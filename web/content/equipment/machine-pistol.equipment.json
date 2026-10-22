@@ -1,0 +1,19 @@
+{
+  "formatVersion": 1,
+  "id": "developer.machine-pistol",
+  "name": "Machine Pistol",
+  "description": "A compact automatic: a stream of light hits at close range. Research it first.",
+  "license": "CC0-1.0",
+  "type": "tool",
+  "action": "disable-pulse",
+  "charges": 60,
+  "researchCost": 70,
+  "effect": {
+    "attack": 5,
+    "range": 4.0,
+    "cooldown": 0.22
+  },
+  "price": 55,
+  "icon": "smg",
+  "carry": "pistol"
+}

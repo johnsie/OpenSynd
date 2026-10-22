@@ -19,6 +19,23 @@ const SHAPES = Object.freeze({
   persuader:
     '<circle cx="16" cy="16" r="3"/><path d="M9 16a7 7 0 0 1 14 0M5 16a11 11 0 0 1 22 0"/>' +
     '<path d="M9 16a7 7 0 0 0 14 0M5 16a11 11 0 0 0 22 0"/>',
+  smg:
+    '<path d="M3 12h19v5h-8l-1 3h-4l1-3H3z"/><path d="M22 13h5v3h-5z"/><path d="M9 17v8h4v-8" />' +
+    '<path d="M17 17l1 3h-3z"/>',
+  rotary:
+    '<path d="M3 13h12v6H3z"/><path d="M15 12h12v2H15zM15 15h12v2H15zM15 18h12v2H15z"/><path d="M8 19v6h4v-6"/>' +
+    '<circle cx="9" cy="16" r="1.5" class="cut"/>',
+  coil:
+    '<path d="M3 14h24v4H3z"/><path d="M8 11v10M12 11v10M16 11v10M20 11v10" class="cut"/>' +
+    '<path d="M27 15h3v2h-3z"/><path d="M6 18v6h4v-6"/>',
+  longshot:
+    '<path d="M2 15h26v3H2z"/><path d="M5 12h8v3H5z"/><circle cx="9" cy="10" r="2"/>' +
+    '<path d="M22 18l-2 6h-3l2-6M28 14h3v5h-3z"/>',
+  bomb:
+    '<circle cx="15" cy="18" r="9"/><path d="M20 10l4-5M23 4l2 1 1 2"/><path d="M12 14a5 5 0 0 1 4-2" class="cut"/>' +
+    '<path d="M11 21h8M15 17v8" class="cut"/>',
+  shield:
+    '<path d="M16 3l11 4v8c0 7-5 12-11 14C10 27 5 22 5 15V7z"/><path d="M16 8v15M10 13h12" class="cut"/>',
   box: '<rect x="5" y="8" width="22" height="18" rx="2"/><path d="M5 14h22"/>',
 });
 

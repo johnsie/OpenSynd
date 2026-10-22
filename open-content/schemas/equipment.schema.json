@@ -13,9 +13,10 @@
     "description": { "type": "string", "minLength": 1, "maxLength": 240 },
     "license": { "enum": ["CC0-1.0", "CC-BY-4.0"] },
     "type": { "enum": ["tool", "consumable"] },
-    "action": { "enum": ["disable-pulse", "restore-vitality", "restore-energy", "stealth", "persuade"] },
+    "action": { "enum": ["disable-pulse", "restore-vitality", "restore-energy", "stealth", "persuade", "time-bomb", "shield"] },
     "price": { "type": "integer", "minimum": 0, "maximum": 1000, "description": "Funds to buy one copy for an operative in the Armoury." },
-    "icon": { "enum": ["pulse", "heavy-pulse", "medkit", "syringe", "cloak", "persuader"], "description": "Which drawn icon represents the item." },
+    "icon": { "enum": ["pulse", "heavy-pulse", "medkit", "syringe", "cloak", "persuader", "smg", "rotary", "coil", "longshot", "bomb", "shield"], "description": "Which drawn icon represents the item." },
+    "carry": { "enum": ["pistol", "rifle"], "description": "How a weapon is held in the character art: one-handed pistol grip or two-handed rifle grip." },
     "researchCost": { "type": "integer", "minimum": 0, "maximum": 500, "description": "Funds needed to research this item; 0 or absent means it is available from the start." },
     "charges": { "type": ["integer", "null"], "minimum": 1, "maximum": 99, "description": "Uses per operation: rounds for a weapon, doses for a consumable; null means unlimited." },
     "effect": {
@@ -28,7 +29,11 @@
         "restoreVitality": { "type": "integer", "minimum": 1, "maximum": 1000 },
         "restoreStamina": { "type": "number", "minimum": 0, "maximum": 1 },
         "restoreFocus": { "type": "number", "minimum": 0, "maximum": 1 },
-        "sightFactor": { "type": "number", "minimum": 0.1, "maximum": 1 }
+        "sightFactor": { "type": "number", "minimum": 0.1, "maximum": 1 },
+        "pierce": { "type": "boolean", "description": "A shot passes through every enemy on its line." },
+        "radius": { "type": "number", "exclusiveMinimum": 0, "maximum": 20, "description": "Time bomb: blast radius in tiles." },
+        "fuse": { "type": "number", "exclusiveMinimum": 0, "maximum": 60, "description": "Time bomb: seconds from planting to blast." },
+        "duration": { "type": "number", "exclusiveMinimum": 0, "maximum": 120, "description": "Shield: seconds it lasts." }
       },
       "minProperties": 1
     }

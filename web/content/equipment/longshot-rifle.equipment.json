@@ -1,0 +1,19 @@
+{
+  "formatVersion": 1,
+  "id": "developer.longshot-rifle",
+  "name": "Longshot Rifle",
+  "description": "A long-barrelled marksman's rifle with the longest reach of any weapon, but a slow hand.",
+  "license": "CC0-1.0",
+  "type": "tool",
+  "action": "disable-pulse",
+  "charges": 12,
+  "researchCost": 110,
+  "effect": {
+    "attack": 24,
+    "range": 15.0,
+    "cooldown": 1.8
+  },
+  "price": 85,
+  "icon": "longshot",
+  "carry": "rifle"
+}

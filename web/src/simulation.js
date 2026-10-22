@@ -499,12 +499,14 @@ function startCooldown(unit, stats) {
 
 // Apply a hit and report it; a unit reduced to zero health is disabled.
 function strike(attacker, target, weapon, stats, events) {
-  target.health = Math.max(0, target.health - stats.attack);
+  const blocked = (target.shieldLeft ?? 0) > 0;
+  if (!blocked) target.health = Math.max(0, target.health - stats.attack);
   events.push({
     type: "damage",
     attackerId: attacker.id,
     targetId: target.id,
-    amount: stats.attack,
+    amount: blocked ? 0 : stats.attack,
+    blocked,
     remaining: target.health,
     outOfRounds: weapon !== null && weapon.charges === 0,
     weapon: weapon ? weapon.definition.name : null,
@@ -526,13 +528,14 @@ export const RAY_STEP = 0.2;
  * walked on (a wall, a building, a closed gate). Returns the enemy hit (or null) and where the
  * shot ended.
  */
-export function castShot(shooter, aim, units, grid, range) {
+export function castShot(shooter, aim, units, grid, range, pierce = false) {
   const dx = aim.x - shooter.position.x;
   const dy = aim.y - shooter.position.y;
   const length = Math.hypot(dx, dy);
-  if (length < 1e-6) return { target: null, end: { ...shooter.position } };
+  if (length < 1e-6) return { target: null, hits: [], end: { ...shooter.position } };
   const direction = { x: dx / length, y: dy / length };
   const enemies = units.filter((unit) => unit.side !== shooter.side && !unit.disabled && !unit.persuaded);
+  const hits = [];
   let last = { ...shooter.position };
   for (let travelled = RAY_STEP * 2; travelled <= range + 1e-9; travelled += RAY_STEP) {
     const point = {
@@ -540,15 +543,17 @@ export function castShot(shooter, aim, units, grid, range) {
       y: shooter.position.y + direction.y * travelled,
     };
     const tile = grid[Math.round(point.y)]?.[Math.round(point.x)];
-    if (!tile || !tile.walkable) return { target: null, end: last };
-    for (const enemy of enemies) {
-      if (Math.hypot(enemy.position.x - point.x, enemy.position.y - point.y) <= HIT_RADIUS) {
-        return { target: enemy, end: { ...enemy.position } };
-      }
+    if (!tile || !tile.walkable) break;
+    const struck = enemies.find(
+      (enemy) => !hits.includes(enemy) && Math.hypot(enemy.position.x - point.x, enemy.position.y - point.y) <= HIT_RADIUS,
+    );
+    if (struck) {
+      hits.push(struck);
+      if (!pierce) return { target: struck, hits, end: { ...struck.position } };
     }
     last = point;
   }
-  return { target: null, end: last };
+  return { target: hits[0] ?? null, hits, end: pierce && hits.length > 0 ? { ...hits.at(-1).position } : last };
 }
 
 /**
@@ -565,13 +570,13 @@ export function fireManual(shooter, aim, units, grid) {
     const reason = pulseItems(shooter).length === 0 ? "no-weapon" : roundsLeft(shooter) === 0 ? "no-rounds" : "none-selected";
     return { fired: false, reason, events: [] };
   }
-  const shot = castShot(shooter, aim, units, grid, stats.range);
+  const shot = castShot(shooter, aim, units, grid, stats.range, Boolean(stats.pierce));
   if (weapon && weapon.charges !== null) weapon.charges -= 1;
   startCooldown(shooter, stats);
   shooter.aimAt = { ...aim };
   const events = [];
-  if (shot.target) {
-    strike(shooter, shot.target, weapon, stats, events);
+  if (shot.hits.length > 0) {
+    for (const target of shot.hits) strike(shooter, target, weapon, stats, events);
   } else {
     events.push({
       type: "shot",
@@ -757,4 +762,24 @@ function followAgent(unit, agent, grid, deltaSeconds) {
     unit.path = findPath(grid, tileOf(unit.position), goal);
   }
   followPath(unit, deltaSeconds, FOLLOW_SPEED_FACTOR);
+}
+
+/** Shields: a raised shield stops every bullet aimed at its wearer until it runs out. */
+export function advanceShields(units, deltaSeconds) {
+  for (const unit of units) {
+    if (unit.shieldLeft > 0) unit.shieldLeft = Math.max(0, unit.shieldLeft - deltaSeconds);
+  }
+}
+
+export function shieldItem(unit) {
+  return (unit.equipment ?? []).find((item) => item.definition.action === "shield" && item.charges !== 0) ?? null;
+}
+
+/** Raise the unit's shield for the item's duration, spending a use. Returns the item, or null. */
+export function raiseShield(unit) {
+  const item = shieldItem(unit);
+  if (!item || unit.disabled || (unit.shieldLeft ?? 0) > 0) return null;
+  unit.shieldLeft = item.definition.effect.duration;
+  if (item.charges !== null) item.charges -= 1;
+  return item;
 }

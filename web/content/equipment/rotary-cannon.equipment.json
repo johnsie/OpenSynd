@@ -1,0 +1,19 @@
+{
+  "formatVersion": 1,
+  "id": "developer.rotary-cannon",
+  "name": "Rotary Cannon",
+  "description": "A spinning multi-barrel emitter that never seems to stop firing. Short of range, long of rounds.",
+  "license": "CC0-1.0",
+  "type": "tool",
+  "action": "disable-pulse",
+  "charges": 90,
+  "researchCost": 140,
+  "effect": {
+    "attack": 6,
+    "range": 5.0,
+    "cooldown": 0.12
+  },
+  "price": 110,
+  "icon": "rotary",
+  "carry": "rifle"
+}

@@ -27,6 +27,8 @@ import {
   fireManual,
   advancePatrols,
   advancePersuasion,
+  advanceShields,
+  raiseShield,
   persuadeCheck,
   gunOut,
   startPanic,
@@ -1146,4 +1148,43 @@ test("persuaded followers are not shot at by hand and a persuaded enemy fights f
   const events = advanceCombat([turned, other, shooter], FIXED_STEP_SECONDS, grid, 1);
   assert.equal(events.filter((event) => event.type === "damage" && event.attackerId === "turned" && event.targetId === "other").length, 1);
   assert.equal(events.filter((event) => event.targetId === "turned").length, 0, "no one shoots the turned agent");
+});
+
+test("a shield stops every bullet for its duration, then wears off", () => {
+  const grid = createTileGrid(streetMap);
+  const shield = { definition: { action: "shield", effect: { duration: 2 } }, charges: 2 };
+  const target = personAt("t", "opposition", 4, 2, { health: 75, equipment: [shield] });
+  assert.equal(raiseShield(target), shield);
+  assert.equal(shield.charges, 1);
+  assert.equal(raiseShield(target), null, "already shielded");
+  const shooter = shooterAt(2, 2, [roundsWeapon(10)]);
+  const blocked = fireManual(shooter, { x: 4, y: 2 }, [shooter, target], grid);
+  assert.equal(blocked.events[0].blocked, true);
+  assert.equal(blocked.events[0].amount, 0);
+  assert.equal(target.health, 75, "no damage while shielded");
+  advanceShields([target], 2.5);
+  assert.equal(target.shieldLeft, 0);
+  shooter.cooldownRemaining = 0;
+  fireManual(shooter, { x: 4, y: 2 }, [shooter, target], grid);
+  assert.equal(target.health, 75 - 12);
+  assert.equal(raiseShield(target), shield, "a second use is available");
+  assert.equal(shield.charges, 0);
+  target.shieldLeft = 0;
+  assert.equal(raiseShield(target), null, "all uses spent");
+});
+
+test("a coil gun round passes through everyone along its line, other guns stop at the first", () => {
+  const grid = createTileGrid(streetMap);
+  const effect = { attack: 40, range: 9, cooldown: 2.4, pierce: true };
+  const coil = { definition: { name: "Coil", action: "disable-pulse", effect }, charges: 3 };
+  const shooter = shooterAt(2, 2, [coil]);
+  const first = personAt("a", "opposition", 4, 2, { health: 100 });
+  const second = personAt("b", "opposition", 6, 2, { health: 100 });
+  const off = personAt("c", "opposition", 6, 4, { health: 100 });
+  const result = fireManual(shooter, { x: 12, y: 2 }, [shooter, first, second, off], grid);
+  assert.deepEqual(result.events.map((event) => event.targetId), ["a", "b"]);
+  assert.equal(first.health, 60);
+  assert.equal(second.health, 60);
+  assert.equal(off.health, 100);
+  assert.equal(coil.charges, 2, "one round, however many it hits");
 });

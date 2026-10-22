@@ -369,3 +369,20 @@ test("Dead Drop mixes objective types and every target and zone it names exists"
     else assert.ok(map.zones.some((zone) => zone.id === objective.targetZone), objective.id);
   }
 });
+
+test("at the start only the pistol is available; every other weapon, the bomb and the shield need research", async () => {
+  const pack = await read("pack.json");
+  const items = await Promise.all(pack.equipment.map((path) => read(path)));
+  const free = items.filter((item) => !(item.researchCost > 0));
+  const freeWeapons = free.filter((item) => item.action === "disable-pulse").map((item) => item.name);
+  assert.deepEqual(freeWeapons, ["Civic Pulse Emitter"], "the pistol alone is free");
+  for (const action of ["time-bomb", "shield", "persuade"]) {
+    const found = items.filter((item) => item.action === action);
+    assert.ok(found.length > 0, `the pack has a ${action} item`);
+    assert.ok(found.every((item) => item.researchCost > 0), `${action} needs research`);
+  }
+  const names = items.filter((item) => item.action === "disable-pulse").map((item) => item.name);
+  for (const wanted of ["Machine Pistol", "Rotary Cannon", "Coil Gun", "Longshot Rifle"]) {
+    assert.ok(names.includes(wanted), wanted);
+  }
+});

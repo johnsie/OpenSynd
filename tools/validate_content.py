@@ -21,6 +21,9 @@ COLOR_PATTERN = re.compile(r"^#[0-9a-fA-F]{6}$")
 CONTENT_LICENSES = {"CC0-1.0", "CC-BY-4.0"}
 
 
+ICONS = {"pulse", "heavy-pulse", "medkit", "syringe", "cloak", "persuader", "smg", "rotary", "coil", "longshot", "bomb", "shield"}
+
+
 class Validation:
     def __init__(self) -> None:
         self.errors: list[str] = []
@@ -218,7 +221,7 @@ class Validation:
         self.validate_identity(path, value)
         if value["type"] not in {"tool", "consumable"}:
             self.error(path, f"unsupported equipment type: {value['type']!r}")
-        if value["action"] not in {"disable-pulse", "restore-vitality", "restore-energy", "stealth", "persuade"}:
+        if value["action"] not in {"disable-pulse", "restore-vitality", "restore-energy", "stealth", "persuade", "time-bomb", "shield"}:
             self.error(path, f"unsupported equipment action: {value['action']!r}")
         charges = value["charges"]
         if charges is not None and (
@@ -242,6 +245,10 @@ class Validation:
             or isinstance(effect.get("restoreFocus"), (int, float))
         ):
             self.error(path, "restore-energy effect requires restoreStamina or restoreFocus")
+        elif value["action"] == "time-bomb" and not {"attack", "radius", "fuse"} <= effect.keys():
+            self.error(path, "time-bomb effect requires attack, radius, and fuse")
+        elif value["action"] == "shield" and not isinstance(effect.get("duration"), (int, float)):
+            self.error(path, "shield effect requires duration")
         elif value["action"] == "persuade" and not {"range", "cooldown"} <= effect.keys():
             self.error(path, "persuade effect requires range and cooldown")
         elif value["action"] == "stealth" and not (
@@ -252,8 +259,10 @@ class Validation:
         price = value.get("price")
         if not isinstance(price, int) or isinstance(price, bool) or not 0 <= price <= 1000:
             self.error(path, "price must be an integer from 0 to 1000")
-        if value.get("icon") not in {"pulse", "heavy-pulse", "medkit", "syringe", "cloak", "persuader"}:
-            self.error(path, "icon must be one of pulse, heavy-pulse, medkit, syringe, cloak, persuader")
+        if value.get("icon") not in ICONS:
+            self.error(path, f"icon must be one of {', '.join(sorted(ICONS))}")
+        if value.get("carry") not in {None, "pistol", "rifle"}:
+            self.error(path, "carry must be pistol or rifle")
         cost = value.get("researchCost", 0)
         if not isinstance(cost, int) or isinstance(cost, bool) or not 0 <= cost <= 500:
             self.error(path, "researchCost must be an integer from 0 to 500")

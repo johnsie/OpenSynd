@@ -1,0 +1,20 @@
+{
+  "formatVersion": 1,
+  "id": "developer.coil-gun",
+  "name": "Coil Gun",
+  "description": "A magnetic accelerator: one round at a time, but each punches through everything along its line.",
+  "license": "CC0-1.0",
+  "type": "tool",
+  "action": "disable-pulse",
+  "charges": 6,
+  "researchCost": 160,
+  "effect": {
+    "attack": 40,
+    "range": 9.0,
+    "cooldown": 2.4,
+    "pierce": true
+  },
+  "price": 120,
+  "icon": "coil",
+  "carry": "rifle"
+}

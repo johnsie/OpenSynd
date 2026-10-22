@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+import { advanceBombs, plantBomb } from "./bombs.js";
 import { createOverlay, createTileSprites } from "./textures.js";
 import { renderWorldMap } from "./worldmap.js";
 import {
@@ -96,7 +97,9 @@ import {
   advanceFocus,
   advancePatrols,
   advancePersuasion,
+  advanceShields,
   hasWeaponSelected,
+  raiseShield,
   startPanic,
   advanceUnits,
   consumeFixedSteps,
@@ -373,6 +376,7 @@ const state = {
   missionSeconds: 0,
   modal: false,
   effects: createEffects(),
+  bombs: [],
   elapsed: 0,
   map: null,
   mission: null,
@@ -432,6 +436,7 @@ async function loadGame(index = state.missionIndex) {
   state.mission = mission;
   state.grid = createTileGrid(map);
   state.buildings = buildingsFromMap(map);
+  state.bombs = [];
   // Relay pylons and the gate console stand on their pads. Their footprint is the pad's first tile
   // so operatives standing on the pad are drawn in front of them.
   state.structures = map.zones
@@ -1375,6 +1380,47 @@ function drawBuilding(building, viewport, size) {
 
 const STRUCTURE_DRAWERS = { relay: drawRelay, console: drawConsole, server: drawServer, beacon: drawBeacon };
 
+// Planted time bombs: a dark case with a blinking light, the seconds left, and the blast radius.
+function drawBombs(viewport) {
+  const { cellSize, origin } = viewport;
+  for (const bomb of state.bombs) {
+    const base = gridToScreen(bomb.at, cellSize, origin, 0);
+    const blink = bomb.left < 2 ? Math.floor(state.elapsed * 8) % 2 === 0 : Math.floor(state.elapsed * 2) % 2 === 0;
+    context.save();
+    context.strokeStyle = "rgba(255, 107, 98, .45)";
+    context.lineWidth = 1.5;
+    context.setLineDash([6, 6]);
+    context.beginPath();
+    context.ellipse(base.x, base.y, bomb.radius * cellSize.width * 0.707, bomb.radius * cellSize.height * 0.707, 0, 0, Math.PI * 2);
+    context.stroke();
+    context.setLineDash([]);
+    const w = cellSize.width * 0.22;
+    const h = cellSize.height * 0.45;
+    context.fillStyle = "#2a323a";
+    context.fillRect(base.x - w, base.y - h, w * 2, h);
+    context.fillStyle = "#4a5660";
+    context.beginPath();
+    context.moveTo(base.x - w, base.y - h);
+    context.lineTo(base.x, base.y - h - h * 0.45);
+    context.lineTo(base.x + w, base.y - h);
+    context.lineTo(base.x, base.y - h + h * 0.45);
+    context.closePath();
+    context.fill();
+    context.fillStyle = blink ? "#ff4d5e" : "#5a1c24";
+    context.beginPath();
+    context.arc(base.x, base.y - h * 0.55, 2.6, 0, Math.PI * 2);
+    context.fill();
+    context.font = `800 ${Math.max(12, cellSize.height * 0.5)}px ui-sans-serif, sans-serif`;
+    context.textAlign = "center";
+    context.strokeStyle = "rgba(0, 0, 0, .85)";
+    context.lineWidth = 3;
+    context.strokeText(String(Math.ceil(bomb.left)), base.x, base.y - h * 1.9);
+    context.fillStyle = "#ffd27a";
+    context.fillText(String(Math.ceil(bomb.left)), base.x, base.y - h * 1.9);
+    context.restore();
+  }
+}
+
 function drawStructure(structure, viewport) {
   const objective = state.objectives.find((item) => item.targetZone === structure.id);
   const complete = objective?.complete ?? false;
@@ -1493,7 +1539,11 @@ function spriteSheetFor(unit) {
     key = SPRITE_SKINS[index % SPRITE_SKINS.length];
   }
   const held = heldWeapon(unit, state.elapsed);
-  if (held) return sheets[`${key}-${held.definition.icon}`] || sheets[key] || null;
+  if (held) {
+    // New weapons borrow the art of the pistol or rifle grip they are held with.
+    const grip = { rifle: "heavy-pulse", pistol: "pulse" }[held.definition.carry] ?? held.definition.icon;
+    return sheets[`${key}-${grip}`] || sheets[key] || null;
+  }
   if (unit.side === "opposition") {
     // Enemy agents always show their weapon: the one they carry, or a pistol if they carry none.
     const carried = unit.equipment.find((item) => item.definition.action === "disable-pulse");
@@ -1618,6 +1668,19 @@ function drawUnit(unit, viewport) {
     context.fillText(appearance.marker, 0, 1);
   }
 
+  if ((unit.shieldLeft ?? 0) > 0 && !unit.disabled) {
+    // A raised shield: a shimmering bubble that flickers as it is about to fail.
+    const fading = unit.shieldLeft < 2;
+    let shimmer = 0.7;
+    if (!reduceMotion) shimmer = fading ? (Math.floor(state.elapsed * 10) % 2 ? 0.9 : 0.25) : 0.65 + 0.2 * Math.sin(state.elapsed * 6);
+    context.fillStyle = `rgba(66, 214, 208, ${0.13 * shimmer})`;
+    context.strokeStyle = `rgba(120, 245, 240, ${shimmer})`;
+    context.lineWidth = 2;
+    context.beginPath();
+    context.ellipse(0, -size * 0.2, size * 1.7, size * 2.6, 0, 0, Math.PI * 2);
+    context.fill();
+    context.stroke();
+  }
   if (unit.persuaded && !unit.disabled) {
     // A persuaded follower: a green ring at its feet and a small link diamond above its head.
     context.strokeStyle = "rgba(121, 213, 155, .9)";
@@ -1705,6 +1768,7 @@ function draw() {
   drawCursor(viewport);
 
   drawPickups(viewport);
+  drawBombs(viewport);
   const boxes = new Map();
   const order = drawOrder([...(state.buildings ?? []), ...(state.structures ?? [])], state.units);
   for (const entry of order) {
@@ -1872,7 +1936,25 @@ function drawEffects(viewport) {
     const grow = reduceMotion ? 1 : progress;
     context.save();
     context.lineWidth = 2;
-    if (effect.type === "persuade") {
+    if (effect.type === "blast") {
+      const ground = gridToScreen(effect.at, viewport.cellSize, viewport.origin, 0);
+      const rx = effect.radius * viewport.cellSize.width * 0.707;
+      const ry = effect.radius * viewport.cellSize.height * 0.707;
+      const spread = reduceMotion ? 1 : Math.min(1, progress * 3);
+      const fire = context.createRadialGradient(ground.x, ground.y - ry * 0.3, 0, ground.x, ground.y - ry * 0.3, rx * spread);
+      fire.addColorStop(0, `rgba(255, 245, 200, ${fade})`);
+      fire.addColorStop(0.45, `rgba(255, 150, 60, ${0.8 * fade})`);
+      fire.addColorStop(1, "rgba(255, 60, 40, 0)");
+      context.fillStyle = fire;
+      context.beginPath();
+      context.ellipse(ground.x, ground.y - ry * 0.3, rx * spread, ry * spread * 1.1, 0, 0, Math.PI * 2);
+      context.fill();
+      context.strokeStyle = `rgba(255, 220, 170, ${fade})`;
+      context.lineWidth = 3;
+      context.beginPath();
+      context.ellipse(ground.x, ground.y, rx * Math.min(1.1, progress * 1.6), ry * Math.min(1.1, progress * 1.6), 0, 0, Math.PI * 2);
+      context.stroke();
+    } else if (effect.type === "persuade") {
       const unit = state.units.find((item) => item.id === effect.unitId);
       if (unit) {
         const at = unitScreenPoint(unit, viewport);
@@ -1967,6 +2049,14 @@ function knockBack(victim, shooter) {
   victim.hitDirection = { x: x / length, y: y / length };
 }
 
+// Keep the record of who has been put out of action, and charge for bystanders.
+function countDisabled(down) {
+  if (down.side === "opposition") state.opStats.watchersDisabled += 1;
+  else if (down.side === "civilian") harmBystander(down, CIVILIAN_PENALTY, "civiliansHarmed");
+  else if (down.side === "police") harmBystander(down, POLICE_PENALTY, "policeHarmed");
+  else state.opStats.operatorsDisabled += 1;
+}
+
 // A civilian or police officer has been killed: it costs funds and goes on the record.
 function harmBystander(unit, cost, counter) {
   state.opStats[counter] += 1;
@@ -1981,7 +2071,11 @@ function handleCombatEvents(combatEvents) {
     if (event.type === "damage" || event.type === "shot") {
       const shooter = state.units.find((item) => item.id === event.attackerId);
       addEffect(state.effects, "muzzle", { unitId: event.attackerId });
-      if (event.type === "damage") {
+      if (event.type === "damage" && event.blocked) {
+        // The shield took it: sparks off the field, no knockback.
+        const victim = state.units.find((item) => item.id === event.targetId);
+        addEffect(state.effects, "puff", { to: victim.position, spin: Math.random() * 3 });
+      } else if (event.type === "damage") {
         const victim = state.units.find((item) => item.id === event.targetId);
         addEffect(state.effects, "impact", { unitId: event.targetId, spin: Math.random() * 3 });
         if (shooter && victim) knockBack(victim, shooter);
@@ -1998,11 +2092,7 @@ function handleCombatEvents(combatEvents) {
         audio.play("alert");
       }
     } else if (event.type === "disabled") {
-      const down = state.units.find((item) => item.id === event.unitId);
-      if (down.side === "opposition") state.opStats.watchersDisabled += 1;
-      else if (down.side === "civilian") harmBystander(down, CIVILIAN_PENALTY, "civiliansHarmed");
-      else if (down.side === "police") harmBystander(down, POLICE_PENALTY, "policeHarmed");
-      else state.opStats.operatorsDisabled += 1;
+      countDisabled(state.units.find((item) => item.id === event.unitId));
     }
   }
   const latest = combatEvents.at(-1);
@@ -2071,6 +2161,24 @@ function simulationStep(deltaSeconds) {
     setStatus(`${watcher.definition.name} spotted ${spotted.definition.name}! It is closing in.`);
     audio.play("alert");
     state.opStats.spotted += 1;
+    interfaceChanged = true;
+  }
+  advanceShields(state.units, deltaSeconds);
+  for (const blast of advanceBombs(state.bombs, state.units, deltaSeconds)) {
+    addEffect(state.effects, "blast", { at: blast.at, radius: blast.radius });
+    audio.play("disabled");
+    startPanic(state.units, blast.at, state.grid, state.elapsed);
+    for (const hit of blast.hits) {
+      const victim = state.units.find((unit) => unit.id === hit.unitId);
+      addEffect(state.effects, "impact", { unitId: hit.unitId, spin: Math.random() * 3 });
+      knockBack(victim, { position: blast.at });
+      if (hit.disabled) countDisabled(victim);
+    }
+    const harmed = blast.hits.filter((hit) => hit.disabled).length;
+    setStatus(
+      `The Delay Charge goes off: ${blast.hits.length} caught in the blast` + (harmed > 0 ? `, ${harmed} down.` : "."),
+    );
+    pruneSelection();
     interfaceChanged = true;
   }
   for (const event of advancePersuasion(state.units, deltaSeconds, state.grid)) {
@@ -3112,6 +3220,10 @@ function slotHint(definition) {
       return "weapon, click to select";
     case "persuade":
       return "click to switch on";
+    case "time-bomb":
+      return "click to plant";
+    case "shield":
+      return "click to raise";
     case "restore-vitality":
     case "restore-energy":
       return "click to use";
@@ -3152,6 +3264,25 @@ function pressSlot(unit, slot) {
         : `${unit.definition.name}: weapon put away. Select one to fire.`,
     );
     audio.play("select");
+    renderInterface();
+  } else if (definition.action === "time-bomb") {
+    if (!plantBomb(unit, entry, state.bombs)) {
+      setStatus("That charge is used up.");
+      return;
+    }
+    audio.play("select");
+    setStatus(
+      `${unit.definition.name} plants a ${definition.name}: ${definition.effect.fuse} seconds. ` +
+        `Get everyone out of ${definition.effect.radius} tiles.`,
+    );
+    renderInterface();
+  } else if (definition.action === "shield") {
+    if (!raiseShield(unit)) {
+      setStatus(entry.charges === 0 ? "That shield is spent." : `${unit.definition.name} already has a shield up.`);
+      return;
+    }
+    audio.play("repair");
+    setStatus(`${unit.definition.name}: ${definition.name} up for ${definition.effect.duration} seconds.`);
     renderInterface();
   } else if (definition.action === "persuade") {
     // Like weapons, with several operators selected the switch applies to all of them that carry one.

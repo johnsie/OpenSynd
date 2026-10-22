@@ -560,6 +560,17 @@ shows that it satisfies maintainability, accessibility, and licensing goals.
   and rules out the Clean hands achievement. Not yet built: police calling for backup and
   civilians reacting to each other.
 
+Operatives fire only a weapon they have selected: with nothing selected they hold fire (right-click,
+pursuit and the crosshair all say so), and once a selected weapon runs dry they carry on with the
+next loaded one. At the start of the campaign only the pistol (Civic Pulse Emitter) is available;
+everything else is researched in the lab first: the Machine Pistol (fast, light, 60 rounds), the
+Rotary Cannon (a hail of light hits, 90 rounds), the Coil Gun (six slow rounds that each pass
+through everything along their line), the Longshot Rifle (15 tiles of reach), the Delay Charge
+(a time bomb: select it to plant it where you stand, six seconds later it blasts everyone within
+3.2 tiles for up to 55, friend or not, which costs funds if bystanders die) and the Deflector Shield
+(two uses of eight seconds in which every bullet aimed at the wearer is stopped; blasts still
+hurt). Weapon names are original, not real product names, to keep the content legally clean.
+
 The Persuader is a shop item (research 80, price 90, 30 charges, range 3.5 tiles). Click it in
 an operator's inventory to switch it on (with several operators selected, it switches on for
 every one who carries it); magenta waves roll out from an operator who has it on. Each second

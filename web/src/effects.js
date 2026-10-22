@@ -9,6 +9,7 @@ export const EFFECT_DURATIONS = Object.freeze({
   muzzle: 0.09,
   tracer: 0.16,
   persuade: 0.8,
+  blast: 0.75,
   impact: 0.3,
   puff: 0.35,
 });

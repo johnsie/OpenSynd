@@ -1,0 +1,18 @@
+{
+  "formatVersion": 1,
+  "id": "developer.delay-charge",
+  "name": "Delay Charge",
+  "description": "A time bomb. Select it to plant it where you stand; after the fuse it blasts everyone nearby, friend or not.",
+  "license": "CC0-1.0",
+  "type": "tool",
+  "action": "time-bomb",
+  "charges": 3,
+  "researchCost": 100,
+  "effect": {
+    "attack": 55,
+    "radius": 3.2,
+    "fuse": 6
+  },
+  "price": 70,
+  "icon": "bomb"
+}

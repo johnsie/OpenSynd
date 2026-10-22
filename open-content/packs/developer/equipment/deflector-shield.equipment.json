@@ -1,0 +1,16 @@
+{
+  "formatVersion": 1,
+  "id": "developer.deflector-shield",
+  "name": "Deflector Shield",
+  "description": "Raises a field that stops every bullet aimed at the wearer for a short time. Two uses per operation.",
+  "license": "CC0-1.0",
+  "type": "tool",
+  "action": "shield",
+  "charges": 2,
+  "researchCost": 90,
+  "effect": {
+    "duration": 8
+  },
+  "price": 80,
+  "icon": "shield"
+}
