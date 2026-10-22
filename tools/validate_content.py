@@ -218,7 +218,7 @@ class Validation:
         self.validate_identity(path, value)
         if value["type"] not in {"tool", "consumable"}:
             self.error(path, f"unsupported equipment type: {value['type']!r}")
-        if value["action"] not in {"disable-pulse", "restore-vitality", "restore-energy", "stealth"}:
+        if value["action"] not in {"disable-pulse", "restore-vitality", "restore-energy", "stealth", "persuade"}:
             self.error(path, f"unsupported equipment action: {value['action']!r}")
         charges = value["charges"]
         if charges is not None and (
@@ -242,6 +242,8 @@ class Validation:
             or isinstance(effect.get("restoreFocus"), (int, float))
         ):
             self.error(path, "restore-energy effect requires restoreStamina or restoreFocus")
+        elif value["action"] == "persuade" and not {"range", "cooldown"} <= effect.keys():
+            self.error(path, "persuade effect requires range and cooldown")
         elif value["action"] == "stealth" and not (
             isinstance(effect.get("sightFactor"), (int, float))
             and 0.1 <= effect["sightFactor"] <= 1
@@ -250,8 +252,8 @@ class Validation:
         price = value.get("price")
         if not isinstance(price, int) or isinstance(price, bool) or not 0 <= price <= 1000:
             self.error(path, "price must be an integer from 0 to 1000")
-        if value.get("icon") not in {"pulse", "heavy-pulse", "medkit", "syringe", "cloak"}:
-            self.error(path, "icon must be one of pulse, heavy-pulse, medkit, syringe, cloak")
+        if value.get("icon") not in {"pulse", "heavy-pulse", "medkit", "syringe", "cloak", "persuader"}:
+            self.error(path, "icon must be one of pulse, heavy-pulse, medkit, syringe, cloak, persuader")
         cost = value.get("researchCost", 0)
         if not isinstance(cost, int) or isinstance(cost, bool) or not 0 <= cost <= 500:
             self.error(path, "researchCost must be an integer from 0 to 500")

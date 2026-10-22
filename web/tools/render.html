@@ -290,14 +290,35 @@
       place(box(unit * 0.3, unit * 0.65, unit * 0.4, material(kit.belt)), offset(hips, -unit * 0.9, -unit * 0.25, 0), "Hips");
       bootsOn(0.8, 1.5);
       gloves(material(kit.belt, 0.5), 0.3);
-      const dome = new THREE.Mesh(new THREE.SphereGeometry(headHeight * 0.66, 20, 14), helmet);
-      dome.scale.set(1, 0.85, 1.1);
-      place(dome, offset(head.clone().lerp(headTop, 0.55), 0, headHeight * 0.02, 0), "Head");
+      // Long navy sleeves with a pale cuff stripe, so no bare arm shows.
+      const sleeve = material(kit.helmet, 0.6);
+      const stripe = glow([225, 232, 245]);
+      for (const side of ["Left", "Right"]) {
+        limb(`${side}Shoulder`, `${side}Arm`, unit * 0.46, unit * 0.43, sleeve, `${side}Shoulder`, -0.2, 1.1);
+        limb(`${side}Arm`, `${side}ForeArm`, unit * 0.43, unit * 0.34, sleeve, `${side}Arm`, -0.3, 1.04);
+        limb(`${side}ForeArm`, `${side}Hand`, unit * 0.33, unit * 0.27, sleeve, `${side}ForeArm`, -0.04, 1.08);
+        limb(`${side}Arm`, `${side}ForeArm`, unit * 0.45, unit * 0.45, stripe, `${side}Arm`, 0.45, 0.5);
+      }
+      // A peaked police cap: crown, wide flat top, shiny brim, a pale band and a gold badge.
+      const crownCentre = offset(head.clone().lerp(headTop, 0.72), 0, headHeight * 0.1, 0);
+      const disc = (top, bottom, height, material, shift) => {
+        const geometry = new THREE.CylinderGeometry(headHeight * top, headHeight * bottom, headHeight * height, 20);
+        place(new THREE.Mesh(geometry, material), offset(crownCentre, 0, headHeight * shift, 0), "Head");
+      };
+      disc(0.6, 0.66, 0.42, helmet, 0);
+      disc(0.72, 0.6, 0.1, helmet, 0.24);
+      disc(0.68, 0.68, 0.09, stripe, -0.14);
+      const brim = new THREE.MeshStandardMaterial({ color: rgb([12, 14, 22]), roughness: 0.25, metalness: 0.2 });
+      const peak = box(headHeight * 0.95, headHeight * 0.06, headHeight * 0.5, brim);
+      place(peak, offset(crownCentre, 0, -headHeight * 0.22, headHeight * 0.62), "Head");
+      const badge = box(headHeight * 0.2, headHeight * 0.22, headHeight * 0.06, glow([245, 200, 90]));
+      place(badge, offset(crownCentre, 0, -headHeight * 0.02, headHeight * 0.68), "Head");
+      // Glowing shades across the eyes, and a light bar on the cap's side.
       const eyeLevel = head.clone().lerp(headTop, 0.4);
-      place(box(headHeight * 1.0, headHeight * 0.2, headHeight * 0.25, accent), offset(eyeLevel, 0, 0, headHeight * 0.45), "Head");
+      place(box(headHeight * 0.95, headHeight * 0.16, headHeight * 0.2, accent), offset(eyeLevel, 0, 0, headHeight * 0.45), "Head");
       for (const [colour, side] of [[[255, 80, 90], -1], [[80, 150, 255], 1]]) {
-        const light = box(headHeight * 0.4, headHeight * 0.12, headHeight * 0.14, glow(colour));
-        place(light, offset(headTop, side * headHeight * 0.22, headHeight * 0.1, 0), "Head");
+        const light = box(headHeight * 0.06, headHeight * 0.14, headHeight * 0.3, glow(colour));
+        place(light, offset(crownCentre, side * headHeight * 0.62, headHeight * 0.1, 0), "Head");
       }
     }
   }

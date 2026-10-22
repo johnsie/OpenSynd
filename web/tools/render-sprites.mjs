@@ -153,11 +153,11 @@ try {
   await page.waitForFunction(() => window.ready === true, null, { timeout: 30000 });
   await mkdir(output, { recursive: true });
   // ONLY=street renders just the civilians and police, leaving the existing sheets untouched.
-  const onlyStreet = process.env.ONLY === "street";
+  const onlyStreet = process.env.ONLY === "street" || process.env.ONLY === "police";
   let manifest = { source: "Quaternius Animated Human (CC0-1.0)", sheets: {} };
   if (onlyStreet) manifest = JSON.parse(await readFile(join(output, "sprites.json"), "utf8"));
   for (const { name, options } of jobs) {
-    if (onlyStreet && !isOnlyNew(name)) continue;
+    if (onlyStreet && !(process.env.ONLY === "police" ? name.startsWith("police-") : isOnlyNew(name))) continue;
     const result = await page.evaluate((job) => window.renderSheet(job), options);
     await writeFile(join(output, `${name}.png`), Buffer.from(result.png.split(",")[1], "base64"));
     manifest.sheets[name] = { file: `${name}.png`, ...result.meta };

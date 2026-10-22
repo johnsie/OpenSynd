@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 export const SAVE_FORMAT = "opensynd-save";
-export const SAVE_VERSION = 8;
-export const LOCAL_SAVE_KEY = "opensynd.save.v8";
+export const SAVE_VERSION = 9;
+export const LOCAL_SAVE_KEY = "opensynd.save.v9";
 export const LEGACY_LOCAL_SAVE_KEYS = [
+  "opensynd.save.v8",
   "opensynd.save.v7",
   "opensynd.save.v6",
   "opensynd.save.v5",
@@ -73,6 +74,8 @@ export function createSaveSnapshot(state, createdAt = new Date().toISOString()) 
       focus: unit.focus ?? 1,
       equipment: (unit.equipment ?? []).map((item) => ({ id: item.definition.id, charges: item.charges })),
       looted: [...(unit.looted ?? [])],
+      persuadedBy: unit.persuadedBy ?? null,
+      persuasions: { civilian: 0, police: 0, opposition: 0, ...(unit.persuasions ?? {}) },
     })),
     objectives: state.objectives.map((objective) => ({
       id: objective.id,
@@ -150,6 +153,14 @@ export function validateSaveSnapshot(value, context) {
     if (!Array.isArray(unit.looted) || unit.looted.length > MAX_ITEMS || !unit.looted.every(known)) {
       fail(`${unit.id} has an invalid loot record`);
     }
+    if (unit.persuadedBy !== null && (!context.selectableUnitIds.includes(unit.persuadedBy) || unit.persuadedBy === unit.id)) {
+      fail(`${unit.id} is persuaded by someone who cannot persuade`);
+    }
+    const counts = unit.persuasions;
+    const validCount = (value) => Number.isInteger(value) && value >= 0 && value <= 999;
+    if (!isObject(counts) || !["civilian", "police", "opposition"].every((kind) => validCount(counts[kind]))) {
+      fail(`${unit.id} persuasion counts are invalid`);
+    }
     const patrolLength = context.patrolLengths?.[unit.id] ?? 0;
     if (
       !Number.isInteger(unit.patrolIndex) ||
@@ -172,6 +183,12 @@ export function validateSaveSnapshot(value, context) {
       focus: unit.focus,
       equipment: unit.equipment.map((item) => ({ id: item.id, charges: item.charges })),
       looted: [...unit.looted],
+      persuadedBy: unit.persuadedBy,
+      persuasions: {
+        civilian: counts.civilian,
+        police: counts.police,
+        opposition: counts.opposition,
+      },
     };
   });
 
@@ -295,11 +312,23 @@ export function migrateSaveSnapshot(value, context) {
     // saves restore the mission's starting items.
     migrated = {
       ...migrated,
-      formatVersion: SAVE_VERSION,
+      formatVersion: 8,
       units: migrated.units.map((unit) => ({
         ...unit,
         equipment: (context.initialEquipment?.[unit?.id] ?? []).map((item) => ({ ...item })),
         looted: [],
+      })),
+    };
+  }
+  if (migrated.formatVersion === 8) {
+    // Version 9 stores who has been persuaded to follow whom, and each operator's persuasion counts.
+    migrated = {
+      ...migrated,
+      formatVersion: SAVE_VERSION,
+      units: migrated.units.map((unit) => ({
+        ...unit,
+        persuadedBy: null,
+        persuasions: { civilian: 0, police: 0, opposition: 0 },
       })),
     };
   }
@@ -323,6 +352,8 @@ export function migrateSaveSnapshot(value, context) {
         focus: 1,
         equipment: (context.initialEquipment?.[id] ?? []).map((item) => ({ ...item })),
         looted: [],
+        persuadedBy: null,
+        persuasions: { civilian: 0, police: 0, opposition: 0 },
       }));
     if (added.length > 0) migrated = { ...migrated, units: [...migrated.units, ...added] };
   }

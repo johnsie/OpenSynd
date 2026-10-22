@@ -94,6 +94,7 @@ import {
   roundsLeft,
   advanceFocus,
   advancePatrols,
+  advancePersuasion,
   startPanic,
   advanceUnits,
   consumeFixedSteps,
@@ -858,6 +859,9 @@ function applySaveSnapshot(snapshot) {
       charges: item.charges,
     }));
     unit.looted = [...saved.looted];
+    unit.persuadedBy = saved.persuadedBy;
+    unit.persuaded = saved.persuadedBy !== null;
+    unit.persuasions = { ...saved.persuasions };
     if (unit.patrol) unit.patrol.index = saved.patrolIndex;
   }
   const objectivesById = new Map(
@@ -1471,7 +1475,13 @@ function spriteSheetFor(unit) {
     key = SPRITE_SKINS[index % SPRITE_SKINS.length];
   }
   const held = heldWeapon(unit, state.elapsed);
-  return (held && sheets[`${key}-${held.definition.icon}`]) || sheets[key] || null;
+  if (held) return sheets[`${key}-${held.definition.icon}`] || sheets[key] || null;
+  if (unit.side === "opposition") {
+    // Enemy agents always show their weapon: the one they carry, or a pistol if they carry none.
+    const carried = unit.equipment.find((item) => item.definition.action === "disable-pulse");
+    return sheets[`${key}-${carried?.definition.icon ?? "pulse"}`] || sheets[key] || null;
+  }
+  return sheets[key] || null;
 }
 
 // Eight facings, 0 toward the camera, increasing clockwise as seen on screen.
@@ -1590,12 +1600,34 @@ function drawUnit(unit, viewport) {
     context.fillText(appearance.marker, 0, 1);
   }
 
-  const healthRatio = unit.health / unit.definition.stats.vitality;
-  context.fillStyle = "rgba(3, 8, 10, .9)";
-  context.fillRect(-size, size * 1.5, size * 2, 3);
-  context.fillStyle = unit.disabled ? "#58646a" : healthRatio > 0.35 ? "#79d59b" : "#ff6b62";
-  context.fillRect(-size, size * 1.5, size * 2 * healthRatio, 3);
-  if ((unit.side === "opposition" || unit.side === "police") && unit.alertedBy && !unit.disabled) {
+  if (unit.persuaded && !unit.disabled) {
+    // A persuaded follower: a green ring at its feet and a small link diamond above its head.
+    context.strokeStyle = "rgba(121, 213, 155, .9)";
+    context.lineWidth = 2;
+    context.beginPath();
+    context.ellipse(0, size * 1.05, size * 1.1, size * 0.45, 0, 0, Math.PI * 2);
+    context.stroke();
+    context.fillStyle = "#79d59b";
+    context.beginPath();
+    context.moveTo(0, -size * 2.9);
+    context.lineTo(size * 0.4, -size * 2.5);
+    context.lineTo(0, -size * 2.1);
+    context.lineTo(-size * 0.4, -size * 2.5);
+    context.closePath();
+    context.fill();
+  }
+  if (unit.persuading && !unit.disabled) {
+    // The Persuader is on: slow magenta waves roll out from the agent.
+    for (const phase of [0, 0.5]) {
+      const wave = reduceMotion ? 0.5 : (state.elapsed * 0.8 + phase) % 1;
+      context.strokeStyle = `rgba(232, 107, 214, ${0.7 * (1 - wave)})`;
+      context.lineWidth = 2;
+      context.beginPath();
+      context.ellipse(0, size * 1.05, size * (1 + wave * 2.6), size * (0.4 + wave * 1.1), 0, 0, Math.PI * 2);
+      context.stroke();
+    }
+  }
+  if ((unit.side === "opposition" || unit.side === "police") && unit.alertedBy && !unit.disabled && !unit.persuaded) {
     // An alert marker over a watcher that has noticed the squad and is giving chase.
     const pulse = reduceMotion ? 1 : 0.8 + 0.2 * Math.sin(state.elapsed * 8);
     context.fillStyle = `rgba(255, 107, 98, ${pulse})`;
@@ -1720,7 +1752,7 @@ function drawMinimap(viewport) {
   for (const unit of state.units) {
     if (unit.disabled) continue;
     const point = miniProject(unit.position, state.map);
-    miniContext.fillStyle = MINI_UNIT_COLOURS[unit.side] ?? "#ff6b62";
+    miniContext.fillStyle = unit.persuaded ? "#79d59b" : (MINI_UNIT_COLOURS[unit.side] ?? "#ff6b62");
     miniContext.fillRect(Math.round(point.x) - 1, Math.round(point.y) - 1, 3, 3);
   }
   // The area the main view currently shows.
@@ -1822,7 +1854,24 @@ function drawEffects(viewport) {
     const grow = reduceMotion ? 1 : progress;
     context.save();
     context.lineWidth = 2;
-    if (effect.type === "impact" || effect.type === "puff") {
+    if (effect.type === "persuade") {
+      const unit = state.units.find((item) => item.id === effect.unitId);
+      if (unit) {
+        const at = unitScreenPoint(unit, viewport);
+        context.strokeStyle = `rgba(232, 107, 214, ${fade})`;
+        context.lineWidth = 2;
+        for (const ring of [0, 0.35]) {
+          const spread = Math.max(0, grow - ring);
+          context.beginPath();
+          context.ellipse(at.x, at.y + size * 0.2, size * (0.5 + spread * 2.2), size * (0.25 + spread * 1.0), 0, 0, Math.PI * 2);
+          context.stroke();
+        }
+        context.fillStyle = `rgba(121, 213, 155, ${fade})`;
+        context.beginPath();
+        context.arc(at.x, at.y - size * (1.6 + grow * 1.6), size * 0.3, 0, Math.PI * 2);
+        context.fill();
+      }
+    } else if (effect.type === "impact" || effect.type === "puff") {
       const unit = effect.unitId ? state.units.find((item) => item.id === effect.unitId) : null;
       let at = unit ? unitScreenPoint(unit, viewport) : null;
       if (at) at = { x: at.x, y: at.y - size * 2.0 };
@@ -2000,6 +2049,22 @@ function simulationStep(deltaSeconds) {
     setStatus(`${watcher.definition.name} spotted ${spotted.definition.name}! It is closing in.`);
     audio.play("alert");
     state.opStats.spotted += 1;
+    interfaceChanged = true;
+  }
+  for (const event of advancePersuasion(state.units, deltaSeconds, state.grid)) {
+    const agent = state.units.find((unit) => unit.id === event.agentId);
+    const target = state.units.find((unit) => unit.id === event.targetId);
+    if (event.type === "persuaded") {
+      addEffect(state.effects, "persuade", { unitId: event.targetId });
+      audio.play("repair");
+      const kinds = { civilian: "civilians", police: "police", opposition: "enemy agents" };
+      setStatus(
+        `${target.definition.name} now follows ${agent.definition.name} (${event.count} ${kinds[event.kind]} persuaded).` +
+          (event.outOfCharges ? " The Persuader is spent." : ""),
+      );
+    } else {
+      setStatus(`${agent.definition.name} cannot persuade ${target.definition.name} yet: ${event.needs} to persuade first.`);
+    }
     interfaceChanged = true;
   }
   const combatEvents = advanceCombat(state.units, deltaSeconds, state.grid, state.elapsed);
@@ -2395,10 +2460,10 @@ function issueMove(destination) {
 // and shoots; if the watcher moves away it is followed again.
 function issueAttack(targetId) {
   const target = state.units.find((unit) => unit.id === targetId);
-  if (!target || target.side !== "opposition") return;
+  if (!target || !isAttackable(target)) return;
   if (target.disabled) {
     if (lootableBody(target)) goLoot(target);
-    else setStatus("That watcher is already disabled and has nothing left to loot.");
+    else setStatus(`${target.definition.name} is already down and has nothing left to loot.`);
     return;
   }
   const squad = selectedOperators();
@@ -2634,11 +2699,16 @@ function setPointerCursor(kind) {
   canvas.classList.toggle("cursor-loot", kind === "loot");
 }
 
+// Anyone the squad could fire on: watchers, civilians and police, but not people it has persuaded.
+function isAttackable(unit) {
+  return (unit.side === "opposition" || unit.side === "civilian" || unit.side === "police") && !unit.persuaded;
+}
+
 function pointerKindAt(position) {
   const squad = selectedOperators();
   if (squad.length === 0 || !state.viewport) return null;
   const unit = hitUnit(position);
-  if (unit && unit.side === "opposition" && !unit.disabled) {
+  if (unit && isAttackable(unit) && !unit.disabled) {
     const reachable = squad.some((operator) => {
       const gap = distanceBetween(operator, unit);
       return gap <= combatStats(operator, gap).range;
@@ -2700,7 +2770,9 @@ canvas.addEventListener("click", (event) => {
   const position = { x: event.clientX - bounds.left, y: event.clientY - bounds.top };
   const unit = hitUnit(position);
   if (unit) {
-    if (unit.side !== "team") issueAttack(unit.id);
+    if (unit.side !== "team") {
+      if (isAttackable(unit)) issueAttack(unit.id);
+    }
     else if (event.ctrlKey || event.shiftKey || event.metaKey) toggleSelect(unit.id);
     else selectUnit(unit.id);
     return;
@@ -2937,6 +3009,15 @@ if (new URLSearchParams(location.search).has("e2e")) {
     effects() {
       return state.effects.map((effect) => effect.type);
     },
+    giveItem(id, itemId) {
+      const unit = state.units.find((item) => item.id === id);
+      const definition = state.catalog.find((item) => item.id === itemId);
+      unit.equipment.push({ definition, charges: definition.charges });
+      renderInterface();
+    },
+    persuadedBy(id) {
+      return state.units.find((item) => item.id === id)?.persuadedBy ?? null;
+    },
     markInProgress() {
       state.missionSeconds = 30;
     },
@@ -2977,7 +3058,9 @@ function slotRow(unit, label) {
       continue;
     }
     const definition = entry.definition;
-    const active = definition.action === "disable-pulse" && unit.activeSlot === slot;
+    const active =
+      (definition.action === "disable-pulse" && unit.activeSlot === slot) ||
+      (definition.action === "persuade" && Boolean(unit.persuading));
     const spent = entry.charges === 0;
     square.classList.toggle("active", active);
     square.classList.toggle("spent", spent);
@@ -2988,7 +3071,8 @@ function slotRow(unit, label) {
       badge.textContent = String(entry.charges);
       square.append(badge);
     }
-    const detail = active ? "selected weapon" : spent ? "used up" : slotHint(definition);
+    const onLabel = definition.action === "persuade" ? "switched on" : "selected weapon";
+    const detail = active ? onLabel : spent ? "used up" : slotHint(definition);
     square.setAttribute("aria-label", `${label} slot ${slot + 1}: ${definition.name}, ${detail}`);
     square.setAttribute("aria-pressed", String(active));
     square.title = `${definition.name}: ${definition.description}`;
@@ -3003,6 +3087,8 @@ function slotHint(definition) {
   switch (definition.action) {
     case "disable-pulse":
       return "weapon, click to select";
+    case "persuade":
+      return "click to switch on";
     case "restore-vitality":
     case "restore-energy":
       return "click to use";
@@ -3041,6 +3127,21 @@ function pressSlot(unit, slot) {
       unit.activeSlot === slot
         ? `${unit.definition.name}: ${definition.name} selected. It will be the only weapon that fires.`
         : `${unit.definition.name}: automatic weapon choice.`,
+    );
+    audio.play("select");
+    renderInterface();
+  } else if (definition.action === "persuade") {
+    // Like weapons, with several operators selected the switch applies to all of them that carry one.
+    const squad = selectedOperators();
+    const group = squad.length > 1 && squad.some((member) => member.id === unit.id) ? squad : [unit];
+    const turnOn = !unit.persuading;
+    const carriers = group.filter((member) => member.equipment.some((item) => item.definition.action === "persuade"));
+    for (const member of carriers) member.persuading = turnOn;
+    setStatus(
+      turnOn
+        ? `${carriers.length > 1 ? `${carriers.length} operators` : unit.definition.name}: ${definition.name} on. ` +
+            "Stand near people to win them over."
+        : `${carriers.length > 1 ? `${carriers.length} operators` : unit.definition.name}: ${definition.name} off.`,
     );
     audio.play("select");
     renderInterface();
@@ -3326,7 +3427,7 @@ function renderInterface() {
 
   renderTraining();
 
-  const threats = state.units.filter((unit) => unit.side === "opposition");
+  const threats = state.units.filter((unit) => unit.side === "opposition" && !unit.persuaded);
   threatsElement.replaceChildren(
     ...threats.map((unit, index) => {
       const button = document.createElement("button");

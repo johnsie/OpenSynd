@@ -467,6 +467,39 @@ for (const [name, type, executablePath] of targets) {
     assert.equal(await page.getByLabel("Field Operator 1 slot 6: Civic Pulse Emitter", { exact: false }).count(), 1);
 
 
+    // The Persuader: switched on beside a civilian, it wins them over; the crosshair shows over civilians.
+    const street = await browser.newPage();
+    await street.goto(`${url}?e2e`);
+    await street.waitForSelector(".roster-select");
+    await street.click("#begin-button");
+    await street.evaluate(() => {
+      const test = window.opensyndTest;
+      test.giveItem("operator-one", "developer.persuader");
+      test.placeNear("civilian-3", "operator-one", 8, 0);
+      test.focusOn("operator-one");
+    });
+    const carried = street.locator(".roster-item").first().locator(".slot:not(.empty)");
+    const slotCount = await carried.count();
+    const persuaderSlot = street.getByLabel(`Field Operator 1 slot ${slotCount}: Persuader`, { exact: false });
+    await persuaderSlot.click();
+    assert.match(await street.locator("#status-message").innerText(), /Persuader on/);
+    // Beyond its range nothing happens; once the civilian is beside the agent it follows.
+    assert.equal(await street.evaluate(() => window.opensyndTest.persuadedBy("civilian-3")), null);
+    await street.evaluate(() => window.opensyndTest.placeNear("civilian-3", "operator-one", 2, 0));
+    await street.waitForFunction(() => window.opensyndTest.persuadedBy("civilian-3") === "operator-one");
+    assert.match(await street.locator("#status-message").innerText(), /now follows/);
+    // The crosshair appears over a civilian the squad could fire on, but not over a follower.
+    await street.evaluate(() => {
+      window.opensyndTest.placeNear("civilian-1", "operator-one", 0, 3);
+      window.opensyndTest.focusOn("operator-one");
+    });
+    await street.waitForTimeout(300);
+    const stranger = await street.evaluate(() => window.opensyndTest.screenPoint("civilian-1"));
+    await street.mouse.move(stranger.x + 40, stranger.y + 40);
+    await street.mouse.move(stranger.x, stranger.y);
+    await street.waitForFunction(() => document.querySelector("#game-canvas").className.includes("cursor-attack"));
+    await street.close();
+
     // Legs and Brain work like weapons: with everyone selected, one operative's controls set them all.
     const group = await browser.newPage();
     await group.goto(`${url}?e2e`);

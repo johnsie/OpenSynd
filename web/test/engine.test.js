@@ -20,11 +20,14 @@ import {
 import {
   FIXED_STEP_SECONDS,
   advanceCombat,
+  castShot,
   hasLineOfSight,
   advanceFocus,
   advancePursuit,
   fireManual,
   advancePatrols,
+  advancePersuasion,
+  persuadeCheck,
   gunOut,
   startPanic,
   advanceUnits,
@@ -1035,4 +1038,101 @@ test("gunfire sends nearby civilians running away from it for a few seconds", ()
   for (let step = 0; step < 30; step += 1) advancePatrols([near, far], FIXED_STEP_SECONDS, grid, 100);
   const sprinted = near.position.x - start;
   assert.ok(sprinted > 2.5, `ran ${sprinted} tiles in a second`);
+});
+
+function persuaderItem(charges = 30) {
+  return { definition: { id: "persuader", action: "persuade", effect: { range: 3.5, cooldown: 1.2 } }, charges };
+}
+
+function personAt(id, side, x, y = 2, overrides = {}) {
+  return patrolUnit([{ x, y }, { x: x + 1, y }], {
+    id,
+    side,
+    alertedBy: null,
+    cooldownRemaining: 0,
+    definition: { stats: { speed: 3, range: 1, attack: 0, cooldown: 1, awareness: 40, vitality: 40 } },
+    ...overrides,
+  });
+}
+
+function persuader(overrides = {}) {
+  return operatorAt(10, 2, { id: "agent", persuading: true, equipment: [persuaderItem()], ...overrides });
+}
+
+test("a Persuader wins over a nearby civilian, who then follows the agent", () => {
+  const grid = createTileGrid(streetMap);
+  const agent = persuader();
+  const civilian = personAt("civ", "civilian", 12);
+  const events = advancePersuasion([agent, civilian], 0.1, grid);
+  assert.deepEqual(events.map((event) => [event.type, event.kind, event.count]), [["persuaded", "civilian", 1]]);
+  assert.equal(civilian.persuaded, true);
+  assert.equal(civilian.persuadedBy, "agent");
+  assert.equal(agent.equipment[0].charges, 29);
+  // The agent walks off; the follower keeps up.
+  agent.position = { x: 24, y: 2 };
+  for (let step = 0; step < 300; step += 1) advancePatrols([agent, civilian], FIXED_STEP_SECONDS, grid, 5);
+  assert.ok(Math.hypot(civilian.position.x - 24, civilian.position.y - 2) <= 2.2, "caught up with the agent");
+});
+
+test("the Persuader needs to be switched on, in range, and have charges", () => {
+  const grid = createTileGrid(streetMap);
+  const civilian = personAt("civ", "civilian", 12);
+  assert.deepEqual(advancePersuasion([persuader({ persuading: false }), civilian], 1, grid), []);
+  assert.deepEqual(advancePersuasion([persuader(), personAt("far", "civilian", 20)], 1, grid), []);
+  assert.deepEqual(advancePersuasion([persuader({ equipment: [persuaderItem(0)] }), civilian], 1, grid), []);
+  assert.equal(civilian.persuaded, undefined);
+});
+
+test("police need six persuaded civilians first, and enemy agents four police", () => {
+  const grid = createTileGrid(streetMap);
+  const agent = persuader();
+  const cop = personAt("cop", "police", 11);
+  const enemy = personAt("enemy", "opposition", 11);
+  assert.deepEqual(persuadeCheck(agent, cop), { ok: false, kind: "police", needs: "6 more civilians" });
+  assert.deepEqual(persuadeCheck(agent, enemy), { ok: false, kind: "opposition", needs: "4 more police" });
+  const refused = advancePersuasion([agent, cop], 0.1, grid);
+  assert.equal(refused[0].type, "refused");
+  assert.equal(cop.persuaded, undefined);
+
+  agent.persuasions = { civilian: 5, police: 0, opposition: 0 };
+  assert.equal(persuadeCheck(agent, cop).ok, false, "five is not enough");
+  agent.persuasions.civilian = 6;
+  assert.equal(persuadeCheck(agent, cop).ok, true);
+  assert.equal(persuadeCheck(agent, enemy).ok, false, "police first");
+  agent.persuasions.police = 4;
+  assert.equal(persuadeCheck(agent, enemy).ok, true);
+
+  // Counts are the persuading agent's own: another agent starts from nothing.
+  assert.equal(persuadeCheck(persuader({ id: "other" }), cop).ok, false);
+});
+
+test("one person is persuaded at a time, nearest first, and the cooldown spaces them", () => {
+  const grid = createTileGrid(streetMap);
+  const agent = persuader();
+  const near = personAt("near", "civilian", 11);
+  const further = personAt("further", "civilian", 12);
+  advancePersuasion([agent, further, near], 0.1, grid);
+  assert.equal(near.persuaded, true);
+  assert.equal(further.persuaded, undefined);
+  assert.deepEqual(advancePersuasion([agent, further, near], 0.5, grid), [], "still recharging");
+  assert.equal(advancePersuasion([agent, further, near], 1, grid).length, 1);
+  assert.equal(agent.persuasions.civilian, 2);
+});
+
+test("persuaded followers are not shot at by hand and a persuaded enemy fights for the squad", () => {
+  const grid = createTileGrid(streetMap);
+  const follower = personAt("civ", "civilian", 12, 2, { persuaded: true, persuadedBy: "agent" });
+  const shooter = operatorAt(10, 2, { id: "agent", cooldownRemaining: 0, equipment: [weaponItem(12, 3.25, 0.75)] });
+  assert.equal(castShot(shooter, { x: 14, y: 2 }, [shooter, follower], grid, 4).target, null, "friends are not hit");
+  const turned = personAt("turned", "opposition", 20, 2, {
+    persuaded: true,
+    persuadedBy: "agent",
+    definition: { stats: { speed: 4, range: 3.25, attack: 12, cooldown: 1, awareness: 85 } },
+  });
+  const other = personAt("other", "opposition", 22, 2, {
+    definition: { stats: { speed: 4, range: 3.25, attack: 12, cooldown: 1, awareness: 85 } },
+  });
+  const events = advanceCombat([turned, other, shooter], FIXED_STEP_SECONDS, grid, 1);
+  assert.equal(events.filter((event) => event.type === "damage" && event.attackerId === "turned" && event.targetId === "other").length, 1);
+  assert.equal(events.filter((event) => event.targetId === "turned").length, 0, "no one shoots the turned agent");
 });

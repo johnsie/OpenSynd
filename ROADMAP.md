@@ -559,6 +559,22 @@ shows that it satisfies maintainability, accessibility, and licensing goals.
   civilian costs 40 funds and a police officer 80 (never below zero), is shown in the debrief,
   and rules out the Clean hands achievement. Not yet built: police calling for backup and
   civilians reacting to each other.
+
+The Persuader is a shop item (research 80, price 90, 30 charges, range 3.5 tiles). Click it in
+an operator's inventory to switch it on (with several operators selected, it switches on for
+every one who carries it); magenta waves roll out from an operator who has it on. Each second
+or so it wins over the nearest person in range who it is allowed to persuade: any civilian;
+a police officer only once that operator has persuaded six civilians; an enemy agent only once
+they have persuaded four police (`persuadeCheck`, `advancePersuasion` in
+`web/src/simulation.js`). The counts belong to the persuading operator and are saved (save
+format 9). A persuaded person follows their persuader through the streets, shows a green ring
+and link diamond, is no longer hostile or shot at, and, if armed (police, enemy agents), opens
+fire on enemies of the squad by themselves. Persuaded civilians stop fleeing gunfire. Police
+ignore a switched-on Persuader (it is not a weapon). The crosshair now shows over civilians and
+police as well as watchers, and clicking them pursues like any target. Enemy agents are always
+drawn armed (the weapon they carry, a pistol if none), and the floating health bars over units
+are gone (health stays in the squad cards and threat list). Police are drawn in a peaked cap
+with a badge, long covered sleeves with cuff stripes, armour and shoulder light strips.
 - **Mission variety.** No two operations in a row may be won the same way, and
   restoring relays is only one kind of job. The objective types to build and mix
   across the campaign are: interact (restore a relay, download from a server,

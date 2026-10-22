@@ -16,6 +16,9 @@ const SHAPES = Object.freeze({
     '<path d="M6 26l-3 3M13 17l2 2"/>',
   cloak:
     '<path d="M16 3c-5 0-8 4-8 9v16h6v-6h4v6h6V12c0-5-3-9-8-9z"/><circle cx="16" cy="12" r="3" class="cut"/>',
+  persuader:
+    '<circle cx="16" cy="16" r="3"/><path d="M9 16a7 7 0 0 1 14 0M5 16a11 11 0 0 1 22 0"/>' +
+    '<path d="M9 16a7 7 0 0 0 14 0M5 16a11 11 0 0 0 22 0"/>',
   box: '<rect x="5" y="8" width="22" height="18" rx="2"/><path d="M5 14h22"/>',
 });
 

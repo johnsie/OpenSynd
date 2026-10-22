@@ -1,0 +1,17 @@
+{
+  "formatVersion": 1,
+  "id": "developer.persuader",
+  "name": "Persuader",
+  "description": "A short-range neural suggestion emitter. Selected, it wins over nearby people so they follow the wearer. Civilians first; police only after six civilians, and enemy agents only after four police.",
+  "license": "CC0-1.0",
+  "type": "tool",
+  "action": "persuade",
+  "charges": 30,
+  "researchCost": 80,
+  "effect": {
+    "range": 3.5,
+    "cooldown": 1.2
+  },
+  "price": 90,
+  "icon": "persuader"
+}

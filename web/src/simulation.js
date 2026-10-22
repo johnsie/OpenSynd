@@ -224,6 +224,10 @@ export function advancePatrols(units, deltaSeconds, grid = null, now = null) {
   const byId = new Map(units.map((unit) => [unit.id, unit]));
   for (const unit of units) {
     if (unit.side === "team" || unit.disabled) continue;
+    if (unit.persuaded) {
+      if (grid) followAgent(unit, byId.get(unit.persuadedBy), grid, deltaSeconds);
+      continue;
+    }
     const hasRoute = unit.patrol && unit.patrol.route.length > 0;
     if (!hasRoute && !grid) continue;
 
@@ -331,14 +335,24 @@ function distanceBetween(left, right) {
   );
 }
 
+// Who an armed unit may open fire on by itself. Opposition and alerted police shoot operators (police
+// only ones with a weapon out); a persuaded follower shoots whoever is hostile to the squad.
+function isHostileTo(attacker, candidate, now) {
+  if (candidate.disabled || candidate === attacker) return false;
+  if (attacker.persuaded) {
+    if (candidate.persuaded) return false;
+    return candidate.side === "opposition" || (candidate.side === "police" && Boolean(candidate.alertedBy));
+  }
+  if (candidate.side !== "team") return false;
+  return attacker.side !== "police" || gunOut(candidate, now);
+}
+
 function automaticTarget(attacker, units, grid = null, now = null) {
   const stats = combatStats(attacker);
   return units
     .filter(
       (candidate) =>
-        !candidate.disabled &&
-        candidate.side === "team" &&
-        (attacker.side !== "police" || gunOut(candidate, now)) &&
+        isHostileTo(attacker, candidate, now) &&
         distanceBetween(attacker, candidate) <= stats.range &&
         hasLineOfSight(grid, attacker.position, candidate.position),
     )
@@ -433,18 +447,25 @@ export function advanceCombat(units, deltaSeconds, grid = null, now = null) {
       attacker.cooldownRemaining - deltaSeconds,
     );
 
-    const hostile = attacker.side === "opposition" || (attacker.side === "police" && attacker.alertedBy);
+    const hostile =
+      (attacker.persuaded && combatStats(attacker).attack > 0) ||
+      (!attacker.persuaded && attacker.side === "opposition") ||
+      (!attacker.persuaded && attacker.side === "police" && attacker.alertedBy);
     if (hostile && attacker.targetId === null) {
       attacker.targetId = automaticTarget(attacker, units, grid, now)?.id ?? null;
     }
 
     const target = byId.get(attacker.targetId);
-    if (!target || target.disabled || target.side === attacker.side) {
+    if (!target || target.disabled || (target.side === attacker.side && !attacker.persuaded)) {
       attacker.targetId = null;
       continue;
     }
     const distance = distanceBetween(attacker, target);
     const { item: weapon, stats } = pickWeapon(attacker, distance);
+    if (attacker.persuaded && (distance > stats.range || stats.range <= 0)) {
+      attacker.targetId = null; // a follower that cannot reach its target drops it and keeps up with its leader
+      continue;
+    }
     if (!hasLineOfSight(grid, attacker.position, target.position)) continue;
     if (stats.range <= 0 || distance > stats.range || attacker.cooldownRemaining > ARRIVAL_EPSILON) continue;
     // Firing spends a round; the weapon that fires is the one that loses it.
@@ -498,7 +519,7 @@ export function castShot(shooter, aim, units, grid, range) {
   const length = Math.hypot(dx, dy);
   if (length < 1e-6) return { target: null, end: { ...shooter.position } };
   const direction = { x: dx / length, y: dy / length };
-  const enemies = units.filter((unit) => unit.side !== shooter.side && !unit.disabled);
+  const enemies = units.filter((unit) => unit.side !== shooter.side && !unit.disabled && !unit.persuaded);
   let last = { ...shooter.position };
   for (let travelled = RAY_STEP * 2; travelled <= range + 1e-9; travelled += RAY_STEP) {
     const point = {
@@ -583,7 +604,7 @@ export function consumeFixedSteps(clock, elapsedSeconds, step) {
 export function startPanic(units, source, grid, now) {
   let fled = 0;
   for (const unit of units) {
-    if (unit.side !== "civilian" || unit.disabled) continue;
+    if (unit.side !== "civilian" || unit.disabled || unit.persuaded) continue;
     const away = { x: unit.position.x - source.x, y: unit.position.y - source.y };
     const distance = Math.hypot(away.x, away.y);
     if (distance > PANIC_RADIUS) continue;
@@ -611,4 +632,115 @@ export function startPanic(units, source, grid, now) {
     }
   }
   return fled;
+}
+
+/**
+ * The Persuader. An operator with it switched on (`persuading`) wins over people within its range,
+ * one at a time, nearest first. Civilians can always be persuaded; police only once that operator
+ * has persuaded POLICE_NEEDS_CIVILIANS civilians; enemy agents only after ENEMY_NEEDS_POLICE police.
+ * A persuaded unit follows its persuader and stops being hostile to the squad.
+ */
+export const POLICE_NEEDS_CIVILIANS = 6;
+export const ENEMY_NEEDS_POLICE = 4;
+const KIND_BY_SIDE = { civilian: "civilian", police: "police", opposition: "opposition" };
+
+export function newPersuasions() {
+  return { civilian: 0, police: 0, opposition: 0 };
+}
+
+/** Whether `agent` may persuade `target` now; otherwise what is still needed, if anything. */
+export function persuadeCheck(agent, target) {
+  const kind = KIND_BY_SIDE[target.side];
+  if (!kind || target.disabled || target.persuaded) return { ok: false, kind: null };
+  const done = agent.persuasions ?? newPersuasions();
+  if (kind === "police" && done.civilian < POLICE_NEEDS_CIVILIANS) {
+    return { ok: false, kind, needs: `${POLICE_NEEDS_CIVILIANS - done.civilian} more civilians` };
+  }
+  if (kind === "opposition" && done.police < ENEMY_NEEDS_POLICE) {
+    return { ok: false, kind, needs: `${ENEMY_NEEDS_POLICE - done.police} more police` };
+  }
+  return { ok: true, kind };
+}
+
+function persuasionItem(unit) {
+  return (unit.equipment ?? []).find((item) => item.definition.action === "persuade" && item.charges !== 0) ?? null;
+}
+
+export function advancePersuasion(units, deltaSeconds, grid = null) {
+  const events = [];
+  for (const agent of units) {
+    if (agent.side !== "team" || agent.disabled || !agent.persuading) continue;
+    const item = persuasionItem(agent);
+    if (!item) continue;
+    agent.persuadeCooldown = Math.max(0, (agent.persuadeCooldown ?? 0) - deltaSeconds);
+    if (agent.persuadeCooldown > 0) continue;
+    const reach = item.definition.effect.range;
+    const near = units
+      .filter(
+        (other) =>
+          other !== agent &&
+          other.side !== "team" &&
+          !other.disabled &&
+          !other.persuaded &&
+          distanceBetween(agent, other) <= reach &&
+          hasLineOfSight(grid, agent.position, other.position),
+      )
+      .sort((left, right) => distanceBetween(agent, left) - distanceBetween(agent, right));
+    let blocked = null;
+    for (const target of near) {
+      const check = persuadeCheck(agent, target);
+      if (!check.ok) {
+        blocked ??= { target, check };
+        continue;
+      }
+      target.persuaded = true;
+      target.persuadedBy = agent.id;
+      target.alertedBy = null;
+      target.targetId = null;
+      target.path = [];
+      target.panicUntil = 0;
+      if (item.charges !== null) item.charges -= 1;
+      agent.persuadeCooldown = item.definition.effect.cooldown;
+      agent.persuasions = { ...newPersuasions(), ...(agent.persuasions ?? {}) };
+      agent.persuasions[check.kind] += 1;
+      events.push({
+        type: "persuaded",
+        agentId: agent.id,
+        targetId: target.id,
+        kind: check.kind,
+        count: agent.persuasions[check.kind],
+        outOfCharges: item.charges === 0,
+      });
+      blocked = null;
+      break;
+    }
+    if (blocked && (agent.persuadeNoticeAt ?? -Infinity) <= (agent.persuadeClock ?? 0)) {
+      agent.persuadeNoticeAt = (agent.persuadeClock ?? 0) + 4;
+      const { target, check } = blocked;
+      events.push({ type: "refused", agentId: agent.id, targetId: target.id, needs: check.needs, kind: check.kind });
+    }
+    agent.persuadeClock = (agent.persuadeClock ?? 0) + deltaSeconds;
+  }
+  return events;
+}
+
+// A follower keeps close to its persuader, walking real streets to do it.
+const FOLLOW_DISTANCE = 1.8;
+const FOLLOW_SPEED_FACTOR = 1.5;
+function followAgent(unit, agent, grid, deltaSeconds) {
+  if (!agent || agent.disabled) {
+    unit.path = [];
+    return;
+  }
+  const distance = distanceBetween(unit, agent);
+  if (distance <= FOLLOW_DISTANCE) {
+    unit.path = [];
+    return;
+  }
+  const goal = tileOf(agent.position);
+  const end = unit.path.at(-1);
+  if (!end || Math.abs(end.x - goal.x) + Math.abs(end.y - goal.y) > 1) {
+    unit.path = findPath(grid, tileOf(unit.position), goal);
+  }
+  followPath(unit, deltaSeconds, FOLLOW_SPEED_FACTOR);
 }

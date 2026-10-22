@@ -13,9 +13,9 @@
     "description": { "type": "string", "minLength": 1, "maxLength": 240 },
     "license": { "enum": ["CC0-1.0", "CC-BY-4.0"] },
     "type": { "enum": ["tool", "consumable"] },
-    "action": { "enum": ["disable-pulse", "restore-vitality", "restore-energy", "stealth"] },
+    "action": { "enum": ["disable-pulse", "restore-vitality", "restore-energy", "stealth", "persuade"] },
     "price": { "type": "integer", "minimum": 0, "maximum": 1000, "description": "Funds to buy one copy for an operative in the Armoury." },
-    "icon": { "enum": ["pulse", "heavy-pulse", "medkit", "syringe", "cloak"], "description": "Which drawn icon represents the item." },
+    "icon": { "enum": ["pulse", "heavy-pulse", "medkit", "syringe", "cloak", "persuader"], "description": "Which drawn icon represents the item." },
     "researchCost": { "type": "integer", "minimum": 0, "maximum": 500, "description": "Funds needed to research this item; 0 or absent means it is available from the start." },
     "charges": { "type": ["integer", "null"], "minimum": 1, "maximum": 99, "description": "Uses per operation: rounds for a weapon, doses for a consumable; null means unlimited." },
     "effect": {
