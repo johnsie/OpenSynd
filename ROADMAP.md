@@ -145,6 +145,17 @@ at the weapon, a short recoil kick, and a thin aim line to the locked target. An
 operative also draws the weapon while firing at a locked target, so a gun never
 fires from empty hands.
 
+Right-clicking fires by hand: each selected operator fires the selected weapon (or the
+longest-ranged loaded one if none is selected) in the direction of the pointer. The shot
+is a real ray (`castShot`/`fireManual` in `web/src/simulation.js`) that stops at the first
+standing enemy within 0.65 tiles of its path or at the first tile that cannot be walked
+on (a wall, a building, a closed gate), so buildings block shots and a miss simply
+flies to the end of the weapon's range. A shot needs the weapon recharged and a round
+left; it spends the round, starts the recharge (scaled by effective Brain), turns the
+operator toward the aim and shows a muzzle flash, recoil and, for a miss, a tracer. The
+crosshair over a standing watcher is red when a selected operator's weapon reaches it
+and white when it is out of range, and updates as units move.
+
 Attacking is a pursuit: the pointer becomes a circular crosshair over a watcher
 that is still standing, and clicking it (or its Threats button) sends the selected
 armed operators after it. Each one follows the watcher, re-routing as it moves, until

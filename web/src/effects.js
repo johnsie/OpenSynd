@@ -7,6 +7,7 @@ export const EFFECT_DURATIONS = Object.freeze({
   repair: 0.7,
   restore: 0.9,
   muzzle: 0.09,
+  tracer: 0.16,
 });
 
 export function createEffects() {

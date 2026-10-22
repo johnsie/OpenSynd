@@ -330,13 +330,16 @@ export function pickWeapon(unit, distance = null) {
  * empty. A watcher has no selection, so it draws its best loaded weapon while it is alert or
  * has a target.
  */
-export function heldWeapon(unit) {
+export const RECENT_FIRE_SECONDS = 0.8;
+
+export function heldWeapon(unit, now = null) {
   if (unit.disabled) return null;
   if (unit.side === "team") {
     const chosen = Number.isInteger(unit.activeSlot) ? unit.equipment?.[unit.activeSlot] : null;
     if (chosen && chosen.definition.action === "disable-pulse" && chosen.charges !== 0) return chosen;
-    // Not selected, but firing at a locked target: the weapon is out while it shoots.
-    return unit.targetId ? pickWeapon(unit).item : null;
+    // Not selected, but firing (at a locked target, or a moment ago by hand): the weapon is out.
+    const justFired = now !== null && unit.firedAt !== undefined && now - unit.firedAt < RECENT_FIRE_SECONDS;
+    return unit.targetId || justFired ? pickWeapon(unit).item : null;
   }
   return unit.alertedBy || unit.targetId ? pickWeapon(unit).item : null;
 }
@@ -379,29 +382,103 @@ export function advanceCombat(units, deltaSeconds) {
     // Firing spends a round; the weapon that fires is the one that loses it.
     if (weapon && weapon.charges !== null) weapon.charges -= 1;
 
-    const amount = stats.attack;
-    target.health = Math.max(0, target.health - amount);
-    attacker.cooldownRemaining =
-      stats.cooldown * cooldownMultiplier(effectiveLevels(attacker.levels, attacker.stamina, attacker.focus));
-    events.push({
-      type: "damage",
-      attackerId: attacker.id,
-      targetId: target.id,
-      amount,
-      remaining: target.health,
-      outOfRounds: weapon !== null && weapon.charges === 0,
-      weapon: weapon ? weapon.definition.name : null,
-    });
-
-    if (target.health === 0) {
-      target.disabled = true;
-      target.path = [];
-      target.targetId = null;
-      events.push({ type: "disabled", unitId: target.id });
-    }
+    startCooldown(attacker, stats);
+    strike(attacker, target, weapon, stats, events);
   }
 
   return events;
+}
+
+// The recharge before a unit can fire again: the weapon's cooldown, scaled by its effective Brain.
+function startCooldown(unit, stats) {
+  unit.cooldownRemaining =
+    stats.cooldown * cooldownMultiplier(effectiveLevels(unit.levels, unit.stamina, unit.focus));
+}
+
+// Apply a hit and report it; a unit reduced to zero health is disabled.
+function strike(attacker, target, weapon, stats, events) {
+  target.health = Math.max(0, target.health - stats.attack);
+  events.push({
+    type: "damage",
+    attackerId: attacker.id,
+    targetId: target.id,
+    amount: stats.attack,
+    remaining: target.health,
+    outOfRounds: weapon !== null && weapon.charges === 0,
+    weapon: weapon ? weapon.definition.name : null,
+  });
+  if (target.health === 0) {
+    target.disabled = true;
+    target.path = [];
+    target.targetId = null;
+    events.push({ type: "disabled", unitId: target.id });
+  }
+}
+
+export const HIT_RADIUS = 0.65;
+export const RAY_STEP = 0.2;
+
+/**
+ * Trace a shot from the shooter toward `aim` (grid coordinates) for up to `range` tiles. It stops
+ * at the first standing enemy within HIT_RADIUS of its path, or at the first tile that cannot be
+ * walked on (a wall, a building, a closed gate). Returns the enemy hit (or null) and where the
+ * shot ended.
+ */
+export function castShot(shooter, aim, units, grid, range) {
+  const dx = aim.x - shooter.position.x;
+  const dy = aim.y - shooter.position.y;
+  const length = Math.hypot(dx, dy);
+  if (length < 1e-6) return { target: null, end: { ...shooter.position } };
+  const direction = { x: dx / length, y: dy / length };
+  const enemies = units.filter((unit) => unit.side !== shooter.side && !unit.disabled);
+  let last = { ...shooter.position };
+  for (let travelled = RAY_STEP * 2; travelled <= range + 1e-9; travelled += RAY_STEP) {
+    const point = {
+      x: shooter.position.x + direction.x * travelled,
+      y: shooter.position.y + direction.y * travelled,
+    };
+    const tile = grid[Math.round(point.y)]?.[Math.round(point.x)];
+    if (!tile || !tile.walkable) return { target: null, end: last };
+    for (const enemy of enemies) {
+      if (Math.hypot(enemy.position.x - point.x, enemy.position.y - point.y) <= HIT_RADIUS) {
+        return { target: enemy, end: { ...enemy.position } };
+      }
+    }
+    last = point;
+  }
+  return { target: null, end: last };
+}
+
+/**
+ * A shot fired by hand (right-click): the selected weapon, or the longest-ranged loaded one if none
+ * is selected, fires in the direction of `aim`. It needs the weapon recharged and a round left, spends
+ * the round and starts the recharge. Returns { fired, reason, events }; events use the same shapes as
+ * automatic combat ("damage", "disabled") plus a "shot" event for a shot that hit nothing.
+ */
+export function fireManual(shooter, aim, units, grid) {
+  if (shooter.disabled) return { fired: false, reason: "down", events: [] };
+  if (shooter.cooldownRemaining > ARRIVAL_EPSILON) return { fired: false, reason: "recharging", events: [] };
+  const { item: weapon, stats } = pickWeapon(shooter);
+  if (stats.range <= 0) {
+    return { fired: false, reason: pulseItems(shooter).length === 0 ? "no-weapon" : "no-rounds", events: [] };
+  }
+  const shot = castShot(shooter, aim, units, grid, stats.range);
+  if (weapon && weapon.charges !== null) weapon.charges -= 1;
+  startCooldown(shooter, stats);
+  shooter.aimAt = { ...aim };
+  const events = [];
+  if (shot.target) {
+    strike(shooter, shot.target, weapon, stats, events);
+  } else {
+    events.push({
+      type: "shot",
+      attackerId: shooter.id,
+      end: shot.end,
+      outOfRounds: weapon !== null && weapon.charges === 0,
+      weapon: weapon ? weapon.definition.name : null,
+    });
+  }
+  return { fired: true, reason: null, events };
 }
 
 /**

@@ -13,6 +13,7 @@ import {
   findObjectiveAtPosition,
   findPath,
   gridToScreen,
+  screenToGridExact,
   screenToGrid,
   zoneContains,
 } from "../src/engine.js";
@@ -21,6 +22,7 @@ import {
   advanceCombat,
   advanceFocus,
   advancePursuit,
+  fireManual,
   advancePatrols,
   advanceUnits,
   combatStats,
@@ -834,4 +836,108 @@ test("pursuit ends when the watcher falls, when rounds run out, or the operative
   const idle = chaser(0, 2, [roundsWeapon(5)], { followId: null });
   assert.deepEqual(advancePursuit([idle, prey(5, 2)], grid), []);
   assert.deepEqual(idle.path, []);
+});
+
+function shooterAt(x, y, equipment, overrides = {}) {
+  return {
+    ...operatorAt(x, y),
+    id: "gun",
+    equipment,
+    cooldownRemaining: 0,
+    levels: { speed: 3, brain: 3 },
+    stamina: 1,
+    focus: 1,
+    health: 100,
+    ...overrides,
+  };
+}
+
+test("a manual shot hits the first standing enemy along the line and spends a round", () => {
+  const grid = createTileGrid(streetMap);
+  const pistol = roundsWeapon(5);
+  const shooter = shooterAt(2, 2, [pistol]);
+  const near = prey(4, 2, { id: "near" });
+  const far = prey(5, 2, { id: "far" });
+  const result = fireManual(shooter, { x: 20, y: 2 }, [shooter, far, near], grid);
+
+  assert.equal(result.fired, true);
+  assert.deepEqual(result.events.map((event) => [event.type, event.targetId]), [["damage", "near"]]);
+  assert.equal(near.health, 75 - 12);
+  assert.equal(far.health, 75, "only the first in line is hit");
+  assert.equal(pistol.charges, 4);
+  assert.ok(shooter.cooldownRemaining > 0);
+  assert.deepEqual(shooter.aimAt, { x: 20, y: 2 });
+});
+
+test("a manual shot that hits nothing reports where it ended and still costs a round", () => {
+  const grid = createTileGrid(streetMap);
+  const pistol = roundsWeapon(1);
+  const shooter = shooterAt(2, 2, [pistol]);
+  const aside = prey(3, 4, { id: "aside" });
+  const result = fireManual(shooter, { x: 20, y: 2 }, [shooter, aside], grid);
+  assert.equal(result.fired, true);
+  assert.equal(result.events[0].type, "shot");
+  assert.ok(Math.abs(result.events[0].end.x - (2 + 3.25)) < 0.3, "it flew to the end of its range");
+  assert.equal(result.events[0].outOfRounds, true, "that was the last round");
+  assert.equal(aside.health, 75);
+});
+
+test("a manual shot stops at walls, ignores the disabled and never hits friends", () => {
+  const grid = createTileGrid(map);
+  const shooter = shooterAt(0, 1, [roundsWeapon(9, 12, 6, 0.75)]);
+  const behindWall = prey(4, 1, { id: "behind" });
+  const result = fireManual(shooter, { x: 4, y: 1 }, [shooter, behindWall], grid);
+  assert.equal(result.events[0].type, "shot", "the wall at x=2 stops it");
+  assert.equal(behindWall.health, 75);
+
+  const open = createTileGrid(streetMap);
+  const gunner = shooterAt(2, 2, [roundsWeapon(9)]);
+  const down = prey(4, 2, { id: "down", disabled: true });
+  const friend = operatorAt(3, 2, { id: "friend" });
+  const out = fireManual(gunner, { x: 9, y: 2 }, [gunner, down, friend], open);
+  assert.equal(out.events[0].type, "shot");
+});
+
+test("a manual shot respects recharge, rounds and the selected weapon's range", () => {
+  const grid = createTileGrid(streetMap);
+  const pistol = roundsWeapon(9, 12, 3.25, 0.75);
+  const rifle = roundsWeapon(9, 20, 4.5, 1.4);
+  const target = prey(7, 2);
+
+  const picked = shooterAt(2, 2, [pistol, rifle], { activeSlot: 0 });
+  assert.equal(fireManual(picked, { x: 7, y: 2 }, [picked, target], grid).events[0].type, "shot", "5 tiles is past the pistol");
+  const heavy = shooterAt(2, 2, [pistol, rifle], { activeSlot: 1 });
+  assert.equal(fireManual(heavy, { x: 7, y: 2 }, [heavy, target], grid).events[0].type, "damage", "the rifle reaches");
+  assert.equal(target.health, 75 - 20);
+
+  assert.equal(fireManual(heavy, { x: 7, y: 2 }, [heavy, target], grid).reason, "recharging");
+  const ready = (equipment) => ({ ...picked, cooldownRemaining: 0, equipment });
+  assert.equal(fireManual(ready([roundsWeapon(0)]), { x: 7, y: 2 }, [target], grid).reason, "no-rounds");
+  assert.equal(fireManual(ready([]), { x: 7, y: 2 }, [target], grid).fired, true, "own natural attack");
+  assert.equal(fireManual({ ...picked, disabled: true }, { x: 7, y: 2 }, [target], grid).reason, "down");
+});
+
+test("a manual shot can disable a watcher", () => {
+  const grid = createTileGrid(streetMap);
+  const gun = shooterAt(2, 2, [roundsWeapon(9)]);
+  const weak = prey(4, 2, { health: 10 });
+  const result = fireManual(gun, { x: 4, y: 2 }, [gun, weak], grid);
+  assert.deepEqual(result.events.map((event) => event.type), ["damage", "disabled"]);
+  assert.equal(weak.disabled, true);
+});
+
+test("screen positions convert back to exact grid positions for aiming", () => {
+  const cell = { width: 80, height: 40 };
+  const origin = { x: 240, y: 50 };
+  const point = gridToScreen({ x: 3.4, y: 1.7 }, cell, origin);
+  const exact = screenToGridExact(point, cell, origin);
+  assert.ok(Math.abs(exact.x - 3.4) < 1e-9 && Math.abs(exact.y - 1.7) < 1e-9);
+});
+
+test("a unit that has just fired by hand holds its weapon for a moment", () => {
+  const pistol = roundsWeapon(5);
+  const operative = shooterAt(0, 0, [pistol], { targetId: null, firedAt: 10 });
+  assert.equal(heldWeapon(operative, 10.5), pistol);
+  assert.equal(heldWeapon(operative, 11), null, "put away again after a moment");
+  assert.equal(heldWeapon(operative), null, "without a clock it only holds a selected or targeted weapon");
 });

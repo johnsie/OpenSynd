@@ -97,6 +97,13 @@ export function screenToGrid(position, cellSize, origin) {
   };
 }
 
+// The exact (fractional) grid position under a screen point, for aiming. screenToGrid rounds to a tile.
+export function screenToGridExact(position, cellSize, origin) {
+  const diagonalX = (position.x - origin.x) / (cellSize.width / 2);
+  const diagonalY = (position.y - origin.y) / (cellSize.height / 2);
+  return { x: (diagonalX + diagonalY) / 2, y: (diagonalY - diagonalX) / 2 };
+}
+
 export function zoneContains(zone, position) {
   return (
     position.x >= zone.position.x &&

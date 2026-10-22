@@ -10,6 +10,7 @@ import {
   gridToScreen,
   isWalkable,
   screenToGrid,
+  screenToGridExact,
   zoneContains,
 } from "./engine.js";
 import {
@@ -70,6 +71,7 @@ import {
   advanceCombat,
   advancePursuit,
   combatStats,
+  fireManual,
   heldWeapon,
   roundsLeft,
   advanceFocus,
@@ -1070,7 +1072,7 @@ function spriteSheetFor(unit) {
     const index = state.units.filter((item) => item.side === "team").indexOf(unit);
     key = SPRITE_SKINS[index % SPRITE_SKINS.length];
   }
-  const held = heldWeapon(unit);
+  const held = heldWeapon(unit, state.elapsed);
   return (held && sheets[`${key}-${held.definition.icon}`]) || sheets[key] || null;
 }
 
@@ -1080,7 +1082,9 @@ function isPatrolling(unit) {
 }
 
 function updateFacing(unit, viewport) {
-  let toward = unit.path[0] ?? null;
+  // Just after firing by hand, face the way the shot went.
+  const aiming = unit.aimAt && unit.firedAt !== undefined && state.elapsed - unit.firedAt < 0.7;
+  let toward = aiming ? unit.aimAt : (unit.path[0] ?? null);
   if (!toward && isPatrolling(unit)) toward = unit.patrol.route[unit.patrol.index];
   if (!toward && unit.targetId) {
     toward = state.units.find((item) => item.id === unit.targetId)?.position ?? null;
@@ -1377,7 +1381,7 @@ function drawAim(viewport) {
   context.lineWidth = 1.5;
   context.setLineDash([3, 5]);
   for (const unit of state.units) {
-    if (!unit.targetId || unit.disabled || !heldWeapon(unit)) continue;
+    if (!unit.targetId || unit.disabled || !heldWeapon(unit, state.elapsed)) continue;
     const target = state.units.find((item) => item.id === unit.targetId);
     if (!target || target.disabled) continue;
     const from = muzzlePoint(unit, viewport);
@@ -1417,6 +1421,18 @@ function drawEffects(viewport) {
         context.arc(b.x, b.y, size * (0.6 + grow), 0, Math.PI * 2);
         context.stroke();
       }
+    } else if (effect.type === "tracer") {
+      const from = state.units.find((unit) => unit.id === effect.fromId);
+      if (from) {
+        const a = muzzlePoint(from, viewport);
+        const end = gridToScreen(effect.to, viewport.cellSize, viewport.origin);
+        context.strokeStyle = `rgba(120, 245, 240, ${0.9 * fade})`;
+        context.lineWidth = 2;
+        context.beginPath();
+        context.moveTo(a.x, a.y);
+        context.lineTo(end.x, end.y - size * 0.4);
+        context.stroke();
+      }
     } else if (effect.type === "muzzle") {
       const unit = state.units.find((item) => item.id === effect.unitId);
       if (unit) {
@@ -1449,6 +1465,44 @@ function drawEffects(viewport) {
       }
     }
     context.restore();
+  }
+}
+
+// Effects, counters and messages for shots, from automatic combat and from shots fired by hand.
+function handleCombatEvents(combatEvents) {
+  for (const event of combatEvents) {
+    if (event.type === "damage" || event.type === "shot") {
+      const shooter = state.units.find((item) => item.id === event.attackerId);
+      addEffect(state.effects, "muzzle", { unitId: event.attackerId });
+      if (event.type === "damage") {
+        addEffect(state.effects, "pulse", { fromId: event.attackerId, toId: event.targetId });
+      } else {
+        addEffect(state.effects, "tracer", { fromId: event.attackerId, to: event.end });
+      }
+      if (shooter) shooter.firedAt = state.elapsed;
+      if (event.outOfRounds && shooter?.side === "team") {
+        setStatus(`${shooter.definition.name}: ${event.weapon} is out of rounds.`);
+        audio.play("alert");
+      }
+    } else if (event.type === "disabled") {
+      const down = state.units.find((item) => item.id === event.unitId);
+      if (down.side === "opposition") state.opStats.watchersDisabled += 1;
+      else state.opStats.operatorsDisabled += 1;
+    }
+  }
+  const latest = combatEvents.at(-1);
+  if (latest.type === "disabled") {
+    audio.play("disabled");
+    const unit = state.units.find((item) => item.id === latest.unitId);
+    setStatus(
+      unit.side === "opposition"
+        ? `${unit.definition.name} disabled. Route is clearer.`
+        : `${unit.definition.name} disabled. Select another operator.`,
+    );
+    pruneSelection();
+  } else if (latest.type === "damage") {
+    const target = state.units.find((item) => item.id === latest.targetId);
+    setStatus(`${target.definition.name} integrity: ${latest.remaining}.`);
   }
 }
 
@@ -1498,39 +1552,7 @@ function simulationStep(deltaSeconds) {
   const combatEvents = advanceCombat(state.units, deltaSeconds);
   if (combatEvents.length > 0) {
     interfaceChanged = true;
-    for (const event of combatEvents) {
-      if (event.type === "damage") {
-        addEffect(state.effects, "pulse", { fromId: event.attackerId, toId: event.targetId });
-        addEffect(state.effects, "muzzle", { unitId: event.attackerId });
-        const shooter = state.units.find((item) => item.id === event.attackerId);
-        if (shooter) shooter.firedAt = state.elapsed;
-        if (event.outOfRounds) {
-          const shooter = state.units.find((item) => item.id === event.attackerId);
-          if (shooter.side === "team") {
-            setStatus(`${shooter.definition.name}: ${event.weapon} is out of rounds.`);
-            audio.play("alert");
-          }
-        }
-      } else if (event.type === "disabled") {
-        const down = state.units.find((item) => item.id === event.unitId);
-        if (down.side === "opposition") state.opStats.watchersDisabled += 1;
-        else state.opStats.operatorsDisabled += 1;
-      }
-    }
-    const latest = combatEvents.at(-1);
-    if (latest.type === "disabled") {
-      audio.play("disabled");
-      const unit = state.units.find((item) => item.id === latest.unitId);
-      setStatus(
-        unit.side === "opposition"
-          ? `${unit.definition.name} disabled. Route is clearer.`
-          : `${unit.definition.name} disabled. Select another operator.`,
-      );
-      pruneSelection();
-    } else {
-      const target = state.units.find((item) => item.id === latest.targetId);
-      setStatus(`${target.definition.name} integrity: ${latest.remaining}.`);
-    }
+    handleCombatEvents(combatEvents);
   }
   if (interfaceChanged) renderInterface();
 }
@@ -1745,6 +1767,12 @@ function frame(time) {
     panByKeys(state.camera, direction, delta, state.viewport, state.map);
   }
   if (state.map) followTarget(state.camera, delta, reduceMotion);
+  // The crosshair colour follows the range as operators or watchers move, even if the mouse is still.
+  state.cursorClock = (state.cursorClock ?? 0) + delta;
+  if (state.cursorClock >= 0.1 && state.pointer && !drag.active) {
+    state.cursorClock = 0;
+    setPointerCursor(pointerKindAt(state.pointer));
+  }
   update(delta);
   draw();
   requestAnimationFrame(frame);
@@ -2124,29 +2152,73 @@ canvas.addEventListener("pointermove", (event) => {
 });
 canvas.addEventListener("pointerleave", () => {
   state.edge = { x: 0, y: 0 };
+  state.pointer = null;
   setPointerCursor(null);
 });
 
-// The pointer shows what a click would do: a crosshair over a watcher still standing, and
-// a pickup cursor over gear an operator could collect.
+// The pointer shows what a click would do: a crosshair over a watcher still standing (red when a
+// selected operator's weapon reaches it, white when it is out of range) and a pickup cursor over
+// gear an operator could collect.
 function setPointerCursor(kind) {
   canvas.classList.toggle("cursor-attack", kind === "attack");
+  canvas.classList.toggle("cursor-attack-far", kind === "attack-far");
   canvas.classList.toggle("cursor-loot", kind === "loot");
+}
+
+function pointerKindAt(position) {
+  const squad = selectedOperators();
+  if (squad.length === 0 || !state.viewport) return null;
+  const unit = hitUnit(position);
+  if (unit && unit.side === "opposition" && !unit.disabled) {
+    const reachable = squad.some((operator) => {
+      const gap = distanceBetween(operator, unit);
+      return gap <= combatStats(operator, gap).range;
+    });
+    return reachable ? "attack" : "attack-far";
+  }
+  const ground = screenToGrid(position, state.viewport.cellSize, state.viewport.origin);
+  if ((unit && lootableBody(unit)) || lootableAt(state.units, ground, 0.9)) return "loot";
+  return null;
 }
 
 canvas.addEventListener("pointermove", (event) => {
   if (event.pointerType !== "mouse" || !state.viewport || drag.active) return;
   const bounds = canvas.getBoundingClientRect();
-  const position = { x: event.clientX - bounds.left, y: event.clientY - bounds.top };
-  if (selectedOperators().length === 0) {
-    setPointerCursor(null);
+  state.pointer = { x: event.clientX - bounds.left, y: event.clientY - bounds.top };
+  setPointerCursor(pointerKindAt(state.pointer));
+});
+
+// Right-click: fire the selected weapon (or the best loaded one) in the direction of the pointer.
+function fireByHand(aim) {
+  const squad = selectedOperators();
+  if (squad.length === 0) {
+    setStatus("Select an operator first, then right-click to fire.");
     return;
   }
-  const unit = hitUnit(position);
-  const ground = screenToGrid(position, state.viewport.cellSize, state.viewport.origin);
-  if (unit && unit.side === "opposition" && !unit.disabled) setPointerCursor("attack");
-  else if ((unit && lootableBody(unit)) || lootableAt(state.units, ground, 0.9)) setPointerCursor("loot");
-  else setPointerCursor(null);
+  const events = [];
+  const reasons = new Set();
+  for (const unit of squad) {
+    const result = fireManual(unit, aim, state.units, state.grid);
+    if (result.fired) events.push(...result.events);
+    else reasons.add(result.reason);
+  }
+  if (events.length > 0) {
+    audio.play("pulse");
+    handleCombatEvents(events);
+    renderInterface();
+    return;
+  }
+  if (reasons.has("recharging")) setStatus("Weapon recharging.");
+  else if (reasons.has("no-rounds")) setStatus("Out of rounds. Select another weapon or loot one.");
+  else if (reasons.has("no-weapon")) setStatus("No weapon equipped.");
+}
+
+canvas.addEventListener("contextmenu", (event) => {
+  event.preventDefault();
+  if (!state.map || !state.viewport || state.modal || state.outcome !== "active") return;
+  const bounds = canvas.getBoundingClientRect();
+  const position = { x: event.clientX - bounds.left, y: event.clientY - bounds.top };
+  fireByHand(screenToGridExact(position, state.viewport.cellSize, state.viewport.origin));
 });
 
 canvas.addEventListener("click", (event) => {
@@ -2373,7 +2445,7 @@ if (new URLSearchParams(location.search).has("e2e")) {
     },
     held(id) {
       const unit = state.units.find((item) => item.id === id);
-      return heldWeapon(unit)?.definition.name ?? null;
+      return heldWeapon(unit, state.elapsed)?.definition.name ?? null;
     },
     focusOn(id) {
       const unit = state.units.find((item) => item.id === id);

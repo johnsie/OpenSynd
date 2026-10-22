@@ -298,7 +298,9 @@ for (const [name, type, executablePath] of targets) {
     const enemy = await page.evaluate(() => window.opensyndTest.screenPoint("watcher-four"));
     await page.mouse.move(enemy.x + 40, enemy.y + 40);
     await page.mouse.move(enemy.x, enemy.y);
-    await page.waitForFunction(() => document.querySelector("#game-canvas").classList.contains("cursor-attack"));
+    // Eight tiles away is out of the pistol's range: the crosshair is white.
+    await page.waitForFunction(() => document.querySelector("#game-canvas").classList.contains("cursor-attack-far"));
+    assert.equal(await page.evaluate(() => document.querySelector("#game-canvas").classList.contains("cursor-attack")), false);
     await page.mouse.click(enemy.x, enemy.y);
     assert.match(await page.locator("#status-message").innerText(), /(closing in on|engaging) Security Watcher/);
     assert.equal(await page.evaluate(() => window.opensyndTest.following("operator-two")), "watcher-four");
@@ -306,6 +308,25 @@ for (const [name, type, executablePath] of targets) {
     await page.locator("#game-canvas").focus();
     await page.keyboard.press("Enter");
     assert.equal(await page.evaluate(() => window.opensyndTest.following("operator-two")), null);
+    // Brought within range, the same crosshair turns red without the mouse moving.
+    await page.evaluate(() => {
+      window.opensyndTest.focusOn("watcher-four");
+      window.opensyndTest.placeNear("operator-two", "watcher-four", -2, 0);
+    });
+    await page.waitForTimeout(300);
+    const closeEnemy = await page.evaluate(() => window.opensyndTest.screenPoint("watcher-four"));
+    await page.mouse.move(closeEnemy.x + 30, closeEnemy.y + 30);
+    await page.mouse.move(closeEnemy.x, closeEnemy.y);
+    await page.waitForFunction(() => document.querySelector("#game-canvas").classList.contains("cursor-attack"));
+    // Right-click fires the selected weapon in the direction of the pointer and spends a round.
+    const rounds = async () =>
+      Number(await page.locator(".roster-item").nth(1).locator(".slot .charges").first().innerText());
+    const roundsBefore = await rounds();
+    await page.mouse.click(closeEnemy.x, closeEnemy.y, { button: "right" });
+    assert.equal(await rounds(), roundsBefore - 1);
+    await page.waitForTimeout(900);
+    await page.mouse.click(closeEnemy.x + 80, closeEnemy.y + 40, { button: "right" });
+    assert.equal(await rounds(), roundsBefore - 2, "a shot that hits nothing still costs a round");
 
     // A watcher notices an operator who walks into its sight (shortened by the cloak just
     // picked up) and raises the alert.
