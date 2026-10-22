@@ -16,6 +16,11 @@ await cp(
   resolve(output, "content"),
   { recursive: true },
 );
+await cp(
+  resolve(projectRoot, "public/assets"),
+  resolve(output, "assets"),
+  { recursive: true },
+);
 await mkdir(resolve(output, "licenses"), { recursive: true });
 await cp(
   resolve(projectRoot, "LICENSES/CC0-1.0.txt"),

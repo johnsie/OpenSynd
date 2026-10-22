@@ -1,0 +1,102 @@
+<!doctype html>
+<meta charset="utf-8" />
+<!-- SPDX-License-Identifier: GPL-2.0-or-later -->
+<script type="importmap">
+  { "imports": { "three": "/node_modules/three/build/three.module.js", "three/addons/": "/node_modules/three/examples/jsm/" } }
+</script>
+<script type="module">
+  import * as THREE from "three";
+  import { FBXLoader } from "three/addons/loaders/FBXLoader.js";
+
+  const FRAME = 128;
+  const SUPERSAMPLE = 2;
+  const DIRECTIONS = 8;
+
+  const loader = new FBXLoader();
+  const load = (url) => loader.loadAsync(url);
+  const textureLoader = new THREE.TextureLoader();
+
+  window.renderSheet = async ({ model, skin, animations }) => {
+    const size = FRAME * SUPERSAMPLE;
+    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, preserveDrawingBuffer: true });
+    renderer.setSize(size, size);
+    renderer.setClearColor(0x000000, 0);
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+    const scene = new THREE.Scene();
+    scene.add(new THREE.HemisphereLight(0xdfe9f2, 0x2a3138, 1.5));
+    const key = new THREE.DirectionalLight(0xffffff, 2.2);
+    key.position.set(-2, 4, 3);
+    scene.add(key);
+
+    const texture = await textureLoader.loadAsync(skin);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.flipY = true;
+    const root = await load(model);
+    root.traverse((node) => {
+      if (node.isMesh) {
+        node.material = new THREE.MeshStandardMaterial({ map: texture, roughness: 0.8, metalness: 0 });
+        node.frustumCulled = false;
+      }
+    });
+
+    const pivot = new THREE.Group();
+    pivot.add(root);
+    scene.add(pivot);
+    const box = new THREE.Box3().setFromObject(root);
+    const height = box.max.y - box.min.y;
+    root.position.y -= box.min.y + height / 2;
+
+    // Classic isometric framing: 35.264° elevation, looking at the figure's centre.
+    const half = height * 0.62;
+    const camera = new THREE.OrthographicCamera(-half, half, half, -half, 0.1, height * 20);
+    const elevation = Math.atan(1 / Math.SQRT2);
+    camera.position.set(0, Math.sin(elevation), Math.cos(elevation)).multiplyScalar(height * 6);
+    camera.lookAt(0, 0, 0);
+
+    const clips = {};
+    for (const [name, { url }] of Object.entries(animations)) {
+      // Each file also holds a one-frame "Targeting Pose" clip; use the real motion.
+      const found = (await load(url)).animations;
+      clips[name] = found.reduce((best, clip) => (clip.duration > best.duration ? clip : best));
+    }
+    const mixer = new THREE.AnimationMixer(root);
+
+    const names = Object.keys(animations);
+    const frameCounts = Object.fromEntries(names.map((name) => [name, animations[name].frames]));
+    const maxFrames = Math.max(...Object.values(frameCounts));
+    const atlas = document.createElement("canvas");
+    atlas.width = FRAME * maxFrames;
+    atlas.height = FRAME * DIRECTIONS * names.length;
+    const atlasContext = atlas.getContext("2d");
+    atlasContext.imageSmoothingQuality = "high";
+
+    names.forEach((name, animationIndex) => {
+      const clip = clips[name];
+      const frames = frameCounts[name];
+      mixer.stopAllAction();
+      const action = mixer.clipAction(clip);
+      action.play();
+      for (let direction = 0; direction < DIRECTIONS; direction += 1) {
+        pivot.rotation.y = (direction * Math.PI * 2) / DIRECTIONS;
+        for (let frame = 0; frame < frames; frame += 1) {
+          mixer.setTime((clip.duration * frame) / frames);
+          renderer.render(scene, camera);
+          atlasContext.drawImage(
+            renderer.domElement,
+            frame * FRAME,
+            (animationIndex * DIRECTIONS + direction) * FRAME,
+            FRAME,
+            FRAME,
+          );
+        }
+      }
+    });
+    renderer.dispose();
+    return {
+      png: atlas.toDataURL("image/png"),
+      meta: { frameSize: FRAME, directions: DIRECTIONS, animations: names.map((name, index) => ({ name, row: index * DIRECTIONS, frames: frameCounts[name], seconds: clips[name].duration })) },
+    };
+  };
+  window.ready = true;
+</script>

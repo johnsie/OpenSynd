@@ -14,7 +14,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 REGISTRY = ROOT / "provenance" / "assets.json"
-ASSET_ROOTS = (ROOT / "data", ROOT / "icon", ROOT / "web" / "public" / "assets")
+ASSET_ROOTS = (
+    ROOT / "data",
+    ROOT / "icon",
+    ROOT / "web" / "public" / "assets",
+    ROOT / "web" / "art-source",
+)
 STATUSES = {"approved", "quarantined", "excluded"}
 APPROVED_LICENSES = {"CC0-1.0", "CC-BY-4.0", "OFL-1.1"}
 REQUIRED_FIELDS = {

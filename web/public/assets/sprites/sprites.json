@@ -1,0 +1,81 @@
+{
+  "source": "Kenney Animated Characters Protagonists 1.1 (CC0-1.0)",
+  "sheets": {
+    "criminalMaleA": {
+      "file": "criminalMaleA.png",
+      "frameSize": 128,
+      "directions": 8,
+      "animations": [
+        {
+          "name": "idle",
+          "row": 0,
+          "frames": 4,
+          "seconds": 1.0666667222976685
+        },
+        {
+          "name": "run",
+          "row": 8,
+          "frames": 8,
+          "seconds": 0.6666666865348816
+        }
+      ]
+    },
+    "cyborgFemaleA": {
+      "file": "cyborgFemaleA.png",
+      "frameSize": 128,
+      "directions": 8,
+      "animations": [
+        {
+          "name": "idle",
+          "row": 0,
+          "frames": 4,
+          "seconds": 1.0666667222976685
+        },
+        {
+          "name": "run",
+          "row": 8,
+          "frames": 8,
+          "seconds": 0.6666666865348816
+        }
+      ]
+    },
+    "skaterMaleA": {
+      "file": "skaterMaleA.png",
+      "frameSize": 128,
+      "directions": 8,
+      "animations": [
+        {
+          "name": "idle",
+          "row": 0,
+          "frames": 4,
+          "seconds": 1.0666667222976685
+        },
+        {
+          "name": "run",
+          "row": 8,
+          "frames": 8,
+          "seconds": 0.6666666865348816
+        }
+      ]
+    },
+    "skaterFemaleA": {
+      "file": "skaterFemaleA.png",
+      "frameSize": 128,
+      "directions": 8,
+      "animations": [
+        {
+          "name": "idle",
+          "row": 0,
+          "frames": 4,
+          "seconds": 1.0666667222976685
+        },
+        {
+          "name": "run",
+          "row": 8,
+          "frames": 8,
+          "seconds": 0.6666666865348816
+        }
+      ]
+    }
+  }
+}

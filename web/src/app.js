@@ -171,6 +171,34 @@ document.querySelector("#settings-form").addEventListener("input", () => {
 });
 applyTextScale();
 
+const SPRITE_SKINS = ["criminalMaleA", "cyborgFemaleA", "skaterMaleA", "skaterFemaleA"];
+const sprites = { manifest: null, images: new Map() };
+
+// Sprite sheets are optional: units fall back to vector shapes if they fail to load.
+async function loadSprites() {
+  if (sprites.manifest) return;
+  try {
+    const manifest = await readJson("assets/sprites/sprites.json");
+    await Promise.all(
+      Object.values(manifest.sheets).map(
+        (sheet) =>
+          new Promise((resolve, reject) => {
+            const image = new Image();
+            image.onload = () => {
+              sprites.images.set(sheet.file, image);
+              resolve();
+            };
+            image.onerror = () => reject(new Error(`Unable to load ${sheet.file}`));
+            image.src = `assets/sprites/${sheet.file}`;
+          }),
+      ),
+    );
+    sprites.manifest = manifest;
+  } catch {
+    sprites.manifest = null;
+  }
+}
+
 const state = {
   effects: createEffects(),
   elapsed: 0,
@@ -194,6 +222,7 @@ async function readJson(path) {
 }
 
 async function loadGame() {
+  await loadSprites();
   const pack = await readJson("content/pack.json");
   const missionPath = pack.missions[0];
   const mission = await readJson(`content/${missionPath}`);
@@ -534,6 +563,54 @@ function drawCursor(viewport) {
   context.stroke();
 }
 
+function spriteSheetFor(unit) {
+  if (!sprites.manifest || unit.side !== "team") return null;
+  const index = state.units.filter((item) => item.side === "team").indexOf(unit);
+  return sprites.manifest.sheets[SPRITE_SKINS[index % SPRITE_SKINS.length]] ?? null;
+}
+
+// Eight facings, 0 toward the camera, increasing clockwise as seen on screen.
+function updateFacing(unit, viewport) {
+  let toward = unit.path[0] ?? null;
+  if (!toward && unit.targetId) {
+    toward = state.units.find((item) => item.id === unit.targetId)?.position ?? null;
+  }
+  if (!toward) return;
+  const from = gridToScreen(unit.position, viewport.cellSize, viewport.origin);
+  const to = gridToScreen(toward, viewport.cellSize, viewport.origin);
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  if (Math.abs(dx) + Math.abs(dy) < 0.001) return;
+  unit.facing = (Math.round(Math.atan2(dx, dy) / (Math.PI / 4)) + 8) % 8;
+}
+
+function drawSprite(unit, sheet, viewport, size) {
+  updateFacing(unit, viewport);
+  const moving = unit.path.length > 0 && !unit.disabled;
+  const animation = sheet.animations.find((item) => item.name === (moving ? "run" : "idle"));
+  const clock = reduceMotion ? 0 : (state.elapsed + unit.id.length * 0.13) / animation.seconds;
+  const frame = Math.floor((clock % 1) * animation.frames) % animation.frames;
+  const direction = unit.facing ?? 0;
+  const image = sprites.images.get(sheet.file);
+  const source = sheet.frameSize;
+  const drawSize = viewport.cellSize.height * 2.9;
+  context.save();
+  if (unit.disabled) context.globalAlpha = 0.55;
+  // The figure's feet sit about 84% down its frame; anchor them to the tile.
+  context.drawImage(
+    image,
+    frame * source,
+    (animation.row + direction) * source,
+    source,
+    source,
+    -drawSize / 2,
+    -drawSize * 0.84 + size * 1.0,
+    drawSize,
+    drawSize,
+  );
+  context.restore();
+}
+
 function drawUnit(unit, viewport) {
   const tile = state.grid[Math.round(unit.position.y)]?.[Math.round(unit.position.x)];
   const center = gridToScreen(
@@ -545,7 +622,9 @@ function drawUnit(unit, viewport) {
   const size = Math.max(9, viewport.cellSize.height * 0.34);
   const appearance = unit.definition.appearance;
 
-  const bob = walkBob(state.elapsed, unit.path.length > 0 && !unit.disabled, reduceMotion);
+  const bob = spriteSheetFor(unit)
+    ? 0
+    : walkBob(state.elapsed, unit.path.length > 0 && !unit.disabled, reduceMotion);
   context.save();
   context.translate(center.x, center.y - size * 0.8 + bob);
   context.fillStyle = "rgba(0, 0, 0, .35)";
@@ -561,11 +640,15 @@ function drawUnit(unit, viewport) {
     context.stroke();
   }
 
+  const sheet = spriteSheetFor(unit);
+  if (sheet) drawSprite(unit, sheet, viewport, size);
   context.fillStyle = appearance.primaryColor;
   context.strokeStyle = appearance.accentColor;
   context.lineWidth = 3;
   context.beginPath();
-  if (appearance.shape === "hexagon") {
+  if (sheet) {
+    // The sprite replaces the vector body.
+  } else if (appearance.shape === "hexagon") {
     for (let index = 0; index < 6; index += 1) {
       const angle = Math.PI / 3 * index - Math.PI / 2;
       const point = { x: Math.cos(angle) * size, y: Math.sin(angle) * size };
@@ -580,13 +663,15 @@ function drawUnit(unit, viewport) {
     context.lineTo(-size * 0.9, 0);
     context.closePath();
   }
-  context.fill();
-  context.stroke();
-  context.fillStyle = "#071012";
-  context.font = `700 ${Math.max(9, size * 0.8)}px ui-monospace, monospace`;
-  context.textAlign = "center";
-  context.textBaseline = "middle";
-  context.fillText(appearance.marker, 0, 1);
+  if (!sheet) {
+    context.fill();
+    context.stroke();
+    context.fillStyle = "#071012";
+    context.font = `700 ${Math.max(9, size * 0.8)}px ui-monospace, monospace`;
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+    context.fillText(appearance.marker, 0, 1);
+  }
 
   const healthRatio = unit.health / unit.definition.stats.vitality;
   context.fillStyle = "rgba(3, 8, 10, .9)";

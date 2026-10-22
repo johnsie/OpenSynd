@@ -18,6 +18,15 @@
       "source": "https://www.npmjs.com/package/playwright-core",
       "purpose": "Browser end-to-end tests only; not shipped in web/dist.",
       "notes": "Apache-2.0 is compatible with GPL-2.0-or-later (GPLv3 terms). Not linked into the distributed application."
+    },
+    {
+      "name": "three",
+      "version": "0.186.1",
+      "license": "MIT",
+      "scope": "dev",
+      "source": "https://www.npmjs.com/package/three",
+      "purpose": "Offline sprite rendering (web/tools/render-sprites.mjs) only; not shipped in web/dist.",
+      "notes": "MIT is GPL-2.0-or-later compatible."
     }
   ]
 }

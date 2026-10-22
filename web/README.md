@@ -41,3 +41,18 @@ walkable route tiles before they can change game state.
 The versioning and compatibility contract is documented in
 [`docs/design/SAVE_FORMAT.md`](../docs/design/SAVE_FORMAT.md).
 
+
+## Character sprites
+
+Operators are drawn from sprite sheets in `public/assets/sprites/`. They are
+rendered from the CC0 Kenney "Animated Characters Protagonists" pack, kept
+unmodified in `art-source/`, by `tools/render-sprites.mjs` (three.js in headless
+Chromium, 8 facings, idle and run). Regenerate with:
+
+```
+CHROMIUM_PATH=/usr/bin/google-chrome node tools/render-sprites.mjs
+```
+
+Every file is listed in `provenance/assets.json` and stays `quarantined` until a
+named reviewer approves it. If the sheets fail to load, units fall back to
+vector shapes.
