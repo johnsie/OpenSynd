@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opensynd.example/schema/content-pack-v1.json",
+  "$comment": "SPDX-License-Identifier: GPL-2.0-or-later",
+  "title": "OpenSynd content pack",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["formatVersion", "id", "name", "status", "license", "authors", "provenance", "maps", "units", "equipment", "missions"],
+  "properties": {
+    "formatVersion": { "const": 1 },
+    "id": { "$ref": "#/$defs/id" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 80 },
+    "description": { "type": "string", "maxLength": 500 },
+    "status": { "enum": ["development", "approved"] },
+    "license": { "enum": ["CC0-1.0", "CC-BY-4.0"] },
+    "authors": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source", "createdDate", "notes"],
+      "properties": {
+        "source": { "type": "string", "minLength": 1 },
+        "createdDate": { "type": "string", "format": "date" },
+        "notes": { "type": "string", "minLength": 1 },
+        "reviewedBy": { "type": "string", "minLength": 1 },
+        "reviewDate": { "type": "string", "format": "date" }
+      }
+    },
+    "maps": { "$ref": "#/$defs/pathList" },
+    "units": { "$ref": "#/$defs/pathList" },
+    "equipment": { "$ref": "#/$defs/pathList" },
+    "missions": { "$ref": "#/$defs/pathList" }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$" },
+    "pathList": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^[a-zA-Z0-9_./-]+\\.json$" },
+      "uniqueItems": true
+    }
+  }
+}

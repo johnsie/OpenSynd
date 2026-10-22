@@ -1,0 +1,150 @@
+{
+  "schema_version": 1,
+  "registry_license": "GPL-2.0-or-later",
+  "assets": [
+    {
+      "path": "data/cursors/cursors.png",
+      "sha256": "ebff60fc26f9becd1d282f160f0c8205ab1d78c289498cdbffa911dfafe1ffdd",
+      "status": "quarantined",
+      "classification": "legacy-artwork",
+      "creator": "UNKNOWN",
+      "copyright": "NOASSERTION",
+      "license": "NOASSERTION",
+      "source": "inherited-freesynd-repository",
+      "notes": "Authorship and license evidence must be found or this file replaced."
+    },
+    {
+      "path": "data/lang/english.lng",
+      "sha256": "8af3c64e7e1fa02e93949ba527922cecbc22808647f5b674d357d0d0ef9997f3",
+      "status": "excluded",
+      "classification": "legacy-localization",
+      "creator": "UNKNOWN",
+      "copyright": "NOASSERTION",
+      "license": "NOASSERTION",
+      "source": "inherited-freesynd-repository",
+      "notes": "Game-facing legacy text; replace with original OpenSynd content."
+    },
+    {
+      "path": "data/lang/french.lng",
+      "sha256": "333842b1f547cba70ad2370acf4b608dccb53df50069e5db7c08d1e4af12e0ad",
+      "status": "excluded",
+      "classification": "legacy-localization",
+      "creator": "UNKNOWN",
+      "copyright": "NOASSERTION",
+      "license": "NOASSERTION",
+      "source": "inherited-freesynd-repository",
+      "notes": "Game-facing legacy text; replace with original OpenSynd content."
+    },
+    {
+      "path": "data/lang/german.lng",
+      "sha256": "5c68e3acd2f2ff1fbe47999c3c2372f8c96efdc146f0139d13aa0722869e176f",
+      "status": "excluded",
+      "classification": "legacy-localization",
+      "creator": "UNKNOWN",
+      "copyright": "NOASSERTION",
+      "license": "NOASSERTION",
+      "source": "inherited-freesynd-repository",
+      "notes": "Game-facing legacy text; replace with original OpenSynd content."
+    },
+    {
+      "path": "data/lang/italian.lng",
+      "sha256": "895380bbd73305cafa8c34c9fb44653715367140ee9b1e90797451c025d9e400",
+      "status": "excluded",
+      "classification": "legacy-localization",
+      "creator": "UNKNOWN",
+      "copyright": "NOASSERTION",
+      "license": "NOASSERTION",
+      "source": "inherited-freesynd-repository",
+      "notes": "Game-facing legacy text; replace with original OpenSynd content."
+    },
+    {
+      "path": "data/music/assassinate.ogg",
+      "sha256": "d4fd550752e1350475a9ba5d8fa88fdf778875947d1addc72502594c73af8bc5",
+      "status": "quarantined",
+      "classification": "legacy-audio",
+      "creator": "UNKNOWN",
+      "copyright": "NOASSERTION",
+      "license": "NOASSERTION",
+      "source": "inherited-freesynd-repository",
+      "notes": "Authorship, composition, performance, and recording rights are unverified."
+    },
+    {
+      "path": "data/music/intro.ogg",
+      "sha256": "3e773e4bc8f1f22df74aead8245fcfe6bcd0e2d906e29947ad96d00076c12481",
+      "status": "quarantined",
+      "classification": "legacy-audio",
+      "creator": "UNKNOWN",
+      "copyright": "NOASSERTION",
+      "license": "NOASSERTION",
+      "source": "inherited-freesynd-repository",
+      "notes": "Authorship, composition, performance, and recording rights are unverified."
+    },
+    {
+      "path": "data/ref/original_data.crc",
+      "sha256": "0b991ab6d4e5550fbbe88600c582c638fb72fc539c13c52339619cdc95514d48",
+      "status": "excluded",
+      "classification": "original-game-compatibility",
+      "creator": "UNKNOWN",
+      "copyright": "NOASSERTION",
+      "license": "NOASSERTION",
+      "source": "inherited-freesynd-repository",
+      "notes": "Original-game file inventory and checksums; not part of OpenSynd."
+    },
+    {
+      "path": "data/ref/research.dat",
+      "sha256": "ad9bc69cef0da2be9f7ec2a087735d371732d67d22ddf411e8b573ac0369f71c",
+      "status": "excluded",
+      "classification": "legacy-game-data",
+      "creator": "UNKNOWN",
+      "copyright": "NOASSERTION",
+      "license": "NOASSERTION",
+      "source": "inherited-freesynd-repository",
+      "notes": "Replace with independently authored OpenSynd research definitions."
+    },
+    {
+      "path": "data/ref/weapons.dat",
+      "sha256": "68e0838c1de9eb4ae511e4c5e1145ccb7c7c77062cab50a9c01c3a955b1b4f8e",
+      "status": "excluded",
+      "classification": "legacy-game-data",
+      "creator": "UNKNOWN",
+      "copyright": "NOASSERTION",
+      "license": "NOASSERTION",
+      "source": "inherited-freesynd-repository",
+      "notes": "Replace with independently authored OpenSynd equipment definitions."
+    },
+    {
+      "path": "icon/sword.icns",
+      "sha256": "93b2db9bab59b9ae4f15e3da98f9b8439fdfca9a621f68327982699b4903c119",
+      "status": "quarantined",
+      "classification": "legacy-branding",
+      "creator": "UNKNOWN",
+      "copyright": "NOASSERTION",
+      "license": "NOASSERTION",
+      "source": "inherited-freesynd-repository",
+      "notes": "Replace before OpenSynd branding or distribution."
+    },
+    {
+      "path": "icon/sword.ico",
+      "sha256": "579b0715999384f7ffb720275047df004f3b1b9da1e71c99d78d9711e74d9554",
+      "status": "quarantined",
+      "classification": "legacy-branding",
+      "creator": "UNKNOWN",
+      "copyright": "NOASSERTION",
+      "license": "NOASSERTION",
+      "source": "inherited-freesynd-repository",
+      "notes": "Replace before OpenSynd branding or distribution."
+    },
+    {
+      "path": "icon/sword.png",
+      "sha256": "3d8094364a42df76975fdfdefe4c66c2019e0e92487ed302a9ecdf6ae54bb8e2",
+      "status": "quarantined",
+      "classification": "legacy-branding",
+      "creator": "UNKNOWN",
+      "copyright": "NOASSERTION",
+      "license": "NOASSERTION",
+      "source": "inherited-freesynd-repository",
+      "notes": "Replace before OpenSynd branding or distribution."
+    }
+  ]
+}
+

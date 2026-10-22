@@ -1,0 +1,23 @@
+{
+  "formatVersion": 1,
+  "id": "developer.restore-relay",
+  "name": "First Light",
+  "license": "CC0-1.0",
+  "briefing": "Two public communication relays have been isolated from the district mesh. Restore both without damaging the runoff controls, then leave through the eastern service gate.",
+  "map": "maps/signal-yard.map.json",
+  "team": [
+    { "id": "operator-one", "unit": "units/field-operator.unit.json", "position": { "x": 1, "y": 5 }, "equipment": ["equipment/civic-pulse-emitter.equipment.json", "equipment/field-repair-kit.equipment.json"] },
+    { "id": "operator-two", "unit": "units/field-operator.unit.json", "position": { "x": 2, "y": 6 }, "equipment": ["equipment/civic-pulse-emitter.equipment.json", "equipment/field-repair-kit.equipment.json"] },
+    { "id": "operator-three", "unit": "units/field-operator.unit.json", "position": { "x": 2, "y": 5 }, "equipment": ["equipment/civic-pulse-emitter.equipment.json", "equipment/field-repair-kit.equipment.json"] },
+    { "id": "operator-four", "unit": "units/field-operator.unit.json", "position": { "x": 1, "y": 6 }, "equipment": ["equipment/civic-pulse-emitter.equipment.json", "equipment/field-repair-kit.equipment.json"] }
+  ],
+  "opponents": [
+    { "id": "watcher-one", "unit": "units/watcher-drone.unit.json", "position": { "x": 6, "y": 3 }, "equipment": [] },
+    { "id": "watcher-two", "unit": "units/watcher-drone.unit.json", "position": { "x": 10, "y": 8 }, "equipment": [] }
+  ],
+  "objectives": [
+    { "id": "restore-west", "type": "interact", "targetZone": "west-relay", "required": true, "description": "Reconnect the western relay." },
+    { "id": "restore-east", "type": "interact", "targetZone": "east-relay", "required": true, "description": "Reconnect the eastern relay." },
+    { "id": "leave-yard", "type": "extract", "targetZone": "safe-exit", "required": true, "description": "Extract through the eastern service gate." }
+  ]
+}

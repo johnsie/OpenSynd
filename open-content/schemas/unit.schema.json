@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opensynd.example/schema/unit-v1.json",
+  "$comment": "SPDX-License-Identifier: GPL-2.0-or-later",
+  "title": "OpenSynd unit",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["formatVersion", "id", "name", "license", "role", "stats", "abilities", "appearance"],
+  "properties": {
+    "formatVersion": { "const": 1 },
+    "id": { "$ref": "#/$defs/id" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 80 },
+    "license": { "enum": ["CC0-1.0", "CC-BY-4.0"] },
+    "role": { "enum": ["operator", "civilian", "security", "drone"] },
+    "stats": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["vitality", "speed", "awareness", "attack", "range", "cooldown"],
+      "properties": {
+        "vitality": { "type": "integer", "minimum": 1, "maximum": 1000 },
+        "speed": { "type": "number", "exclusiveMinimum": 0, "maximum": 20 },
+        "awareness": { "type": "integer", "minimum": 0, "maximum": 100 },
+        "attack": { "type": "integer", "minimum": 0, "maximum": 1000 },
+        "range": { "type": "number", "exclusiveMinimum": 0, "maximum": 50 },
+        "cooldown": { "type": "number", "exclusiveMinimum": 0, "maximum": 60 }
+      }
+    },
+    "abilities": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/id" },
+      "uniqueItems": true
+    },
+    "appearance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["shape", "primaryColor", "accentColor", "marker"],
+      "properties": {
+        "shape": { "enum": ["diamond", "hexagon", "circle", "kite"] },
+        "primaryColor": { "$ref": "#/$defs/color" },
+        "accentColor": { "$ref": "#/$defs/color" },
+        "marker": { "type": "string", "minLength": 1, "maxLength": 3 }
+      }
+    }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$" },
+    "color": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" }
+  }
+}

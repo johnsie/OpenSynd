@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opensynd.example/schema/equipment-v1.json",
+  "$comment": "SPDX-License-Identifier: GPL-2.0-or-later",
+  "title": "OpenSynd equipment",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["formatVersion", "id", "name", "description", "license", "type", "action", "charges", "effect"],
+  "properties": {
+    "formatVersion": { "const": 1 },
+    "id": { "$ref": "#/$defs/id" },
+    "name": { "type": "string", "minLength": 1, "maxLength": 80 },
+    "description": { "type": "string", "minLength": 1, "maxLength": 240 },
+    "license": { "enum": ["CC0-1.0", "CC-BY-4.0"] },
+    "type": { "enum": ["tool", "consumable"] },
+    "action": { "enum": ["disable-pulse", "restore-vitality"] },
+    "charges": { "type": ["integer", "null"], "minimum": 1, "maximum": 99 },
+    "effect": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "attack": { "type": "integer", "minimum": 1, "maximum": 1000 },
+        "range": { "type": "number", "exclusiveMinimum": 0, "maximum": 50 },
+        "cooldown": { "type": "number", "exclusiveMinimum": 0, "maximum": 60 },
+        "restoreVitality": { "type": "integer", "minimum": 1, "maximum": 1000 }
+      },
+      "minProperties": 1
+    }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$" }
+  }
+}

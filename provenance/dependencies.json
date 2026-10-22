@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "registry_license": "GPL-2.0-or-later",
+  "accepted_licenses": [
+    "Apache-2.0",
+    "MIT",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "CC0-1.0"
+  ],
+  "packages": [
+    {
+      "name": "playwright-core",
+      "version": "1.64.1",
+      "license": "Apache-2.0",
+      "scope": "dev",
+      "source": "https://www.npmjs.com/package/playwright-core",
+      "purpose": "Browser end-to-end tests only; not shipped in web/dist.",
+      "notes": "Apache-2.0 is compatible with GPL-2.0-or-later (GPLv3 terms). Not linked into the distributed application."
+    }
+  ]
+}

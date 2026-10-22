@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "registry_license": "GPL-2.0-or-later",
+  "unresolved": [
+    {
+      "path": "src/SDLMain.m",
+      "sha256": "d21f9fb45d6ceb2e13e2c2d9565f8874988c8995912c5613703673f0928f0a62",
+      "classification": "third-party-platform-code",
+      "notes": "Identifies itself as SDL Cocoa entry-point code but contains no license notice in this copy. Locate authoritative SDL 1.2 provenance or remove it."
+    },
+    {
+      "path": "src/cp437.h",
+      "sha256": "ec73d04f13eafaaca310e982f48a6b0607afe67aa1790502f1b56f95b9b10b58",
+      "classification": "generated-or-tabular-data",
+      "notes": "Contains a Unicode-to-CP437 lookup table without authorship, generation source, or license metadata. Regenerate from a documented open standard."
+    },
+    {
+      "path": "src/menus/widget.cpp",
+      "sha256": "23dd37956e2ede2d56ff243faae6abfc73c5269f2303b61880a4f6a4967bdd83",
+      "classification": "legacy-project-code",
+      "notes": "Compiled project source with no file-level copyright or license notice. Establish provenance before reuse in OpenSynd."
+    }
+  ]
+}
+

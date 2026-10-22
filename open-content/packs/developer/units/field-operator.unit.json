@@ -1,0 +1,22 @@
+{
+  "formatVersion": 1,
+  "id": "developer.field-operator",
+  "name": "Field Operator",
+  "license": "CC0-1.0",
+  "role": "operator",
+  "stats": {
+    "vitality": 100,
+    "speed": 4.5,
+    "awareness": 70,
+    "attack": 12,
+    "range": 3.25,
+    "cooldown": 0.75
+  },
+  "abilities": ["coordinate", "restore-service"],
+  "appearance": {
+    "shape": "diamond",
+    "primaryColor": "#d7e2e5",
+    "accentColor": "#42d6d0",
+    "marker": "O"
+  }
+}
