@@ -60,9 +60,11 @@ marks. Regenerate with:
 CHROMIUM_PATH=/usr/bin/google-chrome node tools/render-sprites.mjs
 ```
 
-Held weapons are separate transparent layers (`weapon-pulse.png`, `weapon-heavy-pulse.png`) rendered
-from the same frames with the body acting only as a depth occluder, so a weapon is hidden when the body
-is in front of it. The game draws the layer only for a weapon that is selected (watchers draw theirs while alert or fighting).
+Each character also has armed variants (`<name>-pulse`, `<name>-heavy-pulse`) holding the weapon in both
+hands: the weapon is attached to the chest and both arms are solved onto its grips every frame while the
+legs keep animating. The game uses the armed sheet only while a weapon is selected (watchers use theirs
+while alert or fighting). After rendering, run `python3 tools/optimize-sprites.py` to reduce the sheets to
+a 128-colour palette (about 12 MB down to 2 MB).
 
 Every file is listed in `provenance/assets.json` and stays `quarantined` until a
 named reviewer approves it. If the sheets fail to load, units fall back to

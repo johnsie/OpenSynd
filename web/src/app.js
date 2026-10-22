@@ -1048,14 +1048,21 @@ function drawCursor(viewport) {
   context.stroke();
 }
 
+// The sheet for a unit: its character, or the armed version when it is holding a weapon (both
+// hands on the pistol or rifle that is selected).
 function spriteSheetFor(unit) {
   if (!sprites.manifest) return null;
+  const sheets = sprites.manifest.sheets;
+  let key;
   if (unit.side !== "team") {
     const index = state.units.filter((item) => item.side !== "team").indexOf(unit);
-    return sprites.manifest.sheets[WATCHER_SKINS[index % WATCHER_SKINS.length]] ?? null;
+    key = WATCHER_SKINS[index % WATCHER_SKINS.length];
+  } else {
+    const index = state.units.filter((item) => item.side === "team").indexOf(unit);
+    key = SPRITE_SKINS[index % SPRITE_SKINS.length];
   }
-  const index = state.units.filter((item) => item.side === "team").indexOf(unit);
-  return sprites.manifest.sheets[SPRITE_SKINS[index % SPRITE_SKINS.length]] ?? null;
+  const held = heldWeapon(unit);
+  return (held && sheets[`${key}-${held.definition.icon}`]) || sheets[key] || null;
 }
 
 // Eight facings, 0 toward the camera, increasing clockwise as seen on screen.
@@ -1104,26 +1111,6 @@ function drawSprite(unit, sheet, viewport, size) {
     drawSize,
     drawSize,
   );
-  // A weapon is in the hand only while it is selected (see heldWeapon): a transparent layer
-  // rendered from the same frames, drawn over the body.
-  const carried = heldWeapon(unit);
-  const weaponSheet = carried && sprites.manifest.sheets[`weapon-${carried.definition.icon}`];
-  if (weaponSheet) {
-    // A dark halo keeps the weapon readable against the coat and the ground.
-    context.shadowColor = "rgba(0, 0, 0, 0.95)";
-    context.shadowBlur = 3;
-    context.drawImage(
-      sprites.images.get(weaponSheet.file),
-      frame * source,
-      (animation.row + direction) * source,
-      source,
-      source,
-      -drawSize / 2,
-      -drawSize * 0.84 + size * 1.0,
-      drawSize,
-      drawSize,
-    );
-  }
   context.restore();
 }
 

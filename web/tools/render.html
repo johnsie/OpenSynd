@@ -153,42 +153,66 @@
     place(box(headHeight * 0.95, headHeight * 0.14, headHeight * 0.2, glow(kit.glow)), offset(eyeLevel, 0, 0, headHeight * 0.4), "Head");
   }
 
-  // A held weapon, built in the idle pose and attached to the right hand so it follows every
-  // animation. Barrel along the body's forward axis, slightly below the hand.
-  function addWeapon(root, scene, type, mixer, idleClip) {
+  // Turn a bone so that the line from it to its child points along `direction` (world space),
+  // keeping its twist. Used to place the arms.
+  function aimBone(bone, child, direction) {
+    bone.updateWorldMatrix(true, true);
+    const from = bone.getWorldPosition(new THREE.Vector3());
+    const current = child.getWorldPosition(new THREE.Vector3()).sub(from).normalize();
+    const delta = new THREE.Quaternion().setFromUnitVectors(current, direction.clone().normalize());
+    const world = bone.getWorldQuaternion(new THREE.Quaternion());
+    const parent = bone.parent.getWorldQuaternion(new THREE.Quaternion());
+    bone.quaternion.copy(parent.invert().multiply(delta.multiply(world)));
+    bone.updateWorldMatrix(true, true);
+  }
+
+  // A weapon held in both hands. It is attached to the chest so it follows the torso, and every
+  // frame both arms are solved onto its grips (a two-bone solve with the elbows down and out).
+  // `pose()` must run after the animation for the frame has been applied.
+  function addAimedWeapon(root, scene, type, mixer, idleClip) {
     mixer.clipAction(idleClip).play();
     mixer.setTime(0);
     root.updateMatrixWorld(true);
     const bone = (name) => root.getObjectByName(name);
     const at = (name) => bone(name).getWorldPosition(new THREE.Vector3());
-    const hand = at("RightHand");
+    const chestBone = bone("Spine2");
+    const chest = at("Spine2");
     const unit = at("LeftUpLeg").distanceTo(at("RightUpLeg"));
-    const right = at("LeftUpLeg").clone().sub(at("RightUpLeg")).setY(0).normalize();
-    const up = new THREE.Vector3(0, 1, 0);
-    const forward = new THREE.Vector3().crossVectors(right, up);
-    const orientation = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(right, up, forward));
-    const offset = (base, x, y, z) =>
-      base.clone().addScaledVector(right, x).addScaledVector(up, y).addScaledVector(forward, z);
+    const axes = () => {
+      const right = at("LeftUpLeg").sub(at("RightUpLeg")).setY(0).normalize();
+      const up = new THREE.Vector3(0, 1, 0);
+      return { right, up, forward: new THREE.Vector3().crossVectors(right, up) };
+    };
+    const idle = axes();
+    const orientation = new THREE.Quaternion().setFromRotationMatrix(
+      new THREE.Matrix4().makeBasis(idle.right, idle.up, idle.forward),
+    );
+    // x is toward the character's left, y up, z forward, all in hip-widths from the chest.
+    const spot = (x, y, z) =>
+      chest.clone()
+        .addScaledVector(idle.right, x * unit)
+        .addScaledVector(idle.up, y * unit)
+        .addScaledVector(idle.forward, z * unit);
     const steel = new THREE.MeshStandardMaterial({ color: rgb([176, 188, 204]), roughness: 0.35, metalness: 0.55 });
     const dark = new THREE.MeshStandardMaterial({ color: rgb([34, 38, 48]), roughness: 0.6, metalness: 0.3 });
     const trim = new THREE.MeshStandardMaterial({ color: rgb([245, 195, 90]), roughness: 0.4, metalness: 0.3 });
     const glow = new THREE.MeshBasicMaterial({ color: rgb([120, 245, 240]) });
-    // Weapons are drawn larger than life so they read at game scale, and held a little away from the body.
-    const SCALE = 2.2;
-    const part = (w, h, d, material, x, y, z) => {
-      const mesh = new THREE.Mesh(
-        new THREE.BoxGeometry(unit * w * SCALE, unit * h * SCALE, unit * d * SCALE),
-        material,
-      );
-      mesh.position.copy(offset(hand, unit * (x + 0.12) * SCALE, unit * y * SCALE, unit * z * SCALE));
+    const slide = new THREE.MeshStandardMaterial({ color: rgb([116, 126, 142]), roughness: 0.35, metalness: 0.6 });
+    const heavy = type === "heavy-pulse";
+    const K = heavy ? 1.0 : 1.45; // size of the weapon relative to the drawings below
+    const origin = heavy ? { x: -0.3, y: -0.62, z: 0.5 } : { x: -0.12, y: -0.58, z: 0.7 };
+    // `tilt` leans a part about its sideways axis (positive: the top leans forward), for pistol grips.
+    const part = (w, h, d, material, x, y, z, tilt = 0) => {
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(unit * w * K, unit * h * K, unit * d * K), material);
+      mesh.position.copy(spot(origin.x + x * K, origin.y + y * K, origin.z + z * K));
       mesh.quaternion.copy(orientation);
+      if (tilt !== 0) mesh.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), tilt));
       scene.add(mesh);
       mesh.updateMatrixWorld(true);
-      bone("RightHand").attach(mesh);
+      chestBone.attach(mesh);
     };
-    // Dimensions are in hip-widths (x right, y up, z forward). The grip sits in the hand,
-    // the barrel points forward, and the details (sights, guard, magazine) make it read as a gun.
-    if (type === "heavy-pulse") {
+    let leftGrip;
+    if (heavy) {
       part(0.3, 0.34, 1.0, steel, 0, 0.1, 0.55); // receiver
       part(0.24, 0.24, 1.1, dark, 0, 0.1, 1.55); // barrel shroud
       part(0.12, 0.12, 0.45, steel, 0, 0.1, 2.3); // barrel
@@ -200,20 +224,60 @@
       part(0.18, 0.18, 0.65, dark, 0, 0.4, 0.75); // scope
       part(0.2, 0.2, 0.08, glow, 0, 0.4, 1.12); // scope lens
       part(0.1, 0.06, 0.8, trim, 0, 0.3, 0.55); // top rail
+      leftGrip = spot(origin.x, origin.y - 0.2 * K, origin.z + 1.5 * K);
     } else {
-      part(0.22, 0.24, 0.9, steel, 0, 0.12, 0.5); // slide
-      part(0.14, 0.14, 0.3, dark, 0, 0.1, 1.1); // barrel
-      part(0.3, 0.3, 0.12, glow, 0, 0.1, 1.3); // emitter
-      part(0.22, 0.58, 0.26, dark, 0, -0.22, 0.1); // grip
-      part(0.07, 0.07, 0.34, dark, 0, -0.04, 0.5); // trigger guard (bottom)
-      part(0.07, 0.2, 0.07, dark, 0, -0.1, 0.66); // trigger guard (front)
-      part(0.08, 0.1, 0.1, trim, 0, 0.3, 0.1); // rear sight
-      part(0.08, 0.1, 0.1, trim, 0, 0.3, 0.95); // front sight
-      part(0.1, 0.05, 0.6, trim, 0, 0.26, 0.5); // slide stripe
+      // A semi-automatic pistol: slim slide, frame, tilted grip, trigger guard, sights, magazine base.
+      part(0.15, 0.2, 0.88, slide, 0, 0.16, 0.5); // slide
+      part(0.15, 0.1, 0.62, dark, 0, 0.02, 0.4); // frame under the slide
+      part(0.09, 0.09, 0.14, dark, 0, 0.17, 1.0); // barrel tip
+      part(0.12, 0.12, 0.04, glow, 0, 0.17, 1.1); // muzzle ring
+      part(0.17, 0.62, 0.24, dark, 0, -0.3, 0.08, 0.28); // grip, leaning back
+      part(0.19, 0.06, 0.28, steel, 0, -0.6, -0.02, 0.28); // magazine base
+      part(0.05, 0.22, 0.06, dark, 0, -0.1, 0.56); // trigger guard (front)
+      part(0.05, 0.06, 0.36, dark, 0, -0.2, 0.4); // trigger guard (bottom)
+      part(0.04, 0.12, 0.05, dark, 0, -0.08, 0.38); // trigger
+      part(0.07, 0.07, 0.08, steel, 0, 0.3, 0.08); // rear sight
+      part(0.05, 0.07, 0.06, steel, 0, 0.3, 0.86); // front sight
+      leftGrip = spot(origin.x + 0.18 * K, origin.y - 0.22 * K, origin.z + 0.02 * K);
     }
+    const rightGrip = spot(origin.x, origin.y, origin.z);
+    const grips = { Right: chestBone.worldToLocal(rightGrip.clone()), Left: chestBone.worldToLocal(leftGrip.clone()) };
+
+    const solve = (side, pole, restPose) => {
+      const upper = bone(`${side}Arm`);
+      const fore = bone(`${side}ForeArm`);
+      const hand = bone(`${side}Hand`);
+      upper.updateWorldMatrix(true, true);
+      const shoulder = upper.getWorldPosition(new THREE.Vector3());
+      const elbow = fore.getWorldPosition(new THREE.Vector3());
+      const wrist = hand.getWorldPosition(new THREE.Vector3());
+      const length1 = shoulder.distanceTo(elbow);
+      const length2 = elbow.distanceTo(wrist);
+      const target = chestBone.localToWorld(grips[side].clone());
+      const toTarget = target.clone().sub(shoulder);
+      const distance = Math.min(Math.max(toTarget.length(), 0.05), length1 + length2 - 0.001);
+      const direction = toTarget.normalize();
+      const along = (length1 * length1 - length2 * length2 + distance * distance) / (2 * distance);
+      const lift = Math.sqrt(Math.max(length1 * length1 - along * along, 0));
+      const side_ = pole.clone().sub(direction.clone().multiplyScalar(pole.dot(direction))).normalize();
+      const bend = shoulder.clone().addScaledVector(direction, along).addScaledVector(side_, lift);
+      aimBone(upper, fore, bend.clone().sub(shoulder));
+      const elbowNow = fore.getWorldPosition(new THREE.Vector3());
+      aimBone(fore, hand, shoulder.clone().addScaledVector(direction, distance).sub(elbowNow));
+      if (restPose[hand.name]) hand.quaternion.copy(restPose[hand.name]);
+    };
+    return {
+      pose(restPose) {
+        root.updateMatrixWorld(true);
+        const { right, up } = axes();
+        // Elbows hang down and a little outward from each side.
+        solve("Right", up.clone().multiplyScalar(-1).addScaledVector(right, -0.4), restPose);
+        solve("Left", up.clone().multiplyScalar(-1).addScaledVector(right, 0.4), restPose);
+      },
+    };
   }
 
-  window.renderSheet = async ({ model, animations, palette, kit, weapon }) => {
+  window.renderSheet = async ({ model, animations, palette, kit, aim }) => {
     const size = FRAME * SUPERSAMPLE;
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, preserveDrawingBuffer: true });
     renderer.setSize(size, size);
@@ -259,16 +323,10 @@
       if (!clips[name]) throw new Error(`No animation matching ${wanted}`);
     }
     const mixer = new THREE.AnimationMixer(root);
-    if (weapon) {
-      // Weapon layer: the body only blocks the view (depth) and is not drawn, so the weapon is hidden
-      // wherever the character's body is in front of it.
-      addWeapon(root, scene, weapon, mixer, clips.idle);
-      root.traverse((node) => {
-        if (node.isMesh && node.material.map) node.material.colorWrite = false;
-      });
-    } else if (kit) {
-      addUniformKit(root, scene, kit, mixer, clips.idle);
-    }
+    if (kit) addUniformKit(root, scene, kit, mixer, clips.idle);
+    // An armed variant holds its weapon in both hands: the weapon is built after the kit so it
+    // is measured in the same idle pose, and the arms are solved onto it every frame.
+    const aimed = aim ? addAimedWeapon(root, scene, aim, mixer, clips.idle) : null;
     // The idle pose (arms down, head level) is the reference for a stiffer, more serious gait.
     const restPose = {};
     root.traverse((node) => {
@@ -299,6 +357,7 @@
             const bone = root.getObjectByName(boneName);
             if (bone && restPose[boneName]) bone.quaternion.slerp(restPose[boneName], amount);
           }
+          aimed?.pose(restPose);
           renderer.render(scene, camera);
           atlasContext.drawImage(
             renderer.domElement,

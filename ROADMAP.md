@@ -136,10 +136,11 @@ fires, a weapon with no rounds cannot fire, and an operative can carry several
 of the same weapon, each with its own magazine. The Research & Armoury screen
 lays research, each operative's eight slots and a shop side by side: items have
 prices, a swapped item is bought back at half price, and the shop only sells
-researched items. A weapon is drawn in the hand only while it is selected (a watcher draws its
-weapon while alert or fighting), as a gun with grip, slide or receiver, scope,
-magazine and emitter, using transparent weapon layers rendered from the same
-animation frames.
+researched items. A weapon is held only while it is selected (a watcher holds its weapon while
+alert or fighting): the character is drawn with both hands on a pistol (slim slide,
+tilted grip, trigger guard, sights) or a rifle (scope, magazine, foregrip), with
+both arms solved onto the weapon each frame while the legs keep walking, using
+armed variants of each character rendered from the same animation frames.
 
 Save format version 8 stores each unit's items (with consumable charges) and what
 it has looted, with a tested migration from version 7, so looted gear and spent

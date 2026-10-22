@@ -77,44 +77,6 @@
         }
       ]
     },
-    "weapon-pulse": {
-      "file": "weapon-pulse.png",
-      "frameSize": 128,
-      "directions": 8,
-      "animations": [
-        {
-          "name": "idle",
-          "row": 0,
-          "frames": 4,
-          "seconds": 2
-        },
-        {
-          "name": "walk",
-          "row": 8,
-          "frames": 8,
-          "seconds": 0.66
-        }
-      ]
-    },
-    "weapon-heavy-pulse": {
-      "file": "weapon-heavy-pulse.png",
-      "frameSize": 128,
-      "directions": 8,
-      "animations": [
-        {
-          "name": "idle",
-          "row": 0,
-          "frames": 4,
-          "seconds": 2
-        },
-        {
-          "name": "walk",
-          "row": 8,
-          "frames": 8,
-          "seconds": 0.66
-        }
-      ]
-    },
     "watcher-one": {
       "file": "watcher-one.png",
       "frameSize": 128,
@@ -136,6 +98,234 @@
     },
     "watcher-two": {
       "file": "watcher-two.png",
+      "frameSize": 128,
+      "directions": 8,
+      "animations": [
+        {
+          "name": "idle",
+          "row": 0,
+          "frames": 4,
+          "seconds": 2
+        },
+        {
+          "name": "walk",
+          "row": 8,
+          "frames": 8,
+          "seconds": 0.66
+        }
+      ]
+    },
+    "operative-one-pulse": {
+      "file": "operative-one-pulse.png",
+      "frameSize": 128,
+      "directions": 8,
+      "animations": [
+        {
+          "name": "idle",
+          "row": 0,
+          "frames": 4,
+          "seconds": 2
+        },
+        {
+          "name": "walk",
+          "row": 8,
+          "frames": 8,
+          "seconds": 0.66
+        }
+      ]
+    },
+    "operative-one-heavy-pulse": {
+      "file": "operative-one-heavy-pulse.png",
+      "frameSize": 128,
+      "directions": 8,
+      "animations": [
+        {
+          "name": "idle",
+          "row": 0,
+          "frames": 4,
+          "seconds": 2
+        },
+        {
+          "name": "walk",
+          "row": 8,
+          "frames": 8,
+          "seconds": 0.66
+        }
+      ]
+    },
+    "operative-two-pulse": {
+      "file": "operative-two-pulse.png",
+      "frameSize": 128,
+      "directions": 8,
+      "animations": [
+        {
+          "name": "idle",
+          "row": 0,
+          "frames": 4,
+          "seconds": 2
+        },
+        {
+          "name": "walk",
+          "row": 8,
+          "frames": 8,
+          "seconds": 0.66
+        }
+      ]
+    },
+    "operative-two-heavy-pulse": {
+      "file": "operative-two-heavy-pulse.png",
+      "frameSize": 128,
+      "directions": 8,
+      "animations": [
+        {
+          "name": "idle",
+          "row": 0,
+          "frames": 4,
+          "seconds": 2
+        },
+        {
+          "name": "walk",
+          "row": 8,
+          "frames": 8,
+          "seconds": 0.66
+        }
+      ]
+    },
+    "operative-three-pulse": {
+      "file": "operative-three-pulse.png",
+      "frameSize": 128,
+      "directions": 8,
+      "animations": [
+        {
+          "name": "idle",
+          "row": 0,
+          "frames": 4,
+          "seconds": 2
+        },
+        {
+          "name": "walk",
+          "row": 8,
+          "frames": 8,
+          "seconds": 0.66
+        }
+      ]
+    },
+    "operative-three-heavy-pulse": {
+      "file": "operative-three-heavy-pulse.png",
+      "frameSize": 128,
+      "directions": 8,
+      "animations": [
+        {
+          "name": "idle",
+          "row": 0,
+          "frames": 4,
+          "seconds": 2
+        },
+        {
+          "name": "walk",
+          "row": 8,
+          "frames": 8,
+          "seconds": 0.66
+        }
+      ]
+    },
+    "operative-four-pulse": {
+      "file": "operative-four-pulse.png",
+      "frameSize": 128,
+      "directions": 8,
+      "animations": [
+        {
+          "name": "idle",
+          "row": 0,
+          "frames": 4,
+          "seconds": 2
+        },
+        {
+          "name": "walk",
+          "row": 8,
+          "frames": 8,
+          "seconds": 0.66
+        }
+      ]
+    },
+    "operative-four-heavy-pulse": {
+      "file": "operative-four-heavy-pulse.png",
+      "frameSize": 128,
+      "directions": 8,
+      "animations": [
+        {
+          "name": "idle",
+          "row": 0,
+          "frames": 4,
+          "seconds": 2
+        },
+        {
+          "name": "walk",
+          "row": 8,
+          "frames": 8,
+          "seconds": 0.66
+        }
+      ]
+    },
+    "watcher-one-pulse": {
+      "file": "watcher-one-pulse.png",
+      "frameSize": 128,
+      "directions": 8,
+      "animations": [
+        {
+          "name": "idle",
+          "row": 0,
+          "frames": 4,
+          "seconds": 2
+        },
+        {
+          "name": "walk",
+          "row": 8,
+          "frames": 8,
+          "seconds": 0.66
+        }
+      ]
+    },
+    "watcher-one-heavy-pulse": {
+      "file": "watcher-one-heavy-pulse.png",
+      "frameSize": 128,
+      "directions": 8,
+      "animations": [
+        {
+          "name": "idle",
+          "row": 0,
+          "frames": 4,
+          "seconds": 2
+        },
+        {
+          "name": "walk",
+          "row": 8,
+          "frames": 8,
+          "seconds": 0.66
+        }
+      ]
+    },
+    "watcher-two-pulse": {
+      "file": "watcher-two-pulse.png",
+      "frameSize": 128,
+      "directions": 8,
+      "animations": [
+        {
+          "name": "idle",
+          "row": 0,
+          "frames": 4,
+          "seconds": 2
+        },
+        {
+          "name": "walk",
+          "row": 8,
+          "frames": 8,
+          "seconds": 0.66
+        }
+      ]
+    },
+    "watcher-two-heavy-pulse": {
+      "file": "watcher-two-heavy-pulse.png",
       "frameSize": 128,
       "directions": 8,
       "animations": [
