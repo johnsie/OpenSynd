@@ -305,3 +305,7 @@ dialog a { color: var(--public); }
 .settings-form .hint { margin: 0; font-size: 0.85rem; opacity: 0.8; }
 .key-bindings { display: grid; gap: 0.5rem; border: 1px solid currentColor; padding: 0.6rem; }
 #binding-list { display: grid; grid-template-columns: 1fr auto; gap: 0.35rem 0.75rem; align-items: center; }
+.outcome-stats { display: grid; grid-template-columns: auto 1fr; gap: 0.25rem 1rem; margin: 1rem 0; }
+.outcome-stats dt { color: var(--muted); }
+.outcome-stats dd { margin: 0; }
+dialog .primary { margin-right: 0.5rem; }

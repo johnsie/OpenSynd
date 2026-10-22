@@ -62,6 +62,8 @@ for (const [name, type, executablePath] of targets) {
     page.on("pageerror", (error) => errors.push(error.message));
     await page.goto(url);
     await page.waitForSelector("#roster button");
+    assert.match(await page.locator("#title-dialog").innerText(), /First Light/);
+    await page.click("#begin-button");
     assert.match(await page.locator("#objective-list").innerText(), /service gate/i);
     await page.locator("#roster button").first().click();
     assert.doesNotMatch(await page.locator("#selected-readout").innerText(), /No operator selected/);

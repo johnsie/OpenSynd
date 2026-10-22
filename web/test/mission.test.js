@@ -8,6 +8,7 @@ import { createTileGrid, findPath, isWalkable } from "../src/engine.js";
 import {
   gateOpen,
   missionComplete,
+  missionOutcome,
   resolveArrival,
   resolveInteraction,
   syncGates,
@@ -181,4 +182,16 @@ test("a squad fight against a watcher resolves identically on every run", async 
     "watcher-one": 0,
     "watcher-two": 45,
   });
+});
+
+test("mission outcome is active, success or failure", () => {
+  const objectives = [{ id: "a", required: true, complete: false }];
+  const operator = (disabled) => ({ side: "team", disabled });
+  const drone = { side: "opposition", disabled: false };
+
+  assert.equal(missionOutcome(objectives, [operator(false), drone]), "active");
+  assert.equal(missionOutcome(objectives, [operator(true), operator(false), drone]), "active");
+  assert.equal(missionOutcome(objectives, [operator(true), drone]), "failure");
+  objectives[0].complete = true;
+  assert.equal(missionOutcome(objectives, [operator(true), drone]), "success");
 });

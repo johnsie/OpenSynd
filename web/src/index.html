@@ -157,6 +157,34 @@
       </footer>
     </div>
 
+    <dialog id="title-dialog" aria-labelledby="title-heading">
+      <p class="eyebrow">OPEN CIVIC OPERATIONS NETWORK</p>
+      <h2 id="title-heading">OpenSynd: First Light</h2>
+      <p>
+        The Signal Yard has gone quiet. Two public relays that carried the
+        district's voice have been cut off by remote administrators, and the
+        service gate to the east is locked. Your four-person field team has one
+        night to reconnect the district, unlock the gate, and leave before the
+        watchers raise the alarm.
+      </p>
+      <ul>
+        <li>Select an operator, then click a tile or use the arrow keys and Enter to move.</li>
+        <li>Stand on a relay or panel and press E to restore it.</li>
+        <li>Disable watchers with the pulse emitter from close range; keep your team intact.</li>
+        <li>Space pauses. Keys can be changed in Settings.</li>
+      </ul>
+      <button id="begin-button" type="button" class="primary">Begin operation</button>
+    </dialog>
+
+    <dialog id="outcome-dialog" aria-labelledby="outcome-heading">
+      <p id="outcome-eyebrow" class="eyebrow"></p>
+      <h2 id="outcome-heading"></h2>
+      <p id="outcome-text"></p>
+      <dl id="outcome-stats" class="outcome-stats"></dl>
+      <button id="replay-button" type="button" class="primary">Replay operation</button>
+      <button id="outcome-close" type="button">Review the map</button>
+    </dialog>
+
     <dialog id="settings-dialog" aria-labelledby="settings-title">
       <div class="dialog-header">
         <h2 id="settings-title">Settings</h2>

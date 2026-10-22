@@ -15,6 +15,14 @@ export function missionComplete(objectives) {
   return objectives.filter((item) => item.required).every((item) => item.complete);
 }
 
+// "success" once every required objective is complete, "failure" when no
+// operator can act any more, otherwise "active".
+export function missionOutcome(objectives, units) {
+  if (missionComplete(objectives)) return "success";
+  const operatorsRemain = units.some((unit) => unit.side === "team" && !unit.disabled);
+  return operatorsRemain ? "active" : "failure";
+}
+
 // Zone-entry objectives (everything except "interact") resolve when a unit
 // arrives. Extraction waits until every other required objective is complete.
 // Returns events in order; completed objectives are marked in place.

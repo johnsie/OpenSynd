@@ -26,7 +26,11 @@ import {
   normalizeBindings,
   resolveAction,
 } from "./input.js";
-import { missionComplete as isMissionComplete, resolveArrival, syncGates as syncMissionGates } from "./mission.js";
+import {
+  missionComplete as isMissionComplete,
+  missionOutcome,
+  resolveArrival, syncGates as syncMissionGates,
+} from "./mission.js";
 import { addEffect, advanceEffects, createEffects, effectProgress, walkBob } from "./effects.js";
 import { createMusic } from "./music.js";
 import { createAudio } from "./audio.js";
@@ -45,6 +49,8 @@ const briefingText = document.querySelector("#briefing-text");
 const selectedReadout = document.querySelector("#selected-readout");
 const statusMessage = document.querySelector("#status-message");
 const aboutDialog = document.querySelector("#about-dialog");
+const titleDialog = document.querySelector("#title-dialog");
+const outcomeDialog = document.querySelector("#outcome-dialog");
 const saveButton = document.querySelector("#save-button");
 const loadButton = document.querySelector("#load-button");
 const exportButton = document.querySelector("#export-button");
@@ -217,6 +223,9 @@ async function loadSprites() {
 }
 
 const state = {
+  outcome: "active",
+  missionSeconds: 0,
+  modal: false,
   effects: createEffects(),
   elapsed: 0,
   map: null,
@@ -240,6 +249,8 @@ async function readJson(path) {
 
 async function loadGame() {
   await loadSprites();
+  state.outcome = "active";
+  state.missionSeconds = 0;
   const pack = await readJson("content/pack.json");
   const missionPath = pack.missions[0];
   const mission = await readJson(`content/${missionPath}`);
@@ -774,6 +785,7 @@ function drawEffects(viewport) {
 }
 
 function simulationStep(deltaSeconds) {
+  state.missionSeconds += deltaSeconds;
   let interfaceChanged = false;
   for (const arrival of advanceUnits(state.units, deltaSeconds)) {
     interfaceChanged = true;
@@ -809,14 +821,56 @@ function simulationStep(deltaSeconds) {
   if (interfaceChanged) renderInterface();
 }
 
+function formatDuration(seconds) {
+  const whole = Math.round(seconds);
+  return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
+}
+
+function showOutcome(outcome) {
+  const won = outcome === "success";
+  document.querySelector("#outcome-eyebrow").textContent = won ? "OPERATION COMPLETE" : "OPERATION LOST";
+  document.querySelector("#outcome-heading").textContent = won
+    ? "Signal Yard is back on the mesh"
+    : "The team has gone dark";
+  document.querySelector("#outcome-text").textContent = won
+    ? "Both relays carry the district's voice again, the gate stands open, and your team slips away before the watchers can respond."
+    : "Every operator has been disabled. The relays stay silent and the gate stays locked. Regroup and try a different approach.";
+  const teamDown = state.units.filter((unit) => unit.side === "team" && unit.disabled).length;
+  const watchersDown = state.units.filter((unit) => unit.side === "opposition" && unit.disabled).length;
+  const stats = document.querySelector("#outcome-stats");
+  stats.replaceChildren();
+  for (const [label, value] of [
+    ["Time", formatDuration(state.missionSeconds)],
+    ["Operators disabled", String(teamDown)],
+    ["Watchers disabled", String(watchersDown)],
+  ]) {
+    const term = document.createElement("dt");
+    term.textContent = label;
+    const detail = document.createElement("dd");
+    detail.textContent = value;
+    stats.append(term, detail);
+  }
+  state.modal = true;
+  outcomeDialog.showModal();
+}
+
+function checkOutcome() {
+  if (state.outcome !== "active") return;
+  const outcome = missionOutcome(state.objectives, state.units);
+  if (outcome === "active") return;
+  state.outcome = outcome;
+  showOutcome(outcome);
+}
+
 function update(deltaSeconds) {
-  if (state.paused) {
+  if (state.paused || state.modal) {
     state.clock.accumulator = 0;
     return;
   }
   state.elapsed += deltaSeconds;
   advanceEffects(state.effects, deltaSeconds);
   consumeFixedSteps(state.clock, deltaSeconds, simulationStep);
+  checkOutcome();
 }
 
 function completeObjectivesAt(position) {
@@ -1097,6 +1151,20 @@ loadButton.addEventListener("click", loadLocally);
 exportButton.addEventListener("click", exportSave);
 importButton.addEventListener("click", () => importFile.click());
 importFile.addEventListener("change", () => importSave(importFile.files[0]));
+for (const dialog of [titleDialog, outcomeDialog]) {
+  dialog.addEventListener("close", () => {
+    state.modal = false;
+    canvas.focus();
+  });
+}
+document.querySelector("#begin-button").addEventListener("click", () => titleDialog.close());
+document.querySelector("#replay-button").addEventListener("click", () => {
+  outcomeDialog.close();
+  loadGame().catch(showFatalError);
+});
+document.querySelector("#outcome-close").addEventListener("click", () => outcomeDialog.close());
+titleDialog.showModal();
+state.modal = true;
 document.querySelector("#about-button").addEventListener("click", () => aboutDialog.showModal());
 document.querySelector("#close-about").addEventListener("click", () => aboutDialog.close());
 
