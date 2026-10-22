@@ -110,6 +110,7 @@ import {
   createEffects,
   effectProgress,
   facingVector,
+  knockbackOffset,
   recoilOffset,
   walkBob,
 } from "./effects.js";
@@ -1499,7 +1500,8 @@ function drawUnit(unit, viewport) {
     : walkBob(state.elapsed, unit.path.length > 0 && !unit.disabled, reduceMotion);
   context.save();
   const kick = recoilOffset(state.elapsed, unit.firedAt, unit.facing, 3.5, reduceMotion);
-  context.translate(center.x + kick.x, center.y - size * 0.8 + bob + kick.y);
+  const thrown = knockbackOffset(state.elapsed, unit.hitAt, unit.hitDirection, size * 0.9, reduceMotion);
+  context.translate(center.x + kick.x + thrown.x, center.y - size * 0.8 + bob + kick.y + thrown.y);
   context.fillStyle = "rgba(0, 0, 0, .35)";
   context.beginPath();
   context.ellipse(0, size * 1.05, size * 0.9, size * 0.35, 0, 0, Math.PI * 2);
@@ -1599,7 +1601,6 @@ function draw() {
     else boxes.set(entry.item, drawBuilding(entry.item, viewport, size));
   }
   drawHiddenOperatives(order, boxes, viewport);
-  drawAim(viewport);
   drawEffects(viewport);
   drawMinimap(viewport);
 }
@@ -1749,27 +1750,6 @@ function muzzlePoint(unit, viewport) {
   return { x: body.x + direction.x * reach, y: body.y + direction.y * reach * 0.55 + 4 };
 }
 
-// A thin aim line from each armed unit to the target it has locked, so the lock is visible
-// between shots (cyan for the squad, red for watchers).
-function drawAim(viewport) {
-  context.save();
-  context.lineWidth = 1.5;
-  context.setLineDash([3, 5]);
-  for (const unit of state.units) {
-    if (!unit.targetId || unit.disabled || !heldWeapon(unit, state.elapsed)) continue;
-    const target = state.units.find((item) => item.id === unit.targetId);
-    if (!target || target.disabled) continue;
-    const from = muzzlePoint(unit, viewport);
-    const to = unitScreenPoint(target, viewport);
-    context.strokeStyle = unit.side === "team" ? "rgba(66, 214, 208, 0.55)" : "rgba(255, 107, 98, 0.55)";
-    context.beginPath();
-    context.moveTo(from.x, from.y);
-    context.lineTo(to.x, to.y);
-    context.stroke();
-  }
-  context.restore();
-}
-
 function drawEffects(viewport) {
   const size = Math.max(9, viewport.cellSize.height * 0.34);
   for (const effect of state.effects) {
@@ -1779,33 +1759,36 @@ function drawEffects(viewport) {
     const grow = reduceMotion ? 1 : progress;
     context.save();
     context.lineWidth = 2;
-    if (effect.type === "pulse") {
-      const from = state.units.find((unit) => unit.id === effect.fromId);
-      const to = state.units.find((unit) => unit.id === effect.toId);
-      if (from && to) {
-        const a = unitScreenPoint(from, viewport);
-        const b = unitScreenPoint(to, viewport);
-        context.strokeStyle = `rgba(66, 214, 208, ${0.9 * fade})`;
-        context.setLineDash([8, 5]);
-        context.beginPath();
-        context.moveTo(a.x, a.y);
-        context.lineTo(b.x, b.y);
-        context.stroke();
-        context.setLineDash([]);
-        context.beginPath();
-        context.arc(b.x, b.y, size * (0.6 + grow), 0, Math.PI * 2);
-        context.stroke();
+    if (effect.type === "impact" || effect.type === "puff") {
+      const unit = effect.unitId ? state.units.find((item) => item.id === effect.unitId) : null;
+      let at = unit ? unitScreenPoint(unit, viewport) : null;
+      if (at) at = { x: at.x, y: at.y - size * 2.0 };
+      if (!at) {
+        const ground = gridToScreen(effect.to, viewport.cellSize, viewport.origin);
+        at = { x: ground.x, y: ground.y - size * 0.4 };
       }
-    } else if (effect.type === "tracer") {
-      const from = state.units.find((unit) => unit.id === effect.fromId);
-      if (from) {
-        const a = muzzlePoint(from, viewport);
-        const end = gridToScreen(effect.to, viewport.cellSize, viewport.origin);
-        context.strokeStyle = `rgba(120, 245, 240, ${0.9 * fade})`;
-        context.lineWidth = 2;
+      const hit = effect.type === "impact";
+      const reach = size * (0.7 + grow * (hit ? 2.0 : 1.0));
+      // A bright flash that dies at once, then sparks flying out.
+      context.fillStyle = `rgba(255, 246, 220, ${Math.max(0, 0.9 - progress * 3)})`;
+      context.beginPath();
+      context.arc(at.x, at.y, size * (0.35 + 0.3 * fade), 0, Math.PI * 2);
+      context.fill();
+      context.strokeStyle = hit ? `rgba(255, 190, 110, ${fade})` : `rgba(170, 200, 210, ${0.8 * fade})`;
+      context.lineWidth = 2;
+      context.beginPath();
+      const rays = hit ? 9 : 6;
+      for (let ray = 0; ray < rays; ray += 1) {
+        const angle = (ray / rays) * Math.PI * 2 + (effect.spin ?? 0);
+        const near = reach * 0.45;
+        context.moveTo(at.x + Math.cos(angle) * near, at.y + Math.sin(angle) * near * 0.7);
+        context.lineTo(at.x + Math.cos(angle) * reach, at.y + Math.sin(angle) * reach * 0.7);
+      }
+      context.stroke();
+      if (hit) {
+        context.strokeStyle = `rgba(255, 107, 98, ${0.8 * fade})`;
         context.beginPath();
-        context.moveTo(a.x, a.y);
-        context.lineTo(end.x, end.y - size * 0.4);
+        context.arc(at.x, at.y, size * (0.5 + grow * 1.1), 0, Math.PI * 2);
         context.stroke();
       }
     } else if (effect.type === "muzzle") {
@@ -1843,6 +1826,17 @@ function drawEffects(viewport) {
   }
 }
 
+// Throw a unit that was just hit back, away from whoever hit it (drawn only; the unit stays put).
+function knockBack(victim, shooter) {
+  const dx = victim.position.x - shooter.position.x;
+  const dy = victim.position.y - shooter.position.y;
+  const x = dx - dy;
+  const y = dx + dy;
+  const length = Math.hypot(x, y) || 1;
+  victim.hitAt = state.elapsed;
+  victim.hitDirection = { x: x / length, y: y / length };
+}
+
 // Effects, counters and messages for shots, from automatic combat and from shots fired by hand.
 function handleCombatEvents(combatEvents) {
   for (const event of combatEvents) {
@@ -1850,9 +1844,11 @@ function handleCombatEvents(combatEvents) {
       const shooter = state.units.find((item) => item.id === event.attackerId);
       addEffect(state.effects, "muzzle", { unitId: event.attackerId });
       if (event.type === "damage") {
-        addEffect(state.effects, "pulse", { fromId: event.attackerId, toId: event.targetId });
+        const victim = state.units.find((item) => item.id === event.targetId);
+        addEffect(state.effects, "impact", { unitId: event.targetId, spin: Math.random() * 3 });
+        if (shooter && victim) knockBack(victim, shooter);
       } else {
-        addEffect(state.effects, "tracer", { fromId: event.attackerId, to: event.end });
+        addEffect(state.effects, "puff", { to: event.end, spin: Math.random() * 3 });
       }
       if (shooter) shooter.firedAt = state.elapsed;
       if (event.outOfRounds && shooter?.side === "team") {
@@ -2839,6 +2835,9 @@ if (new URLSearchParams(location.search).has("e2e")) {
       const unit = state.units.find((item) => item.id === id);
       unit.position = { x, y };
       unit.path = [];
+    },
+    effects() {
+      return state.effects.map((effect) => effect.type);
     },
     markInProgress() {
       state.missionSeconds = 30;

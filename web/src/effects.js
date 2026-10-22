@@ -8,6 +8,8 @@ export const EFFECT_DURATIONS = Object.freeze({
   restore: 0.9,
   muzzle: 0.09,
   tracer: 0.16,
+  impact: 0.3,
+  puff: 0.35,
 });
 
 export function createEffects() {
@@ -53,4 +55,16 @@ export function recoilOffset(elapsed, firedAt, facing, distance = 3, reducedMoti
   if (left <= 0 || left > 1) return { x: 0, y: 0 };
   const direction = facingVector(facing ?? 0);
   return { x: -direction.x * distance * left, y: -direction.y * distance * left };
+}
+
+export const KNOCKBACK_SECONDS = 0.26;
+
+// A unit that has just been hit is thrown back along `direction` (a unit vector in screen space,
+// away from the attacker) and then recovers: out fast, back slower. Reduced motion has no kick.
+export function knockbackOffset(elapsed, hitAt, direction, distance = 9, reducedMotion = false) {
+  if (reducedMotion || hitAt === undefined || hitAt === null || !direction) return { x: 0, y: 0 };
+  const progress = (elapsed - hitAt) / KNOCKBACK_SECONDS;
+  if (progress < 0 || progress >= 1) return { x: 0, y: 0 };
+  const amount = Math.sin(Math.PI * Math.pow(progress, 0.6)) * distance;
+  return { x: direction.x * amount, y: direction.y * amount * 0.55 };
 }

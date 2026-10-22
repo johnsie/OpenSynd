@@ -11,6 +11,8 @@ import {
   RECOIL_SECONDS,
   effectProgress,
   facingVector,
+  KNOCKBACK_SECONDS,
+  knockbackOffset,
   recoilOffset,
   walkBob,
 } from "../src/effects.js";
@@ -64,4 +66,15 @@ test("a muzzle flash is a very short effect", () => {
   assert.ok(EFFECT_DURATIONS.muzzle < 0.15);
   advanceEffects(effects, EFFECT_DURATIONS.muzzle + 0.001);
   assert.equal(effects.length, 0);
+});
+
+test("a unit that is hit is thrown back along the given direction, then recovers", () => {
+  const direction = { x: 1, y: 0 };
+  assert.deepEqual(knockbackOffset(10, undefined, direction), { x: 0, y: 0 });
+  assert.deepEqual(knockbackOffset(10, 10, direction), { x: 0, y: 0 }, "nothing at the instant of the hit");
+  const middle = knockbackOffset(10 + KNOCKBACK_SECONDS / 2, 10, direction, 9);
+  assert.ok(middle.x > 5 && middle.y === 0, "well away from where it stood");
+  assert.ok(Math.abs(knockbackOffset(10 + KNOCKBACK_SECONDS * 0.999, 10, direction, 9).x) < 0.5, "back in place");
+  assert.deepEqual(knockbackOffset(10 + KNOCKBACK_SECONDS + 0.01, 10, direction, 9), { x: 0, y: 0 }, "and then still");
+  assert.deepEqual(knockbackOffset(10 + KNOCKBACK_SECONDS / 2, 10, direction, 9, true), { x: 0, y: 0 }, "reduced motion");
 });

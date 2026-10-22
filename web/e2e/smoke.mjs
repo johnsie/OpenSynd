@@ -303,7 +303,7 @@ for (const [name, type, executablePath] of targets) {
     // Pursuit: the pointer becomes a circular crosshair over a watcher, and clicking sends the selected
     // operator after it until it is in range of the weapon.
     await page.evaluate(() => {
-      window.opensyndTest.placeNear("operator-two", "watcher-four", -8, 0);
+      window.opensyndTest.placeNear("operator-two", "watcher-four", -12, 0);
       window.opensyndTest.focusOn("watcher-four");
     });
     await page.locator(".roster-select").nth(1).click();
@@ -311,7 +311,7 @@ for (const [name, type, executablePath] of targets) {
     const enemy = await page.evaluate(() => window.opensyndTest.screenPoint("watcher-four"));
     await page.mouse.move(enemy.x + 40, enemy.y + 40);
     await page.mouse.move(enemy.x, enemy.y);
-    // Eight tiles away is out of the pistol's range: the crosshair is white.
+    // Twelve tiles away is out of the pistol's range: the crosshair is white.
     await page.waitForFunction(() => document.querySelector("#game-canvas").classList.contains("cursor-attack-far"));
     assert.equal(await page.evaluate(() => document.querySelector("#game-canvas").classList.contains("cursor-attack")), false);
     await page.mouse.click(enemy.x, enemy.y);

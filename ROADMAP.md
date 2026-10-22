@@ -168,6 +168,14 @@ operator toward the aim and shows a muzzle flash, recoil and, for a miss, a trac
 crosshair over a standing watcher is red when a selected operator's weapon reaches it
 and white when it is out of range, and updates as units move.
 
+The Civic Pulse Emitter (the pistol) now reaches 6.5 tiles, double its old range; watchers
+keep their own 3.25-tile weapon, so a squad can open fire well before they can answer.
+Shots no longer draw lines (the aim line, tracer and pulse beam are gone). A shot shows a
+muzzle flash and recoil; a hit shows a flash with a ring and sparks at the target's chest
+and throws the target back a few pixels and back again (`knockbackOffset` in
+`web/src/effects.js`, drawing only, so saves and replays are unaffected); a miss puffs
+sparks where it ends. Reduced motion removes the knockback.
+
 Buildings are drawn as single structures rather than stacks of tile cubes
 (`web/src/buildings.js` for the rules, `drawBuilding` in `web/src/app.js`): one block per
 `utility-building` region with solid walls, a dark base plinth, a ledge at every floor and
