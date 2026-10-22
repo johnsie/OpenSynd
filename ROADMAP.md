@@ -525,6 +525,17 @@ shows that it satisfies maintainability, accessibility, and licensing goals.
 - Add the strategic map using an original geography and faction structure.
 - Implement research, equipment purchasing, character upgrades, recruitment,
   economy, mission branching, and campaign persistence.
+- **Mission variety.** No two operations in a row may be won the same way, and
+  restoring relays is only one kind of job. The objective types to build and mix
+  across the campaign are: interact (restore a relay, download from a server,
+  throw a switch), disable a named target (a warden or other key opponent),
+  hold a position against pressure for a set time, reach a place, protect or
+  escort someone, stay unspotted or finish with the whole squad intact as a
+  bonus condition, and extract. Every new operation should use at least one
+  objective type the previous one did not, on a different map layout, with its
+  own look for its props (relay pylon, server rack, uplink beacon). The
+  content-pack schema and validator must describe each objective type, and each
+  needs unit tests, an e2e check and a balance-bot policy.
 - **Research economy.** Money (funds) is earned for research in two ways:
   continuously during game time while an operation is being played, and from
   achievements earned inside the game (for example first disabling a watcher,
