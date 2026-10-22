@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-// Original generative score: a four-chord loop in A minor played by a bass,
-// a soft pad and a delayed arpeggio. Everything is synthesized, so no audio
-// asset needs provenance. buildPattern is pure so the score can be tested.
+// The score. If a music track is given it plays that file on a loop ("The Core" by p0ss, dark
+// industrial techno, see provenance/assets.json). If the file cannot be played, or none is given,
+// it falls back to an original generative score: a four-chord loop in A minor played by a bass, a
+// soft pad and a delayed arpeggio, all synthesized. buildPattern is pure so the score can be tested.
 export const TEMPO = 92;
 export const STEPS_PER_BAR = 16;
 
@@ -38,7 +39,7 @@ export function buildPattern(bars = PROGRESSION.length) {
   return notes.sort((left, right) => left.step - right.step);
 }
 
-export function createMusic({ getSettings, AudioContextClass }) {
+export function createMusic({ getSettings, AudioContextClass, trackUrl = null, AudioElementClass = null }) {
   const pattern = buildPattern();
   const loopSteps = STEPS_PER_BAR * PROGRESSION.length;
   const stepSeconds = 60 / TEMPO / 4;
@@ -47,6 +48,38 @@ export function createMusic({ getSettings, AudioContextClass }) {
   let timer = null;
   let nextStep = 0;
   let nextTime = 0;
+  let track = null;
+  let trackFailed = false;
+
+  // The recorded track: one looping audio element whose volume follows the settings.
+  function startTrack() {
+    if (!trackUrl || !AudioElementClass || trackFailed) return false;
+    if (!track) {
+      track = new AudioElementClass(trackUrl);
+      track.loop = true;
+      track.preload = "auto";
+      track.addEventListener("error", () => {
+        trackFailed = true;
+        track = null;
+        api.start();
+      });
+    }
+    refreshTrack();
+    const playing = track.play?.();
+    playing?.catch?.(() => {
+      // Blocked until the next gesture; start() runs again on the next input.
+      trackStarted = false;
+    });
+    return true;
+  }
+
+  let trackStarted = false;
+  function refreshTrack() {
+    if (!track) return;
+    const settings = getSettings();
+    const audible = settings.music && !settings.muted;
+    track.volume = audible ? Math.min(1, Math.max(0, settings.musicVolume)) : 0;
+  }
 
   function ensureContext() {
     if (context || !AudioContextClass) return context;
@@ -105,11 +138,22 @@ export function createMusic({ getSettings, AudioContextClass }) {
     master.gain.value = audible ? settings.musicVolume : 0;
   }
 
-  return {
+  const api = {
+    // For tests: whether the recorded track is in use and playing.
+    status() {
+      return { track: Boolean(track) && !trackFailed, playing: Boolean(track) && !track.paused, volume: track?.volume ?? 0 };
+    },
     // Browsers require a user gesture before audio, so the game calls this on first input.
     start() {
       const settings = getSettings();
       if (timer !== null || !settings.music) return;
+      if (trackUrl && !trackFailed && AudioElementClass) {
+        if (!trackStarted || track?.paused) {
+          trackStarted = true;
+          startTrack();
+        }
+        return;
+      }
       if (!ensureContext()) return;
       if (context.state === "suspended") context.resume?.();
       nextStep = 0;
@@ -120,12 +164,17 @@ export function createMusic({ getSettings, AudioContextClass }) {
     stop() {
       if (timer !== null) clearInterval(timer);
       timer = null;
+      track?.pause?.();
+      trackStarted = false;
     },
     refresh() {
       const settings = getSettings();
       if (!settings.music) this.stop();
+      else if (track && track.paused) this.start();
       else if (timer === null && context) this.start();
       refresh();
+      refreshTrack();
     },
   };
+  return api;
 }

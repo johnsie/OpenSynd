@@ -20,6 +20,7 @@ FILES = [
         ROOT / "LICENSES" / "GPL-2.0-or-later.txt",
         ROOT / "web" / "LICENSES" / "GPL-2.0-or-later.txt",
     ),
+    (ROOT / "LICENSES" / "GPL-3.0.txt", ROOT / "web" / "LICENSES" / "GPL-3.0.txt"),
 ]
 
 

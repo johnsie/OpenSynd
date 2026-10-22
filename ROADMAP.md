@@ -280,10 +280,18 @@ fields.
 Save format version 4 stores
 each unit's place along its route, with a tested migration from version 3.
 
-The prototype also has an original generative score (`web/src/music.js`): a
-four-chord loop in A minor with bass, pad and a delayed arpeggio, synthesized in
-the browser with its own on/off and volume settings, so no audio asset needs
-provenance.
+The game's score is a recorded track, "The Core (music) [futuristic]" by p0ss from OpenGameArt
+(dark industrial cyberpunk techno, 175 BPM, about 3.5 minutes, looped), used under GPL-3.0 (it is
+also offered under CC-BY-SA 3.0) and credited on the About screen; the full licence text is in
+`LICENSES/GPL-3.0.txt`. It was re-encoded to 128 kbps (3.3 MB) and is registered in
+`provenance/assets.json` as quarantined: copyleft audio is outside the usual approved set (CC0,
+CC-BY, OFL), so a maintainer must either accept GPL-3.0 or CC-BY-SA music for the project or swap
+in a CC0 track. It has its own on/off and volume settings. If the file cannot be played, the game
+falls back to the original generative score in `web/src/music.js`: a four-chord loop in A minor
+with bass, pad and a delayed arpeggio, synthesized in the browser, so no audio asset is needed.
+Other tracks found in the same search for later: "Cypherfunk" (also p0ss, GPL 3.0) was not
+available at its page, and tricksntraps' CC0 "Free Cyberpunk Pack 2" would be a clean replacement
+or a second track for different operations.
 
 A dependency-free style check (`tools/check_style.py`) enforces SPDX headers,
 final newlines, no tabs or trailing whitespace, a line-length limit, and no

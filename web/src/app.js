@@ -203,6 +203,8 @@ const audio = createAudio({
 const music = createMusic({
   getSettings: () => settings,
   AudioContextClass: window.AudioContext ?? window.webkitAudioContext,
+  trackUrl: "assets/music/the-core.mp3",
+  AudioElementClass: window.Audio,
 });
 // Browsers only allow audio after a user gesture, so music starts on first input.
 for (const type of ["pointerdown", "keydown"]) {
@@ -3145,6 +3147,9 @@ if (new URLSearchParams(location.search).has("e2e")) {
     },
     effects() {
       return state.effects.map((effect) => effect.type);
+    },
+    musicStatus() {
+      return music.status();
     },
     giveItem(id, itemId) {
       const unit = state.units.find((item) => item.id === id);

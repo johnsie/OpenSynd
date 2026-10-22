@@ -290,6 +290,17 @@
       "notes": "Unmodified file. Animated Human by Quaternius (OpenGameArt, 2017). Zip SHA-256 dcd72162b5e59495efc629fb624d9e1deb12124b68291ad4fa3ce66b4fc24db3; License.txt states CC0 1.0 and the page lists CC0. Intake checked against the vendor license text on 2026-10-22 by an AI assistant; NOT yet reviewed by a named human. Set status to approved, with reviewer and review_date, after human review."
     },
     {
+      "path": "web/public/assets/music/the-core.mp3",
+      "sha256": "a54563a9aeba9073373c6981bd4ead877c23c175fa9ae1a24d8c74b2cacff20d",
+      "status": "quarantined",
+      "classification": "music",
+      "creator": "p0ss",
+      "copyright": "p0ss",
+      "license": "GPL-3.0-only OR CC-BY-SA-3.0",
+      "source": "https://opengameart.org/content/core-music-futuristic",
+      "notes": "Track \"The Core (music) [futuristic]\" (core_175bpm.mp3, original SHA-256 f3d58e706fc28bdc386d53bc9260de6885875974eb694ffaf50fb281d72652aa, 6.7 MB, 175 BPM), posted 2011-01-22 on OpenGameArt with the licenses listed as \"GPL 3.0\" and \"CC-BY-SA 3.0\". Re-encoded to 128 kbps MP3 with metadata replaced, otherwise unmodified. Used under GPL-3.0 (full text in LICENSES/GPL-3.0.txt) with credit on the About screen. Copyleft audio is outside the project's usual approved set (CC0, CC-BY, OFL): it stays quarantined until a maintainer decides whether to accept GPL-3.0 or CC-BY-SA music, or replaces it with a CC0 track. The page shows no author-supplied copyright line. Intake checked on 2026-10-23 by an AI assistant; NOT yet reviewed by a named human."
+    },
+    {
       "path": "web/public/assets/sprites/civilian-man-1.png",
       "sha256": "5873e02c4867bedfcb355a72aa7137520a060d8a54986f1dd95fa765e0f69b91",
       "status": "quarantined",
