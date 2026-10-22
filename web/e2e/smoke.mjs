@@ -303,21 +303,23 @@ for (const [name, type, executablePath] of targets) {
     // Pursuit: the pointer becomes a circular crosshair over a watcher, and clicking sends the selected
     // operator after it until it is in range of the weapon.
     await page.evaluate(() => {
-      window.opensyndTest.placeNear("operator-two", "watcher-four", -12, 0);
+      window.opensyndTest.placeNear("operator-two", "watcher-four", -17, 0);
       window.opensyndTest.focusOn("watcher-four");
     });
     await page.locator(".roster-select").nth(1).click();
     // Nobody fires without choosing a weapon: with none selected the order is refused.
-    await page.waitForTimeout(250);
+    await page.evaluate(() => window.opensyndTest.focusOn("watcher-four"));
+    await page.waitForTimeout(400);
     const firstEnemy = await page.evaluate(() => window.opensyndTest.screenPoint("watcher-four"));
     await page.mouse.click(firstEnemy.x, firstEnemy.y);
     assert.match(await page.locator("#status-message").innerText(), /No weapon selected/);
     await page.locator(".roster-item").nth(1).getByLabel(/slot \d+: Civic Pulse Emitter/).first().click();
-    await page.waitForTimeout(250);
+    await page.evaluate(() => window.opensyndTest.focusOn("watcher-four"));
+    await page.waitForTimeout(400);
     const enemy = await page.evaluate(() => window.opensyndTest.screenPoint("watcher-four"));
     await page.mouse.move(enemy.x + 40, enemy.y + 40);
     await page.mouse.move(enemy.x, enemy.y);
-    // Twelve tiles away is out of the pistol's range: the crosshair is white.
+    // Seventeen tiles away is out of the pistol's range: the crosshair is white.
     await page.waitForFunction(() => document.querySelector("#game-canvas").classList.contains("cursor-attack-far"));
     assert.equal(await page.evaluate(() => document.querySelector("#game-canvas").classList.contains("cursor-attack")), false);
     await page.mouse.click(enemy.x, enemy.y);
@@ -503,6 +505,17 @@ for (const [name, type, executablePath] of targets) {
     const stranger = await street.evaluate(() => window.opensyndTest.screenPoint("civilian-1"));
     await street.mouse.move(stranger.x + 40, stranger.y + 40);
     await street.mouse.move(stranger.x, stranger.y);
+    await street.waitForFunction(() => document.querySelector("#game-canvas").className.includes("cursor-attack"));
+    // Police get the crosshair too, and it is easy to land: a little above and beside the figure still counts.
+    await street.evaluate(() => {
+      window.opensyndTest.placeNear("police-15", "operator-one", 3, 0);
+      window.opensyndTest.focusOn("operator-one");
+    });
+    await street.mouse.move(5, 400);
+    await street.waitForTimeout(300);
+    const officer = await street.evaluate(() => window.opensyndTest.screenPoint("police-15"));
+    await street.mouse.move(officer.x + 40, officer.y + 60);
+    await street.mouse.move(officer.x + 14, officer.y - 55);
     await street.waitForFunction(() => document.querySelector("#game-canvas").className.includes("cursor-attack"));
     await street.close();
 

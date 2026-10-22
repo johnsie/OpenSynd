@@ -168,7 +168,7 @@ operator toward the aim and shows a muzzle flash, recoil and, for a miss, a trac
 crosshair over a standing watcher is red when a selected operator's weapon reaches it
 and white when it is out of range, and updates as units move.
 
-The Civic Pulse Emitter (the pistol) now reaches 6.5 tiles, double its old range; watchers
+The Civic Pulse Emitter (the pistol) now reaches 13 tiles (it was 3.25, then 6.5); watchers
 keep their own 3.25-tile weapon, so a squad can open fire well before they can answer.
 Shots no longer draw lines (the aim line, tracer and pulse beam are gone). A shot shows a
 muzzle flash and recoil; a hit shows a flash with a ring and sparks at the target's chest

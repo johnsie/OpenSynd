@@ -2738,19 +2738,25 @@ function goLoot(body) {
   renderInterface();
 }
 
+// The unit under a screen point. Characters are tall, so the target is a generous box around the
+// whole figure, from a little below the feet to above the head, and the nearest one wins.
 function hitUnit(position) {
   if (!state.viewport) return null;
+  const { cellSize, origin } = state.viewport;
+  const halfWidth = Math.max(18, cellSize.height * 0.8);
+  const above = Math.max(46, cellSize.height * 2.3);
+  const below = Math.max(12, cellSize.height * 0.4);
   let closest = null;
-  let closestDistance = 28;
+  let closestDistance = Infinity;
   for (const unit of state.units) {
     const tile = state.grid[Math.round(unit.position.y)]?.[Math.round(unit.position.x)];
-    const center = gridToScreen(
-      unit.position,
-      state.viewport.cellSize,
-      state.viewport.origin,
-      tile?.elevation ?? 0,
-    );
-    const distance = Math.hypot(position.x - center.x, position.y - (center.y - 12));
+    const center = gridToScreen(unit.position, cellSize, origin, tile?.elevation ?? 0);
+    const dx = position.x - center.x;
+    const dy = position.y - center.y;
+    if (Math.abs(dx) > halfWidth || dy < -above || dy > below) continue;
+    // Nearest to the middle of the figure, counting height a little less than width.
+    // (a body on the ground only counts when no one standing is under the pointer)
+    const distance = Math.hypot(dx, (dy + above * 0.3) * 0.7) + (unit.disabled ? 1000 : 0);
     if (distance < closestDistance) {
       closest = unit;
       closestDistance = distance;
