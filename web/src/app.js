@@ -13,6 +13,7 @@ import {
   zoneContains,
 } from "./engine.js";
 import {
+  panByKeys,
   centreOn,
   clampCamera,
   createCamera,
@@ -251,6 +252,7 @@ async function loadSprites() {
 }
 
 const state = {
+  panKeys: new Set(),
   camera: createCamera({ x: 0, y: 0 }),
   miniTerrain: null,
   selectedIds: [],
@@ -1069,6 +1071,18 @@ function performInteraction() {
 function frame(time) {
   const delta = Math.min((time - state.lastFrame) / 1000, 0.05);
   state.lastFrame = time;
+  if (state.map && state.viewport && state.panKeys.size > 0) {
+    panByKeys(
+      state.camera,
+      {
+        x: (state.panKeys.has("panRight") ? 1 : 0) - (state.panKeys.has("panLeft") ? 1 : 0),
+        y: (state.panKeys.has("panDown") ? 1 : 0) - (state.panKeys.has("panUp") ? 1 : 0),
+      },
+      delta,
+      state.viewport,
+      state.map,
+    );
+  }
   if (state.map) followTarget(state.camera, delta, reduceMotion);
   update(delta);
   draw();
@@ -1392,6 +1406,12 @@ canvas.addEventListener("keydown", (event) => {
     cursorDown: { x: 0, y: 1 },
   };
   const action = resolveAction(bindings, event);
+  if (action?.startsWith("pan")) {
+    // Held keys pan smoothly; the frame loop applies them every frame.
+    event.preventDefault();
+    state.panKeys.add(action);
+    return;
+  }
   if (moves[action]) {
     event.preventDefault();
     state.cursor.x = Math.max(
@@ -1426,6 +1446,12 @@ canvas.addEventListener("keydown", (event) => {
     renderInterface();
   }
 });
+
+canvas.addEventListener("keyup", (event) => {
+  const action = resolveAction(bindings, event);
+  if (action?.startsWith("pan")) state.panKeys.delete(action);
+});
+canvas.addEventListener("blur", () => state.panKeys.clear());
 
 function togglePause() {
   state.paused = !state.paused;
@@ -1484,6 +1510,9 @@ state.modal = true;
 // Browser tests add ?e2e to reach states that take too long to play out.
 if (new URLSearchParams(location.search).has("e2e")) {
   window.opensyndTest = {
+    camera() {
+      return { x: state.camera.x, y: state.camera.y };
+    },
     positions() {
       return Object.fromEntries(state.units.map((unit) => [unit.id, { ...unit.position }]));
     },

@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 export const ACTIONS = Object.freeze([
+  "panLeft",
+  "panRight",
+  "panUp",
+  "panDown",
   "cursorLeft",
   "cursorRight",
   "cursorUp",
@@ -18,10 +22,14 @@ export const ACTIONS = Object.freeze([
 
 // Values are KeyboardEvent.key (case-insensitive) or "Space" for event.code.
 export const DEFAULT_BINDINGS = Object.freeze({
-  cursorLeft: "ArrowLeft",
-  cursorRight: "ArrowRight",
-  cursorUp: "ArrowUp",
-  cursorDown: "ArrowDown",
+  panLeft: "ArrowLeft",
+  panRight: "ArrowRight",
+  panUp: "ArrowUp",
+  panDown: "ArrowDown",
+  cursorLeft: "j",
+  cursorRight: "l",
+  cursorUp: "i",
+  cursorDown: "k",
   move: "Enter",
   interact: "e",
   repair: "r",
@@ -63,6 +71,10 @@ export function resolveAction(bindings, event) {
 }
 
 export const ACTION_LABELS = Object.freeze({
+  panLeft: "Pan view left",
+  panRight: "Pan view right",
+  panUp: "Pan view up",
+  panDown: "Pan view down",
   cursorLeft: "Cursor left",
   cursorRight: "Cursor right",
   cursorUp: "Cursor up",

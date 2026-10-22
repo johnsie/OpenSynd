@@ -121,3 +121,13 @@ export function miniUnproject(point, map) {
 export function miniSize(map) {
   return { width: map.dimensions.width + map.dimensions.height, height: (map.dimensions.width + map.dimensions.height) / 2 };
 }
+
+// Keyboard panning: `direction` is the way the view should move on screen
+// (right = +x, down = +y), at `speed` screen pixels per second.
+export function panByKeys(camera, direction, deltaSeconds, viewport, map, speed = 900) {
+  if (direction.x === 0 && direction.y === 0) return;
+  const length = Math.hypot(direction.x, direction.y);
+  const step = (speed * deltaSeconds) / length;
+  // Moving the view right means the world slides left, so negate the screen delta.
+  panByScreen(camera, -direction.x * step, -direction.y * step, viewport, map);
+}

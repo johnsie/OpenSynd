@@ -14,6 +14,7 @@ import {
   miniProject,
   miniUnproject,
   nearEdge,
+  panByKeys,
   panByScreen,
   viewportFor,
   visibleBounds,
@@ -90,4 +91,38 @@ test("edge detection and minimap projection round-trip", () => {
   for (const position of [{ x: 0, y: 0 }, { x: 127, y: 3 }, { x: 40, y: 90 }]) {
     assert.deepEqual(miniUnproject(miniProject(position, map), map), position);
   }
+});
+
+test("keyboard panning moves the view in the pressed direction at a steady pace", () => {
+  const camera = createCamera({ x: 64, y: 64 });
+  const viewport = viewportFor(camera, map, size);
+  const probe = { x: 64, y: 64 };
+  const screenOf = () => {
+    const current = viewportFor(camera, map, size);
+    return gridToScreen(probe, current.cellSize, current.origin);
+  };
+  const start = screenOf();
+  panByKeys(camera, { x: 1, y: 0 }, 0.5, viewport, map);
+  const right = screenOf();
+  assert.ok(Math.abs(right.x - start.x + 450) < 1e-6, "view moves right: the world slides left");
+  assert.ok(Math.abs(right.y - start.y) < 1e-6);
+
+  panByKeys(camera, { x: 0, y: -1 }, 0.5, viewport, map);
+  assert.ok(screenOf().y > right.y, "view moves up: the world slides down");
+
+  const before = { x: camera.x, y: camera.y };
+  panByKeys(camera, { x: 0, y: 0 }, 1, viewport, map);
+  assert.deepEqual({ x: camera.x, y: camera.y }, before);
+
+  // Diagonals are not faster than straight lines.
+  const a = createCamera({ x: 64, y: 64 });
+  const b = createCamera({ x: 64, y: 64 });
+  panByKeys(a, { x: 1, y: 0 }, 1, viewport, map);
+  panByKeys(b, { x: 1, y: 1 }, 1, viewport, map);
+  const travelled = (c) => {
+    const v = viewportFor(createCamera({ x: 64, y: 64 }), map, size);
+    const p = gridToScreen({ x: c.x, y: c.y }, v.cellSize, v.origin);
+    return Math.hypot(p.x - 500, p.y - 300);
+  };
+  assert.ok(Math.abs(travelled(a) - travelled(b)) < 1e-6);
 });

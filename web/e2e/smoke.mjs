@@ -75,7 +75,7 @@ for (const [name, type, executablePath] of targets) {
     assert.doesNotMatch(await page.locator("#selected-readout").innerText(), /No operator selected/);
 
     await page.locator("#game-canvas").focus();
-    await page.keyboard.press("ArrowRight");
+    await page.keyboard.press("l");
     await page.keyboard.press("Enter");
     await page.waitForTimeout(300);
     assert.match(await page.locator("#status-message").innerText(), /Route/);
@@ -111,6 +111,17 @@ for (const [name, type, executablePath] of targets) {
     await page.getByRole("button", { name: "Lower Brain", exact: true }).click();
     assert.match(await page.locator("#status-message").innerText(), /Selected operators: Brain lowered/);
     assert.equal(await page.locator('.roster [aria-label^="Brain of"][aria-label$="2 of 5"]').count(), 4);
+    // Arrow keys pan the view while held.
+    await page.locator("#game-canvas").focus();
+    const cameraBefore = await page.evaluate(() => window.opensyndTest.camera());
+    await page.keyboard.down("ArrowRight");
+    await page.waitForTimeout(400);
+    await page.keyboard.up("ArrowRight");
+    const cameraAfter = await page.evaluate(() => window.opensyndTest.camera());
+    assert.ok(cameraAfter.x - cameraBefore.x > 1, "the view moved right");
+    await page.waitForTimeout(150);
+    const settled = await page.evaluate(() => window.opensyndTest.camera());
+    assert.ok(Math.abs(settled.x - cameraAfter.x) < 0.5, "panning stops when the key is released");
     // Camera controls: zoom with the wheel and keys, jump with the minimap, recentre with C.
     await page.locator("#game-canvas").hover();
     await page.mouse.wheel(0, -200);
@@ -118,7 +129,7 @@ for (const [name, type, executablePath] of targets) {
     await page.locator("#minimap").click({ position: { x: 128, y: 64 } });
     await page.keyboard.press("c");
     // A group move sends several operators at once.
-    await page.keyboard.press("ArrowRight");
+    await page.keyboard.press("l");
     await page.keyboard.press("Enter");
     assert.match(await page.locator("#status-message").innerText(), /[34] operators moving/);
     await page.keyboard.press("Space");
@@ -126,10 +137,10 @@ for (const [name, type, executablePath] of targets) {
 
     await page.click("#settings-button");
     await page.locator("#setting-muted").check();
-    await page.locator("#binding-list button").nth(5).click();
+    await page.getByRole("button", { name: /^Interact:/ }).click();
     await page.keyboard.press("f");
     assert.match(await page.locator("#binding-message").innerText(), /now F/);
-    await page.locator("#binding-list button").nth(4).click();
+    await page.getByRole("button", { name: /^Use repair kit:/ }).click();
     await page.keyboard.press("f");
     assert.match(await page.locator("#binding-message").innerText(), /already used/);
     await page.click("#close-settings");

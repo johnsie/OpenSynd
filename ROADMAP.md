@@ -79,7 +79,8 @@ relays and gate panel, and a fenced compound with one gate. The generator
 verifies that every objective is reachable and that the exit is sealed until
 the gate opens. The browser client has a scrolling, zoomable camera that draws
 only visible tiles (about 60 fps fully zoomed out), drag-to-pan, a minimap, and
-remappable camera keys.
+remappable camera keys. Arrow keys pan the view smoothly while held; the grid
+cursor moves with I/J/K/L (remappable) and Enter issues the move.
 
 Security watchers now patrol deterministic routes built from mission waypoints
 (`patrol` in the mission schema). A patrolling watcher holds position while it
