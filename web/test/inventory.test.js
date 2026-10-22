@@ -5,6 +5,8 @@ import test from "node:test";
 
 import {
   LOOT_RANGE,
+  clearWeaponForAll,
+  selectWeaponForAll,
   findLoot,
   freeSlots,
   inLootReach,
@@ -114,4 +116,42 @@ test("the nearest lootable body is found across the map", () => {
   assert.equal(nearestLootable(operator(0, 0), [far, picked, near]), near);
   assert.equal(nearestLootable(operator(0, 0), [picked]), null);
   assert.equal(nearestLootable(operator(100, 0), [far, near]), far);
+});
+
+const gun = (id, charges = null) => ({ definition: { id, action: "disable-pulse", effect: {} }, charges });
+const carrier = (id, equipment) => ({ ...operator(0, 0, equipment), id, activeSlot: null });
+
+test("choosing a weapon for several operatives picks their own copy of it, in whatever slot it is", () => {
+  const first = carrier("a", [gun("pistol", 20), gun("rifle", 5)]);
+  const second = carrier("b", [gun("rifle", 5), gun("pistol", 8)]);
+  const result = selectWeaponForAll([first, second], "pistol");
+  assert.deepEqual(result, { selected: ["a", "b"], missing: [] });
+  assert.equal(first.activeSlot, 0);
+  assert.equal(second.activeSlot, 1, "the second operative carries it in slot 2");
+});
+
+test("an operative with several copies uses the fullest one; empty copies are skipped", () => {
+  const stocked = carrier("a", [gun("pistol", 3), gun("pistol", 19), gun("pistol", 0)]);
+  selectWeaponForAll([stocked], "pistol");
+  assert.equal(stocked.activeSlot, 1);
+
+  const dry = carrier("b", [gun("pistol", 0)]);
+  assert.deepEqual(selectWeaponForAll([dry], "pistol"), { selected: [], missing: ["b"] });
+  assert.equal(dry.activeSlot, null);
+});
+
+test("operatives who do not carry the weapon keep their own choice", () => {
+  const armed = carrier("a", [gun("pistol", 10)]);
+  const other = { ...carrier("b", [gun("rifle", 4)]), activeSlot: 0 };
+  const result = selectWeaponForAll([armed, other], "pistol");
+  assert.deepEqual(result, { selected: ["a"], missing: ["b"] });
+  assert.equal(other.activeSlot, 0, "left on the rifle");
+});
+
+test("putting a weapon away goes back to automatic only for those holding it", () => {
+  const first = { ...carrier("a", [gun("pistol", 10), gun("rifle", 4)]), activeSlot: 0 };
+  const second = { ...carrier("b", [gun("rifle", 4)]), activeSlot: 0 };
+  clearWeaponForAll([first, second], "pistol");
+  assert.equal(first.activeSlot, null);
+  assert.equal(second.activeSlot, 0, "the rifle stays selected");
 });

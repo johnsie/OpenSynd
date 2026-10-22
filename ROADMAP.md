@@ -145,6 +145,12 @@ at the weapon, a short recoil kick, and a thin aim line to the locked target. An
 operative also draws the weapon while firing at a locked target, so a gun never
 fires from empty hands.
 
+With several operatives selected, choosing a weapon chooses the same weapon for all of
+them: each takes up their own copy (in whatever slot they carry it, the fullest if they
+carry several; the one clicked keeps the exact copy), anyone without it keeps their own
+choice and is counted in the message, and clicking the chosen weapon again puts it away
+for everyone who had it selected.
+
 Right-clicking fires by hand: each selected operator fires the selected weapon (or the
 longest-ranged loaded one if none is selected) in the direction of the pointer. The shot
 is a real ray (`castShot`/`fireManual` in `web/src/simulation.js`) that stops at the first

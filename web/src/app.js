@@ -59,12 +59,14 @@ import { newStats, newlyEarned } from "./achievements.js";
 import {
   distanceBetween,
   energyItem,
+  clearWeaponForAll,
   findLoot,
   inLootReach,
   lootBody,
   lootableAt,
   lootableBody,
   nearestLootable,
+  selectWeaponForAll,
   useEnergyItem,
 } from "./inventory.js";
 import {
@@ -2545,6 +2547,25 @@ function pressSlot(unit, slot) {
   if (!entry || unit.disabled) return;
   const definition = entry.definition;
   if (definition.action === "disable-pulse") {
+    // With several operatives selected (and this one among them), the choice applies to all of
+    // them: each takes up their own copy of the same weapon, or puts it away together.
+    const squad = selectedOperators();
+    if (squad.length > 1 && squad.some((member) => member.id === unit.id)) {
+      if (unit.activeSlot === slot) {
+        clearWeaponForAll(squad, definition.id);
+        setStatus(`${squad.length} operators: automatic weapon choice.`);
+      } else {
+        const { selected, missing } = selectWeaponForAll(squad, definition.id);
+        unit.activeSlot = slot; // the operative clicked keeps the exact copy they clicked
+        setStatus(
+          `${selected.length} operators: ${definition.name} selected.` +
+            (missing.length > 0 ? ` ${missing.length} without one keep their own choice.` : ""),
+        );
+      }
+      audio.play("select");
+      renderInterface();
+      return;
+    }
     unit.activeSlot = unit.activeSlot === slot ? null : slot;
     setStatus(
       unit.activeSlot === slot

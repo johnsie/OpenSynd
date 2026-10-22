@@ -93,3 +93,35 @@ export function nearestLootable(from, units) {
   }
   return best?.body ?? null;
 }
+
+// Select the same weapon for several operatives. A weapon is "the same" when it is the same item;
+// each operative may carry it in a different slot, and uses their own copy with rounds left (the
+// one with the most if they carry several). Operatives who do not carry it are left as they are.
+// Returns who got it and who has none.
+export function selectWeaponForAll(units, definitionId) {
+  const selected = [];
+  const missing = [];
+  for (const unit of units) {
+    let best = -1;
+    unit.equipment.forEach((item, slot) => {
+      if (item.definition.id !== definitionId || item.charges === 0) return;
+      const rounds = item.charges ?? Infinity;
+      if (best === -1 || rounds > (unit.equipment[best].charges ?? Infinity)) best = slot;
+    });
+    if (best === -1) {
+      missing.push(unit.id);
+    } else {
+      unit.activeSlot = best;
+      selected.push(unit.id);
+    }
+  }
+  return { selected, missing };
+}
+
+// Put the same weapon away for several operatives: whoever has it selected goes back to automatic.
+export function clearWeaponForAll(units, definitionId) {
+  for (const unit of units) {
+    const chosen = Number.isInteger(unit.activeSlot) ? unit.equipment[unit.activeSlot] : null;
+    if (chosen && chosen.definition.id === definitionId) unit.activeSlot = null;
+  }
+}

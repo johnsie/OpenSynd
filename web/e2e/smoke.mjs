@@ -118,6 +118,19 @@ for (const [name, type, executablePath] of targets) {
     await page.getByRole("button", { name: "Lower Legs", exact: true }).click();
     assert.match(await page.locator("#status-message").innerText(), /Selected operators: Legs lowered/);
     await page.locator(".roster-select").first().click();
+    // With everyone selected, choosing a weapon chooses it for all of them (and again puts it away for all).
+    await page.keyboard.press("a");
+    await page.locator(".roster-item").first().locator(".slot").first().click();
+    const weaponPressed = () =>
+      page.locator(".roster-item").evaluateAll((items) =>
+        items.map((item) => item.querySelector(".slot").getAttribute("aria-pressed")),
+      );
+    assert.deepEqual(await weaponPressed(), ["true", "true", "true", "true"]);
+    assert.match(await page.locator("#status-message").innerText(), /4 operators: Civic Pulse Emitter selected/);
+    await page.locator(".roster-item").first().locator(".slot").first().click();
+    assert.deepEqual(await weaponPressed(), ["false", "false", "false", "false"]);
+    assert.match(await page.locator("#status-message").innerText(), /4 operators: automatic weapon choice/);
+    await page.locator(".roster-select").first().click();
     // Select all operators with the A key, then check they all show as selected.
     await page.keyboard.press("a");
     const pressed = await page.locator(".roster-select").evaluateAll((buttons) =>
