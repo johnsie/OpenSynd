@@ -5,17 +5,28 @@
   "description": "Original procedural content for tests and the first playable prototype.",
   "status": "development",
   "license": "CC0-1.0",
-  "authors": ["OpenSynd contributors"],
+  "authors": [
+    "OpenSynd contributors"
+  ],
   "provenance": {
     "source": "created-for-opensynd",
     "createdDate": "2026-10-22",
     "notes": "Created from the original OpenSynd design brief without imported media; pending maintainer provenance and similarity review."
   },
-  "maps": ["maps/signal-yard.map.json"],
-  "units": ["units/field-operator.unit.json", "units/security-watcher.unit.json"],
+  "maps": [
+    "maps/signal-yard.map.json",
+    "maps/audit-yard.map.json"
+  ],
+  "units": [
+    "units/field-operator.unit.json",
+    "units/security-watcher.unit.json"
+  ],
   "equipment": [
     "equipment/civic-pulse-emitter.equipment.json",
     "equipment/field-repair-kit.equipment.json"
   ],
-  "missions": ["missions/restore-relay.mission.json"]
+  "missions": [
+    "missions/restore-relay.mission.json",
+    "missions/quiet-hours.mission.json"
+  ]
 }

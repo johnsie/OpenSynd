@@ -214,6 +214,24 @@ for (const [name, type, executablePath] of targets) {
     await page.evaluate(() => window.opensyndTest.completeObjectives());
     await page.waitForSelector("#outcome-dialog[open]");
     assert.match(await page.locator("#outcome-heading").innerText(), /back on the mesh/);
+    // The first mission leads to the next one, which has its own name, story and map.
+    assert.equal(await page.locator("#next-button").isVisible(), true);
+    await page.click("#next-button");
+    await page.waitForSelector("#title-dialog[open]");
+    assert.match(await page.locator("#title-heading").innerText(), /Quiet Hours/);
+    assert.match(await page.locator("#title-story").innerText(), /Audit Yard/);
+    await page.click("#begin-button");
+    assert.match(await page.locator("#operation-eyebrow").innerText(), /OPERATION 02/);
+    assert.match(await page.locator("#operation-title").innerText(), /Quiet Hours/);
+    await page.waitForFunction(() =>
+      document.querySelector("#status-message").textContent.includes("Local map established"),
+    );
+    // The last mission has no next operation.
+    await page.evaluate(() => window.opensyndTest.completeObjectives());
+    await page.waitForSelector("#outcome-dialog[open]");
+    assert.match(await page.locator("#outcome-heading").innerText(), /audit trail/i);
+    assert.equal(await page.locator("#next-button").isVisible(), false);
+
 
     assert.deepEqual(errors, []);
     console.log(`ok ${name}`);

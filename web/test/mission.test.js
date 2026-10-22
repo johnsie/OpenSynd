@@ -18,8 +18,8 @@ import { FIXED_STEP_SECONDS, advanceCombat, advancePatrols, advanceUnits } from 
 const read = async (path) =>
   JSON.parse(await readFile(new URL(`../content/${path}`, import.meta.url), "utf8"));
 
-async function loadMission() {
-  const mission = await read("missions/restore-relay.mission.json");
+async function loadMission(file = "missions/restore-relay.mission.json") {
+  const mission = await read(file);
   const map = await read(mission.map);
   const definition = await read("units/field-operator.unit.json");
   const placement = mission.team[0];
@@ -259,4 +259,50 @@ test("every First Light watcher patrols a real route that stays on walkable grou
     }
   }
   assert.ok(watchers.some((unit, index) => unit.position.x !== startedAt[index].x || unit.position.y !== startedAt[index].y));
+});
+
+test("the Audit Yard mission plays through: three relays, the panel, then extraction", async () => {
+  const runs = [];
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const game = await loadMission("missions/quiet-hours.mission.json");
+    game.log = [];
+    const gate = game.map.objects[0];
+    const steps = [];
+
+    assert.equal(game.map.dimensions.width, 96);
+    assert.equal(isWalkable(game.grid, gate.position.x, gate.position.y), false);
+    assert.deepEqual(findPath(game.grid, { x: 81, y: 16 }, { x: 88, y: 14 }), []);
+
+    for (const stop of [{ x: 25, y: 25 }, { x: 47, y: 69 }, { x: 69, y: 47 }]) {
+      steps.push(walk(game, stop));
+      assert.ok(interact(game));
+    }
+    assert.equal(missionComplete(game.objectives), false);
+    steps.push(walk(game, { x: 69, y: 25 }));
+    assert.equal(gateOpen(game.objectives, gate), false);
+    assert.ok(interact(game));
+    assert.equal(isWalkable(game.grid, gate.position.x, gate.position.y), true);
+    steps.push(walk(game, { x: 88, y: 14 }));
+    assert.equal(missionComplete(game.objectives), true);
+    runs.push({ log: game.log, steps });
+  }
+
+  assert.deepEqual(runs[0], runs[1]);
+  assert.deepEqual(runs[0].log, ["restore-one", "restore-two", "restore-three", "open-gate", "leave-yard"]);
+  // Golden step counts at 30 Hz for one operator walking without rest, fatigue included.
+  assert.deepEqual(runs[0].steps, [462, 775, 640, 350, 477]);
+});
+
+test("every mission in the pack has a story, debrief and valid patrols", async () => {
+  const pack = await read("pack.json");
+  assert.ok(pack.missions.length >= 2);
+  for (const file of pack.missions) {
+    const mission = await read(file);
+    assert.ok(mission.story && mission.title, `${file} needs a story and a title`);
+    assert.ok(mission.debrief?.success && mission.debrief?.failure, `${file} needs a debrief`);
+    const grid = createTileGrid(await read(mission.map));
+    for (const placement of mission.opponents) {
+      assert.ok(buildPatrolRoute(grid, placement.position, placement.patrol).length > 0, `${placement.id} in ${file}`);
+    }
+  }
 });

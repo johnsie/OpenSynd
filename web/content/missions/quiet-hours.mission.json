@@ -1,0 +1,223 @@
+{
+  "formatVersion": 1,
+  "id": "developer.quiet-hours",
+  "name": "Quiet Hours",
+  "license": "CC0-1.0",
+  "title": "The audit trail is public",
+  "briefing": "The district's audit yard hides three relays that were switched off to keep a maintenance scandal quiet. Restore all three, unlock the records compound at its control panel, and leave through it. Watchers cover every street, and a tired team is a slow team: spread the walking and rest between pushes.",
+  "story": "Quiet Hours: a night shift the administrators never wanted recorded. Three relays in the Audit Yard were silenced so that no one could hear how the district's water and power contracts were being traded away. Your team has until dawn to bring them back, open the records compound, and walk out with the proof.",
+  "debrief": {
+    "success": "All three relays are live and the records compound stands open. By morning the whole district can read what was done in its name.",
+    "failure": "The team is down and the audit yard stays silent. Rest your operators, spread out the walking, and try another route."
+  },
+  "map": "maps/audit-yard.map.json",
+  "team": [
+    {
+      "id": "operator-one",
+      "unit": "units/field-operator.unit.json",
+      "position": {
+        "x": 2,
+        "y": 48
+      },
+      "equipment": [
+        "equipment/civic-pulse-emitter.equipment.json",
+        "equipment/field-repair-kit.equipment.json"
+      ]
+    },
+    {
+      "id": "operator-two",
+      "unit": "units/field-operator.unit.json",
+      "position": {
+        "x": 3,
+        "y": 48
+      },
+      "equipment": [
+        "equipment/civic-pulse-emitter.equipment.json",
+        "equipment/field-repair-kit.equipment.json"
+      ]
+    },
+    {
+      "id": "operator-three",
+      "unit": "units/field-operator.unit.json",
+      "position": {
+        "x": 2,
+        "y": 49
+      },
+      "equipment": [
+        "equipment/civic-pulse-emitter.equipment.json",
+        "equipment/field-repair-kit.equipment.json"
+      ]
+    },
+    {
+      "id": "operator-four",
+      "unit": "units/field-operator.unit.json",
+      "position": {
+        "x": 3,
+        "y": 49
+      },
+      "equipment": [
+        "equipment/civic-pulse-emitter.equipment.json",
+        "equipment/field-repair-kit.equipment.json"
+      ]
+    }
+  ],
+  "opponents": [
+    {
+      "id": "watcher-one",
+      "unit": "units/security-watcher.unit.json",
+      "position": {
+        "x": 25,
+        "y": 12
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 25,
+          "y": 22
+        }
+      ]
+    },
+    {
+      "id": "watcher-two",
+      "unit": "units/security-watcher.unit.json",
+      "position": {
+        "x": 36,
+        "y": 25
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 44,
+          "y": 25
+        }
+      ]
+    },
+    {
+      "id": "watcher-three",
+      "unit": "units/security-watcher.unit.json",
+      "position": {
+        "x": 47,
+        "y": 56
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 47,
+          "y": 66
+        }
+      ]
+    },
+    {
+      "id": "watcher-four",
+      "unit": "units/security-watcher.unit.json",
+      "position": {
+        "x": 56,
+        "y": 47
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 66,
+          "y": 47
+        }
+      ]
+    },
+    {
+      "id": "watcher-five",
+      "unit": "units/security-watcher.unit.json",
+      "position": {
+        "x": 69,
+        "y": 36
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 69,
+          "y": 44
+        }
+      ]
+    },
+    {
+      "id": "watcher-six",
+      "unit": "units/security-watcher.unit.json",
+      "position": {
+        "x": 69,
+        "y": 58
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 69,
+          "y": 66
+        }
+      ]
+    },
+    {
+      "id": "watcher-seven",
+      "unit": "units/security-watcher.unit.json",
+      "position": {
+        "x": 58,
+        "y": 69
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 50,
+          "y": 69
+        }
+      ]
+    },
+    {
+      "id": "watcher-eight",
+      "unit": "units/security-watcher.unit.json",
+      "position": {
+        "x": 75,
+        "y": 25
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 79,
+          "y": 25
+        }
+      ]
+    }
+  ],
+  "objectives": [
+    {
+      "id": "restore-one",
+      "type": "interact",
+      "targetZone": "relay-one",
+      "required": true,
+      "description": "Reconnect the north-west relay."
+    },
+    {
+      "id": "restore-two",
+      "type": "interact",
+      "targetZone": "relay-two",
+      "required": true,
+      "description": "Reconnect the southern relay."
+    },
+    {
+      "id": "restore-three",
+      "type": "interact",
+      "targetZone": "relay-three",
+      "required": true,
+      "description": "Reconnect the eastern relay."
+    },
+    {
+      "id": "open-gate",
+      "type": "interact",
+      "targetZone": "gate-panel",
+      "required": true,
+      "description": "Unlock the records compound."
+    },
+    {
+      "id": "leave-yard",
+      "type": "extract",
+      "targetZone": "safe-exit",
+      "required": true,
+      "description": "Extract through the records compound."
+    }
+  ]
+}

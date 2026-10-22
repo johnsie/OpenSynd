@@ -9,7 +9,7 @@
       name="description"
       content="OpenSynd: an open-source, real-time squad tactics prototype."
     />
-    <title>OpenSynd — First Light</title>
+    <title>OpenSynd</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
@@ -35,8 +35,8 @@
         <section class="playfield" aria-labelledby="operation-title">
           <div class="operation-heading">
             <div>
-              <p class="eyebrow">OPERATION 01</p>
-              <h2 id="operation-title">First Light</h2>
+              <p id="operation-eyebrow" class="eyebrow">OPERATION</p>
+              <h2 id="operation-title">Loading…</h2>
             </div>
             <div class="operation-tools">
               <button id="pause-button" type="button" aria-pressed="false">
@@ -52,13 +52,13 @@
               width="1200"
               height="760"
               tabindex="0"
-              aria-label="Isometric view of Signal Yard. Select an operator and choose a destination."
+              aria-label="Isometric view of the map. Select an operator and choose a destination."
             ></canvas>
             <canvas
               id="minimap"
               width="256"
               height="128"
-              aria-label="Minimap of Signal Yard. Click to move the view."
+              aria-label="Minimap. Click to move the view."
             ></canvas>
             <div class="scanlines" aria-hidden="true"></div>
             <div class="map-key" aria-hidden="true">
@@ -87,7 +87,7 @@
 
         <aside class="mission-panel" id="mission-panel" aria-label="Mission controls">
           <details class="panel-section briefing">
-            <summary><span class="section-number">01 / BRIEF</span> Restore the district voice</summary>
+            <summary><span class="section-number">01 / BRIEF</span> <span id="brief-title">Briefing</span></summary>
             <p id="briefing-text">Loading open mission data…</p>
           </details>
 
@@ -172,14 +172,8 @@
 
     <dialog id="title-dialog" aria-labelledby="title-heading">
       <p class="eyebrow">OPEN CIVIC OPERATIONS NETWORK</p>
-      <h2 id="title-heading">OpenSynd: First Light</h2>
-      <p>
-        The Signal Yard has gone quiet. Two public relays that carried the
-        district's voice have been cut off by remote administrators, and the
-        service gate to the east is locked. Your four-person field team has one
-        night to reconnect the district, unlock the gate, and leave before the
-        watchers raise the alarm.
-      </p>
+      <h2 id="title-heading">OpenSynd</h2>
+      <p id="title-story">Loading the operation…</p>
       <ul>
         <li>Select an operator, then click a tile, or move the cursor with I/J/K/L and press Enter.</li>
         <li>Stand on a relay or panel and press E to restore it.</li>
@@ -201,6 +195,7 @@
       <h2 id="outcome-heading"></h2>
       <p id="outcome-text"></p>
       <dl id="outcome-stats" class="outcome-stats"></dl>
+      <button id="next-button" type="button" class="primary" hidden>Next operation</button>
       <button id="replay-button" type="button" class="primary">Replay operation</button>
       <button id="outcome-close" type="button">Review the map</button>
     </dialog>

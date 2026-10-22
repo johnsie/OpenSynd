@@ -176,5 +176,11 @@
       "required": true,
       "description": "Extract through the eastern service gate."
     }
-  ]
+  ],
+  "story": "The Signal Yard has gone quiet. Two public relays that carried the district's voice have been cut off by remote administrators, and the service gate to the east is locked. Your four-person field team has one night to reconnect the district, unlock the gate, and leave before the watchers raise the alarm.",
+  "debrief": {
+    "success": "Both relays carry the district's voice again, the gate stands open, and your team slips away before the watchers can respond.",
+    "failure": "Every operator has been disabled. The relays stay silent and the gate stays locked. Regroup and try a different approach."
+  },
+  "title": "Signal Yard is back on the mesh"
 }

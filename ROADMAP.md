@@ -73,7 +73,7 @@ sprite sheets rendered from a CC0 Quaternius model, all registered as
 `quarantined` until a named reviewer approves them.
 
 Level 1 ("First Light") now runs on a 128 × 128 tile map (16,384 tiles) generated
-deterministically by `tools/generate_signal_yard.py`: a grid of city blocks, a
+deterministically by `tools/generate_maps.py`: a grid of city blocks, a
 runoff channel crossed by four bridges, three plaza intersections for the
 relays and gate panel, and a fenced compound with one gate. The generator
 verifies that every objective is reachable and that the exit is sealed until
@@ -91,6 +91,13 @@ has a target in pulse range and resumes afterwards. Every operator has two adjus
 to 1.4x; Brain scales the pulse cooldown from 1.3x to 0.7x (shorter is
 faster). The rules are pure (`web/src/stats.js`), covered by tests, and saved
 in format version 5 with a tested migration from version 4.
+
+The developer pack now has two operations. First Light (128 x 128 Signal Yard,
+two relays) leads to Quiet Hours (96 x 96 Audit Yard, three relays, eight
+patrolling watchers). Missions carry their own story, success headline and
+debrief text; the success screen offers "Next operation", each operation has its
+own local save slot, and `tools/generate_maps.py` builds and verifies both maps.
+Each mission has a golden full-playthrough test.
 
 Fatigue takes levels off the bars. Each operator has two meters: Stamina, which
 walking drains (60 seconds from fresh to empty at Legs level 3, longer with

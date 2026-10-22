@@ -263,6 +263,8 @@ async function loadSprites() {
 }
 
 const state = {
+  missionIndex: 0,
+  missionCount: 1,
   edge: { x: 0, y: 0 },
   panKeys: new Set(),
   camera: createCamera({ x: 0, y: 0 }),
@@ -292,10 +294,10 @@ async function readJson(path) {
   return response.json();
 }
 
-async function loadGame() {
+async function loadGame(index = state.missionIndex) {
   await loadSprites();
   const pack = await readJson("content/pack.json");
-  const missionPath = pack.missions[0];
+  const missionPath = pack.missions[index];
   const mission = await readJson(`content/${missionPath}`);
   const map = await readJson(`content/${mission.map}`);
   const unitEntries = await Promise.all(
@@ -357,6 +359,9 @@ async function loadGame() {
   pauseButton.setAttribute("aria-pressed", "false");
   pauseLabel.textContent = "Pause";
   briefingText.textContent = mission.briefing;
+  state.missionIndex = index;
+  state.missionCount = pack.missions.length;
+  describeMission(mission, map, index);
   setStatus("Local map established. Select a relay route.");
   updateLoadButton();
   renderInterface();
@@ -364,6 +369,19 @@ async function loadGame() {
 
 function syncGates() {
   syncMissionGates(state.grid, state.map, state.objectives);
+}
+
+// Show the loaded mission's name and story wherever the page mentions it.
+function describeMission(mission, map, index) {
+  const number = String(index + 1).padStart(2, "0");
+  document.querySelector("#operation-eyebrow").textContent = `OPERATION ${number}`;
+  document.querySelector("#operation-title").textContent = mission.name;
+  document.querySelector("#brief-title").textContent = mission.title ?? mission.name;
+  document.querySelector("#title-heading").textContent = `OpenSynd: ${mission.name}`;
+  document.querySelector("#title-story").textContent = mission.story ?? mission.briefing;
+  document.title = `OpenSynd — ${mission.name}`;
+  canvas.setAttribute("aria-label", `Isometric view of ${map.name}. Select an operator and choose a destination.`);
+  minimap.setAttribute("aria-label", `Minimap of ${map.name}. Click to move the view.`);
 }
 
 function equipmentWithAction(unit, action) {
@@ -443,7 +461,7 @@ function currentSaveJson() {
 
 function updateLoadButton() {
   try {
-    loadButton.disabled = [LOCAL_SAVE_KEY, ...LEGACY_LOCAL_SAVE_KEYS].every(
+    loadButton.disabled = saveKeyCandidates().every(
       (key) => localStorage.getItem(key) === null,
     );
   } catch {
@@ -451,9 +469,20 @@ function updateLoadButton() {
   }
 }
 
+// Each operation has its own local save slot; the first also reads the older unscoped slots.
+function missionSaveKey() {
+  return `${LOCAL_SAVE_KEY}.${state.mission.id}`;
+}
+
+function saveKeyCandidates() {
+  const keys = [missionSaveKey()];
+  if (state.missionIndex === 0) keys.push(LOCAL_SAVE_KEY, ...LEGACY_LOCAL_SAVE_KEYS);
+  return keys;
+}
+
 function saveLocally() {
   try {
-    localStorage.setItem(LOCAL_SAVE_KEY, currentSaveJson());
+    localStorage.setItem(missionSaveKey(), currentSaveJson());
     updateLoadButton();
     setStatus("Operation saved in this browser.");
   } catch (error) {
@@ -463,15 +492,15 @@ function saveLocally() {
 
 function loadLocally() {
   try {
-    const key = [LOCAL_SAVE_KEY, ...LEGACY_LOCAL_SAVE_KEYS].find(
+    const key = saveKeyCandidates().find(
       (candidate) => localStorage.getItem(candidate) !== null,
     );
     const text = key ? localStorage.getItem(key) : null;
     if (text === null) throw new Error("No local save exists");
     const snapshot = parseSaveSnapshot(text, saveContext());
     applySaveSnapshot(snapshot);
-    if (key !== LOCAL_SAVE_KEY) {
-      localStorage.setItem(LOCAL_SAVE_KEY, `${JSON.stringify(snapshot, null, 2)}\n`);
+    if (key !== missionSaveKey()) {
+      localStorage.setItem(missionSaveKey(), `${JSON.stringify(snapshot, null, 2)}\n`);
     }
     setStatus("Local operation restored.");
   } catch (error) {
@@ -502,7 +531,7 @@ async function importSave(file) {
     applySaveSnapshot(snapshot);
     let storedLocally = true;
     try {
-      localStorage.setItem(LOCAL_SAVE_KEY, `${JSON.stringify(snapshot, null, 2)}\n`);
+      localStorage.setItem(missionSaveKey(), `${JSON.stringify(snapshot, null, 2)}\n`);
     } catch {
       storedLocally = false;
     }
@@ -994,12 +1023,15 @@ function formatDuration(seconds) {
 function showOutcome(outcome) {
   const won = outcome === "success";
   document.querySelector("#outcome-eyebrow").textContent = won ? "OPERATION COMPLETE" : "OPERATION LOST";
+  const debrief = state.mission.debrief;
   document.querySelector("#outcome-heading").textContent = won
-    ? "Signal Yard is back on the mesh"
+    ? state.mission.title ?? "Operation complete"
     : "The team has gone dark";
   document.querySelector("#outcome-text").textContent = won
-    ? "Both relays carry the district's voice again, the gate stands open, and your team slips away before the watchers can respond."
-    : "Every operator has been disabled. The relays stay silent and the gate stays locked. Regroup and try a different approach.";
+    ? debrief?.success ?? "The operation is complete."
+    : debrief?.failure ?? "Every operator has been disabled. Regroup and try a different approach.";
+  const hasNext = won && state.missionIndex + 1 < state.missionCount;
+  document.querySelector("#next-button").hidden = !hasNext;
   const teamDown = state.units.filter((unit) => unit.side === "team" && unit.disabled).length;
   const watchersDown = state.units.filter((unit) => unit.side === "opposition" && unit.disabled).length;
   const stats = document.querySelector("#outcome-stats");
@@ -1065,7 +1097,7 @@ function completeObjectivesAt(position) {
     if (restoredBy) addEffect(state.effects, "restore", { unitId: restoredBy.id });
     setStatus(
       objective.type === "extract" && isMissionComplete(state.objectives)
-        ? "Operation complete. Signal Yard has rejoined the district mesh."
+        ? "Operation complete. Every commitment is fulfilled."
         : `${objective.description} Commitment fulfilled.`,
     );
   }
@@ -1516,7 +1548,7 @@ window.addEventListener("keydown", (event) => {
   }
 });
 resetButton.addEventListener("click", () => {
-  loadGame().catch(showFatalError);
+  loadGame(state.missionIndex).catch(showFatalError);
 });
 for (const button of document.querySelectorAll("[data-cursor-x]")) {
   button.addEventListener("click", () => {
@@ -1550,7 +1582,16 @@ for (const dialog of [titleDialog, outcomeDialog]) {
 document.querySelector("#begin-button").addEventListener("click", () => titleDialog.close());
 document.querySelector("#replay-button").addEventListener("click", () => {
   outcomeDialog.close();
-  loadGame().catch(showFatalError);
+  loadGame(state.missionIndex).catch(showFatalError);
+});
+document.querySelector("#next-button").addEventListener("click", () => {
+  outcomeDialog.close();
+  loadGame(state.missionIndex + 1)
+    .then(() => {
+      state.modal = true;
+      titleDialog.showModal();
+    })
+    .catch(showFatalError);
 });
 document.querySelector("#outcome-close").addEventListener("click", () => outcomeDialog.close());
 titleDialog.showModal();
