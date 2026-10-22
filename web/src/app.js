@@ -1081,10 +1081,6 @@ function selectAll() {
   }
   state.group = true;
   if (!operators.some((unit) => unit.id === state.selectedId)) state.selectedId = operators[0].id;
-  centreOn(state.camera, {
-    x: operators.reduce((sum, unit) => sum + unit.position.x, 0) / operators.length,
-    y: operators.reduce((sum, unit) => sum + unit.position.y, 0) / operators.length,
-  });
   setStatus(`All ${operators.length} operators selected.`);
   audio.play("select");
   renderInterface();
