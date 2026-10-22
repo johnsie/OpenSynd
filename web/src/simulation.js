@@ -8,6 +8,50 @@ export const MAX_STEPS_PER_FRAME = 8;
 
 const ARRIVAL_EPSILON = 1e-9;
 
+/**
+ * Pursuit: an operative with a `followId` chases that watcher. It walks toward it (re-routing as
+ * the watcher moves) until the watcher is within range of the weapon it would fire (the selected
+ * weapon, or the best loaded one), then stops and locks on to shoot. If the watcher walks out of
+ * range it is chased again. Pursuit ends when the watcher is disabled, the operative has no
+ * rounds left, or the operative is given another order (which clears `followId`).
+ * Returns "ended" events so the interface can say why.
+ */
+export function advancePursuit(units, grid) {
+  const events = [];
+  const byId = new Map(units.map((unit) => [unit.id, unit]));
+  for (const unit of units) {
+    if (unit.side !== "team" || !unit.followId) continue;
+    const target = byId.get(unit.followId);
+    if (unit.disabled || !target || target.disabled) {
+      events.push({ type: "ended", unitId: unit.id, reason: target?.disabled ? "disabled" : "lost" });
+      unit.followId = null;
+      continue;
+    }
+    if (roundsLeft(unit) === 0) {
+      events.push({ type: "ended", unitId: unit.id, reason: "no-rounds" });
+      unit.followId = null;
+      unit.targetId = null;
+      continue;
+    }
+    const distance = distanceBetween(unit, target);
+    const reach = combatStats(unit, distance).range;
+    if (distance <= reach * STOP_RANGE_FACTOR) {
+      // In range: stand and shoot.
+      unit.path = [];
+      unit.targetId = target.id;
+      continue;
+    }
+    if (distance <= reach && unit.targetId === target.id) continue; // already firing, still in range
+    unit.targetId = null;
+    const goal = tileOf(target.position);
+    const end = unit.path.at(-1);
+    if (!end || Math.abs(end.x - goal.x) + Math.abs(end.y - goal.y) > 1) {
+      unit.path = findPath(grid, tileOf(unit.position), goal);
+    }
+  }
+  return events;
+}
+
 /** Mental fatigue: Brain turned above the baseline drains focus; otherwise it recovers. */
 export function advanceFocus(units, deltaSeconds) {
   for (const unit of units) {

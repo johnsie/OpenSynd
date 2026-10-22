@@ -20,6 +20,7 @@ import {
   FIXED_STEP_SECONDS,
   advanceCombat,
   advanceFocus,
+  advancePursuit,
   advancePatrols,
   advanceUnits,
   combatStats,
@@ -724,4 +725,113 @@ test("a watcher that spots someone calls its neighbours, who then see further", 
   advancePatrols([spotter, distant, operator, nearOperator], FIXED_STEP_SECONDS, grid);
   assert.equal(spotter.alertedBy, "op");
   assert.equal(distant.alertedBy, null);
+});
+
+function chaser(x, y, equipment, overrides = {}) {
+  return {
+    ...operatorAt(x, y),
+    id: "chaser",
+    levels: { speed: 3, brain: 3 },
+    stamina: 1,
+    focus: 1,
+    equipment,
+    followId: "prey",
+    health: 100,
+    cooldownRemaining: 0,
+    targetId: null,
+    ...overrides,
+  };
+}
+
+const prey = (x, y, overrides = {}) => ({
+  ...operatorAt(x, y),
+  id: "prey",
+  side: "opposition",
+  health: 75,
+  disabled: false,
+  patrol: null,
+  targetId: null,
+  cooldownRemaining: 99,
+  ...overrides,
+});
+
+test("an operative follows a watcher out of range and shoots once it is in range", () => {
+  const grid = createTileGrid(streetMap);
+  const hunter = chaser(0, 2, [roundsWeapon(24)]);
+  const watcher = prey(20, 2);
+  const units = [hunter, watcher];
+
+  advancePursuit(units, grid);
+  assert.ok(hunter.path.length > 0, "out of range: it sets off after the watcher");
+  assert.equal(hunter.targetId, null, "and does not fire yet");
+
+  let shot = false;
+  for (let step = 0; step < 30 * 20 && !shot; step += 1) {
+    advancePursuit(units, grid);
+    advanceUnits(units, FIXED_STEP_SECONDS);
+    shot = advanceCombat(units, FIXED_STEP_SECONDS).some((event) => event.type === "damage");
+  }
+  assert.ok(shot, "it closes the distance and fires");
+  assert.ok(Math.hypot(hunter.position.x - 20, hunter.position.y - 2) <= 3.25, "from inside weapon range");
+  assert.deepEqual(hunter.path, [], "standing still while it shoots");
+  assert.equal(hunter.targetId, "prey");
+});
+
+test("pursuit stops at the range of the selected weapon, not the best weapon", () => {
+  const grid = createTileGrid(streetMap);
+  const standOffAt = (activeSlot) => {
+    const hunter = chaser(0, 2, [roundsWeapon(24, 12, 3.25, 0.75), roundsWeapon(10, 20, 4.5, 1.4)], { activeSlot });
+    const watcher = prey(25, 2);
+    for (let step = 0; step < 30 * 20; step += 1) {
+      advancePursuit([hunter, watcher], grid);
+      advanceUnits([hunter, watcher], FIXED_STEP_SECONDS);
+      if (hunter.targetId) break;
+    }
+    return 25 - hunter.position.x;
+  };
+  const withPistol = standOffAt(0);
+  const withRifle = standOffAt(1);
+  assert.ok(withPistol <= 3.25 * 0.9 + 0.2, `pistol stops ${withPistol} tiles away`);
+  assert.ok(withRifle > withPistol + 0.5 && withRifle <= 4.5 * 0.9 + 0.2, `rifle stops ${withRifle} tiles away`);
+});
+
+test("pursuit re-routes after a moving watcher and starts again when it backs out of range", () => {
+  const grid = createTileGrid(streetMap);
+  const hunter = chaser(0, 2, [roundsWeapon(24)]);
+  const watcher = prey(10, 2);
+  const units = [hunter, watcher];
+  for (let step = 0; step < 30 * 4; step += 1) {
+    advancePursuit(units, grid);
+    advanceUnits(units, FIXED_STEP_SECONDS);
+  }
+  const closeTo = hunter.position.x;
+  assert.ok(closeTo > 5, "it has closed in");
+
+  watcher.position = { x: 36, y: 2 };
+  advancePursuit(units, grid);
+  assert.equal(hunter.targetId, null, "the watcher is far away again: stop firing");
+  assert.ok(hunter.path.length > 0 && hunter.path.at(-1).x >= 35, "and a fresh route leads to its new place");
+});
+
+test("pursuit ends when the watcher falls, when rounds run out, or the operative is down", () => {
+  const grid = createTileGrid(streetMap);
+  const ended = (hunter, watcher) => {
+    const events = advancePursuit([hunter, watcher], grid);
+    return { events, followId: hunter.followId };
+  };
+  assert.deepEqual(ended(chaser(0, 2, [roundsWeapon(5)]), prey(5, 2, { disabled: true })), {
+    events: [{ type: "ended", unitId: "chaser", reason: "disabled" }],
+    followId: null,
+  });
+  assert.deepEqual(ended(chaser(0, 2, [roundsWeapon(0)]), prey(5, 2)).events, [
+    { type: "ended", unitId: "chaser", reason: "no-rounds" },
+  ]);
+  assert.equal(ended(chaser(0, 2, [roundsWeapon(5)], { disabled: true }), prey(5, 2)).followId, null);
+  assert.deepEqual(ended(chaser(0, 2, [roundsWeapon(5)], { followId: "gone" }), prey(5, 2)).events, [
+    { type: "ended", unitId: "chaser", reason: "lost" },
+  ]);
+  // Units that are not following anyone are left alone.
+  const idle = chaser(0, 2, [roundsWeapon(5)], { followId: null });
+  assert.deepEqual(advancePursuit([idle, prey(5, 2)], grid), []);
+  assert.deepEqual(idle.path, []);
 });

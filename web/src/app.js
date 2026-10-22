@@ -68,6 +68,7 @@ import {
 } from "./inventory.js";
 import {
   advanceCombat,
+  advancePursuit,
   combatStats,
   heldWeapon,
   roundsLeft,
@@ -1454,6 +1455,14 @@ function drawEffects(viewport) {
 function simulationStep(deltaSeconds) {
   state.missionSeconds += deltaSeconds;
   let interfaceChanged = false;
+  for (const event of advancePursuit(state.units, state.grid)) {
+    if (event.reason === "no-rounds") {
+      const unit = state.units.find((item) => item.id === event.unitId);
+      setStatus(`${unit.definition.name} is out of rounds and stops the pursuit.`);
+      audio.play("alert");
+      interfaceChanged = true;
+    }
+  }
   const arrivals = advanceUnits(state.units, deltaSeconds);
   advanceFocus(state.units, deltaSeconds);
   for (const unit of state.units) {
@@ -1822,6 +1831,7 @@ function selectAll() {
 function orderMove(unit, destination) {
   unit.targetId = null;
   unit.lootTargetId = null;
+  unit.followId = null;
   const start = { x: Math.round(unit.position.x), y: Math.round(unit.position.y) };
   const path = findPath(state.grid, start, destination);
   if (path.length === 0) return 0;
@@ -1883,23 +1893,9 @@ function issueMove(destination) {
   renderInterface();
 }
 
-function lockPulse(attacker, target) {
-  const armed = (attacker.equipment ?? []).some((item) => item.definition.action === "disable-pulse");
-  if (!armed) return "no-tool";
-  if (roundsLeft(attacker) === 0) return "no-rounds";
-  const distance = Math.hypot(
-    attacker.position.x - target.position.x,
-    attacker.position.y - target.position.y,
-  );
-  if (distance > combatStats(attacker).range) {
-    attacker.targetId = null;
-    return "out-of-range";
-  }
-  attacker.path = [];
-  attacker.targetId = target.id;
-  return "locked";
-}
-
+// Clicking a watcher sends the selected armed operators after it. Each closes in until the
+// watcher is within range of the weapon it would fire (the selected one, if any), then stands
+// and shoots; if the watcher moves away it is followed again.
 function issueAttack(targetId) {
   const target = state.units.find((unit) => unit.id === targetId);
   if (!target || target.side !== "opposition") return;
@@ -1909,35 +1905,32 @@ function issueAttack(targetId) {
     return;
   }
   const squad = selectedOperators();
-  if (squad.length > 1) {
-    const operators = squad;
-    const locked = operators.filter((unit) => lockPulse(unit, target) === "locked");
-    if (locked.length === 0) {
-      setStatus("No selected operator is within pulse range. Move closer, then target again.");
-      return;
-    }
-    setStatus(`Pulse locked on ${target.definition.name} by ${locked.length} of ${operators.length} operators.`);
-    audio.play("pulse");
-    renderInterface();
-    canvas.focus();
+  if (squad.length === 0) return;
+  const armed = squad.filter(
+    (unit) =>
+      unit.equipment.some((item) => item.definition.action === "disable-pulse") && roundsLeft(unit) !== 0,
+  );
+  if (armed.length === 0) {
+    setStatus(
+      squad.some((unit) => unit.equipment.some((item) => item.definition.action === "disable-pulse"))
+        ? "Out of rounds. Swap to another weapon or loot one."
+        : "No selected operator has a weapon equipped.",
+    );
     return;
   }
-  const attacker = selectedUnit();
-  if (!attacker || attacker.disabled) return;
-  const result = lockPulse(attacker, target);
-  if (result === "no-tool") {
-    setStatus("This operator has no disabling tool equipped.");
-    return;
+  for (const unit of armed) {
+    unit.followId = target.id;
+    unit.lootTargetId = null;
   }
-  if (result === "no-rounds") {
-    setStatus(`${attacker.definition.name} is out of rounds. Swap to another weapon or loot one.`);
-    return;
-  }
-  if (result === "out-of-range") {
-    setStatus(`Target is out of range. Move within ${combatStats(attacker).range} tiles, then target again.`);
-    return;
-  }
-  setStatus(`Disabling pulse locked on ${target.definition.name}.`);
+  const inRange = armed.filter(
+    (unit) => distanceBetween(unit, target) <= combatStats(unit, distanceBetween(unit, target)).range,
+  );
+  const who = armed.length > 1 ? `${armed.length} operators` : armed[0].definition.name;
+  setStatus(
+    inRange.length === armed.length
+      ? `${who} engaging ${target.definition.name}.`
+      : `${who} closing in on ${target.definition.name}.`,
+  );
   audio.play("pulse");
   renderInterface();
   canvas.focus();
@@ -2374,6 +2367,9 @@ if (new URLSearchParams(location.search).has("e2e")) {
       unit.position = { x: other.position.x + dx, y: other.position.y + dy };
       unit.path = [];
       renderInterface();
+    },
+    following(id) {
+      return state.units.find((item) => item.id === id).followId ?? null;
     },
     held(id) {
       const unit = state.units.find((item) => item.id === id);

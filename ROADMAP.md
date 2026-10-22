@@ -145,6 +145,15 @@ at the weapon, a short recoil kick, and a thin aim line to the locked target. An
 operative also draws the weapon while firing at a locked target, so a gun never
 fires from empty hands.
 
+Attacking is a pursuit: the pointer becomes a circular crosshair over a watcher
+that is still standing, and clicking it (or its Threats button) sends the selected
+armed operators after it. Each one follows the watcher, re-routing as it moves, until
+it is within range of the weapon it would fire (the selected weapon, if any, so a
+pistol closes in further than a rifle), then stands and shoots; if the watcher backs
+out of range it is followed again. The pursuit ends when the watcher falls, the
+operative runs out of rounds, or they are given another order (`advancePursuit` in
+`web/src/simulation.js`, with tests).
+
 Difficulty is measured, not guessed: `npm run balance` (web/tools/balance.mjs)
 plays every mission headlessly with a simple squad bot through the real game rules
 (patrols, chasing, combat, rounds, fatigue) under three tactics (rush, steady, careful)

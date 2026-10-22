@@ -287,6 +287,26 @@ for (const [name, type, executablePath] of targets) {
     await page.mouse.move(gear.x + 60, gear.y + 60);
     await page.mouse.move(gear.x, gear.y);
     await page.waitForFunction(() => !document.querySelector("#game-canvas").classList.contains("cursor-loot"));
+    // Pursuit: the pointer becomes a circular crosshair over a watcher, and clicking sends the selected
+    // operator after it until it is in range of the weapon.
+    await page.evaluate(() => {
+      window.opensyndTest.placeNear("operator-two", "watcher-four", -8, 0);
+      window.opensyndTest.focusOn("watcher-four");
+    });
+    await page.locator(".roster-select").nth(1).click();
+    await page.waitForTimeout(250);
+    const enemy = await page.evaluate(() => window.opensyndTest.screenPoint("watcher-four"));
+    await page.mouse.move(enemy.x + 40, enemy.y + 40);
+    await page.mouse.move(enemy.x, enemy.y);
+    await page.waitForFunction(() => document.querySelector("#game-canvas").classList.contains("cursor-attack"));
+    await page.mouse.click(enemy.x, enemy.y);
+    assert.match(await page.locator("#status-message").innerText(), /(closing in on|engaging) Security Watcher/);
+    assert.equal(await page.evaluate(() => window.opensyndTest.following("operator-two")), "watcher-four");
+    // Ordering the operator somewhere else ends the pursuit.
+    await page.locator("#game-canvas").focus();
+    await page.keyboard.press("Enter");
+    assert.equal(await page.evaluate(() => window.opensyndTest.following("operator-two")), null);
+
     // A watcher notices an operator who walks into its sight (shortened by the cloak just
     // picked up) and raises the alert.
     await page.evaluate(() => window.opensyndTest.placeNear("operator-one", "watcher-two", 0, 4));
