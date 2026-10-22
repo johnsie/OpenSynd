@@ -27,6 +27,7 @@ import {
   normalizeBindings,
   resolveAction,
 } from "./input.js";
+import { addEffect, advanceEffects, createEffects, effectProgress, walkBob } from "./effects.js";
 import { createAudio } from "./audio.js";
 import { SETTINGS_KEY, parseSettings, prefersReducedMotion, serializeSettings } from "./settings.js";
 
@@ -171,6 +172,8 @@ document.querySelector("#settings-form").addEventListener("input", () => {
 applyTextScale();
 
 const state = {
+  effects: createEffects(),
+  elapsed: 0,
   map: null,
   mission: null,
   grid: null,
@@ -234,6 +237,7 @@ async function loadGame() {
   state.selectedId = mission.team[0].id;
   state.cursor = { ...mission.team[0].position };
   state.paused = false;
+  state.effects.length = 0;
   state.clock.accumulator = 0;
   state.lastFrame = performance.now();
   pauseButton.setAttribute("aria-pressed", "false");
@@ -541,8 +545,9 @@ function drawUnit(unit, viewport) {
   const size = Math.max(9, viewport.cellSize.height * 0.34);
   const appearance = unit.definition.appearance;
 
+  const bob = walkBob(state.elapsed, unit.path.length > 0 && !unit.disabled, reduceMotion);
   context.save();
-  context.translate(center.x, center.y - size * 0.8);
+  context.translate(center.x, center.y - size * 0.8 + bob);
   context.fillStyle = "rgba(0, 0, 0, .35)";
   context.beginPath();
   context.ellipse(0, size * 1.05, size * 0.9, size * 0.35, 0, 0, Math.PI * 2);
@@ -618,6 +623,55 @@ function draw() {
     (left, right) => left.position.x + left.position.y - (right.position.x + right.position.y),
   );
   for (const unit of units) drawUnit(unit, viewport);
+  drawEffects(viewport);
+}
+
+function unitScreenPoint(unit, viewport) {
+  const tile = state.grid[Math.round(unit.position.y)]?.[Math.round(unit.position.x)];
+  const point = gridToScreen(unit.position, viewport.cellSize, viewport.origin, tile?.elevation ?? 0);
+  return { x: point.x, y: point.y - Math.max(9, viewport.cellSize.height * 0.34) * 0.8 };
+}
+
+function drawEffects(viewport) {
+  const size = Math.max(9, viewport.cellSize.height * 0.34);
+  for (const effect of state.effects) {
+    const progress = effectProgress(effect);
+    const fade = 1 - progress;
+    // Reduced motion keeps the cue visible but removes travel and growth.
+    const grow = reduceMotion ? 1 : progress;
+    context.save();
+    context.lineWidth = 2;
+    if (effect.type === "pulse") {
+      const from = state.units.find((unit) => unit.id === effect.fromId);
+      const to = state.units.find((unit) => unit.id === effect.toId);
+      if (from && to) {
+        const a = unitScreenPoint(from, viewport);
+        const b = unitScreenPoint(to, viewport);
+        context.strokeStyle = `rgba(66, 214, 208, ${0.9 * fade})`;
+        context.setLineDash([8, 5]);
+        context.beginPath();
+        context.moveTo(a.x, a.y);
+        context.lineTo(b.x, b.y);
+        context.stroke();
+        context.setLineDash([]);
+        context.beginPath();
+        context.arc(b.x, b.y, size * (0.6 + grow), 0, Math.PI * 2);
+        context.stroke();
+      }
+    } else {
+      const unit = state.units.find((item) => item.id === effect.unitId);
+      const at = unit ? unitScreenPoint(unit, viewport) : effect.at;
+      if (at) {
+        const color = effect.type === "repair" ? "121, 213, 155" : "225, 179, 90";
+        context.strokeStyle = `rgba(${color}, ${0.9 * fade})`;
+        const rise = reduceMotion ? 0 : progress * size * 1.2;
+        context.beginPath();
+        context.arc(at.x, at.y - rise, size * (0.8 + grow * 0.9), 0, Math.PI * 2);
+        context.stroke();
+      }
+    }
+    context.restore();
+  }
 }
 
 function simulationStep(deltaSeconds) {
@@ -629,6 +683,11 @@ function simulationStep(deltaSeconds) {
   const combatEvents = advanceCombat(state.units, deltaSeconds);
   if (combatEvents.length > 0) {
     interfaceChanged = true;
+    for (const event of combatEvents) {
+      if (event.type === "damage") {
+        addEffect(state.effects, "pulse", { fromId: event.attackerId, toId: event.targetId });
+      }
+    }
     const latest = combatEvents.at(-1);
     if (latest.type === "disabled") {
       audio.play("disabled");
@@ -656,6 +715,8 @@ function update(deltaSeconds) {
     state.clock.accumulator = 0;
     return;
   }
+  state.elapsed += deltaSeconds;
+  advanceEffects(state.effects, deltaSeconds);
   consumeFixedSteps(state.clock, deltaSeconds, simulationStep);
 }
 
@@ -679,6 +740,11 @@ function completeObjectivesAt(position) {
     syncGates();
     changed = true;
     audio.play("objective");
+    const zoneRect = state.map.zones.find((item) => item.id === objective.targetZone);
+    const restoredBy = state.units.find(
+      (unit) => unit.side === "team" && zoneContains(zoneRect, unit.position),
+    );
+    if (restoredBy) addEffect(state.effects, "restore", { unitId: restoredBy.id });
     setStatus(
       objective.type === "extract"
         ? "Operation complete. Signal Yard has rejoined the district mesh."
@@ -707,6 +773,8 @@ function performInteraction() {
   }
   objective.complete = true;
   syncGates();
+  audio.play("objective");
+  if (selectedUnit()) addEffect(state.effects, "restore", { unitId: selectedUnit().id });
   setStatus(`${objective.description} Commitment fulfilled.`);
   renderInterface();
 }
@@ -822,6 +890,7 @@ function useRepairKit() {
   if (kit.charges !== null) kit.charges -= 1;
   setStatus(`${kit.definition.name} restored ${restored} integrity.`);
   audio.play("repair");
+  addEffect(state.effects, "repair", { unitId: unit.id });
   renderInterface();
 }
 
