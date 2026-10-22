@@ -6,7 +6,7 @@ export function createTileGrid(map) {
   for (const region of map.regions) {
     for (let y = region.y; y < region.y + region.height; y += 1) {
       for (let x = region.x; x < region.x + region.width; x += 1) {
-        grid[y][x] = { ...region, x, y };
+        grid[y][x] = { ...region, x, y, regionX: region.x, regionY: region.y };
       }
     }
   }

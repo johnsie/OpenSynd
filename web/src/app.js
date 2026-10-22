@@ -979,6 +979,60 @@ function diamond(center, cellSize) {
   context.closePath();
 }
 
+// Streets: dark asphalt with glowing edge lines, an amber and cyan centre divider, and lane
+// chevrons that point each way. Crossings are left plain. Returns false if the tile is not a street.
+function drawRoad(tile, topCenter, cellSize) {
+  if (tile.surface !== "street" || tile.gate) return false;
+  const column = tile.width < tile.height;
+  const lanes = column ? tile.width : tile.height;
+  const across = column ? tile.x - tile.regionX : tile.y - tile.regionY;
+  const along = column ? tile.y : tile.x;
+  const first = column ? [tile.x - across - 1, tile.y] : [tile.x, tile.y - across - 1];
+  const last = column ? [tile.x - across + lanes, tile.y] : [tile.x, tile.y - across + lanes];
+  const isStreet = ([x, y]) => state.grid[y]?.[x]?.surface === "street";
+  const crossing = isStreet(first) && isStreet(last);
+  // Grid offsets within the tile: a runs across the street, b along it.
+  const point = (a, b) => {
+    const dx = column ? a : b;
+    const dy = column ? b : a;
+    return {
+      x: topCenter.x + (dx - dy) * (cellSize.width / 2),
+      y: topCenter.y + (dx + dy) * (cellSize.height / 2),
+    };
+  };
+  const line = (a0, b0, a1, b1, colour, width, alpha) => {
+    const from = point(a0, b0);
+    const to = point(a1, b1);
+    context.strokeStyle = colour;
+    context.lineWidth = width;
+    context.globalAlpha = alpha;
+    context.beginPath();
+    context.moveTo(from.x, from.y);
+    context.lineTo(to.x, to.y);
+    context.stroke();
+  };
+  const glow = (a0, b0, a1, b1, colour, alpha = 1) => {
+    line(a0, b0, a1, b1, colour, 4, 0.16 * alpha);
+    line(a0, b0, a1, b1, colour, 1.2, 0.9 * alpha);
+  };
+  if (!crossing) {
+    if (across === 0) glow(-0.42, -0.5, -0.42, 0.5, "#42d6d0");
+    if (across === lanes - 1) glow(0.42, -0.5, 0.42, 0.5, "#42d6d0");
+    const middle = lanes / 2;
+    if (across === middle - 1) glow(0.46, -0.5, 0.46, 0.5, "#e1b35a");
+    if (across === middle && along % 2 === 0) glow(-0.46, -0.4, -0.46, 0.4, "#9fefff");
+    if (along % 8 === 4) {
+      // A chevron in the middle of the lane; lanes on either side of the divider point opposite ways.
+      const direction = across < middle ? -1 : 1;
+      for (const [a0, b0, a1, b1] of [[-0.2, -0.12, 0, 0.12], [0.2, -0.12, 0, 0.12]]) {
+        glow(a0, b0 * direction, a1, b1 * direction, "#42d6d0", 0.7);
+      }
+    }
+  }
+  context.globalAlpha = 1;
+  return true;
+}
+
 function drawTile(tile, viewport) {
   const { cellSize, origin } = viewport;
   const elevationHeight = tile.elevation * cellSize.height * 0.28;
@@ -1023,6 +1077,7 @@ function drawTile(tile, viewport) {
     context.stroke();
     context.setLineDash([]);
   }
+  if (drawRoad(tile, topCenter, cellSize)) return;
   context.strokeStyle = tile.walkable ? "rgba(124, 161, 170, .22)" : "rgba(0, 0, 0, .5)";
   context.lineWidth = 1;
   context.stroke();
@@ -1034,8 +1089,8 @@ function drawTile(tile, viewport) {
 function drawBuilding(building, viewport, size) {
   const style = buildingStyle(building);
   const { cellSize, origin } = viewport;
-  const floors = building.elevation + 2;
-  const floorHeight = cellSize.height * 0.8;
+  const floors = building.elevation + 1;
+  const floorHeight = cellSize.height * 0.62;
   const wallHeight = floors * floorHeight;
   const box = {
     x0: building.x - 0.5,

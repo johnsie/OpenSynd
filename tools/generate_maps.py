@@ -128,19 +128,21 @@ def build(layout: dict) -> dict:
             x, y = first + period * i, first + period * j
             if intersects((x, y, block, block), keep_clear):
                 continue
-            color = rng.choice(BUILDING_COLORS)
-            elevation = rng.randint(2, 5)
+            # Each block holds several separate buildings with two-tile alleys between them.
             inner = block - 2
-            if rng.random() < 0.4:
-                # Two towers with an alley between them.
-                half = (block - 4) // 2
-                regions.append(region(f"block-{i}-{j}-a", x + 1, y + 1, half, inner, "utility-building",
-                                      False, elevation, color))
-                regions.append(region(f"block-{i}-{j}-b", x + block - 1 - half, y + 1, half, inner,
-                                      "utility-building", False, rng.randint(2, 5), color))
-            else:
-                regions.append(region(f"block-{i}-{j}", x + 1, y + 1, inner, inner, "utility-building",
-                                      False, elevation, color))
+            half = (inner - 2) // 2
+            pattern = rng.choice(["quad", "pair-x", "pair-y", "three", "three", "quad"])
+            ox, oy = x + 1, y + 1
+            footprints = {
+                "quad": [(0, 0, half, half), (half + 2, 0, half, half),
+                         (0, half + 2, half, half), (half + 2, half + 2, half, half)],
+                "pair-x": [(0, 0, half, inner), (half + 2, 0, half, inner)],
+                "pair-y": [(0, 0, inner, half), (0, half + 2, inner, half)],
+                "three": [(0, 0, inner, half), (0, half + 2, half, half), (half + 2, half + 2, half, half)],
+            }[pattern]
+            for index, (dx, dy, w, h) in enumerate(footprints):
+                regions.append(region(f"block-{i}-{j}-{'abcd'[index]}", ox + dx, oy + dy, w, h,
+                                      "utility-building", False, rng.randint(2, 5), rng.choice(BUILDING_COLORS)))
 
     for item in layout["zones"]:
         if item["kind"] == "interaction":
