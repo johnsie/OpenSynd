@@ -243,6 +243,16 @@ for (const [name, type, executablePath] of targets) {
     // Finishing an operation is remembered in this browser.
     const remembered = await page.evaluate(() => localStorage.getItem("opensynd.progress.v1"));
     assert.match(remembered, /developer\.restore-relay/);
+    // Achievements pay funds. This run lost no operator and was quick, but a watcher spotted
+    // one earlier, so Ghost is not awarded.
+    const awards = await page.locator("#outcome-awards").innerText();
+    assert.match(awards, /Whole squad \+30/);
+    assert.match(awards, /Quick work \+30/);
+    assert.doesNotMatch(awards, /Ghost/);
+    const funds = Number((await page.locator("#funds-readout").innerText()).replace(/\D/g, ""));
+    assert.ok(funds >= 60, `funds were ${funds}`);
+    const storedCampaign = await page.evaluate(() => localStorage.getItem("opensynd.campaign.v1"));
+    assert.match(storedCampaign, /"quick-work"/);
     // The first mission leads to the next one, which has its own name, story and map.
     assert.equal(await page.locator("#next-button").isVisible(), true);
     await page.click("#next-button");

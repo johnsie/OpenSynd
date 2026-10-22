@@ -30,7 +30,22 @@ import {
   zoomCamera,
 } from "./camera.js";
 import {
+  CAMPAIGN_KEY,
+  SLOTS_PER_OPERATIVE,
+  captureItems,
+  earnAchievement,
+  earnTime,
+  emptyCampaign,
+  isItemAvailable,
+  loadoutFor,
+  parseCampaign,
+  sanitizeLoadouts,
+  serializeCampaign,
+} from "./campaign.js";
+import { newStats, newlyEarned } from "./achievements.js";
+import {
   advanceCombat,
+  combatStats,
   advanceFocus,
   advancePatrols,
   advanceUnits,
@@ -274,6 +289,13 @@ async function loadSprites() {
 }
 
 const state = {
+  campaign: emptyCampaign(),
+  catalog: [],
+  opStats: newStats(0),
+  earnedThisRun: [],
+  shownFunds: -1,
+  campaignTimer: 0,
+  achievementTimer: 0,
   trainingBudget: TRAINING_BUDGET_DEFAULT,
   progress: emptyProgress(),
   missionList: [],
@@ -308,6 +330,18 @@ async function readJson(path) {
   return response.json();
 }
 
+// Operators start with their campaign loadout (their mission defaults until one is chosen);
+// everyone else carries what the mission gives them.
+function startingEquipment(placement, definition, byPath, byId) {
+  const defaults = placement.equipment.map((path) => byPath.get(path));
+  if (definition.role !== "operator") return defaults;
+  const ids = loadoutFor(state.campaign, placement.id, defaults.map((item) => item.id));
+  return ids
+    .map((id) => byId.get(id))
+    .filter((item) => item && isItemAvailable(state.campaign, item))
+    .slice(0, SLOTS_PER_OPERATIVE);
+}
+
 async function loadGame(index = state.missionIndex) {
   await loadSprites();
   const pack = await readJson("content/pack.json");
@@ -322,6 +356,12 @@ async function loadGame(index = state.missionIndex) {
     pack.equipment.map(async (path) => [path, await readJson(`content/${path}`)]),
   );
   const equipmentDefinitions = new Map(equipmentEntries);
+  state.catalog = [...equipmentDefinitions.values()];
+  if (!state.campaignLoaded) {
+    state.campaign = sanitizeLoadouts(parseCampaign(readStored(CAMPAIGN_KEY)), state.catalog);
+    state.campaignLoaded = true;
+  }
+  const definitionsById = new Map(state.catalog.map((definition) => [definition.id, definition]));
 
   state.map = map;
   state.mission = mission;
@@ -348,10 +388,12 @@ async function loadGame(index = state.missionIndex) {
         ? { route: buildPatrolRoute(state.grid, placement.position, placement.patrol), index: 0 }
         : null,
       path: [],
-      equipment: placement.equipment.map((path) => {
-        const equipment = equipmentDefinitions.get(path);
-        return { definition: equipment, charges: equipment.charges };
-      }),
+      research: definition.role === "operator" ? { heart: state.campaign.heart, brain: state.campaign.brain } : null,
+      looted: [],
+      equipment: startingEquipment(placement, definition, equipmentDefinitions, definitionsById).map((item) => ({
+        definition: item,
+        charges: item.charges,
+      })),
       health: definition.stats.vitality,
       cooldownRemaining: 0,
       targetId: null,
@@ -361,6 +403,8 @@ async function loadGame(index = state.missionIndex) {
   // Reset only now that the new units exist, or the old squad would re-trigger the outcome.
   state.outcome = "active";
   state.missionSeconds = 0;
+  state.opStats = newStats(mission.opponents.length);
+  state.earnedThisRun = [];
   state.camera = createCamera(mission.team[0].position);
   buildMiniTerrain();
   state.selectedId = mission.team[0].id;
@@ -484,10 +528,6 @@ function saveProgress() {
 
 function equipmentWithAction(unit, action) {
   return unit?.equipment.find((item) => item.definition.action === action) ?? null;
-}
-
-function combatStats(unit) {
-  return equipmentWithAction(unit, "disable-pulse")?.definition.effect ?? unit.definition.stats;
 }
 
 function saveContext() {
@@ -1085,6 +1125,7 @@ function simulationStep(deltaSeconds) {
     const spotted = state.units.find((unit) => unit.id === event.targetId);
     setStatus(`${watcher.definition.name} spotted ${spotted.definition.name}! It is closing in.`);
     audio.play("alert");
+    state.opStats.spotted += 1;
     interfaceChanged = true;
   }
   const combatEvents = advanceCombat(state.units, deltaSeconds);
@@ -1093,6 +1134,10 @@ function simulationStep(deltaSeconds) {
     for (const event of combatEvents) {
       if (event.type === "damage") {
         addEffect(state.effects, "pulse", { fromId: event.attackerId, toId: event.targetId });
+      } else if (event.type === "disabled") {
+        const down = state.units.find((item) => item.id === event.unitId);
+        if (down.side === "opposition") state.opStats.watchersDisabled += 1;
+        else state.opStats.operatorsDisabled += 1;
       }
     }
     const latest = combatEvents.at(-1);
@@ -1125,6 +1170,10 @@ function showOutcome(outcome) {
   document.querySelector("#outcome-heading").textContent = won
     ? state.mission.title ?? "Operation complete"
     : "The team has gone dark";
+  const earned = state.earnedThisRun;
+  document.querySelector("#outcome-awards").textContent = earned.length
+    ? `Achievements: ${earned.map((item) => `${item.name} +${item.reward}`).join(", ")}.`
+    : "";
   document.querySelector("#outcome-text").textContent = won
     ? debrief?.success ?? "The operation is complete."
     : debrief?.failure ?? "Every operator has been disabled. Regroup and try a different approach.";
@@ -1149,16 +1198,65 @@ function showOutcome(outcome) {
   outcomeDialog.showModal();
 }
 
+function persistCampaign() {
+  try {
+    localStorage.setItem(CAMPAIGN_KEY, serializeCampaign(state.campaign));
+  } catch {
+    // The campaign still counts for this session when storage is unavailable.
+  }
+  state.campaignTimer = 0;
+}
+
+function updateFundsReadout() {
+  state.shownFunds = state.campaign.funds;
+  document.querySelector("#funds-readout").textContent = `Funds ${state.campaign.funds}`;
+}
+
+// Pay out any achievements the operation's record now satisfies.
+function checkAchievements() {
+  for (const achievement of newlyEarned(state.opStats, state.campaign.achievements)) {
+    state.campaign = earnAchievement(state.campaign, achievement);
+    state.earnedThisRun.push(achievement);
+    setStatus(`Achievement: ${achievement.name} (+${achievement.reward} funds). ${achievement.description}`);
+    audio.play("objective");
+    persistCampaign();
+  }
+  updateFundsReadout();
+}
+
+// A successful operation keeps what the operators looted: captured gear counts as
+// researched and joins their loadout while there is room.
+function keepLoot() {
+  for (const unit of state.units.filter((item) => item.side === "team" && item.looted.length > 0)) {
+    const carried = unit.equipment.map((item) => item.definition.id);
+    // Start from what they carried in (without the loot), so the loadout reflects their kit.
+    const before = carried.filter((id, index) => index < carried.length - unit.looted.length);
+    state.campaign = captureItems(
+      { ...state.campaign, loadouts: { ...state.campaign.loadouts, [unit.id]: before } },
+      unit.id,
+      unit.looted,
+      state.catalog,
+      before,
+    );
+  }
+  persistCampaign();
+}
+
 function checkOutcome() {
   if (state.outcome !== "active") return;
   const outcome = missionOutcome(state.objectives, state.units);
   if (outcome === "active") return;
   state.outcome = outcome;
+  state.opStats.outcome = outcome;
+  state.opStats.seconds = state.missionSeconds;
   if (outcome === "success") {
     state.progress = markCompleted(state.progress, state.mission.id);
     saveProgress();
     renderMissionList();
+    keepLoot();
   }
+  checkAchievements();
+  persistCampaign();
   showOutcome(outcome);
 }
 
@@ -1168,6 +1266,19 @@ function update(deltaSeconds) {
     return;
   }
   state.elapsed += deltaSeconds;
+  if (state.outcome === "active") {
+    // Funds accrue with game time; the record is saved every few seconds.
+    state.campaign = earnTime(state.campaign, deltaSeconds);
+    state.opStats.seconds = state.missionSeconds;
+    state.campaignTimer += deltaSeconds;
+    state.achievementTimer += deltaSeconds;
+    if (state.campaignTimer >= 5) persistCampaign();
+    if (state.achievementTimer >= 0.5) {
+      state.achievementTimer = 0;
+      checkAchievements();
+    }
+    if (state.campaign.funds !== state.shownFunds) updateFundsReadout();
+  }
   state.meterClock = (state.meterClock ?? 0) + deltaSeconds;
   if (state.meterClock >= 0.2) {
     state.meterClock = 0;
@@ -1190,6 +1301,7 @@ function completeObjectivesAt(position) {
       continue;
     }
     const { objective } = event;
+    state.opStats.objectivesCompleted += 1;
     syncGates();
     changed = true;
     audio.play("objective");
@@ -1235,6 +1347,7 @@ function performInteraction() {
   }
   const { unit, objective } = candidate;
   objective.complete = true;
+  state.opStats.objectivesCompleted += 1;
   syncGates();
   audio.play("objective");
   addEffect(state.effects, "restore", { unitId: unit.id });
