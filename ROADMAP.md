@@ -555,7 +555,7 @@ shows that it satisfies maintainability, accessibility, and licensing goals.
   thigh-high heeled boots, a corset and a choker; police with visored helmets and light bars).
   Civilians walk the streets and run from gunfire within ten tiles for six seconds. Police
   patrol, ignore an operator whose weapon is away, and chase and shoot one who has a weapon
-  out (selected or just fired) in line of sight, stopping when it is put away. Killing a
+  out (selected or just fired) in line of sight, stopping when it is put away. A police hit does 6 damage, half a watcher's 12. Killing a
   civilian costs 40 funds and a police officer 80 (never below zero), is shown in the debrief,
   and rules out the Clean hands achievement. Not yet built: police calling for backup and
   civilians reacting to each other.
