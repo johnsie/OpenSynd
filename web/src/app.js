@@ -1920,7 +1920,7 @@ function simulationStep(deltaSeconds) {
     state.opStats.spotted += 1;
     interfaceChanged = true;
   }
-  const combatEvents = advanceCombat(state.units, deltaSeconds);
+  const combatEvents = advanceCombat(state.units, deltaSeconds, state.grid);
   if (combatEvents.length > 0) {
     interfaceChanged = true;
     handleCombatEvents(combatEvents);

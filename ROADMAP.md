@@ -176,6 +176,14 @@ and throws the target back a few pixels and back again (`knockbackOffset` in
 `web/src/effects.js`, drawing only, so saves and replays are unaffected); a miss puffs
 sparks where it ends. Reduced motion removes the knockback.
 
+Buildings and walls now give cover (`hasLineOfSight` in `web/src/simulation.js`). A watcher
+cannot spot an operator it has no clear line to, cannot fire through a building, and an
+operator ordered to pursue a watcher keeps closing until the line is clear before standing
+to shoot. Fences, gates and water are see-through, so chain-link gives no cover, and a
+watcher already chasing someone within four tiles keeps hold of them round a corner. The
+balance bot now rewards patience: Quiet Hours is won 25% of runs when rushing, 88% steadily
+and 100% carefully.
+
 Buildings are drawn as single structures rather than stacks of tile cubes
 (`web/src/buildings.js` for the rules, `drawBuilding` in `web/src/app.js`): one block per
 `utility-building` region with solid walls, a dark base plinth, a ledge at every floor and
@@ -200,7 +208,7 @@ and turn green with a beam once restored, the gate panel is a console with a scr
 service gate is a barrier of red light bars that clears when opened, and the exit is a
 chevron landing pad. Everything is procedural, so there are no model or texture assets and nothing new to
 record in `provenance/assets.json`. Walkability, pathing, shots and the minimap are
-unchanged. Not yet done: watchers still see through buildings (no line of sight).
+unchanged.
 
 Attacking is a pursuit: the pointer becomes a circular crosshair over a watcher
 that is still standing, and clicking it (or its Threats button) sends the selected

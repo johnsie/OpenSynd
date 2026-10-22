@@ -209,7 +209,7 @@ function playOnce(world, tactics) {
     for (const event of advancePatrols(units, FIXED_STEP_SECONDS, grid)) {
       if (event.type === "spotted") stats.spotted += 1;
     }
-    for (const event of advanceCombat(units, FIXED_STEP_SECONDS)) {
+    for (const event of advanceCombat(units, FIXED_STEP_SECONDS, grid)) {
       if (event.type === "disabled") {
         const down = units.find((unit) => unit.id === event.unitId);
         if (down.side === "opposition") stats.watchersDisabled += 1;

@@ -20,6 +20,7 @@ import {
 import {
   FIXED_STEP_SECONDS,
   advanceCombat,
+  hasLineOfSight,
   advanceFocus,
   advancePursuit,
   fireManual,
@@ -938,4 +939,37 @@ test("a unit that has just fired by hand holds its weapon for a moment", () => {
   assert.equal(heldWeapon(operative, 10.5), pistol);
   assert.equal(heldWeapon(operative, 11), null, "put away again after a moment");
   assert.equal(heldWeapon(operative), null, "without a clock it only holds a selected or targeted weapon");
+});
+
+const walledMap = {
+  dimensions: { width: 20, height: 5 },
+  regions: [
+    { id: "road", x: 0, y: 0, width: 20, height: 5, surface: "service-concrete", walkable: true, elevation: 0 },
+    { id: "block", x: 8, y: 0, width: 2, height: 5, surface: "utility-building", walkable: false, elevation: 3 },
+  ],
+};
+
+test("a building blocks line of sight; open ground and fences do not", () => {
+  const grid = createTileGrid(walledMap);
+  assert.equal(hasLineOfSight(grid, { x: 2, y: 2 }, { x: 6, y: 2 }), true, "open ground");
+  assert.equal(hasLineOfSight(grid, { x: 2, y: 2 }, { x: 14, y: 2 }), false, "through the building");
+  assert.equal(hasLineOfSight(null, { x: 2, y: 2 }, { x: 14, y: 2 }), true, "no map, no cover");
+  const fenced = createTileGrid({
+    ...walledMap,
+    regions: [walledMap.regions[0], { ...walledMap.regions[1], surface: "service-fence", elevation: 1 }],
+  });
+  assert.equal(hasLineOfSight(fenced, { x: 2, y: 2 }, { x: 14, y: 2 }), true, "chain-link is see-through");
+});
+
+test("watchers do not spot operators hidden behind a building, and cannot shoot through it", () => {
+  const grid = createTileGrid(walledMap);
+  const guard = patrolUnit([{ x: 6, y: 2 }, { x: 7, y: 2 }]);
+  const hidden = operatorAt(12, 2);
+  assert.deepEqual(advancePatrols([guard, hidden], 1, grid), [], "no one seen through the building");
+  const clear = operatorAt(2, 2);
+  assert.equal(advancePatrols([guard, clear], 1, grid).length, 1, "an operator in the open is seen");
+
+  const shooter = { ...operatorAt(7, 2, { id: "shooter", cooldownRemaining: 0 }), side: "opposition", targetId: null };
+  const target = operatorAt(10.5, 2, { cooldownRemaining: 0, targetId: null });
+  assert.deepEqual(advanceCombat([shooter, target], FIXED_STEP_SECONDS, grid), []);
 });

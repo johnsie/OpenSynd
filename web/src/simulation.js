@@ -35,13 +35,14 @@ export function advancePursuit(units, grid) {
     }
     const distance = distanceBetween(unit, target);
     const reach = combatStats(unit, distance).range;
-    if (distance <= reach * STOP_RANGE_FACTOR) {
-      // In range: stand and shoot.
+    const clear = hasLineOfSight(grid, unit.position, target.position);
+    if (distance <= reach * STOP_RANGE_FACTOR && clear) {
+      // In range and in the clear: stand and shoot.
       unit.path = [];
       unit.targetId = target.id;
       continue;
     }
-    if (distance <= reach && unit.targetId === target.id) continue; // already firing, still in range
+    if (distance <= reach && clear && unit.targetId === target.id) continue; // already firing, still in range
     unit.targetId = null;
     const goal = tileOf(target.position);
     const end = unit.path.at(-1);
@@ -152,13 +153,48 @@ export function stealthFactor(unit) {
   return factor;
 }
 
-function nearestVisibleOperator(unit, units, sight) {
+// What stops a watcher seeing across a tile: solid ground such as buildings and walls. Fences,
+// gates and water are see-through. Anything off the map blocks.
+const SEE_THROUGH_SURFACES = new Set(["service-fence", "runoff-channel"]);
+export const SIGHT_STEP = 0.25;
+// A chasing watcher keeps hold of a quarry this close even round a corner.
+export const LOST_TRACK_CLOSE = 4;
+
+function blocksSight(tile) {
+  if (!tile) return true;
+  if (tile.walkable || tile.gate) return false;
+  return !SEE_THROUGH_SURFACES.has(tile.surface);
+}
+
+/** Can one position see another with nothing solid between them? Without a grid, always. */
+export function hasLineOfSight(grid, from, to) {
+  if (!grid) return true;
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const length = Math.hypot(dx, dy);
+  const startTile = tileOf(from);
+  const endTile = tileOf(to);
+  for (let travelled = SIGHT_STEP; travelled < length; travelled += SIGHT_STEP) {
+    const point = { x: from.x + (dx / length) * travelled, y: from.y + (dy / length) * travelled };
+    const tile = tileOf(point);
+    if ((tile.x === startTile.x && tile.y === startTile.y) || (tile.x === endTile.x && tile.y === endTile.y)) continue;
+    if (blocksSight(grid[tile.y]?.[tile.x])) return false;
+  }
+  return true;
+}
+
+function nearestVisibleOperator(unit, units, sight, grid = null) {
   let best = null;
   let bestDistance = Infinity;
   for (const candidate of units) {
     if (candidate.side !== "team" || candidate.disabled) continue;
     const distance = distanceBetween(unit, candidate);
-    if (distance <= sight * stealthFactor(candidate) && distance < bestDistance) {
+    const holdsTrack = unit.alertedBy === candidate.id && distance <= LOST_TRACK_CLOSE;
+    if (
+      distance <= sight * stealthFactor(candidate) &&
+      distance < bestDistance &&
+      (holdsTrack || hasLineOfSight(grid, unit.position, candidate.position))
+    ) {
       best = candidate;
       bestDistance = distance;
     }
@@ -185,7 +221,10 @@ export function advancePatrols(units, deltaSeconds, grid = null) {
     if (unit.targetId !== null) {
       const target = byId.get(unit.targetId);
       const engaged =
-        target && !target.disabled && distanceBetween(unit, target) <= combatStats(unit).range;
+        target &&
+        !target.disabled &&
+        distanceBetween(unit, target) <= combatStats(unit).range &&
+        hasLineOfSight(grid, unit.position, target.position);
       if (engaged) {
         unit.path = [];
         continue;
@@ -204,7 +243,7 @@ export function advancePatrols(units, deltaSeconds, grid = null) {
     );
     const sight = unit.definition.stats.awareness * SIGHT_TILES_PER_AWARENESS * (called ? CALL_SIGHT_FACTOR : 1);
     const seen = grid
-      ? nearestVisibleOperator(unit, units, unit.alertedBy ? sight * LOSE_SIGHT_FACTOR : sight)
+      ? nearestVisibleOperator(unit, units, unit.alertedBy ? sight * LOSE_SIGHT_FACTOR : sight, grid)
       : null;
 
     if (seen) {
@@ -269,14 +308,15 @@ function distanceBetween(left, right) {
   );
 }
 
-function automaticTarget(attacker, units) {
+function automaticTarget(attacker, units, grid = null) {
   const stats = combatStats(attacker);
   return units
     .filter(
       (candidate) =>
         !candidate.disabled &&
         candidate.side !== attacker.side &&
-        distanceBetween(attacker, candidate) <= stats.range,
+        distanceBetween(attacker, candidate) <= stats.range &&
+        hasLineOfSight(grid, attacker.position, candidate.position),
     )
     .sort(
       (left, right) =>
@@ -358,7 +398,7 @@ export function roundsLeft(unit) {
 }
 
 /** Advance cooldowns and resolve deterministic, non-random combat pulses. */
-export function advanceCombat(units, deltaSeconds) {
+export function advanceCombat(units, deltaSeconds, grid = null) {
   const events = [];
   const byId = new Map(units.map((unit) => [unit.id, unit]));
 
@@ -370,7 +410,7 @@ export function advanceCombat(units, deltaSeconds) {
     );
 
     if (attacker.side === "opposition" && attacker.targetId === null) {
-      attacker.targetId = automaticTarget(attacker, units)?.id ?? null;
+      attacker.targetId = automaticTarget(attacker, units, grid)?.id ?? null;
     }
 
     const target = byId.get(attacker.targetId);
@@ -380,6 +420,7 @@ export function advanceCombat(units, deltaSeconds) {
     }
     const distance = distanceBetween(attacker, target);
     const { item: weapon, stats } = pickWeapon(attacker, distance);
+    if (!hasLineOfSight(grid, attacker.position, target.position)) continue;
     if (stats.range <= 0 || distance > stats.range || attacker.cooldownRemaining > ARRIVAL_EPSILON) continue;
     // Firing spends a round; the weapon that fires is the one that loses it.
     if (weapon && weapon.charges !== null) weapon.charges -= 1;
