@@ -12,7 +12,7 @@ import {
   resolveInteraction,
   syncGates,
 } from "../src/mission.js";
-import { FIXED_STEP_SECONDS, advanceUnits } from "../src/simulation.js";
+import { FIXED_STEP_SECONDS, advanceCombat, advanceUnits } from "../src/simulation.js";
 
 const read = async (path) =>
   JSON.parse(await readFile(new URL(`../content/${path}`, import.meta.url), "utf8"));
@@ -113,4 +113,72 @@ test("extraction stays blocked until every other required objective is complete"
   const done = resolveArrival(objectives, zones, { x: 0, y: 0 });
   assert.deepEqual(done.map((event) => event.type), ["complete"]);
   assert.equal(missionComplete(objectives), true);
+});
+
+async function loadSquad() {
+  const mission = await read("missions/restore-relay.mission.json");
+  const definitions = {
+    operator: await read("units/field-operator.unit.json"),
+    drone: await read("units/watcher-drone.unit.json"),
+  };
+  const equipment = {
+    "equipment/civic-pulse-emitter.equipment.json": await read("equipment/civic-pulse-emitter.equipment.json"),
+    "equipment/field-repair-kit.equipment.json": await read("equipment/field-repair-kit.equipment.json"),
+  };
+  return [...mission.team, ...mission.opponents].map((placement) => {
+    const definition = placement.unit.includes("operator") ? definitions.operator : definitions.drone;
+    return {
+      id: placement.id,
+      side: definition.role === "operator" ? "team" : "opposition",
+      definition,
+      position: { ...placement.position },
+      path: [],
+      equipment: placement.equipment.map((path) => ({ definition: equipment[path], charges: equipment[path].charges })),
+      health: definition.stats.vitality,
+      cooldownRemaining: 0,
+      targetId: null,
+      disabled: false,
+    };
+  });
+}
+
+test("a squad fight against a watcher resolves identically on every run", async () => {
+  const runs = [];
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const units = await loadSquad();
+    const byId = Object.fromEntries(units.map((unit) => [unit.id, unit]));
+    // Two operators close to within pulse range of the first watcher and engage it.
+    byId["operator-one"].position = { x: 4, y: 3 };
+    byId["operator-two"].position = { x: 4, y: 4 };
+    byId["operator-one"].targetId = "watcher-one";
+    byId["operator-two"].targetId = "watcher-one";
+
+    const events = [];
+    for (let step = 1; step <= 600 && !byId["watcher-one"].disabled; step += 1) {
+      for (const event of advanceCombat(units, FIXED_STEP_SECONDS)) {
+        events.push({ step, ...event });
+      }
+    }
+    runs.push({
+      events,
+      health: Object.fromEntries(units.map((unit) => [unit.id, unit.health])),
+    });
+  }
+
+  assert.deepEqual(runs[0], runs[1]);
+  const [run] = runs;
+  assert.equal(run.events.at(-1).type, "disabled");
+  assert.equal(run.events.at(-1).unitId, "watcher-one");
+  // Golden values at 30 Hz: the watcher falls on step 24 after six pulses and
+  // lands one retaliation hit; the far watcher is untouched.
+  assert.equal(run.events.at(-1).step, 24);
+  assert.equal(run.events.length, 6);
+  assert.deepEqual(run.health, {
+    "operator-one": 94,
+    "operator-two": 100,
+    "operator-three": 100,
+    "operator-four": 100,
+    "watcher-one": 0,
+    "watcher-two": 45,
+  });
 });
