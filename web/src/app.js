@@ -121,6 +121,7 @@ import {
   adjustLevel,
   defaultLevels,
   pointsLeft,
+  setBarForAll,
 } from "./stats.js";
 import { isSelected, prune, selectMany, selectOnly, toggle } from "./selection.js";
 import {
@@ -2662,17 +2663,13 @@ function levelBar(unit, bar, label) {
   return element;
 }
 
-function applyLevelChange(targets, bar, delta, subject) {
-  let changed = 0;
-  for (const unit of targets) {
-    const next = adjustLevel(unit.levels, bar, delta, state.trainingBudget);
-    if (next !== unit.levels) {
-      unit.levels = next;
-      changed += 1;
-    }
-  }
-  if (changed === 0) {
-    const outOfPoints = delta > 0 && targets.some((unit) => unit.levels[bar] < LEVEL_MAX);
+// Change one bar. `reference` is the operative whose level the change is based on; with several
+// operatives selected (and the reference among them) everyone selected is set to the level the
+// reference ends up at, limited for each by their own training points.
+function changeBar(reference, bar, delta, group, subject) {
+  const next = adjustLevel(reference.levels, bar, delta, state.trainingBudget)[bar];
+  if (next === reference.levels[bar]) {
+    const outOfPoints = delta > 0 && reference.levels[bar] < LEVEL_MAX;
     setStatus(
       outOfPoints
         ? "No training points left: lower another bar first."
@@ -2680,21 +2677,38 @@ function applyLevelChange(targets, bar, delta, subject) {
     );
     return;
   }
-  setStatus(`${subject}: ${BAR_LABELS[bar]} ${delta > 0 ? "raised" : "lowered"}.`);
+  const { limited } = setBarForAll(group, bar, next, state.trainingBudget);
+  const several = group.length > 1;
+  const who = subject ?? (several ? `${group.length} operators` : reference.definition.name);
+  const action = `${BAR_LABELS[bar]} ${delta > 0 ? "raised" : "lowered"}`;
+  setStatus(
+    several
+      ? `${who}: ${action} to ${next}.` +
+          (limited.length > 0 ? ` ${limited.length} could not reach it: not enough training points.` : "")
+      : `${who}: ${action}.`,
+  );
   audio.play("select");
   renderInterface();
 }
 
-// Change one operator's own bar from its roster entry.
-function adjustOperator(unit, bar, delta) {
-  applyLevelChange([unit], bar, delta, unit.definition.name);
+// The operatives a change on this operative's own controls applies to: everyone selected when this
+// one is among several selected, otherwise just this one.
+function levelGroup(unit) {
+  const squad = selectedOperators();
+  return squad.length > 1 && squad.some((member) => member.id === unit.id) ? squad : [unit];
 }
 
-// Change a bar for every selected operator from the Training panel.
+// Change a bar from an operative's roster entry.
+function adjustOperator(unit, bar, delta) {
+  changeBar(unit, bar, delta, levelGroup(unit));
+}
+
+// Change a bar for everyone selected from the Training panel (which shows the primary operative).
 function adjustTraining(bar, delta) {
-  const targets = selectedOperators();
-  const subject = targets.length > 1 ? "Selected operators" : targets[0]?.definition.name;
-  applyLevelChange(targets, bar, delta, subject);
+  const group = selectedOperators();
+  const reference = selectedUnit() ?? group[0];
+  if (!reference) return;
+  changeBar(reference, bar, delta, group, group.length > 1 ? "Selected operators" : undefined);
   canvas.focus();
 }
 

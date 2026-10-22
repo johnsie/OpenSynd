@@ -132,3 +132,24 @@ export function effectiveLevels(levels, stamina, focus) {
     brain: effectiveLevel(base.brain, focus),
   };
 }
+
+// Set one bar to the same level for several operatives. Lowering always works; raising is limited by
+// each operative's own training points, so someone short of points ends up as high as they can
+// afford. Returns who reached the level, who was limited, and who needed no change.
+export function setBarForAll(units, bar, level, budget = Infinity) {
+  const wanted = clampLevel(level);
+  const result = { reached: [], limited: [], unchanged: [] };
+  if (!BARS.includes(bar)) return result;
+  for (const unit of units) {
+    const current = unit.levels[bar];
+    if (current === wanted) {
+      result.unchanged.push(unit.id);
+      continue;
+    }
+    // Raising: as high as the operative's free points allow.
+    const reachable = wanted > current ? Math.min(wanted, current + Math.max(0, pointsLeft(unit.levels, budget))) : wanted;
+    if (reachable !== current) unit.levels = { ...unit.levels, [bar]: reachable };
+    (reachable === wanted ? result.reached : result.limited).push(unit.id);
+  }
+  return result;
+}

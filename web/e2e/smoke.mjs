@@ -454,6 +454,42 @@ for (const [name, type, executablePath] of targets) {
     assert.equal(await page.getByLabel("Field Operator 1 slot 6: Civic Pulse Emitter", { exact: false }).count(), 1);
 
 
+    // Legs and Brain work like weapons: with everyone selected, one operative's controls set them all.
+    const group = await browser.newPage();
+    await group.goto(`${url}?e2e`);
+    await group.waitForSelector(".roster-select");
+    await group.click("#begin-button");
+    await group.locator("#game-canvas").focus();
+    await group.keyboard.press("a");
+    const levels = (bar) =>
+      group.locator(`.roster .bar[data-bar="${bar}"]`).evaluateAll((bars) =>
+        bars.map((element) => element.getAttribute("aria-label")),
+      );
+    const raiseLegs = group.getByRole("button", { name: "Raise Legs for Field Operator 2" });
+    await raiseLegs.click();
+    assert.ok((await levels("speed")).every((label) => label.includes("4 of 5")), "all four Legs are now 4");
+    assert.match(await group.locator("#status-message").innerText(), /4 operators: Legs raised to 4/);
+    assert.ok((await levels("brain")).every((label) => label.includes("3 of 5")), "Brain is untouched");
+    await group.getByRole("button", { name: "Lower Legs for Field Operator 3" }).click();
+    await group.getByRole("button", { name: "Lower Brain for Field Operator 4" }).click();
+    assert.ok((await levels("speed")).every((label) => label.includes("3 of 5")));
+    assert.ok((await levels("brain")).every((label) => label.includes("2 of 5")));
+    // Someone out of training points is limited: operator 3 spends their spare points on Brain
+    // (Legs 3, Brain 5, none left), so a group raise of Legs cannot take them up.
+    await group.locator(".roster-select").nth(2).click();
+    for (let step = 0; step < 3; step += 1) {
+      await group.getByRole("button", { name: "Raise Brain for Field Operator 3" }).click();
+    }
+    assert.match(await group.locator(".roster-item").nth(2).innerText(), /0 pts/);
+    await group.locator("#game-canvas").focus();
+    await group.keyboard.press("a");
+    await group.getByRole("button", { name: "Raise Legs for Field Operator 2" }).click();
+    assert.match(await group.locator("#status-message").innerText(), /1 could not reach it: not enough training points/);
+    const finalLegs = await levels("speed");
+    assert.ok(finalLegs[0].includes("4 of 5") && finalLegs[1].includes("4 of 5") && finalLegs[3].includes("4 of 5"));
+    assert.ok(finalLegs[2].includes("3 of 5"), "operator 3 stayed at 3");
+    await group.close();
+
     assert.deepEqual(errors, []);
     console.log(`ok ${name}`);
   } catch (error) {

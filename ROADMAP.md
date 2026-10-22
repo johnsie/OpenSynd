@@ -145,6 +145,12 @@ at the weapon, a short recoil kick, and a thin aim line to the locked target. An
 operative also draws the weapon while firing at a locked target, so a gun never
 fires from empty hands.
 
+With several operatives selected, Legs and Brain work the same way: changing a bar on
+one selected operative sets that bar to the same level for everyone selected, with a
+raise limited for each by their own training points (the message says how many could not
+reach it) and a lowering always allowed; the Training panel applies the primary
+operative's result to the whole selection.
+
 With several operatives selected, choosing a weapon chooses the same weapon for all of
 them: each takes up their own copy (in whatever slot they carry it, the fullest if they
 carry several; the one clicked keeps the exact copy), anyone without it keeps their own
