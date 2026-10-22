@@ -7,11 +7,56 @@ on:
     branches: [ master, sdl2 ]
 
 jobs:
+  provenance:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Validate asset provenance
+      run: python3 tools/check_provenance.py
+
+    - name: Validate source licenses
+      run: python3 tools/check_source_licenses.py
+
+    - name: Validate npm dependency registry
+      run: python3 tools/check_dependencies.py
+
+    - name: Validate open content
+      run: |
+        python3 tools/validate_content.py
+        python3 tools/check_web_sync.py
+
+    - name: Test and build browser prototype
+      working-directory: web
+      run: |
+        npm ci
+        npm test
+        npm run build
+
+    - name: Run browser end-to-end tests
+      working-directory: web
+      env:
+        E2E_STRICT: "1"
+      run: |
+        npx playwright-core install --with-deps chromium firefox
+        node e2e/smoke.mjs
+
+    - name: Test independently implemented CRC-32
+      run: |
+        g++ -std=c++98 -Isrc tests/crc32_test.cpp src/utils/ccrc32.cpp -o /tmp/opensynd-crc32-test
+        /tmp/opensynd-crc32-test
+
+    - name: Compile independently implemented build helpers
+      run: |
+        cc -std=c89 -Wall -Wextra -pedantic src/tools/embed.c -o /tmp/opensynd-embed-test
+        g++ -std=c++98 -Wall -Wextra -pedantic src/tools/copy_but.cpp -o /tmp/opensynd-copy-but-test
+
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
 
     - name: Install build dependencies
       run: sudo apt-get install libsdl1.2-dev libsdl-mixer1.2-dev libsdl-image1.2-dev libpng-dev
