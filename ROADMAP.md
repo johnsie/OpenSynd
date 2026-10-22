@@ -391,6 +391,25 @@ shows that it satisfies maintainability, accessibility, and licensing goals.
 - Add the strategic map using an original geography and faction structure.
 - Implement research, equipment purchasing, character upgrades, recruitment,
   economy, mission branching, and campaign persistence.
+- **Research economy.** Money (funds) is earned for research in two ways:
+  continuously during game time while an operation is being played, and from
+  achievements earned inside the game (for example first disabling a watcher,
+  restoring a relay, finishing with the whole squad intact, finishing
+  unspotted, or finishing quickly). Between missions the player chooses how to
+  spend it: cyborg heart research (Stamina: tires slower, recovers faster),
+  cyborg brain research (Brain: mental strain builds slower, clears faster), and
+  new weapons and items.
+- **Inventory.** Each operative holds up to eight weapons or items. Loadouts are
+  chosen between missions, persist across the campaign, and only contain
+  researched or captured items.
+- **Looting.** A disabled opponent drops its weapons and items. One of the
+  player's operatives can walk to the body and loot it, within that operative's
+  eight-slot limit. Items kept after a successful operation join the campaign
+  and count as researched; a failed operation loses them.
+- **Item effects.** New items change play rather than numbers alone: a heavier
+  pulse emitter with more reach, a stimulant that restores stamina and focus, a
+  cloak that shortens watchers' sight, and enemy-carried gear. Opponents that
+  carry weapons use them.
 - Expand AI with independently specified behaviours and deterministic tests.
 - Add vehicles, civilian simulation, status effects, and additional objective
   types only where they serve the new design.
