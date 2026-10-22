@@ -69,7 +69,7 @@ Phase 3 work now includes a service gate that blocks the exit until its control
 panel is used, a pure `mission.js` rules module (arrival and interaction
 objectives, extraction gating, gate state), and a golden full-playthrough test
 that pins fixed-step counts for every leg. Units are drawn from 8-direction
-sprite sheets rendered from CC0 Quaternius models, all registered as
+sprite sheets rendered from a CC0 Quaternius model, all registered as
 `quarantined` until a named reviewer approves them.
 
 The prototype also has an original generative score (`web/src/music.js`): a

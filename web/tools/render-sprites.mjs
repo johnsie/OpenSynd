@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-// Renders the CC0 Quaternius human (in a shared military uniform) and robot to
-// 8-direction sprite sheets.
+// Renders the CC0 Quaternius human, in a shared military uniform, to 8-direction
+// sprite sheets for the operatives and the opposition.
 // Usage: node tools/render-sprites.mjs   (CHROMIUM_PATH selects the browser)
 
 import { mkdir, readFile, writeFile } from "node:fs/promises";
@@ -33,7 +33,6 @@ const server = createServer(async (request, response) => {
 await new Promise((done) => server.listen(0, "127.0.0.1", done));
 
 const human = "/art-source/quaternius-animated-human/AnimatedHuman.fbx";
-const robot = "/art-source/quaternius-animated-robot/Robot.fbx";
 
 // One shared uniform: palette is skin, boots, hair, jacket, trousers. Operatives
 // differ only in skin tone so the squad reads as uniformed but not cloned.
@@ -57,30 +56,29 @@ const skins = {
   "operative-three": [156, 114, 72],
   "operative-four": [233, 186, 140],
 };
+// Opposition wear the same uniform with a crimson beret; only the hat differs.
+const watcherSkins = {
+  "watcher-one": [233, 186, 140],
+  "watcher-two": [196, 146, 104],
+};
 const humanAnimations = {
   idle: { pick: "Idle", frames: 4, window: 2 },
   walk: { pick: "Walk", frames: 8, playback: 0.78 },
 };
-const jobs = [
-  ...Object.entries(skins).map(([name, skin]) => ({
-    name,
-    options: {
-      kind: "human",
-      model: human,
-      animations: humanAnimations,
-      palette: uniform.palette.map((color, index) => (index === 0 ? skin : color)),
-      kit: uniform.kit,
-    },
-  })),
-  {
-    name: "watcher",
-    options: {
-      kind: "robot",
-      model: robot,
-      animations: { idle: { pick: "Robot_Idle", frames: 4, window: 2 }, walk: { pick: "Robot_Walking", frames: 8 } },
-      materials: { Main: [64, 26, 52], Grey: [88, 96, 112], Black: [12, 12, 16] },
-    },
+const humanJob = (name, skin, kit) => ({
+  name,
+  options: {
+    model: human,
+    animations: humanAnimations,
+    palette: uniform.palette.map((color, index) => (index === 0 ? skin : color)),
+    kit,
   },
+});
+const jobs = [
+  ...Object.entries(skins).map(([name, skin]) => humanJob(name, skin, uniform.kit)),
+  ...Object.entries(watcherSkins).map(([name, skin]) =>
+    humanJob(name, skin, { ...uniform.kit, beret: [150, 28, 40] }),
+  ),
 ];
 
 const browser = await chromium.launch({
@@ -94,7 +92,7 @@ try {
   await page.goto(`http://127.0.0.1:${server.address().port}/`);
   await page.waitForFunction(() => window.ready === true, null, { timeout: 30000 });
   await mkdir(output, { recursive: true });
-  const manifest = { source: "Quaternius Animated Human and Animated Robot (CC0-1.0)", sheets: {} };
+  const manifest = { source: "Quaternius Animated Human (CC0-1.0)", sheets: {} };
   for (const { name, options } of jobs) {
     const result = await page.evaluate((job) => window.renderSheet(job), options);
     await writeFile(join(output, `${name}.png`), Buffer.from(result.png.split(",")[1], "base64"));

@@ -153,7 +153,7 @@
     place(box(headHeight * 0.95, headHeight * 0.14, headHeight * 0.2, glow(kit.glow)), offset(eyeLevel, 0, 0, headHeight * 0.4), "Head");
   }
 
-  window.renderSheet = async ({ kind, model, animations, palette, kit, materials }) => {
+  window.renderSheet = async ({ model, animations, palette, kit }) => {
     const size = FRAME * SUPERSAMPLE;
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, preserveDrawingBuffer: true });
     renderer.setSize(size, size);
@@ -167,28 +167,13 @@
     scene.add(key);
 
     const root = await loader.loadAsync(model);
-    if (kind === "human") {
-      const texture = paletteTexture(palette);
-      root.traverse((node) => {
-        if (node.isMesh) {
-          node.material = new THREE.MeshStandardMaterial({ map: texture, roughness: 0.85 });
-          node.frustumCulled = false;
-        }
-      });
-    } else {
-      // Robot: remap its named materials to the supplied colours.
-      root.traverse((node) => {
-        if (!node.isMesh) return;
+    const texture = paletteTexture(palette);
+    root.traverse((node) => {
+      if (node.isMesh) {
+        node.material = new THREE.MeshStandardMaterial({ map: texture, roughness: 0.85 });
         node.frustumCulled = false;
-        const remap = (material) => {
-          const next = material.clone();
-          const wanted = materials[material.name];
-          if (wanted) next.color = rgb(wanted);
-          return next;
-        };
-        node.material = Array.isArray(node.material) ? node.material.map(remap) : remap(node.material);
-      });
-    }
+      }
+    });
 
     const pivot = new THREE.Group();
     pivot.add(root);

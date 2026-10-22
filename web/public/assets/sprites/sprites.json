@@ -1,5 +1,5 @@
 {
-  "source": "Quaternius Animated Human and Animated Robot (CC0-1.0)",
+  "source": "Quaternius Animated Human (CC0-1.0)",
   "sheets": {
     "operative-one": {
       "file": "operative-one.png",
@@ -77,8 +77,8 @@
         }
       ]
     },
-    "watcher": {
-      "file": "watcher.png",
+    "watcher-one": {
+      "file": "watcher-one.png",
       "frameSize": 128,
       "directions": 8,
       "animations": [
@@ -92,7 +92,26 @@
           "name": "walk",
           "row": 8,
           "frames": 8,
-          "seconds": 0.9583333134651184
+          "seconds": 0.78
+        }
+      ]
+    },
+    "watcher-two": {
+      "file": "watcher-two.png",
+      "frameSize": 128,
+      "directions": 8,
+      "animations": [
+        {
+          "name": "idle",
+          "row": 0,
+          "frames": 4,
+          "seconds": 2
+        },
+        {
+          "name": "walk",
+          "row": 8,
+          "frames": 8,
+          "seconds": 0.78
         }
       ]
     }

@@ -196,6 +196,7 @@ document.querySelector("#settings-form").addEventListener("input", () => {
 applyTextScale();
 
 const SPRITE_SKINS = ["operative-one", "operative-two", "operative-three", "operative-four"];
+const WATCHER_SKINS = ["watcher-one", "watcher-two"];
 const sprites = { manifest: null, images: new Map() };
 
 // Sprite sheets are optional: units fall back to vector shapes if they fail to load.
@@ -594,7 +595,10 @@ function drawCursor(viewport) {
 
 function spriteSheetFor(unit) {
   if (!sprites.manifest) return null;
-  if (unit.side !== "team") return sprites.manifest.sheets.watcher ?? null;
+  if (unit.side !== "team") {
+    const index = state.units.filter((item) => item.side !== "team").indexOf(unit);
+    return sprites.manifest.sheets[WATCHER_SKINS[index % WATCHER_SKINS.length]] ?? null;
+  }
   const index = state.units.filter((item) => item.side === "team").indexOf(unit);
   return sprites.manifest.sheets[SPRITE_SKINS[index % SPRITE_SKINS.length]] ?? null;
 }
@@ -623,7 +627,7 @@ function drawSprite(unit, sheet, viewport, size) {
   const direction = unit.facing ?? 0;
   const image = sprites.images.get(sheet.file);
   const source = sheet.frameSize;
-  const drawSize = viewport.cellSize.height * (unit.side === "team" ? 3.3 : 2.4);
+  const drawSize = viewport.cellSize.height * 3.3;
   context.save();
   if (unit.disabled) context.globalAlpha = 0.55;
   // The figure's feet sit about 84% down its frame; anchor them to the tile.
