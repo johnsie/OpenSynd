@@ -261,6 +261,8 @@ class Validation:
             self.error(path, "price must be an integer from 0 to 1000")
         if value.get("icon") not in ICONS:
             self.error(path, f"icon must be one of {', '.join(sorted(ICONS))}")
+        if value.get("sound") not in {None, "pistol", "smg", "rotary", "rifle", "coil", "longshot"}:
+            self.error(path, "sound must be pistol, smg, rotary, rifle, coil or longshot")
         if value.get("carry") not in {None, "pistol", "rifle"}:
             self.error(path, "carry must be pistol or rifle")
         cost = value.get("researchCost", 0)

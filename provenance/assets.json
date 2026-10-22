@@ -290,6 +290,17 @@
       "notes": "Unmodified file. Animated Human by Quaternius (OpenGameArt, 2017). Zip SHA-256 dcd72162b5e59495efc629fb624d9e1deb12124b68291ad4fa3ce66b4fc24db3; License.txt states CC0 1.0 and the page lists CC0. Intake checked against the vendor license text on 2026-10-22 by an AI assistant; NOT yet reviewed by a named human. Set status to approved, with reviewer and review_date, after human review."
     },
     {
+      "path": "web/public/assets/music/electric-stream.mp3",
+      "sha256": "3735344130d1700cd9a0152a8c7d0ff622654c39354849a008c05ead64e0a2c3",
+      "status": "quarantined",
+      "classification": "music",
+      "creator": "Alexander Ehlers (tricksntraps)",
+      "copyright": "Royalty Free Music by Alexander Ehlers",
+      "license": "CC0-1.0",
+      "source": "https://opengameart.org/content/t-t-free-cyberpunk-pack-2",
+      "notes": "Track \"electric_stream_180bpm\" from \"T & T Free Cyberpunk Pack 2\" (original electric_stream_180bpm.ogg, SHA-256 4021eaa200b2611f6ee004e0c7896f3c2f9f0815a903b5a36d16296c696ce22a, 4.5 MB, 80 s, 180 BPM), posted 2020-11-01 on OpenGameArt with the single license \"CC0\" for the whole pack. Re-encoded to 128 kbps MP3 with metadata replaced, otherwise unmodified. Played as the intense score while an enemy has seen the squad. Credit is courtesy only under CC0. Intake checked on 2026-10-23 by an AI assistant; NOT yet reviewed by a named human."
+    },
+    {
       "path": "web/public/assets/music/the-core.mp3",
       "sha256": "a54563a9aeba9073373c6981bd4ead877c23c175fa9ae1a24d8c74b2cacff20d",
       "status": "quarantined",

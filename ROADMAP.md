@@ -289,6 +289,11 @@ CC-BY, OFL), so a maintainer must either accept GPL-3.0 or CC-BY-SA music for th
 in a CC0 track. It has its own on/off and volume settings. If the file cannot be played, the game
 falls back to the original generative score in `web/src/music.js`: a four-chord loop in A minor
 with bass, pad and a delayed arpeggio, synthesized in the browser, so no audio asset is needed.
+While an enemy agent (a watcher; police on alert do not count) has seen the squad and for six
+seconds afterwards, an intense track ("Electric Stream", 180 BPM, CC0
+by Alexander Ehlers) crossfades in over about a second from the start of the track and the calm
+score fades out; it returns to calm when the alert is over (`setAlert` in `web/src/music.js`,
+`updateAlertMusic` in `web/src/app.js`). Operatives' numbers are drawn in gold above their heads.
 Other tracks found in the same search for later: "Cypherfunk" (also p0ss, GPL 3.0) was not
 available at its page, and tricksntraps' CC0 "Free Cyberpunk Pack 2" would be a clean replacement
 or a second track for different operations.
@@ -576,6 +581,14 @@ shows that it satisfies maintainability, accessibility, and licensing goals.
   civilian costs 40 funds and a police officer 80 (never below zero), is shown in the debrief,
   and rules out the Clean hands achievement. Not yet built: police calling for backup and
   civilians reacting to each other.
+
+Every weapon sounds like itself (`web/src/audio.js`, all synthesized from filtered noise and sweeps, so
+no sound assets): a sharp pistol crack, a light snappy machine-pistol burst, a buzzing rotary-cannon
+chatter, a deep rifle boom, a coil gun's rising whine then crack and thump, and a long-range rifle's
+ringing crack with a fading echo. Equipment says which with its `sound` field. There are also a hit
+thud, a bullet pinging off a shield, a shield rising, the Delay Charge's tick each second and its
+rolling explosion, and the Persuader's hum. Fire is quieter the further it is from the view, rapid
+fire is throttled per sound so a firefight does not drown the mix, and every sound has a caption.
 
 Operatives fire only a weapon they have selected: with nothing selected they hold fire (right-click,
 pursuit and the crosshair all say so), and once a selected weapon runs dry they carry on with the

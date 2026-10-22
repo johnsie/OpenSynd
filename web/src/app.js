@@ -158,7 +158,7 @@ import {
   serializeProgress,
 } from "./progress.js";
 import { createMusic } from "./music.js";
-import { createAudio } from "./audio.js";
+import { createAudio, shotCue, shotVolume } from "./audio.js";
 import { SETTINGS_KEY, parseSettings, prefersReducedMotion, serializeSettings } from "./settings.js";
 
 const canvas = document.querySelector("#game-canvas");
@@ -204,6 +204,7 @@ const music = createMusic({
   getSettings: () => settings,
   AudioContextClass: window.AudioContext ?? window.webkitAudioContext,
   trackUrl: "assets/music/the-core.mp3",
+  alertTrackUrl: "assets/music/electric-stream.mp3",
   AudioElementClass: window.Audio,
 });
 // Browsers only allow audio after a user gesture, so music starts on first input.
@@ -439,6 +440,9 @@ async function loadGame(index = state.missionIndex) {
   state.grid = createTileGrid(map);
   state.buildings = buildingsFromMap(map);
   state.bombs = [];
+  state.alertHold = 0;
+  state.alertMusic = false;
+  music.setAlert(false);
   // Relay pylons and the gate console stand on their pads. Their footprint is the pad's first tile
   // so operatives standing on the pad are drawn in front of them.
   state.structures = map.zones
@@ -488,6 +492,10 @@ async function loadGame(index = state.missionIndex) {
       targetId: null,
       disabled: false,
     };
+  });
+  // Each operative's number, shown in gold above their head and matching their place in the squad list.
+  state.units.filter((unit) => unit.side === "team").forEach((unit, index) => {
+    unit.number = index + 1;
   });
   for (const unit of state.units) unit.initialEquipment = unit.equipment.map((item) => ({ ...item }));
   // Reset only now that the new units exist, or the old squad would re-trigger the outcome.
@@ -1670,6 +1678,17 @@ function drawUnit(unit, viewport) {
     context.fillText(appearance.marker, 0, 1);
   }
 
+  if (unit.number) {
+    // The operative's number in gold above their head (dimmer once they are down).
+    context.font = `800 ${Math.max(14, size * 1.5)}px ui-sans-serif, sans-serif`;
+    context.textAlign = "center";
+    context.textBaseline = "alphabetic";
+    context.lineWidth = 4;
+    context.strokeStyle = "rgba(0, 0, 0, .9)";
+    context.strokeText(String(unit.number), 0, -size * 5.6);
+    context.fillStyle = unit.disabled ? "rgba(225, 179, 90, .45)" : "#f2c14e";
+    context.fillText(String(unit.number), 0, -size * 5.6);
+  }
   if ((unit.shieldLeft ?? 0) > 0 && !unit.disabled) {
     // A raised shield: a shimmering bubble that flickers as it is about to fail.
     const fading = unit.shieldLeft < 2;
@@ -2073,12 +2092,19 @@ function handleCombatEvents(combatEvents) {
     if (event.type === "damage" || event.type === "shot") {
       const shooter = state.units.find((item) => item.id === event.attackerId);
       addEffect(state.effects, "muzzle", { unitId: event.attackerId });
+      // Each weapon sounds like itself; fire further from the view is quieter.
+      if (shooter) {
+        const away = Math.hypot(shooter.position.x - state.camera.x, shooter.position.y - state.camera.y);
+        audio.play(shotCue(event.sound), { volume: shotVolume(away, shooter.side === "team") });
+      }
       if (event.type === "damage" && event.blocked) {
         // The shield took it: sparks off the field, no knockback.
         const victim = state.units.find((item) => item.id === event.targetId);
+        audio.play("shield-hit");
         addEffect(state.effects, "puff", { to: victim.position, spin: Math.random() * 3 });
       } else if (event.type === "damage") {
         const victim = state.units.find((item) => item.id === event.targetId);
+        audio.play("hit");
         addEffect(state.effects, "impact", { unitId: event.targetId, spin: Math.random() * 3 });
         if (shooter && victim) knockBack(victim, shooter);
       } else {
@@ -2115,6 +2141,19 @@ function handleCombatEvents(combatEvents) {
   } else if (latest.type === "damage") {
     const target = state.units.find((item) => item.id === latest.targetId);
     setStatus(`${target.definition.name} integrity: ${latest.remaining}.`);
+  }
+}
+
+// The intense score plays only while an enemy agent (a watcher) has seen the squad, and for a few
+// seconds after the last one loses it. Police on alert do not bring it in.
+const ALERT_MUSIC_HOLD_SECONDS = 6;
+function updateAlertMusic(deltaSeconds) {
+  const seen = state.units.some((unit) => unit.side === "opposition" && unit.alertedBy && !unit.disabled && !unit.persuaded);
+  state.alertHold = seen ? ALERT_MUSIC_HOLD_SECONDS : Math.max(0, (state.alertHold ?? 0) - deltaSeconds);
+  const intense = state.outcome === "active" && state.alertHold > 0;
+  if (intense !== state.alertMusic) {
+    state.alertMusic = intense;
+    music.setAlert(intense);
   }
 }
 
@@ -2165,10 +2204,18 @@ function simulationStep(deltaSeconds) {
     state.opStats.spotted += 1;
     interfaceChanged = true;
   }
+  updateAlertMusic(deltaSeconds);
   advanceShields(state.units, deltaSeconds);
+  for (const bomb of state.bombs) {
+    const second = Math.ceil(bomb.left);
+    if (bomb.tickedAt !== second) {
+      bomb.tickedAt = second;
+      audio.play("tick");
+    }
+  }
   for (const blast of advanceBombs(state.bombs, state.units, deltaSeconds)) {
     addEffect(state.effects, "blast", { at: blast.at, radius: blast.radius });
-    audio.play("disabled");
+    audio.play("blast");
     startPanic(state.units, blast.at, state.grid, state.elapsed);
     for (const hit of blast.hits) {
       const victim = state.units.find((unit) => unit.id === hit.unitId);
@@ -2188,7 +2235,7 @@ function simulationStep(deltaSeconds) {
     const target = state.units.find((unit) => unit.id === event.targetId);
     if (event.type === "persuaded") {
       addEffect(state.effects, "persuade", { unitId: event.targetId });
-      audio.play("repair");
+      audio.play("persuade");
       const kinds = { civilian: "civilians", police: "police", opposition: "enemy agents" };
       setStatus(
         `${target.definition.name} now follows ${agent.definition.name} (${event.count} ${kinds[event.kind]} persuaded).` +
@@ -2625,7 +2672,7 @@ function issueAttack(targetId) {
       ? `${who} engaging ${target.definition.name}.`
       : `${who} closing in on ${target.definition.name}.`,
   );
-  audio.play("pulse");
+  audio.play("move");
   renderInterface();
   canvas.focus();
 }
@@ -2880,7 +2927,6 @@ function fireByHand(aim) {
     else reasons.add(result.reason);
   }
   if (events.length > 0) {
-    audio.play("pulse");
     handleCombatEvents(events);
     renderInterface();
     return;
@@ -3151,6 +3197,9 @@ if (new URLSearchParams(location.search).has("e2e")) {
     musicStatus() {
       return music.status();
     },
+    advanceMusic(seconds) {
+      music.advance(seconds);
+    },
     giveItem(id, itemId) {
       const unit = state.units.find((item) => item.id === id);
       const definition = state.catalog.find((item) => item.id === itemId);
@@ -3281,7 +3330,7 @@ function pressSlot(unit, slot) {
       setStatus("That charge is used up.");
       return;
     }
-    audio.play("select");
+    audio.play("tick");
     setStatus(
       `${unit.definition.name} plants a ${definition.name}: ${definition.effect.fuse} seconds. ` +
         `Get everyone out of ${definition.effect.radius} tiles.`,
@@ -3292,7 +3341,7 @@ function pressSlot(unit, slot) {
       setStatus(entry.charges === 0 ? "That shield is spent." : `${unit.definition.name} already has a shield up.`);
       return;
     }
-    audio.play("repair");
+    audio.play("shield-up");
     setStatus(`${unit.definition.name}: ${definition.name} up for ${definition.effect.duration} seconds.`);
     renderInterface();
   } else if (definition.action === "persuade") {

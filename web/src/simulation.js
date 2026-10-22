@@ -510,6 +510,7 @@ function strike(attacker, target, weapon, stats, events) {
     remaining: target.health,
     outOfRounds: weapon !== null && weapon.charges === 0,
     weapon: weapon ? weapon.definition.name : null,
+    sound: weapon?.definition.sound ?? "pistol",
   });
   if (target.health === 0) {
     target.disabled = true;
@@ -584,6 +585,7 @@ export function fireManual(shooter, aim, units, grid) {
       end: shot.end,
       outOfRounds: weapon !== null && weapon.charges === 0,
       weapon: weapon ? weapon.definition.name : null,
+      sound: weapon?.definition.sound ?? "pistol",
     });
   }
   return { fired: true, reason: null, events };

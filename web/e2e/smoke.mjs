@@ -355,6 +355,10 @@ for (const [name, type, executablePath] of targets) {
     await page.waitForFunction(
       () => document.querySelector("#status-message").textContent.includes("spotted"),
     );
+    // Being seen brings in the intense score, which takes over from the calm one.
+    await page.waitForFunction(() => window.opensyndTest.musicStatus().intense, null, { timeout: 5000 });
+    await page.evaluate(() => window.opensyndTest.advanceMusic(2));
+    assert.equal(await page.evaluate(() => window.opensyndTest.musicStatus().mix), 1);
     // Success screen: complete every objective.
     await page.evaluate(() => window.opensyndTest.completeObjectives());
     await page.waitForSelector("#outcome-dialog[open]");

@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-// The score. If a music track is given it plays that file on a loop ("The Core" by p0ss, dark
-// industrial techno, see provenance/assets.json). If the file cannot be played, or none is given,
+// The score. If music tracks are given it plays them from files on a loop: a calm one ("The Core" by
+// p0ss, dark industrial techno) and an intense one ("Electric Stream", CC0) that crossfades in while an
+// enemy has seen the squad (see provenance/assets.json). If the files cannot be played, or none is given,
 // it falls back to an original generative score: a four-chord loop in A minor played by a bass, a
 // soft pad and a delayed arpeggio, all synthesized. buildPattern is pure so the score can be tested.
 export const TEMPO = 92;
@@ -39,7 +40,15 @@ export function buildPattern(bars = PROGRESSION.length) {
   return notes.sort((left, right) => left.step - right.step);
 }
 
-export function createMusic({ getSettings, AudioContextClass, trackUrl = null, AudioElementClass = null }) {
+export const FADE_SECONDS = 1.2;
+
+export function createMusic({
+  getSettings,
+  AudioContextClass,
+  trackUrl = null,
+  alertTrackUrl = null,
+  AudioElementClass = null,
+}) {
   const pattern = buildPattern();
   const loopSteps = STEPS_PER_BAR * PROGRESSION.length;
   const stepSeconds = 60 / TEMPO / 4;
@@ -48,37 +57,69 @@ export function createMusic({ getSettings, AudioContextClass, trackUrl = null, A
   let timer = null;
   let nextStep = 0;
   let nextTime = 0;
-  let track = null;
+  // The recorded tracks: a calm score and an intense one that takes over while an enemy has seen
+  // the squad. Each is one looping audio element; their gains crossfade and follow the settings.
+  const tracks = {};
   let trackFailed = false;
+  let trackStarted = false;
+  let alertOn = false;
+  let mix = 0; // 0 = all calm, 1 = all intense
+  let fadeTimer = null;
 
-  // The recorded track: one looping audio element whose volume follows the settings.
-  function startTrack() {
-    if (!trackUrl || !AudioElementClass || trackFailed) return false;
-    if (!track) {
-      track = new AudioElementClass(trackUrl);
-      track.loop = true;
-      track.preload = "auto";
-      track.addEventListener("error", () => {
-        trackFailed = true;
-        track = null;
-        api.start();
-      });
-    }
-    refreshTrack();
-    const playing = track.play?.();
-    playing?.catch?.(() => {
-      // Blocked until the next gesture; start() runs again on the next input.
-      trackStarted = false;
+  function createTrack(name, url) {
+    if (!url || !AudioElementClass) return;
+    const element = new AudioElementClass(url);
+    element.loop = true;
+    element.preload = "auto";
+    element.addEventListener("error", () => {
+      trackFailed = true;
+      for (const other of Object.values(tracks)) other.pause?.();
+      for (const key of Object.keys(tracks)) delete tracks[key];
+      api.start();
     });
-    return true;
+    tracks[name] = element;
   }
 
-  let trackStarted = false;
-  function refreshTrack() {
-    if (!track) return;
+  function trackVolume(gain) {
     const settings = getSettings();
     const audible = settings.music && !settings.muted;
-    track.volume = audible ? Math.min(1, Math.max(0, settings.musicVolume)) : 0;
+    return audible ? Math.min(1, Math.max(0, settings.musicVolume)) * gain : 0;
+  }
+
+  // Set each element's volume from the mix, starting one that has come in and pausing one that is gone.
+  function applyMix() {
+    const gains = { calm: 1 - mix, alert: mix };
+    for (const [name, element] of Object.entries(tracks)) {
+      element.volume = trackVolume(gains[name]);
+      if (gains[name] > 0 && element.paused) {
+        if (name === "alert") element.currentTime = 0; // the intense track always comes in from its start
+        element.play?.()?.catch?.(() => {
+          trackStarted = false; // blocked until the next gesture; start() runs again on the next input
+        });
+      } else if (gains[name] === 0 && !element.paused) {
+        element.pause?.();
+      }
+    }
+  }
+
+  // Move the crossfade along by `seconds`; also called on a timer.
+  function advance(seconds) {
+    const target = alertOn ? 1 : 0;
+    if (mix === target) return;
+    const step = seconds / FADE_SECONDS;
+    mix = target > mix ? Math.min(target, mix + step) : Math.max(target, mix - step);
+    applyMix();
+  }
+
+  function startTracks() {
+    if (!trackUrl || !AudioElementClass || trackFailed) return false;
+    if (!tracks.calm) {
+      createTrack("calm", trackUrl);
+      createTrack("alert", alertTrackUrl);
+    }
+    applyMix();
+    if (fadeTimer === null) fadeTimer = setInterval(() => advance(0.1), 100);
+    return true;
   }
 
   function ensureContext() {
@@ -139,18 +180,30 @@ export function createMusic({ getSettings, AudioContextClass, trackUrl = null, A
   }
 
   const api = {
-    // For tests: whether the recorded track is in use and playing.
+    // For tests: whether the recorded score is in use, what is playing and how far the mix is toward intense.
     status() {
-      return { track: Boolean(track) && !trackFailed, playing: Boolean(track) && !track.paused, volume: track?.volume ?? 0 };
+      const calm = tracks.calm;
+      return {
+        track: Boolean(calm) && !trackFailed,
+        playing: Boolean(calm && !calm.paused) || Boolean(tracks.alert && !tracks.alert.paused),
+        intense: alertOn,
+        mix,
+        volume: calm?.volume ?? 0,
+      };
     },
+    // Switch to the intense score while an enemy has seen the squad, and back to calm when it is over.
+    setAlert(value) {
+      alertOn = Boolean(value);
+    },
+    advance,
     // Browsers require a user gesture before audio, so the game calls this on first input.
     start() {
       const settings = getSettings();
       if (timer !== null || !settings.music) return;
       if (trackUrl && !trackFailed && AudioElementClass) {
-        if (!trackStarted || track?.paused) {
+        if (!trackStarted || tracks.calm?.paused) {
           trackStarted = true;
-          startTrack();
+          startTracks();
         }
         return;
       }
@@ -164,16 +217,18 @@ export function createMusic({ getSettings, AudioContextClass, trackUrl = null, A
     stop() {
       if (timer !== null) clearInterval(timer);
       timer = null;
-      track?.pause?.();
+      for (const element of Object.values(tracks)) element.pause?.();
+      if (fadeTimer !== null) clearInterval(fadeTimer);
+      fadeTimer = null;
       trackStarted = false;
     },
     refresh() {
       const settings = getSettings();
       if (!settings.music) this.stop();
-      else if (track && track.paused) this.start();
-      else if (timer === null && context) this.start();
+      else if (tracks.calm && !trackStarted) this.start();
+      else if (timer === null && context && !tracks.calm) this.start();
       refresh();
-      refreshTrack();
+      if (settings.music) applyMix();
     },
   };
   return api;
