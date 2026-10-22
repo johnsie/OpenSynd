@@ -81,6 +81,7 @@ for (const [name, type, executablePath] of targets) {
     assert.match(await page.locator("#status-message").innerText(), /Route/);
 
     // Training bars: raise Speed for one operator, then lower Brain for everyone.
+    await page.locator("#training-panel summary").click();
     await page.getByRole("button", { name: "Raise Legs", exact: true }).click();
     assert.match(await page.locator("#status-message").innerText(), /Legs raised/);
     assert.equal(await page.locator('#training-bars [aria-label="Legs 4 of 5"]').count(), 1);

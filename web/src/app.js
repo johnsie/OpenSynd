@@ -1645,7 +1645,7 @@ function renderInterface() {
       glyph.setAttribute("aria-hidden", "true");
       glyph.textContent = "◇";
       const name = document.createElement("span");
-      name.textContent = `${label} · ${unit.health}/${unit.definition.stats.vitality}`;
+      name.textContent = `Operator ${index + 1} · ${unit.health}/${unit.definition.stats.vitality}`;
       const position = document.createElement("span");
       position.className = "operator-position";
       position.textContent = `${pad(unit.position.x)}:${pad(unit.position.y)}`;
