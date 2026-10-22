@@ -65,6 +65,10 @@ const CHASE_SPEED_FACTOR = 0.85;
 const SIGHT_TILES_PER_AWARENESS = 0.1;
 const LOSE_SIGHT_FACTOR = 1.6;
 const STOP_RANGE_FACTOR = 0.9;
+// A watcher that has spotted someone calls its neighbours: those within this many tiles see
+// further, so they close in too.
+export const CALL_RADIUS = 14;
+export const CALL_SIGHT_FACTOR = 1.8;
 
 // Walk a unit along its own `path`; returns true while it still has path left.
 function followPath(unit, deltaSeconds, speedFactor) {
@@ -144,7 +148,15 @@ export function advancePatrols(units, deltaSeconds, grid = null) {
     }
 
     const stopRange = combatStats(unit).range * STOP_RANGE_FACTOR;
-    const sight = unit.definition.stats.awareness * SIGHT_TILES_PER_AWARENESS;
+    const called = units.some(
+      (other) =>
+        other !== unit &&
+        other.side !== "team" &&
+        !other.disabled &&
+        other.alertedBy &&
+        distanceBetween(unit, other) <= CALL_RADIUS,
+    );
+    const sight = unit.definition.stats.awareness * SIGHT_TILES_PER_AWARENESS * (called ? CALL_SIGHT_FACTOR : 1);
     const seen = grid
       ? nearestVisibleOperator(unit, units, unit.alertedBy ? sight * LOSE_SIGHT_FACTOR : sight)
       : null;

@@ -172,21 +172,23 @@ test("a squad fight against a watcher resolves identically on every run", async 
   const [run] = runs;
   assert.equal(run.events.at(-1).type, "disabled");
   assert.equal(run.events.at(-1).unitId, "watcher-one");
-  // Golden values at 30 Hz: the watcher falls on step 24 after six pulses and
-  // lands one heavy-pulse retaliation hit (20); the other watchers are untouched.
-  assert.equal(run.events.at(-1).step, 24);
-  assert.equal(run.events.length, 6);
+  // Golden values at 30 Hz: the watcher falls on step 70 after ten shots
+  // and lands two heavy-pulse retaliation hits (20 each); the other watchers are untouched.
+  assert.equal(run.events.at(-1).step, 70);
+  assert.equal(run.events.length, 10);
   assert.deepEqual(run.health, {
-    "operator-one": 80,
+    "operator-one": 60,
     "operator-two": 100,
     "operator-three": 100,
     "operator-four": 100,
     "watcher-one": 0,
-    "watcher-two": 45,
-    "watcher-three": 45,
-    "watcher-four": 45,
-    "watcher-five": 45,
-    "watcher-six": 45,
+    "watcher-two": 75,
+    "watcher-three": 75,
+    "watcher-four": 75,
+    "watcher-five": 75,
+    "watcher-six": 75,
+    "watcher-seven": 75,
+    "watcher-eight": 75,
   });
 });
 
@@ -225,8 +227,8 @@ test("an undefended squad loses to the watchers at a repeatable step", async () 
 
   assert.deepEqual(runs[0], runs[1]);
   assert.equal(runs[0].outcome, "failure");
-  // Golden value at 30 Hz: about 10 seconds of sustained fire from a heavy-pulse watcher, no watcher touched.
-  assert.deepEqual(runs[0], { step: 295, outcome: "failure", watchers: 45 });
+  // Golden value at 30 Hz: about 4 seconds of sustained fire from toughened watchers, no watcher touched.
+  assert.deepEqual(runs[0], { step: 121, outcome: "failure", watchers: 75 });
 });
 
 test("every First Light watcher patrols a real route that stays on walkable ground", async () => {
@@ -234,7 +236,7 @@ test("every First Light watcher patrols a real route that stays on walkable grou
   const map = await read(mission.map);
   const definition = await read("units/security-watcher.unit.json");
   const grid = createTileGrid(map);
-  const watchers = mission.opponents.map((placement) => {
+  const watchers = mission.opponents.filter((placement) => placement.patrol).map((placement) => {
     const route = buildPatrolRoute(grid, placement.position, placement.patrol);
     assert.ok(route.length > 0, `${placement.id} has no valid patrol route`);
     return {
@@ -301,7 +303,7 @@ test("every mission in the pack has a story, debrief and valid patrols", async (
     assert.ok(mission.story && mission.title, `${file} needs a story and a title`);
     assert.ok(mission.debrief?.success && mission.debrief?.failure, `${file} needs a debrief`);
     const grid = createTileGrid(await read(mission.map));
-    for (const placement of mission.opponents) {
+    for (const placement of mission.opponents.filter((entry) => entry.patrol)) {
       assert.ok(buildPatrolRoute(grid, placement.position, placement.patrol).length > 0, `${placement.id} in ${file}`);
     }
   }

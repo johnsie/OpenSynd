@@ -189,6 +189,64 @@
           "y": 25
         }
       ]
+    },
+    {
+      "id": "watcher-nine",
+      "unit": "units/security-watcher.unit.json",
+      "position": {
+        "x": 49,
+        "y": 68
+      },
+      "equipment": []
+    },
+    {
+      "id": "watcher-ten",
+      "unit": "units/security-watcher.unit.json",
+      "position": {
+        "x": 71,
+        "y": 46
+      },
+      "equipment": [
+        "equipment/heavy-pulse-emitter.equipment.json"
+      ]
+    },
+    {
+      "id": "watcher-eleven",
+      "unit": "units/security-watcher.unit.json",
+      "position": {
+        "x": 71,
+        "y": 27
+      },
+      "equipment": []
+    },
+    {
+      "id": "watcher-twelve",
+      "unit": "units/security-watcher.unit.json",
+      "position": {
+        "x": 79,
+        "y": 18
+      },
+      "equipment": [
+        "equipment/heavy-pulse-emitter.equipment.json"
+      ]
+    },
+    {
+      "id": "watcher-thirteen",
+      "unit": "units/security-watcher.unit.json",
+      "position": {
+        "x": 80,
+        "y": 13
+      },
+      "equipment": []
+    },
+    {
+      "id": "watcher-fourteen",
+      "unit": "units/security-watcher.unit.json",
+      "position": {
+        "x": 70,
+        "y": 30
+      },
+      "equipment": []
     }
   ],
   "objectives": [

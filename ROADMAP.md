@@ -145,6 +145,19 @@ at the weapon, a short recoil kick, and a thin aim line to the locked target. An
 operative also draws the weapon while firing at a locked target, so a gun never
 fires from empty hands.
 
+Difficulty is measured, not guessed: `npm run balance` (web/tools/balance.mjs)
+plays every mission headlessly with a simple squad bot through the real game rules
+(patrols, chasing, combat, rounds, fatigue) under three tactics (rush, steady, careful)
+with seeded variation. The first pass showed both operations far too easy (about 98%
+wins, no operator ever lost), so watchers were toughened (75 vitality, 12 attack,
+3.25 range, 1.0 s cooldown), a spotted squad now calls watchers within 14 tiles who then
+see 1.8 times further, and guards were posted at the objectives (First Light has 8
+watchers, Quiet Hours 14, with heavy-pulse guards at the gate). Current bot results:
+First Light is a gentle opener (steady 100%, rush 60%) and Quiet Hours is clearly
+harder (rush 63%, steady 70%, careful 97%, one to two operators lost on average).
+The bot does not use training, research or purchases, so human play should be easier
+than these numbers with a well-built squad.
+
 Save format version 8 stores each unit's items (with consumable charges) and what
 it has looted, with a tested migration from version 7, so looted gear and spent
 stims survive a save and load.

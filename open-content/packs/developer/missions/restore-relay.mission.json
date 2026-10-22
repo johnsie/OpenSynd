@@ -151,6 +151,26 @@
           "y": 99
         }
       ]
+    },
+    {
+      "id": "watcher-seven",
+      "unit": "units/security-watcher.unit.json",
+      "position": {
+        "x": 98,
+        "y": 76
+      },
+      "equipment": []
+    },
+    {
+      "id": "watcher-eight",
+      "unit": "units/security-watcher.unit.json",
+      "position": {
+        "x": 104,
+        "y": 100
+      },
+      "equipment": [
+        "equipment/heavy-pulse-emitter.equipment.json"
+      ]
     }
   ],
   "objectives": [
