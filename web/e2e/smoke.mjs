@@ -80,6 +80,15 @@ for (const [name, type, executablePath] of targets) {
     await page.waitForTimeout(300);
     assert.match(await page.locator("#status-message").innerText(), /Route/);
 
+    // Training bars: raise Speed for one operator, then lower Brain for everyone.
+    const speedRaise = page.getByRole("button", { name: "Raise Speed" });
+    await speedRaise.click();
+    assert.match(await page.locator("#status-message").innerText(), /Speed raised/);
+    assert.equal(
+      await page.locator('#training-bars [aria-label="Speed 4 of 5"]').count(),
+      1,
+    );
+    assert.equal(await page.locator('.roster [aria-label^="Speed"]').count(), 4);
     // Select all operators with the A key, then check they all show as selected.
     await page.keyboard.press("a");
     const pressed = await page.locator("#roster button").evaluateAll((buttons) =>
@@ -88,6 +97,9 @@ for (const [name, type, executablePath] of targets) {
     assert.deepEqual(pressed, ["true", "true", "true", "true"]);
     await page.click("#select-all-button");
     assert.match(await page.locator("#status-message").innerText(), /All 4 operators selected/);
+    await page.getByRole("button", { name: "Lower Brain" }).click();
+    assert.match(await page.locator("#status-message").innerText(), /All operators: Brain lowered/);
+    assert.equal(await page.locator('.roster [aria-label="Brain 2 of 5"]').count(), 4);
     // Camera controls: zoom with the wheel and keys, jump with the minimap, recentre with C.
     await page.locator("#game-canvas").hover();
     await page.mouse.wheel(0, -200);

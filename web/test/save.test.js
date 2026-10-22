@@ -190,3 +190,33 @@ test("save validation rejects patrol positions outside the route", () => {
   assert.throws(() => validateSaveSnapshot(withIndex(1), context), /patrol position/);
   assert.throws(() => validateSaveSnapshot(withIndex(-1), patrolling), /patrol position/);
 });
+
+test("version 4 saves migrate with every unit at the default training levels", () => {
+  const snapshot = createSaveSnapshot(state, "2026-10-22T12:00:00.000Z");
+  const older = {
+    ...snapshot,
+    formatVersion: 4,
+    units: snapshot.units.map(({ levels, ...unit }) => unit),
+  };
+  const parsed = parseSaveSnapshot(JSON.stringify(older), context);
+  assert.equal(parsed.formatVersion, SAVE_VERSION);
+  assert.ok(parsed.units.every((unit) => unit.levels.speed === 3 && unit.levels.brain === 3));
+});
+
+test("training levels round-trip and invalid levels are rejected", () => {
+  const trained = {
+    ...state,
+    units: state.units.map((unit, index) => (index === 0 ? { ...unit, levels: { speed: 5, brain: 2 } } : unit)),
+  };
+  const snapshot = createSaveSnapshot(trained, "2026-10-22T12:00:00.000Z");
+  const parsed = parseSaveSnapshot(JSON.stringify(snapshot), context);
+  assert.deepEqual(parsed.units[0].levels, { speed: 5, brain: 2 });
+
+  const withLevels = (levels) => ({
+    ...snapshot,
+    units: snapshot.units.map((unit, index) => (index === 0 ? { ...unit, levels } : unit)),
+  });
+  assert.throws(() => validateSaveSnapshot(withLevels({ speed: 6, brain: 3 }), context), /training levels/);
+  assert.throws(() => validateSaveSnapshot(withLevels({ speed: 3 }), context), /training levels/);
+  assert.throws(() => validateSaveSnapshot(withLevels(null), context), /training levels/);
+});

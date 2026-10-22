@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 export const SAVE_FORMAT = "opensynd-save";
-export const SAVE_VERSION = 4;
-export const LOCAL_SAVE_KEY = "opensynd.save.v4";
-export const LEGACY_LOCAL_SAVE_KEYS = ["opensynd.save.v3", "opensynd.save.v2", "opensynd.save.v1"];
+export const SAVE_VERSION = 5;
+export const LOCAL_SAVE_KEY = "opensynd.save.v5";
+export const LEGACY_LOCAL_SAVE_KEYS = ["opensynd.save.v4", "opensynd.save.v3", "opensynd.save.v2", "opensynd.save.v1"];
+
+import { BARS, defaultLevels, isValidLevel, maxCooldownMultiplier } from "./stats.js";
 
 function fail(message) {
   throw new Error(`Invalid OpenSynd save: ${message}`);
@@ -55,6 +57,7 @@ export function createSaveSnapshot(state, createdAt = new Date().toISOString()) 
       targetId: unit.targetId,
       disabled: unit.disabled,
       patrolIndex: unit.patrol?.index ?? 0,
+      levels: { ...(unit.levels ?? defaultLevels()) },
     })),
     objectives: state.objectives.map((objective) => ({
       id: objective.id,
@@ -100,7 +103,7 @@ export function validateSaveSnapshot(value, context) {
     if (
       !Number.isFinite(unit.cooldownRemaining) ||
       unit.cooldownRemaining < 0 ||
-      unit.cooldownRemaining > rule.cooldown
+      unit.cooldownRemaining > rule.cooldown * maxCooldownMultiplier()
     ) {
       fail(`${unit.id} cooldown is invalid`);
     }
@@ -115,6 +118,9 @@ export function validateSaveSnapshot(value, context) {
     }
     if (unit.disabled && (path.length > 0 || unit.targetId !== null)) {
       fail(`${unit.id} cannot have orders while disabled`);
+    }
+    if (!isObject(unit.levels) || !BARS.every((bar) => isValidLevel(unit.levels[bar]))) {
+      fail(`${unit.id} training levels are invalid`);
     }
     const patrolLength = context.patrolLengths?.[unit.id] ?? 0;
     if (
@@ -133,6 +139,7 @@ export function validateSaveSnapshot(value, context) {
       targetId: unit.targetId,
       disabled: unit.disabled,
       patrolIndex: unit.patrolIndex,
+      levels: { speed: unit.levels.speed, brain: unit.levels.brain },
     };
   });
 
@@ -223,8 +230,16 @@ export function migrateSaveSnapshot(value, context) {
     // Version 4 tracks each patrolling unit's place along its route.
     migrated = {
       ...migrated,
-      formatVersion: SAVE_VERSION,
+      formatVersion: 4,
       units: migrated.units.map((unit) => ({ ...unit, patrolIndex: 0 })),
+    };
+  }
+  if (migrated.formatVersion === 4) {
+    // Version 5 stores each unit's speed and brain training levels.
+    migrated = {
+      ...migrated,
+      formatVersion: SAVE_VERSION,
+      units: migrated.units.map((unit) => ({ ...unit, levels: defaultLevels() })),
     };
   }
   // Missions may gain objectives after a save was written; they start incomplete.

@@ -334,3 +334,54 @@ test("a watcher that loses its target returns to its route over real ground", ()
   assert.ok(guard.position.x <= 4.5 && guard.position.x >= 1.5, `guard ended at ${guard.position.x}`);
   assert.equal(guard.alertedBy, null);
 });
+
+test("a higher speed level walks further in the same time", () => {
+  const grid = createTileGrid(streetMap);
+  const walkedBy = (speed) => {
+    const unit = {
+      ...operatorAt(0, 2),
+      levels: { speed, brain: 3 },
+      path: findPath(grid, { x: 0, y: 2 }, { x: 39, y: 2 }),
+    };
+    for (let step = 0; step < 90; step += 1) advanceUnits([unit], FIXED_STEP_SECONDS);
+    return unit.position.x;
+  };
+  const slow = walkedBy(1);
+  const normal = walkedBy(3);
+  const fast = walkedBy(5);
+  assert.ok(slow < normal && normal < fast);
+  assert.ok(Math.abs(fast / normal - 1.4) < 0.01);
+  assert.ok(Math.abs(slow / normal - 0.6) < 0.01);
+});
+
+test("a higher brain level fires the pulse more often", () => {
+  const firedBy = (brain) => {
+    const attacker = {
+      ...operatorAt(0, 2),
+      id: "shooter",
+      levels: { speed: 3, brain },
+      equipment: [{ definition: { action: "disable-pulse", effect: { attack: 1, range: 5, cooldown: 0.75 } } }],
+      cooldownRemaining: 0,
+      targetId: "dummy",
+      health: 100,
+    };
+    const dummy = {
+      ...operatorAt(1, 2),
+      id: "dummy",
+      side: "opposition",
+      health: 100000,
+      cooldownRemaining: 99,
+      targetId: null,
+    };
+    let shots = 0;
+    for (let step = 0; step < 30 * 20; step += 1) {
+      shots += advanceCombat([attacker, dummy], FIXED_STEP_SECONDS).filter((event) => event.type === "damage").length;
+    }
+    return shots;
+  };
+  const slow = firedBy(1);
+  const normal = firedBy(3);
+  const quick = firedBy(5);
+  assert.ok(slow < normal && normal < quick);
+  assert.ok(quick / normal > 1.35 && quick / normal < 1.5);
+});

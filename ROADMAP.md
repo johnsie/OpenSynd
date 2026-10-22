@@ -83,7 +83,13 @@ remappable camera keys.
 
 Security watchers now patrol deterministic routes built from mission waypoints
 (`patrol` in the mission schema). A patrolling watcher holds position while it
-has a target in pulse range and resumes afterwards. Watchers also notice operators within sight (awareness x 0.1 tiles), chase them
+has a target in pulse range and resumes afterwards. Every operator has two adjustable training bars, Speed and Brain, each from 1 to
+5 with 3 as the baseline in the unit data. Speed scales walking pace from 0.6x
+to 1.4x; Brain scales the pulse cooldown from 1.3x to 0.7x (shorter is
+faster). The rules are pure (`web/src/stats.js`), covered by tests, and saved
+in format version 5 with a tested migration from version 4.
+
+Watchers also notice operators within sight (awareness x 0.1 tiles), chase them
 over real streets at 85% of an operator's speed so a fleeing squad keeps its
 lead, stop within pulse range, and walk back to their route once they lose
 sight. The behaviour is stateless and deterministic, so it needs no extra save

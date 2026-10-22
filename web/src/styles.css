@@ -323,3 +323,19 @@ dialog .primary { margin-right: 0.5rem; }
 @media (max-width: 700px) {
   #minimap { width: 160px; height: 80px; }
 }
+.training-bars { display: grid; gap: 0.65rem; margin-top: 0.75rem; }
+.training-row { display: grid; grid-template-columns: 4.5rem 1fr auto auto; align-items: center; gap: 0.5rem; }
+.training-row button { min-width: 2rem; padding: 0.25rem 0.5rem; }
+.bar { display: inline-flex; gap: 3px; }
+.bar i {
+  display: block;
+  width: 100%;
+  min-width: 0.9rem;
+  height: 0.7rem;
+  background: rgba(124, 161, 170, 0.22);
+  border: 1px solid rgba(124, 161, 170, 0.35);
+}
+.bar i.filled { background: var(--public); border-color: var(--public); }
+.roster .mini-bars { grid-column: 1 / -1; display: flex; gap: 0.9rem; font-size: 0.75rem; color: var(--muted); }
+.roster .mini-bars .bar i { min-width: 0.55rem; height: 0.45rem; }
+.roster .mini-bars span { display: inline-flex; align-items: center; gap: 0.35rem; }

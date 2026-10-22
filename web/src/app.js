@@ -49,6 +49,7 @@ import {
   resolveArrival, syncGates as syncMissionGates,
 } from "./mission.js";
 import { addEffect, advanceEffects, createEffects, effectProgress, walkBob } from "./effects.js";
+import { BARS, BAR_HINTS, BAR_LABELS, LEVEL_MAX, adjustLevel, defaultLevels } from "./stats.js";
 import { createMusic } from "./music.js";
 import { createAudio } from "./audio.js";
 import { SETTINGS_KEY, parseSettings, prefersReducedMotion, serializeSettings } from "./settings.js";
@@ -300,6 +301,7 @@ async function loadGame() {
       position: { ...placement.position },
       initialPosition: { ...placement.position },
       alertedBy: null,
+      levels: defaultLevels(),
       patrol: placement.patrol
         ? { route: buildPatrolRoute(state.grid, placement.position, placement.patrol), index: 0 }
         : null,
@@ -385,6 +387,7 @@ function applySaveSnapshot(snapshot) {
     unit.cooldownRemaining = saved.cooldownRemaining;
     unit.targetId = saved.targetId;
     unit.disabled = saved.disabled;
+    unit.levels = { ...saved.levels };
     if (unit.patrol) unit.patrol.index = saved.patrolIndex;
   }
   const objectivesById = new Map(
@@ -1464,6 +1467,73 @@ if (new URLSearchParams(location.search).has("e2e")) {
 document.querySelector("#about-button").addEventListener("click", () => aboutDialog.showModal());
 document.querySelector("#close-about").addEventListener("click", () => aboutDialog.close());
 
+function levelBar(level, label) {
+  const bar = document.createElement("span");
+  bar.className = "bar";
+  bar.setAttribute("role", "img");
+  bar.setAttribute("aria-label", `${label} ${level} of ${LEVEL_MAX}`);
+  for (let index = 1; index <= LEVEL_MAX; index += 1) {
+    const segment = document.createElement("i");
+    segment.classList.toggle("filled", index <= level);
+    bar.append(segment);
+  }
+  return bar;
+}
+
+// Raise or lower a bar for the selected operator, or for everyone in group mode.
+function adjustTraining(bar, delta) {
+  const targets = state.group ? activeOperators() : [selectedUnit()].filter(Boolean);
+  let changed = 0;
+  for (const unit of targets) {
+    const next = adjustLevel(unit.levels, bar, delta);
+    if (next !== unit.levels) {
+      unit.levels = next;
+      changed += 1;
+    }
+  }
+  if (changed === 0) {
+    setStatus(`${BAR_LABELS[bar]} cannot go ${delta > 0 ? "higher" : "lower"}.`);
+    return;
+  }
+  const subject = state.group ? "All operators" : targets[0].definition.name;
+  setStatus(`${subject}: ${BAR_LABELS[bar]} ${delta > 0 ? "raised" : "lowered"}.`);
+  audio.play("select");
+  renderInterface();
+  canvas.focus();
+}
+
+function renderTraining() {
+  const unit = selectedUnit();
+  const container = document.querySelector("#training-bars");
+  document.querySelector("#training-heading").textContent = unit
+    ? `${unit.definition.name} ${state.units.filter((item) => item.side === "team").indexOf(unit) + 1}`
+    : "Operative bars";
+  container.replaceChildren(
+    ...BARS.map((bar) => {
+      const row = document.createElement("div");
+      row.className = "training-row";
+      row.title = BAR_HINTS[bar];
+      const label = document.createElement("span");
+      label.textContent = BAR_LABELS[bar];
+      const level = unit?.levels[bar] ?? 0;
+      const lower = document.createElement("button");
+      lower.type = "button";
+      lower.textContent = "−";
+      lower.setAttribute("aria-label", `Lower ${BAR_LABELS[bar]}`);
+      lower.disabled = !unit || level <= 1;
+      lower.addEventListener("click", () => adjustTraining(bar, -1));
+      const raise = document.createElement("button");
+      raise.type = "button";
+      raise.textContent = "+";
+      raise.setAttribute("aria-label", `Raise ${BAR_LABELS[bar]}`);
+      raise.disabled = !unit || level >= LEVEL_MAX;
+      raise.addEventListener("click", () => adjustTraining(bar, 1));
+      row.append(label, levelBar(level, BAR_LABELS[bar]), lower, raise);
+      return row;
+    }),
+  );
+}
+
 function renderInterface() {
   if (!state.mission) return;
   objectiveList.replaceChildren(
@@ -1506,10 +1576,19 @@ function renderInterface() {
       const position = document.createElement("span");
       position.className = "operator-position";
       position.textContent = location;
-      button.append(glyph, name, position);
+      const bars = document.createElement("span");
+      bars.className = "mini-bars";
+      for (const bar of BARS) {
+        const group = document.createElement("span");
+        group.append(BAR_LABELS[bar], levelBar(unit.levels[bar], BAR_LABELS[bar]));
+        bars.append(group);
+      }
+      button.append(glyph, name, position, bars);
       return button;
     }),
   );
+
+  renderTraining();
 
   const threats = state.units.filter((unit) => unit.side === "opposition");
   threatsElement.replaceChildren(
