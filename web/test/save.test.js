@@ -277,3 +277,48 @@ test("focus round-trips and out-of-range values are rejected", () => {
   assert.throws(() => validateSaveSnapshot(withFocus(2), context), /focus/);
   assert.throws(() => validateSaveSnapshot(withFocus(null), context), /focus/);
 });
+
+test("version 7 saves migrate with each unit's starting items", () => {
+  const snapshot = createSaveSnapshot(state, "2026-10-22T12:00:00.000Z");
+  const older = {
+    ...snapshot,
+    formatVersion: 7,
+    units: snapshot.units.map(({ equipment, looted, ...unit }) => unit),
+  };
+  const withItems = {
+    ...context,
+    initialEquipment: { [snapshot.units[0].id]: [{ id: "pulse", charges: null }, { id: "kit", charges: 1 }] },
+  };
+  const parsed = parseSaveSnapshot(JSON.stringify(older), withItems);
+  assert.equal(parsed.formatVersion, SAVE_VERSION);
+  assert.deepEqual(parsed.units[0].equipment, [{ id: "pulse", charges: null }, { id: "kit", charges: 1 }]);
+  assert.deepEqual(parsed.units[0].looted, []);
+  assert.deepEqual(parsed.units[1].equipment, []);
+});
+
+test("items and loot round-trip and invalid inventories are rejected", () => {
+  const item = (id, charges = null) => ({ definition: { id }, charges });
+  const armed = {
+    ...state,
+    units: state.units.map((unit, index) =>
+      index === 0 ? { ...unit, equipment: [item("pulse"), item("stim", 1)], looted: ["stim"] } : unit,
+    ),
+  };
+  const known = { ...context, itemIds: ["pulse", "stim", "kit"] };
+  const snapshot = createSaveSnapshot(armed, "2026-10-22T12:00:00.000Z");
+  const parsed = parseSaveSnapshot(JSON.stringify(snapshot), known);
+  assert.deepEqual(parsed.units[0].equipment, [{ id: "pulse", charges: null }, { id: "stim", charges: 1 }]);
+  assert.deepEqual(parsed.units[0].looted, ["stim"]);
+
+  const withEquipment = (equipment, looted = []) => ({
+    ...snapshot,
+    units: snapshot.units.map((unit, index) => (index === 0 ? { ...unit, equipment, looted } : unit)),
+  });
+  const nine = Array.from({ length: 9 }, () => ({ id: "kit", charges: 1 }));
+  assert.throws(() => validateSaveSnapshot(withEquipment(nine), known), /too many items/);
+  assert.throws(() => validateSaveSnapshot(withEquipment([{ id: "nonsense", charges: null }]), known), /invalid item/);
+  assert.throws(() => validateSaveSnapshot(withEquipment([{ id: "kit", charges: -1 }]), known), /invalid item/);
+  assert.throws(() => validateSaveSnapshot(withEquipment([{ id: "kit", charges: "one" }]), known), /invalid item/);
+  assert.throws(() => validateSaveSnapshot(withEquipment([], ["ghost"]), known), /loot record/);
+  assert.throws(() => validateSaveSnapshot(withEquipment("none"), known), /too many items/);
+});

@@ -391,6 +391,7 @@ async function loadGame(index = state.missionIndex) {
       path: [],
       research: definition.role === "operator" ? { heart: state.campaign.heart, brain: state.campaign.brain } : null,
       looted: [],
+      initialEquipment: [],
       equipment: startingEquipment(placement, definition, equipmentDefinitions, definitionsById).map((item) => ({
         definition: item,
         charges: item.charges,
@@ -401,6 +402,7 @@ async function loadGame(index = state.missionIndex) {
       disabled: false,
     };
   });
+  for (const unit of state.units) unit.initialEquipment = unit.equipment.map((item) => ({ ...item }));
   // Reset only now that the new units exist, or the old squad would re-trigger the outcome.
   state.outcome = "active";
   state.missionSeconds = 0;
@@ -551,6 +553,13 @@ function saveContext() {
         },
       ]),
     ),
+    itemIds: state.catalog.map((item) => item.id),
+    initialEquipment: Object.fromEntries(
+      state.units.map((unit) => [
+        unit.id,
+        unit.initialEquipment.map((item) => ({ id: item.definition.id, charges: item.charges })),
+      ]),
+    ),
     patrolLengths: Object.fromEntries(
       state.units.map((unit) => [unit.id, unit.patrol?.route.length ?? 0]),
     ),
@@ -573,6 +582,11 @@ function applySaveSnapshot(snapshot) {
     unit.levels = { ...saved.levels };
     unit.stamina = saved.stamina;
     unit.focus = saved.focus;
+    unit.equipment = saved.equipment.map((item) => ({
+      definition: state.catalog.find((entry) => entry.id === item.id),
+      charges: item.charges,
+    }));
+    unit.looted = [...saved.looted];
     if (unit.patrol) unit.patrol.index = saved.patrolIndex;
   }
   const objectivesById = new Map(

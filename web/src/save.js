@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 export const SAVE_FORMAT = "opensynd-save";
-export const SAVE_VERSION = 7;
-export const LOCAL_SAVE_KEY = "opensynd.save.v7";
+export const SAVE_VERSION = 8;
+export const LOCAL_SAVE_KEY = "opensynd.save.v8";
 export const LEGACY_LOCAL_SAVE_KEYS = [
+  "opensynd.save.v7",
   "opensynd.save.v6",
   "opensynd.save.v5",
   "opensynd.save.v4",
@@ -13,6 +14,9 @@ export const LEGACY_LOCAL_SAVE_KEYS = [
 ];
 
 import { BARS, defaultLevels, isValidLevel, isValidMeter, maxCooldownMultiplier } from "./stats.js";
+
+// Mirrors SLOTS_PER_OPERATIVE in campaign.js: no unit may carry more than eight items.
+const MAX_ITEMS = 8;
 
 function fail(message) {
   throw new Error(`Invalid OpenSynd save: ${message}`);
@@ -67,6 +71,8 @@ export function createSaveSnapshot(state, createdAt = new Date().toISOString()) 
       levels: { ...(unit.levels ?? defaultLevels()) },
       stamina: unit.stamina ?? 1,
       focus: unit.focus ?? 1,
+      equipment: (unit.equipment ?? []).map((item) => ({ id: item.definition.id, charges: item.charges })),
+      looted: [...(unit.looted ?? [])],
     })),
     objectives: state.objectives.map((objective) => ({
       id: objective.id,
@@ -133,6 +139,17 @@ export function validateSaveSnapshot(value, context) {
     }
     if (!isValidMeter(unit.stamina)) fail(`${unit.id} stamina is invalid`);
     if (!isValidMeter(unit.focus)) fail(`${unit.id} focus is invalid`);
+    const known = (id) => typeof id === "string" && (!context.itemIds || context.itemIds.includes(id));
+    if (!Array.isArray(unit.equipment) || unit.equipment.length > MAX_ITEMS) {
+      fail(`${unit.id} carries too many items`);
+    }
+    for (const item of unit.equipment) {
+      const validCharges = item?.charges === null || (Number.isInteger(item?.charges) && item.charges >= 0 && item.charges <= 99);
+      if (!isObject(item) || !known(item.id) || !validCharges) fail(`${unit.id} carries an invalid item`);
+    }
+    if (!Array.isArray(unit.looted) || unit.looted.length > MAX_ITEMS || !unit.looted.every(known)) {
+      fail(`${unit.id} has an invalid loot record`);
+    }
     const patrolLength = context.patrolLengths?.[unit.id] ?? 0;
     if (
       !Number.isInteger(unit.patrolIndex) ||
@@ -153,6 +170,8 @@ export function validateSaveSnapshot(value, context) {
       levels: { speed: unit.levels.speed, brain: unit.levels.brain },
       stamina: unit.stamina,
       focus: unit.focus,
+      equipment: unit.equipment.map((item) => ({ id: item.id, charges: item.charges })),
+      looted: [...unit.looted],
     };
   });
 
@@ -267,8 +286,21 @@ export function migrateSaveSnapshot(value, context) {
     // Version 7 stores each unit's focus (mental fatigue); older saves start everyone sharp.
     migrated = {
       ...migrated,
-      formatVersion: SAVE_VERSION,
+      formatVersion: 7,
       units: migrated.units.map((unit) => ({ ...unit, focus: 1 })),
+    };
+  }
+  if (migrated.formatVersion === 7) {
+    // Version 8 stores each unit's items (with charges) and what it has looted; older
+    // saves restore the mission's starting items.
+    migrated = {
+      ...migrated,
+      formatVersion: SAVE_VERSION,
+      units: migrated.units.map((unit) => ({
+        ...unit,
+        equipment: (context.initialEquipment?.[unit?.id] ?? []).map((item) => ({ ...item })),
+        looted: [],
+      })),
     };
   }
   // Missions may gain objectives after a save was written; they start incomplete.

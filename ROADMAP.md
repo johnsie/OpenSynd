@@ -110,6 +110,10 @@ levels may not exceed in total, so raising one bar means lowering the other.
 Leaving an operation in progress (switching operations or resetting) asks for
 confirmation first.
 
+Save format version 8 stores each unit's items (with consumable charges) and what
+it has looted, with a tested migration from version 7, so looted gear and spent
+stims survive a save and load.
+
 Fatigue takes levels off the bars. Each operator has two meters: Stamina, which
 walking drains (60 seconds from fresh to empty at Legs level 3, longer with
 stronger legs) and standing still recovers slowly (70 seconds from empty), and
