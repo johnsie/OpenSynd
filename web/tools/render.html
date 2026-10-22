@@ -197,10 +197,10 @@
     const dark = new THREE.MeshStandardMaterial({ color: rgb([34, 38, 48]), roughness: 0.6, metalness: 0.3 });
     const trim = new THREE.MeshStandardMaterial({ color: rgb([245, 195, 90]), roughness: 0.4, metalness: 0.3 });
     const glow = new THREE.MeshBasicMaterial({ color: rgb([120, 245, 240]) });
-    const slide = new THREE.MeshStandardMaterial({ color: rgb([116, 126, 142]), roughness: 0.35, metalness: 0.6 });
+    const slide = new THREE.MeshStandardMaterial({ color: rgb([205, 214, 228]), roughness: 0.3, metalness: 0.55 });
     const heavy = type === "heavy-pulse";
-    const K = heavy ? 1.0 : 1.45; // size of the weapon relative to the drawings below
-    const origin = heavy ? { x: -0.3, y: -0.62, z: 0.5 } : { x: -0.12, y: -0.58, z: 0.7 };
+    const K = heavy ? 1.15 : 2.3; // size of the weapon relative to the drawings below
+    const origin = heavy ? { x: -0.3, y: -0.62, z: 0.5 } : { x: -0.1, y: -0.5, z: 0.45 };
     // `tilt` leans a part about its sideways axis (positive: the top leans forward), for pistol grips.
     const part = (w, h, d, material, x, y, z, tilt = 0) => {
       const mesh = new THREE.Mesh(new THREE.BoxGeometry(unit * w * K, unit * h * K, unit * d * K), material);

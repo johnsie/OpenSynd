@@ -140,7 +140,10 @@ researched items. A weapon is held only while it is selected (a watcher holds it
 alert or fighting): the character is drawn with both hands on a pistol (slim slide,
 tilted grip, trigger guard, sights) or a rifle (scope, magazine, foregrip), with
 both arms solved onto the weapon each frame while the legs keep walking, using
-armed variants of each character rendered from the same animation frames.
+armed variants of each character rendered from the same animation frames. Firing is shown: a muzzle flash
+at the weapon, a short recoil kick, and a thin aim line to the locked target. An
+operative also draws the weapon while firing at a locked target, so a gun never
+fires from empty hands.
 
 Save format version 8 stores each unit's items (with consumable charges) and what
 it has looted, with a tested migration from version 7, so looted gear and spent

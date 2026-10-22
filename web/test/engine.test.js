@@ -671,9 +671,11 @@ test("an operative holds a weapon only while one is selected and loaded", () => 
   const pistol = roundsWeapon(5);
   const rifle = roundsWeapon(3, 20, 4.5, 1.4);
   const medkit = { definition: { action: "restore-vitality", effect: { restoreVitality: 30 } }, charges: 1 };
-  const operative = shooterWith([pistol, medkit, rifle]);
+  const operative = shooterWith([pistol, medkit, rifle], { targetId: null });
 
   assert.equal(heldWeapon(operative), null, "nothing selected: hands empty");
+  assert.equal(heldWeapon({ ...operative, targetId: "w" }), rifle, "firing at a target: the weapon is out");
+  assert.equal(heldWeapon({ ...operative, targetId: "w", equipment: [roundsWeapon(0)] }), null, "nothing to fire");
   assert.equal(heldWeapon({ ...operative, activeSlot: 0 }), pistol);
   assert.equal(heldWeapon({ ...operative, activeSlot: 2 }), rifle);
   assert.equal(heldWeapon({ ...operative, activeSlot: 1 }), null, "a medkit is not a weapon");

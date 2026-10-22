@@ -96,7 +96,15 @@ import {
   missionOutcome,
   resolveArrival, syncGates as syncMissionGates,
 } from "./mission.js";
-import { addEffect, advanceEffects, createEffects, effectProgress, walkBob } from "./effects.js";
+import {
+  addEffect,
+  advanceEffects,
+  createEffects,
+  effectProgress,
+  facingVector,
+  recoilOffset,
+  walkBob,
+} from "./effects.js";
 import { effectiveLevels, speedMultiplier } from "./stats.js";
 import {
   BARS,
@@ -1129,7 +1137,8 @@ function drawUnit(unit, viewport) {
     ? 0
     : walkBob(state.elapsed, unit.path.length > 0 && !unit.disabled, reduceMotion);
   context.save();
-  context.translate(center.x, center.y - size * 0.8 + bob);
+  const kick = recoilOffset(state.elapsed, unit.firedAt, unit.facing, 3.5, reduceMotion);
+  context.translate(center.x + kick.x, center.y - size * 0.8 + bob + kick.y);
   context.fillStyle = "rgba(0, 0, 0, .35)";
   context.beginPath();
   context.ellipse(0, size * 1.05, size * 0.9, size * 0.35, 0, 0, Math.PI * 2);
@@ -1211,6 +1220,7 @@ function draw() {
   );
   drawPickups(viewport);
   for (const unit of units) drawUnit(unit, viewport);
+  drawAim(viewport);
   drawEffects(viewport);
   drawMinimap(viewport);
 }
@@ -1351,6 +1361,35 @@ function drawPickups(viewport) {
   }
 }
 
+// Where the muzzle is on screen: out in front of the unit along its facing, at chest height.
+function muzzlePoint(unit, viewport) {
+  const body = unitScreenPoint(unit, viewport);
+  const direction = facingVector(unit.facing ?? 0);
+  const reach = Math.max(9, viewport.cellSize.height * 0.34) * 1.7;
+  return { x: body.x + direction.x * reach, y: body.y + direction.y * reach * 0.55 + 4 };
+}
+
+// A thin aim line from each armed unit to the target it has locked, so the lock is visible
+// between shots (cyan for the squad, red for watchers).
+function drawAim(viewport) {
+  context.save();
+  context.lineWidth = 1.5;
+  context.setLineDash([3, 5]);
+  for (const unit of state.units) {
+    if (!unit.targetId || unit.disabled || !heldWeapon(unit)) continue;
+    const target = state.units.find((item) => item.id === unit.targetId);
+    if (!target || target.disabled) continue;
+    const from = muzzlePoint(unit, viewport);
+    const to = unitScreenPoint(target, viewport);
+    context.strokeStyle = unit.side === "team" ? "rgba(66, 214, 208, 0.55)" : "rgba(255, 107, 98, 0.55)";
+    context.beginPath();
+    context.moveTo(from.x, from.y);
+    context.lineTo(to.x, to.y);
+    context.stroke();
+  }
+  context.restore();
+}
+
 function drawEffects(viewport) {
   const size = Math.max(9, viewport.cellSize.height * 0.34);
   for (const effect of state.effects) {
@@ -1375,6 +1414,25 @@ function drawEffects(viewport) {
         context.setLineDash([]);
         context.beginPath();
         context.arc(b.x, b.y, size * (0.6 + grow), 0, Math.PI * 2);
+        context.stroke();
+      }
+    } else if (effect.type === "muzzle") {
+      const unit = state.units.find((item) => item.id === effect.unitId);
+      if (unit) {
+        const at = muzzlePoint(unit, viewport);
+        const radius = size * (0.5 + 0.4 * fade);
+        context.fillStyle = `rgba(255, 244, 214, ${0.95 * fade})`;
+        context.beginPath();
+        context.arc(at.x, at.y, radius * 0.45, 0, Math.PI * 2);
+        context.fill();
+        context.strokeStyle = `rgba(120, 245, 240, ${0.9 * fade})`;
+        context.lineWidth = 2;
+        context.beginPath();
+        for (let ray = 0; ray < 6; ray += 1) {
+          const angle = (ray * Math.PI) / 3 + unit.facing;
+          context.moveTo(at.x + Math.cos(angle) * radius * 0.5, at.y + Math.sin(angle) * radius * 0.5);
+          context.lineTo(at.x + Math.cos(angle) * radius * 1.3, at.y + Math.sin(angle) * radius * 1.3);
+        }
         context.stroke();
       }
     } else {
@@ -1434,6 +1492,9 @@ function simulationStep(deltaSeconds) {
     for (const event of combatEvents) {
       if (event.type === "damage") {
         addEffect(state.effects, "pulse", { fromId: event.attackerId, toId: event.targetId });
+        addEffect(state.effects, "muzzle", { unitId: event.attackerId });
+        const shooter = state.units.find((item) => item.id === event.attackerId);
+        if (shooter) shooter.firedAt = state.elapsed;
         if (event.outOfRounds) {
           const shooter = state.units.find((item) => item.id === event.attackerId);
           if (shooter.side === "team") {
