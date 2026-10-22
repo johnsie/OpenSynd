@@ -28,6 +28,7 @@ import {
 } from "./input.js";
 import { missionComplete as isMissionComplete, resolveArrival, syncGates as syncMissionGates } from "./mission.js";
 import { addEffect, advanceEffects, createEffects, effectProgress, walkBob } from "./effects.js";
+import { createMusic } from "./music.js";
 import { createAudio } from "./audio.js";
 import { SETTINGS_KEY, parseSettings, prefersReducedMotion, serializeSettings } from "./settings.js";
 
@@ -68,6 +69,15 @@ const audio = createAudio({
   AudioContextClass: window.AudioContext ?? window.webkitAudioContext,
 });
 
+const music = createMusic({
+  getSettings: () => settings,
+  AudioContextClass: window.AudioContext ?? window.webkitAudioContext,
+});
+// Browsers only allow audio after a user gesture, so music starts on first input.
+for (const type of ["pointerdown", "keydown"]) {
+  window.addEventListener(type, () => music.start(), { once: true });
+}
+
 function readStored(key) {
   try {
     return localStorage.getItem(key);
@@ -84,6 +94,7 @@ function updateSettings(changes) {
     // Settings still apply for this session when storage is unavailable.
   }
   bindings = settings.keyBindings;
+  music.refresh();
   applyTextScale();
 }
 
@@ -95,6 +106,8 @@ const settingsDialog = document.querySelector("#settings-dialog");
 const settingControls = {
   volume: document.querySelector("#setting-volume"),
   muted: document.querySelector("#setting-muted"),
+  music: document.querySelector("#setting-music"),
+  musicVolume: document.querySelector("#setting-music-volume"),
   captions: document.querySelector("#setting-captions"),
   reducedMotion: document.querySelector("#setting-motion"),
   textScale: document.querySelector("#setting-text"),
@@ -152,6 +165,8 @@ function showSettings() {
   renderBindings();
   settingControls.volume.value = settings.volume;
   settingControls.muted.checked = settings.muted;
+  settingControls.music.checked = settings.music;
+  settingControls.musicVolume.value = settings.musicVolume;
   settingControls.captions.checked = settings.captions;
   settingControls.reducedMotion.value = settings.reducedMotion;
   settingControls.textScale.value = settings.textScale;
@@ -164,6 +179,8 @@ document.querySelector("#settings-form").addEventListener("input", () => {
   updateSettings({
     volume: Number(settingControls.volume.value),
     muted: settingControls.muted.checked,
+    music: settingControls.music.checked,
+    musicVolume: Number(settingControls.musicVolume.value),
     captions: settingControls.captions.checked,
     reducedMotion: settingControls.reducedMotion.value,
     textScale: Number(settingControls.textScale.value),

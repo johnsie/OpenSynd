@@ -9,6 +9,8 @@ export const SETTINGS_KEY = "opensynd.settings.v1";
 export const DEFAULT_SETTINGS = Object.freeze({
   volume: 0.6,
   muted: false,
+  music: true,
+  musicVolume: 0.35,
   captions: true,
   reducedMotion: "system",
   textScale: 1,
@@ -28,6 +30,8 @@ export function normalizeSettings(raw) {
   const settings = { ...DEFAULT_SETTINGS };
   if (Number.isFinite(source.volume)) settings.volume = clamp(source.volume, 0, 1);
   if (typeof source.muted === "boolean") settings.muted = source.muted;
+  if (typeof source.music === "boolean") settings.music = source.music;
+  if (Number.isFinite(source.musicVolume)) settings.musicVolume = clamp(source.musicVolume, 0, 1);
   if (typeof source.captions === "boolean") settings.captions = source.captions;
   if (REDUCED_MOTION_VALUES.includes(source.reducedMotion)) {
     settings.reducedMotion = source.reducedMotion;

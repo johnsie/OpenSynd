@@ -72,6 +72,11 @@ that pins fixed-step counts for every leg. Units are drawn from 8-direction
 sprite sheets rendered from CC0 Quaternius models, all registered as
 `quarantined` until a named reviewer approves them.
 
+The prototype also has an original generative score (`web/src/music.js`): a
+four-chord loop in A minor with bass, pad and a delayed arpeggio, synthesized in
+the browser with its own on/off and volume settings, so no audio asset needs
+provenance.
+
 A dependency-free style check (`tools/check_style.py`) enforces SPDX headers,
 final newlines, no tabs or trailing whitespace, a line-length limit, and no
 stray `console.log` in game or test code. It runs in CI alongside syntax

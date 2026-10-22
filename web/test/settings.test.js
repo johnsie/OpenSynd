@@ -69,3 +69,10 @@ test("audio is optional when the browser lacks Web Audio", () => {
   const audio = createAudio({ getSettings: () => DEFAULT_SETTINGS });
   assert.doesNotThrow(() => audio.play("select"));
 });
+
+test("music settings default on, clamp volume and reject bad types", () => {
+  assert.equal(DEFAULT_SETTINGS.music, true);
+  const settings = normalizeSettings({ music: "loud", musicVolume: 3 });
+  assert.equal(settings.music, true);
+  assert.equal(settings.musicVolume, 1);
+});
