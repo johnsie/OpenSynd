@@ -6,9 +6,10 @@ export const LEVEL_MIN = 1;
 export const LEVEL_MAX = 5;
 export const LEVEL_DEFAULT = 3;
 export const BARS = Object.freeze(["speed", "brain"]);
-export const BAR_LABELS = Object.freeze({ speed: "Speed", brain: "Brain" });
+// The key stays "speed" so saves keep working; the label is "Legs".
+export const BAR_LABELS = Object.freeze({ speed: "Legs", brain: "Brain" });
 export const BAR_HINTS = Object.freeze({
-  speed: "How fast the operative walks.",
+  speed: "How fast the operative walks: stronger legs, quicker pace.",
   brain: "How quickly the operative can fire the pulse again.",
 });
 

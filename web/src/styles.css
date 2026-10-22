@@ -237,8 +237,35 @@ canvas:focus-visible { box-shadow: inset 0 0 0 2px var(--public); }
 .objective-list li.complete::before { content: "◆"; color: var(--restored); }
 
 .roster { display: grid; gap: 0.55rem; margin-top: 0.75rem; }
-.roster button { display: grid; grid-template-columns: auto 1fr auto; align-items: center; text-align: left; gap: 0.7rem; }
-.roster button[aria-pressed="true"] { color: var(--ink); background: rgba(66, 214, 208, 0.14); border-color: var(--public); }
+.roster-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 0.35rem 0.6rem;
+  padding: 0.5rem;
+  border: 1px solid rgba(124, 161, 170, 0.3);
+  background: rgba(10, 18, 22, 0.6);
+}
+.roster-item.selected { background: rgba(66, 214, 208, 0.14); border-color: var(--public); }
+.roster-item.down { opacity: 0.55; }
+.roster-item input[type="checkbox"] { width: 1.15rem; height: 1.15rem; accent-color: var(--public); }
+.roster-select {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  text-align: left;
+  gap: 0.7rem;
+  border: 0;
+  background: none;
+}
+.roster-select[aria-pressed="true"] {
+  color: var(--ink);
+  background: none;
+  border: 0;
+}
+.roster-bars { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; font-size: 0.8rem; color: var(--muted); }
+.roster-bars .bar-group { display: inline-flex; align-items: center; gap: 0.4rem; }
+.roster-bars button { min-width: 1.6rem; padding: 0.05rem 0.35rem; font-size: 0.9rem; }
 .operator-glyph { color: var(--public); font-size: 1.3rem; }
 .operator-position { color: var(--muted); font: 0.68rem ui-monospace, monospace; }
 .threats { display: grid; gap: 0.55rem; margin-top: 0.75rem; }
@@ -336,6 +363,4 @@ dialog .primary { margin-right: 0.5rem; }
   border: 1px solid rgba(124, 161, 170, 0.35);
 }
 .bar i.filled { background: var(--public); border-color: var(--public); }
-.roster .mini-bars { grid-column: 1 / -1; display: flex; gap: 0.9rem; font-size: 0.75rem; color: var(--muted); }
-.roster .mini-bars .bar i { min-width: 0.55rem; height: 0.45rem; }
-.roster .mini-bars span { display: inline-flex; align-items: center; gap: 0.35rem; }
+.roster-bars .bar i { min-width: 0.7rem; height: 0.5rem; }

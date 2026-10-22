@@ -61,7 +61,7 @@ for (const [name, type, executablePath] of targets) {
     const errors = [];
     page.on("pageerror", (error) => errors.push(error.message));
     await page.goto(`${url}?e2e`);
-    await page.waitForSelector("#roster button");
+    await page.waitForSelector(".roster-select");
     assert.match(await page.locator("#title-dialog").innerText(), /First Light/);
     await page.click("#begin-button");
     // Watchers patrol: their positions change on their own.
@@ -71,7 +71,7 @@ for (const [name, type, executablePath] of targets) {
     assert.notDeepEqual(after["watcher-one"], before["watcher-one"]);
     assert.deepEqual(after["operator-one"], before["operator-one"]);
     assert.match(await page.locator("#objective-list").innerText(), /service gate/i);
-    await page.locator("#roster button").first().click();
+    await page.locator(".roster-select").first().click();
     assert.doesNotMatch(await page.locator("#selected-readout").innerText(), /No operator selected/);
 
     await page.locator("#game-canvas").focus();
@@ -81,25 +81,35 @@ for (const [name, type, executablePath] of targets) {
     assert.match(await page.locator("#status-message").innerText(), /Route/);
 
     // Training bars: raise Speed for one operator, then lower Brain for everyone.
-    const speedRaise = page.getByRole("button", { name: "Raise Speed" });
-    await speedRaise.click();
-    assert.match(await page.locator("#status-message").innerText(), /Speed raised/);
-    assert.equal(
-      await page.locator('#training-bars [aria-label="Speed 4 of 5"]').count(),
-      1,
-    );
-    assert.equal(await page.locator('.roster [aria-label^="Speed"]').count(), 4);
+    await page.getByRole("button", { name: "Raise Legs", exact: true }).click();
+    assert.match(await page.locator("#status-message").innerText(), /Legs raised/);
+    assert.equal(await page.locator('#training-bars [aria-label="Legs 4 of 5"]').count(), 1);
+    assert.equal(await page.locator('.roster [aria-label^="Legs of"]').count(), 4);
+    // Each operator's own controls change only that operator.
+    await page.getByRole("button", { name: "Raise Brain for Field Operator 3" }).click();
+    assert.equal(await page.locator('[aria-label="Brain of Field Operator 3 4 of 5"]').count(), 1);
+    assert.equal(await page.locator('[aria-label="Brain of Field Operator 1 4 of 5"]').count(), 0);
+    await page.getByRole("button", { name: "Lower Brain for Field Operator 3" }).click();
+    // Pick two operators with the roster checkboxes.
+    await page.getByLabel("Include Field Operator 2 in the selection").check();
+    await page.getByLabel("Include Field Operator 3 in the selection").check();
+    assert.match(await page.locator("#status-message").innerText(), /3 operators selected/);
+    await page.getByLabel("Include Field Operator 1 in the selection").uncheck();
+    assert.match(await page.locator("#status-message").innerText(), /2 operators selected/);
+    await page.getByRole("button", { name: "Lower Legs", exact: true }).click();
+    assert.match(await page.locator("#status-message").innerText(), /Selected operators: Legs lowered/);
+    await page.locator(".roster-select").first().click();
     // Select all operators with the A key, then check they all show as selected.
     await page.keyboard.press("a");
-    const pressed = await page.locator("#roster button").evaluateAll((buttons) =>
+    const pressed = await page.locator(".roster-select").evaluateAll((buttons) =>
       buttons.map((button) => button.getAttribute("aria-pressed")),
     );
     assert.deepEqual(pressed, ["true", "true", "true", "true"]);
     await page.click("#select-all-button");
     assert.match(await page.locator("#status-message").innerText(), /All 4 operators selected/);
-    await page.getByRole("button", { name: "Lower Brain" }).click();
-    assert.match(await page.locator("#status-message").innerText(), /All operators: Brain lowered/);
-    assert.equal(await page.locator('.roster [aria-label="Brain 2 of 5"]').count(), 4);
+    await page.getByRole("button", { name: "Lower Brain", exact: true }).click();
+    assert.match(await page.locator("#status-message").innerText(), /Selected operators: Brain lowered/);
+    assert.equal(await page.locator('.roster [aria-label^="Brain of"][aria-label$="2 of 5"]').count(), 4);
     // Camera controls: zoom with the wheel and keys, jump with the minimap, recentre with C.
     await page.locator("#game-canvas").hover();
     await page.mouse.wheel(0, -200);

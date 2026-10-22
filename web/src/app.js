@@ -49,7 +49,16 @@ import {
   resolveArrival, syncGates as syncMissionGates,
 } from "./mission.js";
 import { addEffect, advanceEffects, createEffects, effectProgress, walkBob } from "./effects.js";
-import { BARS, BAR_HINTS, BAR_LABELS, LEVEL_MAX, adjustLevel, defaultLevels } from "./stats.js";
+import {
+  BARS,
+  BAR_HINTS,
+  BAR_LABELS,
+  LEVEL_MAX,
+  LEVEL_MIN,
+  adjustLevel,
+  defaultLevels,
+} from "./stats.js";
+import { isSelected, prune, selectMany, selectOnly, toggle } from "./selection.js";
 import { createMusic } from "./music.js";
 import { createAudio } from "./audio.js";
 import { SETTINGS_KEY, parseSettings, prefersReducedMotion, serializeSettings } from "./settings.js";
@@ -244,7 +253,7 @@ async function loadSprites() {
 const state = {
   camera: createCamera({ x: 0, y: 0 }),
   miniTerrain: null,
-  group: false,
+  selectedIds: [],
   outcome: "active",
   missionSeconds: 0,
   modal: false,
@@ -319,10 +328,10 @@ async function loadGame() {
   // Reset only now that the new units exist, or the old squad would re-trigger the outcome.
   state.outcome = "active";
   state.missionSeconds = 0;
-  state.group = false;
   state.camera = createCamera(mission.team[0].position);
   buildMiniTerrain();
   state.selectedId = mission.team[0].id;
+  state.selectedIds = [state.selectedId];
   state.cursor = { ...mission.team[0].position };
   state.paused = false;
   state.effects.length = 0;
@@ -397,8 +406,8 @@ function applySaveSnapshot(snapshot) {
     objective.complete = objectivesById.get(objective.id).complete;
   }
   syncGates();
-  state.group = false;
   state.selectedId = snapshot.selectedId;
+  state.selectedIds = snapshot.selectedId ? [snapshot.selectedId] : [];
   state.cursor = { ...snapshot.cursor };
   state.paused = false;
   state.clock.accumulator = 0;
@@ -694,8 +703,8 @@ function drawUnit(unit, viewport) {
   context.ellipse(0, size * 1.05, size * 0.9, size * 0.35, 0, 0, Math.PI * 2);
   context.fill();
 
-  const inGroup = state.group && unit.side === "team" && !unit.disabled;
-  if (unit.id === state.selectedId || inGroup) {
+  const picked = state.selectedIds.includes(unit.id) && !unit.disabled;
+  if (unit.id === state.selectedId || picked) {
     context.strokeStyle = "#42d6d0";
     context.lineWidth = 2;
     context.beginPath();
@@ -936,11 +945,7 @@ function simulationStep(deltaSeconds) {
           ? `${unit.definition.name} disabled. Route is clearer.`
           : `${unit.definition.name} disabled. Select another operator.`,
       );
-      if (latest.unitId === state.selectedId) {
-        state.selectedId = state.units.find(
-          (item) => item.side === "team" && !item.disabled,
-        )?.id ?? null;
-      }
+      pruneSelection();
     } else {
       const target = state.units.find((item) => item.id === latest.targetId);
       setStatus(`${target.definition.name} integrity: ${latest.remaining}.`);
@@ -1028,7 +1033,7 @@ function completeObjectivesAt(position) {
 
 // The operator who can interact right now (any group member in group mode) and what with.
 function interactionCandidate() {
-  const candidates = state.group ? activeOperators() : [selectedUnit()];
+  const candidates = selectedOperators();
   for (const unit of candidates) {
     if (!unit || unit.disabled || unit.path.length > 0) continue;
     const objective = findObjectiveAtPosition(
@@ -1074,14 +1079,39 @@ function selectedUnit() {
   return state.units.find((unit) => unit.id === state.selectedId) ?? null;
 }
 
+function activeOperators() {
+  return state.units.filter((unit) => unit.side === "team" && !unit.disabled);
+}
+
+function applySelection(selection) {
+  state.selectedId = selection.primary;
+  state.selectedIds = selection.ids;
+}
+
+// Operators that orders apply to: everyone selected who can still act.
+function selectedOperators() {
+  const picked = activeOperators().filter((unit) => isSelected({ ids: state.selectedIds }, unit.id));
+  if (picked.length > 0) return picked;
+  const primary = selectedUnit();
+  return primary && !primary.disabled ? [primary] : [];
+}
+
+function pruneSelection() {
+  applySelection(
+    prune(
+      { primary: state.selectedId, ids: state.selectedIds },
+      activeOperators().map((unit) => unit.id),
+    ),
+  );
+}
+
 function selectUnit(id) {
   const requested = state.units.find((unit) => unit.id === id);
   if (!requested || requested.side !== "team" || requested.disabled) {
     setStatus("That operator is unavailable.");
     return;
   }
-  state.selectedId = id;
-  state.group = false;
+  applySelection(selectOnly(id));
   const unit = selectedUnit();
   if (unit) {
     state.cursor = { x: Math.round(unit.position.x), y: Math.round(unit.position.y) };
@@ -1093,8 +1123,18 @@ function selectUnit(id) {
   canvas.focus();
 }
 
-function activeOperators() {
-  return state.units.filter((unit) => unit.side === "team" && !unit.disabled);
+// Add or remove one operator from the selection (Ctrl/Shift-click or the roster checkbox).
+function toggleSelect(id) {
+  const requested = state.units.find((unit) => unit.id === id);
+  if (!requested || requested.side !== "team" || requested.disabled) {
+    setStatus("That operator is unavailable.");
+    return;
+  }
+  applySelection(toggle({ primary: state.selectedId, ids: state.selectedIds }, id));
+  setStatus(`${selectedOperators().length} operators selected.`);
+  audio.play("select");
+  renderInterface();
+  canvas.focus();
 }
 
 function selectAll() {
@@ -1103,8 +1143,9 @@ function selectAll() {
     setStatus("No operators are available.");
     return;
   }
-  state.group = true;
-  if (!operators.some((unit) => unit.id === state.selectedId)) state.selectedId = operators[0].id;
+  const keepPrimary = operators.find((unit) => unit.id === state.selectedId);
+  const primary = (keepPrimary ?? operators[0]).id;
+  applySelection(selectMany([primary, ...operators.map((unit) => unit.id).filter((id) => id !== primary)]));
   setStatus(`All ${operators.length} operators selected.`);
   audio.play("select");
   renderInterface();
@@ -1143,8 +1184,9 @@ function groupDestinations(operators, destination) {
 }
 
 function issueMove(destination) {
-  if (state.group) {
-    const assignments = groupDestinations(activeOperators(), destination);
+  const squad = selectedOperators();
+  if (squad.length > 1) {
+    const assignments = groupDestinations(squad, destination);
     const moving = assignments.filter(([unit, tile]) => orderMove(unit, tile) > 0);
     if (moving.length === 0) {
       setStatus("No safe route to that tile.");
@@ -1197,8 +1239,9 @@ function issueAttack(targetId) {
     setStatus("That watcher is already disabled.");
     return;
   }
-  if (state.group) {
-    const operators = activeOperators();
+  const squad = selectedOperators();
+  if (squad.length > 1) {
+    const operators = squad;
     const locked = operators.filter((unit) => lockPulse(unit, target) === "locked");
     if (locked.length === 0) {
       setStatus("No selected operator is within pulse range. Move closer, then target again.");
@@ -1325,8 +1368,9 @@ canvas.addEventListener("click", (event) => {
   const position = { x: event.clientX - bounds.left, y: event.clientY - bounds.top };
   const unit = hitUnit(position);
   if (unit) {
-    if (unit.side === "team") selectUnit(unit.id);
-    else issueAttack(unit.id);
+    if (unit.side !== "team") issueAttack(unit.id);
+    else if (event.ctrlKey || event.shiftKey || event.metaKey) toggleSelect(unit.id);
+    else selectUnit(unit.id);
     return;
   }
   const destination = screenToGrid(position, state.viewport.cellSize, state.viewport.origin);
@@ -1378,8 +1422,7 @@ canvas.addEventListener("keydown", (event) => {
     event.preventDefault();
     selectAll();
   } else if (action === "deselect") {
-    state.selectedId = null;
-    state.group = false;
+    applySelection({ primary: null, ids: [] });
     renderInterface();
   }
 });
@@ -1480,9 +1523,7 @@ function levelBar(level, label) {
   return bar;
 }
 
-// Raise or lower a bar for the selected operator, or for everyone in group mode.
-function adjustTraining(bar, delta) {
-  const targets = state.group ? activeOperators() : [selectedUnit()].filter(Boolean);
+function applyLevelChange(targets, bar, delta, subject) {
   let changed = 0;
   for (const unit of targets) {
     const next = adjustLevel(unit.levels, bar, delta);
@@ -1495,19 +1536,33 @@ function adjustTraining(bar, delta) {
     setStatus(`${BAR_LABELS[bar]} cannot go ${delta > 0 ? "higher" : "lower"}.`);
     return;
   }
-  const subject = state.group ? "All operators" : targets[0].definition.name;
   setStatus(`${subject}: ${BAR_LABELS[bar]} ${delta > 0 ? "raised" : "lowered"}.`);
   audio.play("select");
   renderInterface();
+}
+
+// Change one operator's own bar from its roster entry.
+function adjustOperator(unit, bar, delta) {
+  applyLevelChange([unit], bar, delta, unit.definition.name);
+}
+
+// Change a bar for every selected operator from the Training panel.
+function adjustTraining(bar, delta) {
+  const targets = selectedOperators();
+  const subject = targets.length > 1 ? "Selected operators" : targets[0]?.definition.name;
+  applyLevelChange(targets, bar, delta, subject);
   canvas.focus();
 }
 
 function renderTraining() {
   const unit = selectedUnit();
   const container = document.querySelector("#training-bars");
-  document.querySelector("#training-heading").textContent = unit
-    ? `${unit.definition.name} ${state.units.filter((item) => item.side === "team").indexOf(unit) + 1}`
-    : "Operative bars";
+  const picked = selectedOperators();
+  document.querySelector("#training-heading").textContent = picked.length > 1
+    ? `${picked.length} operators selected`
+    : unit
+      ? `${unit.definition.name} ${state.units.filter((item) => item.side === "team").indexOf(unit) + 1}`
+      : "Operative bars";
   container.replaceChildren(
     ...BARS.map((bar) => {
       const row = document.createElement("div");
@@ -1553,38 +1608,72 @@ function renderInterface() {
 
   const selectAllButton = document.querySelector("#select-all-button");
   selectAllButton.textContent = `Select all (${bindingLabel(bindings.selectAll)})`;
-  selectAllButton.setAttribute("aria-pressed", String(state.group));
+  selectAllButton.setAttribute(
+    "aria-pressed",
+    String(activeOperators().length > 1 && selectedOperators().length === activeOperators().length),
+  );
   const operators = state.units.filter((unit) => unit.side === "team");
   rosterElement.replaceChildren(
     ...operators.map((unit, index) => {
+      const label = `${unit.definition.name} ${index + 1}`;
+      const picked = isSelected({ ids: state.selectedIds }, unit.id) && !unit.disabled;
+      const item = document.createElement("div");
+      item.className = "roster-item";
+      item.classList.toggle("selected", picked);
+      item.classList.toggle("down", unit.disabled);
+
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.checked = picked;
+      checkbox.disabled = unit.disabled;
+      checkbox.setAttribute("aria-label", `Include ${label} in the selection`);
+      checkbox.addEventListener("change", () => toggleSelect(unit.id));
+
       const button = document.createElement("button");
       button.type = "button";
+      button.className = "roster-select";
       button.disabled = unit.disabled;
-      button.setAttribute(
-        "aria-pressed",
-        String(unit.id === state.selectedId || (state.group && !unit.disabled)),
-      );
-      button.addEventListener("click", () => selectUnit(unit.id));
+      button.setAttribute("aria-pressed", String(picked));
+      button.title = "Click to select only this operator. Ctrl or Shift-click adds to the selection.";
+      button.addEventListener("click", (event) => {
+        if (event.ctrlKey || event.shiftKey || event.metaKey) toggleSelect(unit.id);
+        else selectUnit(unit.id);
+      });
       const pad = (value) => Math.round(value).toString().padStart(2, "0");
-      const location = `${pad(unit.position.x)}:${pad(unit.position.y)}`;
       const glyph = document.createElement("span");
       glyph.className = "operator-glyph";
       glyph.setAttribute("aria-hidden", "true");
       glyph.textContent = "◇";
       const name = document.createElement("span");
-      name.textContent = `${unit.definition.name} ${index + 1} · ${unit.health}/${unit.definition.stats.vitality}`;
+      name.textContent = `${label} · ${unit.health}/${unit.definition.stats.vitality}`;
       const position = document.createElement("span");
       position.className = "operator-position";
-      position.textContent = location;
-      const bars = document.createElement("span");
-      bars.className = "mini-bars";
+      position.textContent = `${pad(unit.position.x)}:${pad(unit.position.y)}`;
+      button.append(glyph, name, position);
+
+      // Each operator's own bars: these change only this operator.
+      const bars = document.createElement("div");
+      bars.className = "roster-bars";
       for (const bar of BARS) {
         const group = document.createElement("span");
-        group.append(BAR_LABELS[bar], levelBar(unit.levels[bar], BAR_LABELS[bar]));
+        group.className = "bar-group";
+        const lower = document.createElement("button");
+        lower.type = "button";
+        lower.textContent = "−";
+        lower.disabled = unit.disabled || unit.levels[bar] <= LEVEL_MIN;
+        lower.setAttribute("aria-label", `Lower ${BAR_LABELS[bar]} for ${label}`);
+        lower.addEventListener("click", () => adjustOperator(unit, bar, -1));
+        const raise = document.createElement("button");
+        raise.type = "button";
+        raise.textContent = "+";
+        raise.disabled = unit.disabled || unit.levels[bar] >= LEVEL_MAX;
+        raise.setAttribute("aria-label", `Raise ${BAR_LABELS[bar]} for ${label}`);
+        raise.addEventListener("click", () => adjustOperator(unit, bar, 1));
+        group.append(BAR_LABELS[bar], levelBar(unit.levels[bar], `${BAR_LABELS[bar]} of ${label}`), lower, raise);
         bars.append(group);
       }
-      button.append(glyph, name, position, bars);
-      return button;
+      item.append(checkbox, button, bars);
+      return item;
     }),
   );
 

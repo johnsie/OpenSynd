@@ -83,11 +83,16 @@ remappable camera keys.
 
 Security watchers now patrol deterministic routes built from mission waypoints
 (`patrol` in the mission schema). A patrolling watcher holds position while it
-has a target in pulse range and resumes afterwards. Every operator has two adjustable training bars, Speed and Brain, each from 1 to
-5 with 3 as the baseline in the unit data. Speed scales walking pace from 0.6x
+has a target in pulse range and resumes afterwards. Every operator has two adjustable training bars, Legs (saved as `speed`) and Brain, each from 1 to
+5 with 3 as the baseline in the unit data. Legs scales walking pace from 0.6x
 to 1.4x; Brain scales the pulse cooldown from 1.3x to 0.7x (shorter is
 faster). The rules are pure (`web/src/stats.js`), covered by tests, and saved
 in format version 5 with a tested migration from version 4.
+
+Operators can be picked individually: each roster entry has a selection checkbox,
+Ctrl/Shift-click adds or removes an operator, and each entry carries its own
+Legs and Brain controls. Orders (moves, pulses, interactions, training from the
+Training panel) apply to everyone selected.
 
 Watchers also notice operators within sight (awareness x 0.1 tiles), chase them
 over real streets at 85% of an operator's speed so a fleeing squad keeps its
