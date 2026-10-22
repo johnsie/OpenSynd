@@ -1,0 +1,171 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+import assert from "node:assert/strict";
+import test from "node:test";
+
+import {
+  createTileGrid,
+  findObjectiveAtPosition,
+  findPath,
+  gridToScreen,
+  screenToGrid,
+  zoneContains,
+} from "../src/engine.js";
+import {
+  FIXED_STEP_SECONDS,
+  advanceCombat,
+  advanceUnits,
+  consumeFixedSteps,
+} from "../src/simulation.js";
+
+const map = {
+  dimensions: { width: 5, height: 4 },
+  regions: [
+    { id: "ground", x: 0, y: 0, width: 5, height: 4, walkable: true, elevation: 0 },
+    { id: "wall", x: 2, y: 0, width: 1, height: 3, walkable: false, elevation: 2 },
+  ],
+};
+
+test("later regions override earlier map regions", () => {
+  const grid = createTileGrid(map);
+  assert.equal(grid[1][1].id, "ground");
+  assert.equal(grid[1][2].id, "wall");
+});
+
+test("pathfinding routes around unwalkable regions", () => {
+  const path = findPath(createTileGrid(map), { x: 0, y: 1 }, { x: 4, y: 1 });
+  assert.ok(path.length > 4);
+  assert.ok(path.every((position) => position.x !== 2 || position.y === 3));
+  assert.deepEqual(path.at(-1), { x: 4, y: 1 });
+});
+
+test("isometric projection round-trips tile centers", () => {
+  const cell = { width: 80, height: 40 };
+  const origin = { x: 240, y: 50 };
+  for (const position of [{ x: 0, y: 0 }, { x: 4, y: 2 }, { x: 1, y: 3 }]) {
+    assert.deepEqual(screenToGrid(gridToScreen(position, cell, origin), cell, origin), position);
+  }
+});
+
+test("zone containment excludes the far boundary", () => {
+  const zone = { position: { x: 3, y: 2 }, width: 2, height: 2 };
+  assert.equal(zoneContains(zone, { x: 4, y: 3 }), true);
+  assert.equal(zoneContains(zone, { x: 5, y: 3 }), false);
+});
+
+test("interaction lookup finds only pending objectives in the active zone", () => {
+  const objectives = [
+    { id: "done", type: "interact", targetZone: "west", complete: true },
+    { id: "pending", type: "interact", targetZone: "east", complete: false },
+  ];
+  const zones = [
+    { id: "west", position: { x: 1, y: 1 }, width: 1, height: 1 },
+    { id: "east", position: { x: 3, y: 2 }, width: 2, height: 2 },
+  ];
+
+  assert.equal(findObjectiveAtPosition(objectives, zones, { x: 3, y: 3 }, "interact")?.id, "pending");
+  assert.equal(findObjectiveAtPosition(objectives, zones, { x: 1, y: 1 }, "interact"), null);
+});
+
+function movingUnit() {
+  return {
+    id: "operator-1",
+    side: "team",
+    definition: { stats: { speed: 3 } },
+    position: { x: 0, y: 0 },
+    path: [
+      { x: 1, y: 0 },
+      { x: 2, y: 0 },
+      { x: 2, y: 1 },
+    ],
+  };
+}
+
+test("fixed-step replay is independent of render-frame frequency", () => {
+  const replay = (frameDurations) => {
+    const unit = movingUnit();
+    const clock = { accumulator: 0 };
+    const arrivals = [];
+    let ticks = 0;
+    for (const duration of frameDurations) {
+      consumeFixedSteps(clock, duration, (stepSeconds) => {
+        arrivals.push(...advanceUnits([unit], stepSeconds));
+        ticks += 1;
+      });
+    }
+    return { unit, arrivals, ticks };
+  };
+
+  const thirtyFps = replay(Array(60).fill(FIXED_STEP_SECONDS));
+  const sixtyFps = replay(Array(120).fill(FIXED_STEP_SECONDS / 2));
+
+  assert.deepEqual(sixtyFps, thirtyFps);
+  assert.deepEqual(thirtyFps.unit.position, { x: 2, y: 1 });
+});
+
+test("fixed-step clock retains fractional frame time", () => {
+  const clock = { accumulator: 0 };
+  let ticks = 0;
+  const step = () => {
+    ticks += 1;
+  };
+
+  consumeFixedSteps(clock, FIXED_STEP_SECONDS * 0.4, step);
+  consumeFixedSteps(clock, FIXED_STEP_SECONDS * 0.6, step);
+
+  assert.equal(ticks, 1);
+  assert.equal(clock.accumulator, 0);
+});
+
+function combatUnits() {
+  return [
+    {
+      id: "operator-one",
+      side: "team",
+      definition: { stats: { attack: 12, range: 3.25, cooldown: 0.75 } },
+      position: { x: 1, y: 1 },
+      path: [],
+      health: 100,
+      cooldownRemaining: 0,
+      targetId: "watcher-one",
+      disabled: false,
+    },
+    {
+      id: "watcher-one",
+      side: "opposition",
+      definition: { stats: { attack: 6, range: 2.5, cooldown: 1.2 } },
+      position: { x: 3, y: 1 },
+      path: [],
+      health: 45,
+      cooldownRemaining: 0,
+      targetId: null,
+      disabled: false,
+    },
+  ];
+}
+
+test("combat replay applies deterministic damage and disabling", () => {
+  const replay = () => {
+    const units = combatUnits();
+    const events = [];
+    for (let tick = 0; tick < 120; tick += 1) {
+      events.push(...advanceCombat(units, FIXED_STEP_SECONDS));
+    }
+    return { units, events };
+  };
+
+  const first = replay();
+  const second = replay();
+  assert.deepEqual(first, second);
+  assert.equal(first.units[1].health, 0);
+  assert.equal(first.units[1].disabled, true);
+  assert.ok(first.events.some((event) => event.type === "disabled"));
+});
+
+test("combat does not apply damage outside weapon range", () => {
+  const units = combatUnits();
+  units[1].position = { x: 7, y: 5 };
+  assert.deepEqual(advanceCombat(units, FIXED_STEP_SECONDS), []);
+  assert.equal(units[0].health, 100);
+  assert.equal(units[1].health, 45);
+});

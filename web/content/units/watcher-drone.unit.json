@@ -1,0 +1,22 @@
+{
+  "formatVersion": 1,
+  "id": "developer.watcher-drone",
+  "name": "Watcher Drone",
+  "license": "CC0-1.0",
+  "role": "drone",
+  "stats": {
+    "vitality": 45,
+    "speed": 3.25,
+    "awareness": 85,
+    "attack": 6,
+    "range": 2.5,
+    "cooldown": 1.2
+  },
+  "abilities": ["observe", "raise-alert"],
+  "appearance": {
+    "shape": "hexagon",
+    "primaryColor": "#3d454d",
+    "accentColor": "#ff6b62",
+    "marker": "W"
+  }
+}

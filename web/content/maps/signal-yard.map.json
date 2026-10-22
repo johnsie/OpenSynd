@@ -1,0 +1,25 @@
+{
+  "formatVersion": 1,
+  "id": "developer.signal-yard",
+  "name": "Signal Yard",
+  "license": "CC0-1.0",
+  "projection": "isometric-diamond",
+  "dimensions": { "width": 16, "height": 12 },
+  "cellSize": { "width": 80, "height": 40 },
+  "regions": [
+    { "id": "ground", "x": 0, "y": 0, "width": 16, "height": 12, "surface": "service-concrete", "walkable": true, "elevation": 0, "color": "#293138" },
+    { "id": "water-channel", "x": 7, "y": 0, "width": 2, "height": 12, "surface": "runoff-channel", "walkable": false, "elevation": 0, "color": "#12313d" },
+    { "id": "north-bridge", "x": 7, "y": 3, "width": 2, "height": 2, "surface": "signal-grate", "walkable": true, "elevation": 1, "color": "#59717a" },
+    { "id": "south-bridge", "x": 7, "y": 8, "width": 2, "height": 1, "surface": "signal-grate", "walkable": true, "elevation": 1, "color": "#59717a" },
+    { "id": "west-relay-base", "x": 3, "y": 3, "width": 2, "height": 2, "surface": "relay-pad", "walkable": true, "elevation": 1, "color": "#8b6b32" },
+    { "id": "east-relay-base", "x": 11, "y": 7, "width": 2, "height": 2, "surface": "relay-pad", "walkable": true, "elevation": 1, "color": "#8b6b32" },
+    { "id": "north-block", "x": 10, "y": 1, "width": 4, "height": 3, "surface": "utility-building", "walkable": false, "elevation": 3, "color": "#1d2227" },
+    { "id": "south-block", "x": 2, "y": 8, "width": 3, "height": 3, "surface": "utility-building", "walkable": false, "elevation": 2, "color": "#1d2227" }
+  ],
+  "zones": [
+    { "id": "team-entry", "kind": "entry", "position": { "x": 1, "y": 5 }, "width": 2, "height": 2 },
+    { "id": "west-relay", "kind": "interaction", "position": { "x": 3, "y": 3 }, "width": 2, "height": 2 },
+    { "id": "east-relay", "kind": "interaction", "position": { "x": 11, "y": 7 }, "width": 2, "height": 2 },
+    { "id": "safe-exit", "kind": "exit", "position": { "x": 14, "y": 9 }, "width": 2, "height": 2 }
+  ]
+}

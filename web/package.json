@@ -1,0 +1,15 @@
+{
+  "name": "opensynd-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "license": "GPL-2.0-or-later",
+  "scripts": {
+    "build": "node build.mjs",
+    "e2e": "node build.mjs && node e2e/smoke.mjs",
+    "test": "node --check src/app.js && node --check src/engine.js && node --check src/save.js && node --check src/simulation.js && node --check src/settings.js && node --check src/audio.js && node --check src/input.js && node --test test/*.test.js"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.64.1"
+  }
+}
