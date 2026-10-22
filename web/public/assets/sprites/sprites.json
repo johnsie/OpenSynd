@@ -1,8 +1,8 @@
 {
   "source": "Kenney Animated Characters Protagonists 1.1 (CC0-1.0)",
   "sheets": {
-    "criminalMaleA": {
-      "file": "criminalMaleA.png",
+    "operative-one": {
+      "file": "operative-one.png",
       "frameSize": 128,
       "directions": 8,
       "animations": [
@@ -20,8 +20,8 @@
         }
       ]
     },
-    "cyborgFemaleA": {
-      "file": "cyborgFemaleA.png",
+    "operative-two": {
+      "file": "operative-two.png",
       "frameSize": 128,
       "directions": 8,
       "animations": [
@@ -39,8 +39,8 @@
         }
       ]
     },
-    "skaterMaleA": {
-      "file": "skaterMaleA.png",
+    "operative-three": {
+      "file": "operative-three.png",
       "frameSize": 128,
       "directions": 8,
       "animations": [
@@ -58,8 +58,8 @@
         }
       ]
     },
-    "skaterFemaleA": {
-      "file": "skaterFemaleA.png",
+    "operative-four": {
+      "file": "operative-four.png",
       "frameSize": 128,
       "directions": 8,
       "animations": [

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-// Renders the CC0 Kenney character model to 8-direction sprite sheets.
+// Renders the CC0 Kenney character model, with the recoloured operative skins
+// from tools/make-skins.py, to 8-direction sprite sheets.
 // Usage: node tools/render-sprites.mjs   (CHROMIUM_PATH selects the browser)
 
 import { mkdir, readFile, writeFile } from "node:fs/promises";
@@ -32,7 +33,7 @@ const server = createServer(async (request, response) => {
 });
 await new Promise((done) => server.listen(0, "127.0.0.1", done));
 
-const skins = ["criminalMaleA", "cyborgFemaleA", "skaterMaleA", "skaterFemaleA"];
+const skins = ["operative-one", "operative-two", "operative-three", "operative-four"];
 const animations = {
   idle: { url: `${source}/Animations/idle.fbx`, frames: 4 },
   run: { url: `${source}/Animations/run.fbx`, frames: 8 },
@@ -55,7 +56,7 @@ try {
       (options) => window.renderSheet(options),
       {
         model: `${source}/Model/characterMedium.fbx`,
-        skin: `${source}/Skins/${skin}.png`,
+        skin: `/art-source/opensynd-skins/${skin}.png`,
         animations,
       },
     );

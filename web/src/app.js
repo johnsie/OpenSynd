@@ -171,7 +171,7 @@ document.querySelector("#settings-form").addEventListener("input", () => {
 });
 applyTextScale();
 
-const SPRITE_SKINS = ["criminalMaleA", "cyborgFemaleA", "skaterMaleA", "skaterFemaleA"];
+const SPRITE_SKINS = ["operative-one", "operative-two", "operative-three", "operative-four"];
 const sprites = { manifest: null, images: new Map() };
 
 // Sprite sheets are optional: units fall back to vector shapes if they fail to load.

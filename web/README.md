@@ -56,3 +56,7 @@ CHROMIUM_PATH=/usr/bin/google-chrome node tools/render-sprites.mjs
 Every file is listed in `provenance/assets.json` and stays `quarantined` until a
 named reviewer approves it. If the sheets fail to load, units fall back to
 vector shapes.
+
+Operative skins are recoloured from the Kenney suit skin by `tools/make-skins.py`
+(needs Pillow): beige coats with a per-operative accent colour, hair and skin
+tone. They carry no agency or organisation marks.
