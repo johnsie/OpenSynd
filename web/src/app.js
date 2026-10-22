@@ -1028,14 +1028,15 @@ function drawTile(tile, viewport) {
   context.stroke();
 }
 
-const LIT_COLOURS = ["#7fe9ff", "#ffd27a", "#ff8be8"];
-
-// One building: a single prism with lit windows, neon trim, a roof with equipment and, on the
-// tall ones, a stepped upper tier. Returns its screen box so hidden operatives can be marked.
+// One building: solid walls with a base plinth, floor ledges and a few large windows per
+// floor, topped by a flat roof with a raised parapet, vents and a stair house. Returns its
+// screen box so hidden operatives can be marked.
 function drawBuilding(building, viewport, size) {
   const style = buildingStyle(building);
   const { cellSize, origin } = viewport;
-  const wallHeight = (building.elevation + 2) * cellSize.height * 0.8;
+  const floors = building.elevation + 2;
+  const floorHeight = cellSize.height * 0.8;
+  const wallHeight = floors * floorHeight;
   const box = {
     x0: building.x - 0.5,
     y0: building.y - 0.5,
@@ -1056,159 +1057,145 @@ function drawBuilding(building, viewport, size) {
     return bounds;
   }
   const random = seededRandom(style.seed);
-  const lit = [[], [], []];
-  const dark = [];
+  const quad = (points) => {
+    context.beginPath();
+    points.forEach((point, index) => (index === 0 ? context.moveTo(point.x, point.y) : context.lineTo(point.x, point.y)));
+    context.closePath();
+  };
+  // A point on a wall: u along it (0..1), z up from the ground.
+  const onWall = (from, to, u, z) => ({ x: from.x + (to.x - from.x) * u, y: from.y + (to.y - from.y) * u - z });
 
-  const prism = (rect, z0, z1, windows) => {
+  // A plain block: two walls and a roof face. Windows are added separately on the tall walls.
+  const block = (rect, z0, z1, wallColour, roofColour) => {
     const west = topPoint(rect.x0, rect.y1, 0);
     const south = topPoint(rect.x1, rect.y1, 0);
     const east = topPoint(rect.x1, rect.y0, 0);
-    const corner = (point, z) => ({ x: point.x, y: point.y - z });
-    const faces = [
-      { from: west, to: south, shadeBy: 12 },
-      { from: south, to: east, shadeBy: -10 },
+    const north = topPoint(rect.x0, rect.y0, 0);
+    const walls = [
+      { from: west, to: south, shadeBy: 14 },
+      { from: south, to: east, shadeBy: -12 },
     ];
-    for (const face of faces) {
-      const gradient = context.createLinearGradient(0, face.from.y - z1, 0, face.from.y - z0);
-      gradient.addColorStop(0, shade(building.color, face.shadeBy + 14));
-      gradient.addColorStop(1, shade(building.color, face.shadeBy - 8));
-      context.fillStyle = gradient;
-      context.beginPath();
-      context.moveTo(face.from.x, face.from.y - z1);
-      context.lineTo(face.to.x, face.to.y - z1);
-      context.lineTo(face.to.x, face.to.y - z0);
-      context.lineTo(face.from.x, face.from.y - z0);
-      context.closePath();
+    for (const wall of walls) {
+      context.fillStyle = shade(wallColour, wall.shadeBy);
+      quad([onWall(wall.from, wall.to, 0, z1), onWall(wall.from, wall.to, 1, z1), onWall(wall.from, wall.to, 1, z0), onWall(wall.from, wall.to, 0, z0)]);
       context.fill();
     }
-    const north = topPoint(rect.x0, rect.y0, 0);
-    context.fillStyle = shade(building.color, 26);
-    context.beginPath();
-    for (const [index, point] of [north, east, south, west].entries()) {
-      const top = corner(point, z1);
-      if (index === 0) context.moveTo(top.x, top.y);
-      else context.lineTo(top.x, top.y);
-    }
-    context.closePath();
+    context.fillStyle = roofColour;
+    quad([north, east, south, west].map((point) => ({ x: point.x, y: point.y - z1 })));
     context.fill();
-
-    if (windows) {
-      for (const [faceIndex, face] of faces.entries()) {
-        const across = faceIndex === 0 ? rect.x1 - rect.x0 : rect.y1 - rect.y0;
-        const columns = Math.max(1, Math.round(across * 1.5));
-        const rows = Math.max(3, Math.round((z1 - z0) / (cellSize.height * 0.62)));
-        for (let column = 0; column < columns; column += 1) {
-          for (let row = 0; row < rows; row += 1) {
-            const u0 = (column + 0.2) / columns;
-            const u1 = (column + 0.8) / columns;
-            const v0 = z0 + ((row + 0.28) / rows) * (z1 - z0) * 0.9 + (z1 - z0) * 0.04;
-            const v1 = z0 + ((row + 0.72) / rows) * (z1 - z0) * 0.9 + (z1 - z0) * 0.04;
-            const lerpX = (u) => face.from.x + (face.to.x - face.from.x) * u;
-            const lerpY = (u) => face.from.y + (face.to.y - face.from.y) * u;
-            const tint = random();
-            const target = random() < style.lit ? lit[tint < 0.6 ? 0 : tint < 0.85 ? 1 : 2] : dark;
-            target.push(
-              [lerpX(u0), lerpY(u0) - v0, lerpX(u1), lerpY(u1) - v0, lerpX(u1), lerpY(u1) - v1, lerpX(u0), lerpY(u0) - v1],
-            );
-          }
-        }
-      }
-      const addWindows = (list, colour, alpha) => {
-        if (list.length === 0) return;
-        context.globalAlpha = alpha;
-        context.fillStyle = colour;
-        context.beginPath();
-        for (const quad of list) {
-          context.moveTo(quad[0], quad[1]);
-          context.lineTo(quad[2], quad[3]);
-          context.lineTo(quad[4], quad[5]);
-          context.lineTo(quad[6], quad[7]);
-          context.closePath();
-        }
-        context.fill();
-        context.globalAlpha = 1;
-      };
-      addWindows(dark, shade(building.color, 36), 0.9);
-      lit.forEach((list, index) => addWindows(list, LIT_COLOURS[index], 0.85));
-      lit.forEach((list) => (list.length = 0));
-      dark.length = 0;
-    }
-
-    // Neon trim along the roof edge and the nearest corner, glowing in two strokes.
-    const roofEdge = [corner(west, z1), corner(south, z1), corner(east, z1)];
-    const cornerLine = [corner(south, z1), corner(south, z0)];
-    for (const [width, alpha] of [[5, 0.18], [1.5, 0.95]]) {
-      context.strokeStyle = style.trim;
-      context.globalAlpha = alpha;
-      context.lineWidth = width;
-      context.beginPath();
-      context.moveTo(roofEdge[0].x, roofEdge[0].y);
-      context.lineTo(roofEdge[1].x, roofEdge[1].y);
-      context.lineTo(roofEdge[2].x, roofEdge[2].y);
-      context.moveTo(cornerLine[0].x, cornerLine[0].y);
-      context.lineTo(cornerLine[1].x, cornerLine[1].y);
-      context.stroke();
-    }
-    context.globalAlpha = 1;
+    return walls;
   };
 
-  prism(box, 0, wallHeight, true);
-  // A glowing sign band near the foot of the walls.
+  const wallColour = shade(building.color, 22);
+  const walls = block(box, 0, wallHeight, wallColour, shade(building.color, 40));
+
+  // Base plinth and a ledge at every floor line.
+  for (const [index, wall] of walls.entries()) {
+    const tone = index === 0 ? 0.28 : 0.4;
+    context.fillStyle = `rgba(0, 0, 0, ${tone})`;
+    quad([onWall(wall.from, wall.to, 0, floorHeight * 0.45), onWall(wall.from, wall.to, 1, floorHeight * 0.45), onWall(wall.from, wall.to, 1, 0), onWall(wall.from, wall.to, 0, 0)]);
+    context.fill();
+    context.strokeStyle = index === 0 ? "rgba(255, 255, 255, .13)" : "rgba(255, 255, 255, .07)";
+    context.lineWidth = 1;
+    context.beginPath();
+    for (let floor = 1; floor <= floors; floor += 1) {
+      const a = onWall(wall.from, wall.to, 0, floor * floorHeight);
+      const b = onWall(wall.from, wall.to, 1, floor * floorHeight);
+      context.moveTo(a.x, a.y);
+      context.lineTo(b.x, b.y);
+    }
+    context.stroke();
+
+    // Large windows: one per two tiles per floor, dark glass with a few lit rooms.
+    const across = index === 0 ? box.x1 - box.x0 : box.y1 - box.y0;
+    const bays = Math.max(1, Math.floor(across / 2));
+    const glass = [];
+    const lit = [];
+    for (let floor = 1; floor < floors; floor += 1) {
+      for (let bay = 0; bay < bays; bay += 1) {
+        const u0 = (bay + 0.22) / bays;
+        const u1 = (bay + 0.78) / bays;
+        const z0 = floor * floorHeight + floorHeight * 0.18;
+        const z1 = floor * floorHeight + floorHeight * 0.74;
+        const window = [onWall(wall.from, wall.to, u0, z1), onWall(wall.from, wall.to, u1, z1), onWall(wall.from, wall.to, u1, z0), onWall(wall.from, wall.to, u0, z0)];
+        (random() < style.lit * 0.6 ? lit : glass).push(window);
+      }
+    }
+    const fillAll = (list, colour) => {
+      context.fillStyle = colour;
+      context.beginPath();
+      for (const points of list) {
+        points.forEach((point, i) => (i === 0 ? context.moveTo(point.x, point.y) : context.lineTo(point.x, point.y)));
+        context.closePath();
+      }
+      context.fill();
+    };
+    fillAll(glass, index === 0 ? "#1b3140" : "#142532");
+    fillAll(lit, index === 0 ? "#e6c88a" : "#caa96b");
+  }
+
+  // Roof: a raised parapet around a flat, lighter roof surface.
+  const parapet = cellSize.height * 0.32;
+  const rim = 0.22;
   const west = topPoint(box.x0, box.y1, 0);
   const south = topPoint(box.x1, box.y1, 0);
   const east = topPoint(box.x1, box.y0, 0);
+  const north = topPoint(box.x0, box.y0, 0);
+  const inner = { x0: box.x0 + rim, y0: box.y0 + rim, x1: box.x1 - rim, y1: box.y1 - rim };
+  const ip = {
+    north: topPoint(inner.x0, inner.y0, wallHeight),
+    east: topPoint(inner.x1, inner.y0, wallHeight),
+    south: topPoint(inner.x1, inner.y1, wallHeight),
+    west: topPoint(inner.x0, inner.y1, wallHeight),
+  };
+  context.fillStyle = shade(building.color, 70);
+  quad([north, east, south, west].map((point) => ({ x: point.x, y: point.y - wallHeight })));
+  context.fill();
+  context.fillStyle = shade(building.color, 52);
+  quad([ip.north, ip.east, ip.south, ip.west]);
+  context.fill();
+  // Inner faces of the far parapet, then the near parapet's outer faces.
+  for (const [from, to, tone] of [[ip.west, ip.north, -4], [ip.north, ip.east, 6]]) {
+    context.fillStyle = shade(building.color, 30 + tone);
+    quad([from, to, { x: to.x, y: to.y - parapet }, { x: from.x, y: from.y - parapet }]);
+    context.fill();
+  }
+  for (const [from, to, tone] of [[west, south, 28], [south, east, 6]]) {
+    context.fillStyle = shade(building.color, 30 + tone);
+    quad([
+      { x: from.x, y: from.y - wallHeight - parapet },
+      { x: to.x, y: to.y - wallHeight - parapet },
+      { x: to.x, y: to.y - wallHeight },
+      { x: from.x, y: from.y - wallHeight },
+    ]);
+    context.fill();
+  }
+  // A thin neon strip along the top of the near parapet is the only trim.
   context.strokeStyle = style.trim;
-  context.globalAlpha = 0.5;
-  context.lineWidth = 2;
+  context.globalAlpha = 0.8;
+  context.lineWidth = 1.5;
   context.beginPath();
-  context.moveTo(west.x, west.y - wallHeight * 0.07);
-  context.lineTo(south.x, south.y - wallHeight * 0.07);
-  context.lineTo(east.x, east.y - wallHeight * 0.07);
+  context.moveTo(west.x, west.y - wallHeight - parapet);
+  context.lineTo(south.x, south.y - wallHeight - parapet);
+  context.lineTo(east.x, east.y - wallHeight - parapet);
   context.stroke();
   context.globalAlpha = 1;
 
-  let roof = wallHeight;
-  if (style.tiers === 2) {
-    const insetX = (box.x1 - box.x0) * 0.22;
-    const insetY = (box.y1 - box.y0) * 0.22;
-    const tier = { x0: box.x0 + insetX, y0: box.y0 + insetY, x1: box.x1 - insetX, y1: box.y1 - insetY };
-    roof = wallHeight * 1.35;
-    prism(tier, wallHeight, roof, true);
-    box.x0 = tier.x0;
-    box.y0 = tier.y0;
-    box.x1 = tier.x1;
-    box.y1 = tier.y1;
-  }
-
-  // Roof equipment, then an antenna with a blinking beacon.
+  // Roof fittings sit on the roof surface: vents and a stair house, then an antenna.
+  const roof = wallHeight;
   const roofRandom = seededRandom(style.seed ^ 0x9e3779b9);
-  // Panel seams across the roof, every two tiles.
-  context.strokeStyle = "rgba(255, 255, 255, .07)";
-  context.lineWidth = 1;
-  context.beginPath();
-  for (let gx = Math.ceil(box.x0 + 0.5); gx < box.x1; gx += 2) {
-    const a = topPoint(gx, box.y0, roof);
-    const b = topPoint(gx, box.y1, roof);
-    context.moveTo(a.x, a.y);
-    context.lineTo(b.x, b.y);
-  }
-  for (let gy = Math.ceil(box.y0 + 0.5); gy < box.y1; gy += 2) {
-    const a = topPoint(box.x0, gy, roof);
-    const b = topPoint(box.x1, gy, roof);
-    context.moveTo(a.x, a.y);
-    context.lineTo(b.x, b.y);
-  }
-  context.stroke();
-  const equipment = Math.min(14, style.units + Math.floor(((box.x1 - box.x0) * (box.y1 - box.y0)) / 22));
-  for (let index = 0; index < equipment; index += 1) {
-    const w = Math.min(0.5 + roofRandom() * 1.2, (box.x1 - box.x0) * 0.25);
-    const d = Math.min(0.5 + roofRandom() * 1.2, (box.y1 - box.y0) * 0.25);
-    const x0 = box.x0 + 0.3 + roofRandom() * Math.max(0, box.x1 - box.x0 - w - 0.6);
-    const y0 = box.y0 + 0.3 + roofRandom() * Math.max(0, box.y1 - box.y0 - d - 0.6);
-    prism({ x0, y0, x1: x0 + w, y1: y0 + d }, roof, roof + cellSize.height * (0.35 + roofRandom() * 0.5), false);
+  const room = { x0: inner.x0 + 0.5, y0: inner.y0 + 0.5, x1: inner.x1 - 0.5, y1: inner.y1 - 0.5 };
+  const count = Math.min(10, style.units + Math.floor(((room.x1 - room.x0) * (room.y1 - room.y0)) / 30));
+  for (let index = 0; index < count; index += 1) {
+    const w = Math.min(0.6 + roofRandom() * 1.4, (room.x1 - room.x0) * 0.3);
+    const d = Math.min(0.6 + roofRandom() * 1.4, (room.y1 - room.y0) * 0.3);
+    const x0 = room.x0 + roofRandom() * Math.max(0, room.x1 - room.x0 - w);
+    const y0 = room.y0 + roofRandom() * Math.max(0, room.y1 - room.y0 - d);
+    const height = cellSize.height * (index === 0 ? 1.1 : 0.4 + roofRandom() * 0.4);
+    block({ x0, y0, x1: x0 + w, y1: y0 + d }, roof, roof + height, shade(building.color, 36), shade(building.color, 62));
   }
   if (style.antenna) {
-    const mast = topPoint((box.x0 + box.x1) / 2, (box.y0 + box.y1) / 2, roof);
+    const mast = topPoint((room.x0 + room.x1) / 2, (room.y0 + room.y1) / 2, roof);
     context.strokeStyle = "#9aa9b0";
     context.lineWidth = 1.5;
     context.beginPath();
@@ -1222,7 +1209,6 @@ function drawBuilding(building, viewport, size) {
       context.fill();
     }
   }
-  bounds.minY = Math.min(bounds.minY, topPoint(box.x0, box.y0, roof).y - cellSize.height * 2.4);
   return bounds;
 }
 
