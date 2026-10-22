@@ -1,5 +1,5 @@
 {
-  "source": "Kenney Animated Characters Protagonists 1.1 (CC0-1.0)",
+  "source": "Quaternius Animated Human and Animated Robot (CC0-1.0)",
   "sheets": {
     "operative-one": {
       "file": "operative-one.png",
@@ -10,13 +10,13 @@
           "name": "idle",
           "row": 0,
           "frames": 4,
-          "seconds": 1.0666667222976685
+          "seconds": 2
         },
         {
           "name": "run",
           "row": 8,
           "frames": 8,
-          "seconds": 0.6666666865348816
+          "seconds": 0.625
         }
       ]
     },
@@ -29,13 +29,13 @@
           "name": "idle",
           "row": 0,
           "frames": 4,
-          "seconds": 1.0666667222976685
+          "seconds": 2
         },
         {
           "name": "run",
           "row": 8,
           "frames": 8,
-          "seconds": 0.6666666865348816
+          "seconds": 0.625
         }
       ]
     },
@@ -48,13 +48,13 @@
           "name": "idle",
           "row": 0,
           "frames": 4,
-          "seconds": 1.0666667222976685
+          "seconds": 2
         },
         {
           "name": "run",
           "row": 8,
           "frames": 8,
-          "seconds": 0.6666666865348816
+          "seconds": 0.625
         }
       ]
     },
@@ -67,13 +67,32 @@
           "name": "idle",
           "row": 0,
           "frames": 4,
-          "seconds": 1.0666667222976685
+          "seconds": 2
         },
         {
           "name": "run",
           "row": 8,
           "frames": 8,
-          "seconds": 0.6666666865348816
+          "seconds": 0.625
+        }
+      ]
+    },
+    "watcher": {
+      "file": "watcher.png",
+      "frameSize": 128,
+      "directions": 8,
+      "animations": [
+        {
+          "name": "idle",
+          "row": 0,
+          "frames": 4,
+          "seconds": 2
+        },
+        {
+          "name": "run",
+          "row": 8,
+          "frames": 8,
+          "seconds": 0.9583333134651184
         }
       ]
     }

@@ -13,82 +13,110 @@
   const DIRECTIONS = 8;
 
   const loader = new FBXLoader();
-  const load = (url) => loader.loadAsync(url);
-  const textureLoader = new THREE.TextureLoader();
+  const rgb = (values) =>
+    new THREE.Color().setRGB(values[0] / 255, values[1] / 255, values[2] / 255, THREE.SRGBColorSpace);
 
-  // Rigid trench coat skirt, belt, collar, beret and boots, built in the bind pose
-  // and attached to bones so they follow every animation.
-  function addOutfit(root, look, rgb, bone) {
+  // The human model samples a 32x32 palette: skin, boots, hair, jacket, trousers.
+  function paletteTexture(colors) {
+    const bands = [6, 5, 6, 6, 9];
+    const canvas = document.createElement("canvas");
+    canvas.width = 32;
+    canvas.height = 32;
+    const context = canvas.getContext("2d");
+    let row = 0;
+    colors.forEach((color, index) => {
+      context.fillStyle = `rgb(${color.join(",")})`;
+      context.fillRect(0, row, 32, bands[index]);
+      row += bands[index];
+    });
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.magFilter = THREE.NearestFilter;
+    texture.minFilter = THREE.NearestFilter;
+    return texture;
+  }
+
+  // Rigid military kit attached to bones in the bind pose, so it follows every
+  // animation: beret, chest rig with pouches, belt, shoulder boards and boots.
+  function addUniformKit(root, scene, kit, mixer, idleClip) {
+    // Measure in the first idle frame: upright and symmetric, unlike the pose the file loads in.
+    mixer.clipAction(idleClip).play();
+    mixer.setTime(0);
     root.updateMatrixWorld(true);
+    const bone = (name) => root.getObjectByName(name);
     const at = (name) => bone(name).getWorldPosition(new THREE.Vector3());
     const hips = at("Hips");
+    const chest = at("Spine2");
+    const neck = at("Neck");
+    const head = at("Head");
+    const headTop = at("HeadTop_End");
     const leftUp = at("LeftUpLeg");
     const rightUp = at("RightUpLeg");
-    const hipWidth = leftUp.distanceTo(rightUp);
-    const knee = at("LeftLeg");
-    const ankle = at("LeftFoot");
-    const toes = at("LeftToes");
-    const head = at("Head");
-    const headEnd = at("Head_end");
-    const headHeight = head.distanceTo(headEnd);
+    const unit = leftUp.distanceTo(rightUp);
+    const headHeight = head.distanceTo(headTop);
 
-    const coat = new THREE.MeshStandardMaterial({ color: rgb(look.coat), roughness: 0.9, side: THREE.DoubleSide });
-    const coatDark = new THREE.MeshStandardMaterial({ color: rgb(look.coat).multiplyScalar(0.7), roughness: 0.9 });
-    const boots = new THREE.MeshStandardMaterial({ color: rgb(look.boots), roughness: 0.6 });
-    const beret = new THREE.MeshStandardMaterial({ color: rgb(look.beret), roughness: 1 });
+    // Body frame: right toward the character's left leg, forward = right x up.
+    const right = leftUp.clone().sub(rightUp).setY(0).normalize();
+    const up = new THREE.Vector3(0, 1, 0);
+    const forward = new THREE.Vector3().crossVectors(right, up);
+    const orientation = new THREE.Quaternion().setFromRotationMatrix(
+      new THREE.Matrix4().makeBasis(right, up, forward),
+    );
+    const offset = (base, x, y, z) =>
+      base.clone().addScaledVector(right, x).addScaledVector(up, y).addScaledVector(forward, z);
+
+    const material = (color, roughness = 0.85) =>
+      new THREE.MeshStandardMaterial({ color: rgb(color), roughness });
+    const rig = material(kit.rig);
+    const boots = material(kit.boots, 0.55);
+    const beret = material(kit.beret, 1);
+    const glow = (color) => new THREE.MeshBasicMaterial({ color: rgb(color) });
 
     const place = (mesh, position, boneName) => {
       mesh.position.copy(position);
-      root.add(mesh);
-      root.updateMatrixWorld(true);
+      mesh.quaternion.copy(orientation);
+      // Positions are world coordinates, so parent to the (identity) scene first.
+      scene.add(mesh);
+      mesh.updateMatrixWorld(true);
       bone(boneName).attach(mesh);
     };
+    const box = (w, h, d, mat) => new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
 
-    // Coat skirt: a flared open cone around each thigh, down past the knee.
-    const skirtHeight = (hips.y - knee.y) * 1.25;
-    for (const [side, upPosition] of [["Left", leftUp], ["Right", rightUp]]) {
-      const cone = new THREE.Mesh(
-        new THREE.CylinderGeometry(hipWidth * 0.62, hipWidth * 0.95, skirtHeight, 14, 1, true),
-        coat,
-      );
-      place(cone, new THREE.Vector3(upPosition.x, hips.y - skirtHeight * 0.42, upPosition.z), `${side}UpLeg`);
+    // Chest rig, pouches and a glowing trim line.
+    place(box(unit * 1.9, unit * 1.2, unit * 0.95, rig), offset(chest, 0, 0, unit * 0.1), "Spine2");
+    for (const x of [-0.6, 0, 0.6]) {
+      place(box(unit * 0.5, unit * 0.42, unit * 0.2, rig), offset(chest, unit * x, -unit * 0.28, unit * 0.62), "Spine2");
     }
-    const back = new THREE.Mesh(new THREE.BoxGeometry(hipWidth * 1.5, skirtHeight * 0.9, hipWidth * 0.12), coat);
-    place(back, new THREE.Vector3(hips.x, hips.y - skirtHeight * 0.38, hips.z - hipWidth * 0.55), "Hips");
-
-    // Belt and collar.
-    const belt = new THREE.Mesh(new THREE.CylinderGeometry(hipWidth * 0.78, hipWidth * 0.78, hipWidth * 0.14, 16), coatDark);
-    place(belt, new THREE.Vector3(hips.x, hips.y + hipWidth * 0.32, hips.z), "Spine");
-    const neck = at("Neck");
+    place(box(unit * 1.5, unit * 0.06, unit * 0.06, glow(kit.glow)), offset(chest, 0, unit * 0.38, unit * 0.62), "Spine2");
+    // Belt.
+    place(box(unit * 1.75, unit * 0.2, unit * 0.95, material(kit.belt)), offset(hips, 0, unit * 0.15, 0), "Hips");
+    // Shoulder boards with glowing edge.
     for (const side of [-1, 1]) {
-      const collar = new THREE.Mesh(new THREE.BoxGeometry(hipWidth * 0.3, hipWidth * 0.34, hipWidth * 0.12), coat);
-      collar.rotation.z = side * 0.35;
-      place(collar, new THREE.Vector3(neck.x + side * hipWidth * 0.2, neck.y - hipWidth * 0.12, neck.z + hipWidth * 0.2), "Neck");
+      place(box(unit * 0.55, unit * 0.1, unit * 0.45, rig), offset(neck, side * unit * 0.95, -unit * 0.1, 0), "Spine2");
+      place(box(unit * 0.55, unit * 0.04, unit * 0.05, glow(kit.glow)), offset(neck, side * unit * 0.95, -unit * 0.03, unit * 0.2), "Spine2");
     }
-
-    // Military boots: shin cylinder plus a toe box on each foot.
-    const shinLength = (knee.y - ankle.y) * 0.62;
+    // Boots: each side from its own bones.
     for (const side of ["Left", "Right"]) {
-      const footX = Math.abs(ankle.x) * (side === "Left" ? Math.sign(leftUp.x) : Math.sign(rightUp.x));
-      const shin = new THREE.Mesh(new THREE.CylinderGeometry(hipWidth * 0.33, hipWidth * 0.38, shinLength, 12), boots);
-      place(shin, new THREE.Vector3(footX, ankle.y + shinLength * 0.5 - hipWidth * 0.02, ankle.z), `${side}Leg`);
-      const foot = new THREE.Mesh(
-        new THREE.BoxGeometry(hipWidth * 0.66, hipWidth * 0.46, Math.abs(toes.z - ankle.z) + hipWidth * 0.8),
-        boots,
-      );
-      place(foot, new THREE.Vector3(footX, ankle.y - hipWidth * 0.05, (toes.z + ankle.z) / 2 + hipWidth * 0.1), `${side}Foot`);
+      const knee = at(`${side}Leg`);
+      const ankle = at(`${side}Foot`);
+      const toes = at(`${side}ToeBase`);
+      const shin = knee.distanceTo(ankle) * 0.6;
+      const cylinder = new THREE.Mesh(new THREE.CylinderGeometry(unit * 0.34, unit * 0.4, shin, 12), boots);
+      place(cylinder, ankle.clone().add(new THREE.Vector3(0, shin * 0.5, 0)), `${side}Leg`);
+      const toeLength = ankle.distanceTo(toes) + unit * 0.5;
+      const foot = box(unit * 0.72, unit * 0.5, toeLength * 1.25, boots);
+      place(foot, offset(ankle, 0, -unit * 0.1, toeLength * 0.38), `${side}Foot`);
     }
-
-    // Beret: a flattened dome tipped slightly to one side.
-    const dome = new THREE.Mesh(new THREE.SphereGeometry(headHeight * 0.5, 20, 12), beret);
-    dome.scale.set(1, 0.42, 1.05);
-    dome.rotation.z = 0.18;
-    place(dome, new THREE.Vector3(head.x + headHeight * 0.05, headEnd.y - headHeight * 0.12, head.z), "Head");
-
-    return bone("Head");
+    // Beret and a glowing visor band across the eyes.
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(headHeight * 0.62, 20, 12), beret);
+    dome.scale.set(1, 0.42, 1.08);
+    dome.rotation.z = 0.15;
+    place(dome, offset(headTop, 0, -headHeight * 0.1, 0), "Head");
+    const eyeLevel = head.clone().lerp(headTop, 0.45);
+    place(box(headHeight * 0.95, headHeight * 0.14, headHeight * 0.2, glow(kit.glow)), offset(eyeLevel, 0, 0, headHeight * 0.4), "Head");
   }
 
-  window.renderSheet = async ({ model, skin, animations, look }) => {
+  window.renderSheet = async ({ kind, model, animations, palette, kit, materials }) => {
     const size = FRAME * SUPERSAMPLE;
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, preserveDrawingBuffer: true });
     renderer.setSize(size, size);
@@ -101,25 +129,34 @@
     key.position.set(-2, 4, 3);
     scene.add(key);
 
-    const texture = await textureLoader.loadAsync(skin);
-    texture.colorSpace = THREE.SRGBColorSpace;
-    texture.flipY = true;
-    const root = await load(model);
-    root.traverse((node) => {
-      if (node.isMesh) {
-        node.material = new THREE.MeshStandardMaterial({ map: texture, roughness: 0.8, metalness: 0 });
+    const root = await loader.loadAsync(model);
+    if (kind === "human") {
+      const texture = paletteTexture(palette);
+      root.traverse((node) => {
+        if (node.isMesh) {
+          node.material = new THREE.MeshStandardMaterial({ map: texture, roughness: 0.85 });
+          node.frustumCulled = false;
+        }
+      });
+    } else {
+      // Robot: remap its named materials to the supplied colours.
+      root.traverse((node) => {
+        if (!node.isMesh) return;
         node.frustumCulled = false;
-      }
-    });
-
-    const rgb = (values) => new THREE.Color().setRGB(values[0] / 255, values[1] / 255, values[2] / 255, THREE.SRGBColorSpace);
-    const bone = (name) => root.getObjectByName(name);
-    let headBone = null;
-    if (look) headBone = addOutfit(root, look, rgb, bone);
+        const remap = (material) => {
+          const next = material.clone();
+          const wanted = materials[material.name];
+          if (wanted) next.color = rgb(wanted);
+          return next;
+        };
+        node.material = Array.isArray(node.material) ? node.material.map(remap) : remap(node.material);
+      });
+    }
 
     const pivot = new THREE.Group();
     pivot.add(root);
     scene.add(pivot);
+    root.updateMatrixWorld(true);
     const box = new THREE.Box3().setFromObject(root);
     const height = box.max.y - box.min.y;
     root.position.y -= box.min.y + height / 2;
@@ -131,15 +168,17 @@
     camera.position.set(0, Math.sin(elevation), Math.cos(elevation)).multiplyScalar(height * 6);
     camera.lookAt(0, 0, 0);
 
+    const names = Object.keys(animations);
     const clips = {};
-    for (const [name, { url }] of Object.entries(animations)) {
-      // Each file also holds a one-frame "Targeting Pose" clip; use the real motion.
-      const found = (await load(url)).animations;
-      clips[name] = found.reduce((best, clip) => (clip.duration > best.duration ? clip : best));
+    for (const name of names) {
+      const found = (await loader.loadAsync(model)).animations;
+      const wanted = animations[name].pick;
+      clips[name] = found.find((clip) => clip.name.includes(wanted));
+      if (!clips[name]) throw new Error(`No animation matching ${wanted}`);
     }
     const mixer = new THREE.AnimationMixer(root);
+    if (kit) addUniformKit(root, scene, kit, mixer, clips.idle);
 
-    const names = Object.keys(animations);
     const frameCounts = Object.fromEntries(names.map((name) => [name, animations[name].frames]));
     const maxFrames = Math.max(...Object.values(frameCounts));
     const atlas = document.createElement("canvas");
@@ -151,15 +190,14 @@
     names.forEach((name, animationIndex) => {
       const clip = clips[name];
       const frames = frameCounts[name];
+      // Long idle loops are sampled over a short window so the sheet stays small.
+      const seconds = Math.min(clip.duration, animations[name].window ?? clip.duration);
       mixer.stopAllAction();
-      const action = mixer.clipAction(clip);
-      action.play();
+      mixer.clipAction(clip).play();
       for (let direction = 0; direction < DIRECTIONS; direction += 1) {
         pivot.rotation.y = (direction * Math.PI * 2) / DIRECTIONS;
         for (let frame = 0; frame < frames; frame += 1) {
-          mixer.setTime((clip.duration * frame) / frames);
-          // Animation scale tracks reset the head each frame; shrink it for adult proportions.
-          if (headBone) headBone.scale.multiplyScalar(0.8);
+          mixer.setTime((seconds * frame) / frames);
           renderer.render(scene, camera);
           atlasContext.drawImage(
             renderer.domElement,
@@ -174,7 +212,16 @@
     renderer.dispose();
     return {
       png: atlas.toDataURL("image/png"),
-      meta: { frameSize: FRAME, directions: DIRECTIONS, animations: names.map((name, index) => ({ name, row: index * DIRECTIONS, frames: frameCounts[name], seconds: clips[name].duration })) },
+      meta: {
+        frameSize: FRAME,
+        directions: DIRECTIONS,
+        animations: names.map((name, index) => ({
+          name,
+          row: index * DIRECTIONS,
+          frames: frameCounts[name],
+          seconds: Math.min(clips[name].duration, animations[name].window ?? clips[name].duration),
+        })),
+      },
     };
   };
   window.ready = true;

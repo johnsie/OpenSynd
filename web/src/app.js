@@ -564,7 +564,8 @@ function drawCursor(viewport) {
 }
 
 function spriteSheetFor(unit) {
-  if (!sprites.manifest || unit.side !== "team") return null;
+  if (!sprites.manifest) return null;
+  if (unit.side !== "team") return sprites.manifest.sheets.watcher ?? null;
   const index = state.units.filter((item) => item.side === "team").indexOf(unit);
   return sprites.manifest.sheets[SPRITE_SKINS[index % SPRITE_SKINS.length]] ?? null;
 }
@@ -593,7 +594,7 @@ function drawSprite(unit, sheet, viewport, size) {
   const direction = unit.facing ?? 0;
   const image = sprites.images.get(sheet.file);
   const source = sheet.frameSize;
-  const drawSize = viewport.cellSize.height * 3.3;
+  const drawSize = viewport.cellSize.height * (unit.side === "team" ? 3.3 : 2.4);
   context.save();
   if (unit.disabled) context.globalAlpha = 0.55;
   // The figure's feet sit about 84% down its frame; anchor them to the tile.

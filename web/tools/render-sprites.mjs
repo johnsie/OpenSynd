@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-// Renders the CC0 Kenney character model, with the recoloured operative skins
-// from tools/make-skins.py, to 8-direction sprite sheets.
+// Renders the CC0 Quaternius human (in a shared military uniform) and robot to
+// 8-direction sprite sheets.
 // Usage: node tools/render-sprites.mjs   (CHROMIUM_PATH selects the browser)
 
 import { mkdir, readFile, writeFile } from "node:fs/promises";
@@ -12,7 +12,6 @@ import { fileURLToPath } from "node:url";
 import { chromium } from "playwright-core";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const source = "/art-source/kenney-animated-characters-protagonists";
 const output = join(root, "public/assets/sprites");
 const types = { ".html": "text/html", ".js": "text/javascript", ".png": "image/png" };
 
@@ -33,12 +32,53 @@ const server = createServer(async (request, response) => {
 });
 await new Promise((done) => server.listen(0, "127.0.0.1", done));
 
-const looks = JSON.parse(await readFile(join(root, "art-source/opensynd-skins/looks.json"), "utf8"));
-const skins = ["operative-one", "operative-two", "operative-three", "operative-four"];
-const animations = {
-  idle: { url: `${source}/Animations/idle.fbx`, frames: 4 },
-  run: { url: `${source}/Animations/run.fbx`, frames: 8 },
+const human = "/art-source/quaternius-animated-human/AnimatedHuman.fbx";
+const robot = "/art-source/quaternius-animated-robot/Robot.fbx";
+
+// One shared uniform: palette is skin, boots, hair, jacket, trousers. Operatives
+// differ only in skin tone so the squad reads as uniformed but not cloned.
+// Dark gunmetal with neon cyan trim and a visor gives the cyberpunk look.
+const uniform = {
+  palette: [null, [26, 26, 32], [20, 16, 14], [62, 74, 92], [46, 55, 70]],
+  kit: {
+    rig: [34, 40, 50],
+    belt: [14, 16, 20],
+    boots: [18, 18, 22],
+    beret: [28, 34, 48],
+    glow: [66, 214, 208],
+  },
 };
+const skins = {
+  "operative-one": [255, 209, 159],
+  "operative-two": [196, 146, 104],
+  "operative-three": [156, 114, 72],
+  "operative-four": [233, 186, 140],
+};
+const humanAnimations = {
+  idle: { pick: "Idle", frames: 4, window: 2 },
+  run: { pick: "Run", frames: 8 },
+};
+const jobs = [
+  ...Object.entries(skins).map(([name, skin]) => ({
+    name,
+    options: {
+      kind: "human",
+      model: human,
+      animations: humanAnimations,
+      palette: uniform.palette.map((color, index) => (index === 0 ? skin : color)),
+      kit: uniform.kit,
+    },
+  })),
+  {
+    name: "watcher",
+    options: {
+      kind: "robot",
+      model: robot,
+      animations: { idle: { pick: "Robot_Idle", frames: 4, window: 2 }, run: { pick: "Robot_Walking", frames: 8 } },
+      materials: { Main: [64, 26, 52], Grey: [88, 96, 112], Black: [12, 12, 16] },
+    },
+  },
+];
 
 const browser = await chromium.launch({
   executablePath: process.env.CHROMIUM_PATH,
@@ -51,20 +91,12 @@ try {
   await page.goto(`http://127.0.0.1:${server.address().port}/`);
   await page.waitForFunction(() => window.ready === true, null, { timeout: 30000 });
   await mkdir(output, { recursive: true });
-  const manifest = { source: "Kenney Animated Characters Protagonists 1.1 (CC0-1.0)", sheets: {} };
-  for (const skin of skins) {
-    const result = await page.evaluate(
-      (options) => window.renderSheet(options),
-      {
-        model: `${source}/Model/characterMedium.fbx`,
-        skin: `/art-source/opensynd-skins/${skin}.png`,
-        animations,
-        look: looks[skin],
-      },
-    );
-    await writeFile(join(output, `${skin}.png`), Buffer.from(result.png.split(",")[1], "base64"));
-    manifest.sheets[skin] = { file: `${skin}.png`, ...result.meta };
-    console.log(`rendered ${skin}`);
+  const manifest = { source: "Quaternius Animated Human and Animated Robot (CC0-1.0)", sheets: {} };
+  for (const { name, options } of jobs) {
+    const result = await page.evaluate((job) => window.renderSheet(job), options);
+    await writeFile(join(output, `${name}.png`), Buffer.from(result.png.split(",")[1], "base64"));
+    manifest.sheets[name] = { file: `${name}.png`, ...result.meta };
+    console.log(`rendered ${name}`);
   }
   await writeFile(join(output, "sprites.json"), `${JSON.stringify(manifest, null, 2)}\n`);
 } finally {

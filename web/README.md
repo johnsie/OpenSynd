@@ -44,10 +44,14 @@ The versioning and compatibility contract is documented in
 
 ## Character sprites
 
-Operators are drawn from sprite sheets in `public/assets/sprites/`. They are
-rendered from the CC0 Kenney "Animated Characters Protagonists" pack, kept
-unmodified in `art-source/`, by `tools/render-sprites.mjs` (three.js in headless
-Chromium, 8 facings, idle and run). Regenerate with:
+Units are drawn from sprite sheets in `public/assets/sprites/`, rendered by
+`tools/render-sprites.mjs` (three.js in headless Chromium, 8 facings, idle and
+run) from two CC0 Quaternius models kept unmodified in `art-source/`: the
+animated human (operatives) and animated robot (watchers). The operatives wear
+one shared dark uniform; only skin tone differs. The visor, beret, chest rig,
+belt, shoulder boards and boots are generated parts attached to the skeleton in
+`tools/render.html`, not imported art. They carry no agency or organisation
+marks. Regenerate with:
 
 ```
 CHROMIUM_PATH=/usr/bin/google-chrome node tools/render-sprites.mjs
@@ -56,11 +60,3 @@ CHROMIUM_PATH=/usr/bin/google-chrome node tools/render-sprites.mjs
 Every file is listed in `provenance/assets.json` and stays `quarantined` until a
 named reviewer approves it. If the sheets fail to load, units fall back to
 vector shapes.
-
-Operative skins are recoloured from the Kenney suit skin by `tools/make-skins.py`
-(needs Pillow): beige coats with a per-operative accent colour, hair and skin
-tone. They carry no agency or organisation marks.
-
-`tools/render.html` also builds a belted trench-coat skirt, collar, beret and
-military boots as rigid parts attached to the skeleton, and shrinks the head
-slightly for adult proportions. These are generated, not imported.
