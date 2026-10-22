@@ -168,6 +168,18 @@ operator toward the aim and shows a muzzle flash, recoil and, for a miss, a trac
 crosshair over a standing watcher is red when a selected operator's weapon reaches it
 and white when it is out of range, and updates as units move.
 
+Buildings are drawn as single cyberpunk structures rather than stacks of tile cubes
+(`web/src/buildings.js` for the rules, `drawBuilding` in `web/src/app.js`): one prism per
+`utility-building` region with a gradient wall, a grid of windows lit in cyan, amber and
+magenta (seeded from the building's id, so each always looks the same), a neon trim colour
+along the roof edge and nearest corner, a sign band near the foot, roof panel seams,
+rooftop equipment scaled to the roof area, a blinking antenna beacon, and a stepped upper
+tier on tall wide blocks. Buildings and units are drawn together back to front
+(`drawOrder`), so operatives pass behind towers; a hidden operative keeps a faint ring.
+Everything is procedural, so there are no model or texture assets and nothing new to
+record in `provenance/assets.json`. Walkability, pathing, shots and the minimap are
+unchanged. Not yet done: watchers still see through buildings (no line of sight).
+
 Attacking is a pursuit: the pointer becomes a circular crosshair over a watcher
 that is still standing, and clicking it (or its Threats button) sends the selected
 armed operators after it. Each one follows the watcher, re-routing as it moves, until

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+import { BUILDING_SURFACE, buildingStyle, buildingsFromMap, drawOrder, seededRandom } from "./buildings.js";
 import {
   buildPatrolRoute,
   createTileGrid,
@@ -408,6 +409,7 @@ async function loadGame(index = state.missionIndex) {
   state.map = map;
   state.mission = mission;
   state.grid = createTileGrid(map);
+  state.buildings = buildingsFromMap(map);
   state.objectives = mission.objectives.map((objective) => ({
     ...objective,
     complete: false,
@@ -1026,6 +1028,219 @@ function drawTile(tile, viewport) {
   context.stroke();
 }
 
+const LIT_COLOURS = ["#7fe9ff", "#ffd27a", "#ff8be8"];
+
+// One building: a single prism with lit windows, neon trim, a roof with equipment and, on the
+// tall ones, a stepped upper tier. Returns its screen box so hidden operatives can be marked.
+function drawBuilding(building, viewport, size) {
+  const style = buildingStyle(building);
+  const { cellSize, origin } = viewport;
+  const wallHeight = (building.elevation + 2) * cellSize.height * 0.8;
+  const box = {
+    x0: building.x - 0.5,
+    y0: building.y - 0.5,
+    x1: building.x + building.width - 0.5,
+    y1: building.y + building.height - 0.5,
+  };
+  const topPoint = (gx, gy, z) => ({
+    x: origin.x + (gx - gy) * (cellSize.width / 2),
+    y: origin.y + (gx + gy) * (cellSize.height / 2) - z,
+  });
+  const bounds = {
+    minX: topPoint(box.x0, box.y1, 0).x,
+    maxX: topPoint(box.x1, box.y0, 0).x,
+    minY: topPoint(box.x0, box.y0, wallHeight * 1.5).y - 30,
+    maxY: topPoint(box.x1, box.y1, 0).y,
+  };
+  if (bounds.maxX < 0 || bounds.minX > size.width || bounds.maxY < 0 || bounds.minY > size.height) {
+    return bounds;
+  }
+  const random = seededRandom(style.seed);
+  const lit = [[], [], []];
+  const dark = [];
+
+  const prism = (rect, z0, z1, windows) => {
+    const west = topPoint(rect.x0, rect.y1, 0);
+    const south = topPoint(rect.x1, rect.y1, 0);
+    const east = topPoint(rect.x1, rect.y0, 0);
+    const corner = (point, z) => ({ x: point.x, y: point.y - z });
+    const faces = [
+      { from: west, to: south, shadeBy: 12 },
+      { from: south, to: east, shadeBy: -10 },
+    ];
+    for (const face of faces) {
+      const gradient = context.createLinearGradient(0, face.from.y - z1, 0, face.from.y - z0);
+      gradient.addColorStop(0, shade(building.color, face.shadeBy + 14));
+      gradient.addColorStop(1, shade(building.color, face.shadeBy - 8));
+      context.fillStyle = gradient;
+      context.beginPath();
+      context.moveTo(face.from.x, face.from.y - z1);
+      context.lineTo(face.to.x, face.to.y - z1);
+      context.lineTo(face.to.x, face.to.y - z0);
+      context.lineTo(face.from.x, face.from.y - z0);
+      context.closePath();
+      context.fill();
+    }
+    const north = topPoint(rect.x0, rect.y0, 0);
+    context.fillStyle = shade(building.color, 26);
+    context.beginPath();
+    for (const [index, point] of [north, east, south, west].entries()) {
+      const top = corner(point, z1);
+      if (index === 0) context.moveTo(top.x, top.y);
+      else context.lineTo(top.x, top.y);
+    }
+    context.closePath();
+    context.fill();
+
+    if (windows) {
+      for (const [faceIndex, face] of faces.entries()) {
+        const across = faceIndex === 0 ? rect.x1 - rect.x0 : rect.y1 - rect.y0;
+        const columns = Math.max(1, Math.round(across * 1.5));
+        const rows = Math.max(3, Math.round((z1 - z0) / (cellSize.height * 0.62)));
+        for (let column = 0; column < columns; column += 1) {
+          for (let row = 0; row < rows; row += 1) {
+            const u0 = (column + 0.2) / columns;
+            const u1 = (column + 0.8) / columns;
+            const v0 = z0 + ((row + 0.28) / rows) * (z1 - z0) * 0.9 + (z1 - z0) * 0.04;
+            const v1 = z0 + ((row + 0.72) / rows) * (z1 - z0) * 0.9 + (z1 - z0) * 0.04;
+            const lerpX = (u) => face.from.x + (face.to.x - face.from.x) * u;
+            const lerpY = (u) => face.from.y + (face.to.y - face.from.y) * u;
+            const tint = random();
+            const target = random() < style.lit ? lit[tint < 0.6 ? 0 : tint < 0.85 ? 1 : 2] : dark;
+            target.push(
+              [lerpX(u0), lerpY(u0) - v0, lerpX(u1), lerpY(u1) - v0, lerpX(u1), lerpY(u1) - v1, lerpX(u0), lerpY(u0) - v1],
+            );
+          }
+        }
+      }
+      const addWindows = (list, colour, alpha) => {
+        if (list.length === 0) return;
+        context.globalAlpha = alpha;
+        context.fillStyle = colour;
+        context.beginPath();
+        for (const quad of list) {
+          context.moveTo(quad[0], quad[1]);
+          context.lineTo(quad[2], quad[3]);
+          context.lineTo(quad[4], quad[5]);
+          context.lineTo(quad[6], quad[7]);
+          context.closePath();
+        }
+        context.fill();
+        context.globalAlpha = 1;
+      };
+      addWindows(dark, shade(building.color, 36), 0.9);
+      lit.forEach((list, index) => addWindows(list, LIT_COLOURS[index], 0.85));
+      lit.forEach((list) => (list.length = 0));
+      dark.length = 0;
+    }
+
+    // Neon trim along the roof edge and the nearest corner, glowing in two strokes.
+    const roofEdge = [corner(west, z1), corner(south, z1), corner(east, z1)];
+    const cornerLine = [corner(south, z1), corner(south, z0)];
+    for (const [width, alpha] of [[5, 0.18], [1.5, 0.95]]) {
+      context.strokeStyle = style.trim;
+      context.globalAlpha = alpha;
+      context.lineWidth = width;
+      context.beginPath();
+      context.moveTo(roofEdge[0].x, roofEdge[0].y);
+      context.lineTo(roofEdge[1].x, roofEdge[1].y);
+      context.lineTo(roofEdge[2].x, roofEdge[2].y);
+      context.moveTo(cornerLine[0].x, cornerLine[0].y);
+      context.lineTo(cornerLine[1].x, cornerLine[1].y);
+      context.stroke();
+    }
+    context.globalAlpha = 1;
+  };
+
+  prism(box, 0, wallHeight, true);
+  // A glowing sign band near the foot of the walls.
+  const west = topPoint(box.x0, box.y1, 0);
+  const south = topPoint(box.x1, box.y1, 0);
+  const east = topPoint(box.x1, box.y0, 0);
+  context.strokeStyle = style.trim;
+  context.globalAlpha = 0.5;
+  context.lineWidth = 2;
+  context.beginPath();
+  context.moveTo(west.x, west.y - wallHeight * 0.07);
+  context.lineTo(south.x, south.y - wallHeight * 0.07);
+  context.lineTo(east.x, east.y - wallHeight * 0.07);
+  context.stroke();
+  context.globalAlpha = 1;
+
+  let roof = wallHeight;
+  if (style.tiers === 2) {
+    const insetX = (box.x1 - box.x0) * 0.22;
+    const insetY = (box.y1 - box.y0) * 0.22;
+    const tier = { x0: box.x0 + insetX, y0: box.y0 + insetY, x1: box.x1 - insetX, y1: box.y1 - insetY };
+    roof = wallHeight * 1.35;
+    prism(tier, wallHeight, roof, true);
+    box.x0 = tier.x0;
+    box.y0 = tier.y0;
+    box.x1 = tier.x1;
+    box.y1 = tier.y1;
+  }
+
+  // Roof equipment, then an antenna with a blinking beacon.
+  const roofRandom = seededRandom(style.seed ^ 0x9e3779b9);
+  // Panel seams across the roof, every two tiles.
+  context.strokeStyle = "rgba(255, 255, 255, .07)";
+  context.lineWidth = 1;
+  context.beginPath();
+  for (let gx = Math.ceil(box.x0 + 0.5); gx < box.x1; gx += 2) {
+    const a = topPoint(gx, box.y0, roof);
+    const b = topPoint(gx, box.y1, roof);
+    context.moveTo(a.x, a.y);
+    context.lineTo(b.x, b.y);
+  }
+  for (let gy = Math.ceil(box.y0 + 0.5); gy < box.y1; gy += 2) {
+    const a = topPoint(box.x0, gy, roof);
+    const b = topPoint(box.x1, gy, roof);
+    context.moveTo(a.x, a.y);
+    context.lineTo(b.x, b.y);
+  }
+  context.stroke();
+  const equipment = Math.min(14, style.units + Math.floor(((box.x1 - box.x0) * (box.y1 - box.y0)) / 22));
+  for (let index = 0; index < equipment; index += 1) {
+    const w = Math.min(0.5 + roofRandom() * 1.2, (box.x1 - box.x0) * 0.25);
+    const d = Math.min(0.5 + roofRandom() * 1.2, (box.y1 - box.y0) * 0.25);
+    const x0 = box.x0 + 0.3 + roofRandom() * Math.max(0, box.x1 - box.x0 - w - 0.6);
+    const y0 = box.y0 + 0.3 + roofRandom() * Math.max(0, box.y1 - box.y0 - d - 0.6);
+    prism({ x0, y0, x1: x0 + w, y1: y0 + d }, roof, roof + cellSize.height * (0.35 + roofRandom() * 0.5), false);
+  }
+  if (style.antenna) {
+    const mast = topPoint((box.x0 + box.x1) / 2, (box.y0 + box.y1) / 2, roof);
+    context.strokeStyle = "#9aa9b0";
+    context.lineWidth = 1.5;
+    context.beginPath();
+    context.moveTo(mast.x, mast.y);
+    context.lineTo(mast.x, mast.y - cellSize.height * 2.2);
+    context.stroke();
+    if (Math.floor(performance.now() / 600) % 2 === 0) {
+      context.fillStyle = "#ff4d5e";
+      context.beginPath();
+      context.arc(mast.x, mast.y - cellSize.height * 2.2, 2.4, 0, Math.PI * 2);
+      context.fill();
+    }
+  }
+  bounds.minY = Math.min(bounds.minY, topPoint(box.x0, box.y0, roof).y - cellSize.height * 2.4);
+  return bounds;
+}
+
+// Operatives behind a building keep a faint ring so they are never lost from view.
+function drawHiddenOperatives(order, boxes, viewport) {
+  for (const entry of order) {
+    if (entry.kind !== "unit" || !entry.behind || entry.item.side !== "team" || entry.item.disabled) continue;
+    const bounds = boxes.get(entry.behind);
+    const point = gridToScreen(entry.item.position, viewport.cellSize, viewport.origin, 0);
+    if (!bounds || point.x < bounds.minX || point.x > bounds.maxX || point.y < bounds.minY || point.y > bounds.maxY) continue;
+    context.strokeStyle = "rgba(66, 214, 208, .85)";
+    context.lineWidth = 2;
+    context.beginPath();
+    context.ellipse(point.x, point.y, viewport.cellSize.width * 0.28, viewport.cellSize.height * 0.28, 0, 0, Math.PI * 2);
+    context.stroke();
+  }
+}
+
 function drawZones(viewport) {
   for (const zone of state.map.zones) {
     const objective = state.objectives.find((item) => item.targetZone === zone.id);
@@ -1231,15 +1446,20 @@ function draw() {
   state.viewport = viewport;
   context.clearRect(0, 0, size.width, size.height);
 
-  forEachVisibleTile(state.grid, visibleBounds(viewport, state.map), (tile) => drawTile(tile, viewport));
+  forEachVisibleTile(state.grid, visibleBounds(viewport, state.map), (tile) => {
+    if (tile.surface !== BUILDING_SURFACE || tile.gate) drawTile(tile, viewport);
+  });
   drawZones(viewport);
   drawCursor(viewport);
 
-  const units = [...state.units].sort(
-    (left, right) => left.position.x + left.position.y - (right.position.x + right.position.y),
-  );
   drawPickups(viewport);
-  for (const unit of units) drawUnit(unit, viewport);
+  const boxes = new Map();
+  const order = drawOrder(state.buildings ?? [], state.units);
+  for (const entry of order) {
+    if (entry.kind === "building") boxes.set(entry.item, drawBuilding(entry.item, viewport, size));
+    else drawUnit(entry.item, viewport);
+  }
+  drawHiddenOperatives(order, boxes, viewport);
   drawAim(viewport);
   drawEffects(viewport);
   drawMinimap(viewport);
