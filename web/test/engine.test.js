@@ -217,8 +217,9 @@ function patrolUnit(route, overrides = {}) {
   return {
     id: "guard",
     side: "opposition",
-    definition: { stats: { speed: 3.25, range: 2.5, attack: 6, cooldown: 1.2 } },
+    definition: { stats: { speed: 3.25, range: 2.5, attack: 6, cooldown: 1.2, awareness: 85 } },
     position: { ...route[0] },
+    path: [],
     targetId: null,
     disabled: false,
     patrol: { route, index: 1 },
@@ -271,4 +272,65 @@ test("a patrol is repeatable, holds while engaged, and ignores disabled units", 
   const down = patrolUnit(route, { disabled: true });
   advancePatrols([down], 1);
   assert.deepEqual(down.position, route[0]);
+});
+
+const streetMap = {
+  dimensions: { width: 40, height: 5 },
+  regions: [{ id: "road", x: 0, y: 0, width: 40, height: 5, walkable: true, elevation: 0 }],
+};
+
+function operatorAt(x, y, overrides = {}) {
+  return {
+    id: "op",
+    side: "team",
+    disabled: false,
+    position: { x, y },
+    path: [],
+    definition: { stats: { speed: 4.5, range: 3.25, attack: 12, cooldown: 0.75, awareness: 70 } },
+    ...overrides,
+  };
+}
+
+test("a watcher spots a nearby operator once, chases, and stops within pulse range", () => {
+  const grid = createTileGrid(streetMap);
+  const guard = patrolUnit([{ x: 2, y: 2 }, { x: 4, y: 2 }]);
+  const operator = operatorAt(8, 2);
+  const events = [];
+  for (let step = 0; step < 300; step += 1) {
+    events.push(...advancePatrols([guard, operator], FIXED_STEP_SECONDS, grid));
+  }
+  assert.deepEqual(events, [{ type: "spotted", unitId: "guard", targetId: "op" }]);
+  const gap = Math.hypot(guard.position.x - operator.position.x, guard.position.y - operator.position.y);
+  assert.ok(gap <= 2.5 * 0.9 + 1e-6, `stopped ${gap} tiles away`);
+  assert.deepEqual(guard.path, []);
+});
+
+test("a watcher ignores operators beyond its sight and cannot catch a fleeing one", () => {
+  const grid = createTileGrid(streetMap);
+  const guard = patrolUnit([{ x: 2, y: 2 }, { x: 4, y: 2 }]);
+  const far = operatorAt(38, 2);
+  assert.deepEqual(advancePatrols([guard, far], 1, grid), []);
+
+  // An operator running away at full speed keeps its lead over the chaser.
+  const operator = operatorAt(8, 2);
+  const startGap = 6;
+  for (let step = 0; step < 150; step += 1) {
+    operator.position.x += (operator.definition.stats.speed * 0.7 * FIXED_STEP_SECONDS);
+    advancePatrols([guard, operator], FIXED_STEP_SECONDS, grid);
+  }
+  assert.ok(operator.position.x - guard.position.x > startGap);
+});
+
+test("a watcher that loses its target returns to its route over real ground", () => {
+  const grid = createTileGrid(streetMap);
+  const route = [{ x: 2, y: 2 }, { x: 4, y: 2 }];
+  const guard = patrolUnit(route);
+  const operator = operatorAt(8, 2);
+  for (let step = 0; step < 60; step += 1) advancePatrols([guard, operator], FIXED_STEP_SECONDS, grid);
+  assert.ok(guard.position.x > 4);
+
+  operator.position = { x: 39, y: 0 };
+  for (let step = 0; step < 900; step += 1) advancePatrols([guard, operator], FIXED_STEP_SECONDS, grid);
+  assert.ok(guard.position.x <= 4.5 && guard.position.x >= 1.5, `guard ended at ${guard.position.x}`);
+  assert.equal(guard.alertedBy, null);
 });

@@ -128,6 +128,11 @@ for (const [name, type, executablePath] of targets) {
     await page.waitForFunction(() =>
       document.querySelector("#status-message").textContent.includes("Local map established"),
     );
+    // A watcher notices an operator who walks into its sight and raises the alert.
+    await page.evaluate(() => window.opensyndTest.placeUnit("operator-one", 28, 28));
+    await page.waitForFunction(
+      () => document.querySelector("#status-message").textContent.includes("spotted"),
+    );
     // Success screen: complete every objective.
     await page.evaluate(() => window.opensyndTest.completeObjectives());
     await page.waitForSelector("#outcome-dialog[open]");

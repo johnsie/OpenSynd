@@ -8,6 +8,7 @@ export const CUES = Object.freeze({
   pulse: { caption: "Disabling pulse fired", notes: [[880, 0.04], [330, 0.12]] },
   repair: { caption: "Repair kit applied", notes: [[392, 0.08], [523, 0.08], [659, 0.1]] },
   objective: { caption: "Objective complete", notes: [[523, 0.1], [659, 0.1], [784, 0.16]] },
+  alert: { caption: "Watcher alerted", notes: [[740, 0.07], [740, 0.07], [988, 0.12]] },
   disabled: { caption: "Unit disabled", notes: [[220, 0.14], [147, 0.2]] },
 });
 

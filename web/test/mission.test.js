@@ -241,6 +241,7 @@ test("every First Light watcher patrols a real route that stays on walkable grou
       side: "opposition",
       definition,
       position: { ...placement.position },
+      path: [],
       targetId: null,
       disabled: false,
       patrol: { route, index: 0 },

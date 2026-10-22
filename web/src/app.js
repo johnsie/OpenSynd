@@ -299,6 +299,7 @@ async function loadGame() {
       side: definition.role === "operator" ? "team" : "opposition",
       position: { ...placement.position },
       initialPosition: { ...placement.position },
+      alertedBy: null,
       patrol: placement.patrol
         ? { route: buildPatrolRoute(state.grid, placement.position, placement.patrol), index: 0 }
         : null,
@@ -908,7 +909,13 @@ function simulationStep(deltaSeconds) {
     interfaceChanged = true;
     interfaceChanged = completeObjectivesAt(arrival.position) || interfaceChanged;
   }
-  advancePatrols(state.units, deltaSeconds);
+  for (const event of advancePatrols(state.units, deltaSeconds, state.grid)) {
+    const watcher = state.units.find((unit) => unit.id === event.unitId);
+    const spotted = state.units.find((unit) => unit.id === event.targetId);
+    setStatus(`${watcher.definition.name} spotted ${spotted.definition.name}! It is closing in.`);
+    audio.play("alert");
+    interfaceChanged = true;
+  }
   const combatEvents = advanceCombat(state.units, deltaSeconds);
   if (combatEvents.length > 0) {
     interfaceChanged = true;
@@ -1443,6 +1450,11 @@ if (new URLSearchParams(location.search).has("e2e")) {
           unit.targetId = null;
         }
       }
+    },
+    placeUnit(id, x, y) {
+      const unit = state.units.find((item) => item.id === id);
+      unit.position = { x, y };
+      unit.path = [];
     },
     completeObjectives() {
       for (const objective of state.objectives) objective.complete = true;

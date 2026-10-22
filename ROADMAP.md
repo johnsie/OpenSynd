@@ -83,7 +83,12 @@ remappable camera keys.
 
 Security watchers now patrol deterministic routes built from mission waypoints
 (`patrol` in the mission schema). A patrolling watcher holds position while it
-has a target in pulse range and resumes afterwards. Save format version 4 stores
+has a target in pulse range and resumes afterwards. Watchers also notice operators within sight (awareness x 0.1 tiles), chase them
+over real streets at 85% of an operator's speed so a fleeing squad keeps its
+lead, stop within pulse range, and walk back to their route once they lose
+sight. The behaviour is stateless and deterministic, so it needs no extra save
+fields.
+Save format version 4 stores
 each unit's place along its route, with a tested migration from version 3.
 
 The prototype also has an original generative score (`web/src/music.js`): a

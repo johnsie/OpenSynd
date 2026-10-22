@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+import { findPath } from "./engine.js";
+
 export const FIXED_STEP_SECONDS = 1 / 30;
 export const MAX_STEPS_PER_FRAME = 8;
 
@@ -44,26 +46,118 @@ export function advanceUnits(units, deltaSeconds) {
 }
 
 const PATROL_SPEED_FACTOR = 0.45;
+const CHASE_SPEED_FACTOR = 0.85;
+const SIGHT_TILES_PER_AWARENESS = 0.1;
+const LOSE_SIGHT_FACTOR = 1.6;
+const STOP_RANGE_FACTOR = 0.9;
+
+// Walk a unit along its own `path`; returns true while it still has path left.
+function followPath(unit, deltaSeconds, speedFactor) {
+  let remaining = deltaSeconds * unit.definition.stats.speed * 0.7 * speedFactor;
+  while (remaining > 0 && unit.path.length > 0) {
+    const destination = unit.path[0];
+    const offsetX = destination.x - unit.position.x;
+    const offsetY = destination.y - unit.position.y;
+    const distance = Math.hypot(offsetX, offsetY);
+    if (distance <= remaining + ARRIVAL_EPSILON) {
+      unit.position = { ...destination };
+      unit.path.shift();
+      remaining = Math.max(0, remaining - distance);
+    } else {
+      unit.position = {
+        x: unit.position.x + (offsetX / distance) * remaining,
+        y: unit.position.y + (offsetY / distance) * remaining,
+      };
+      remaining = 0;
+    }
+  }
+  return unit.path.length > 0;
+}
+
+function tileOf(position) {
+  return { x: Math.round(position.x), y: Math.round(position.y) };
+}
+
+function nearestVisibleOperator(unit, units, sight) {
+  let best = null;
+  let bestDistance = sight;
+  for (const candidate of units) {
+    if (candidate.side !== "team" || candidate.disabled) continue;
+    const distance = distanceBetween(unit, candidate);
+    if (distance <= bestDistance) {
+      best = candidate;
+      bestDistance = distance;
+    }
+  }
+  return best;
+}
 
 /**
- * Walk opposition units that have a patrol route. A patrolling unit holds its
- * position while it has a target in pulse range and resumes once the target is
- * disabled or out of range.
+ * Move opposition units. A watcher holds position while it has a target in
+ * pulse range; otherwise it chases the nearest operator within sight (slower
+ * than operators can run), returns to its patrol route when it loses them, and
+ * walks the route otherwise. With a `grid` it paths around obstacles; without
+ * one it only follows its route. Returns "spotted" events when a watcher first
+ * notices an operator.
  */
-export function advancePatrols(units, deltaSeconds) {
+export function advancePatrols(units, deltaSeconds, grid = null) {
+  const events = [];
   const byId = new Map(units.map((unit) => [unit.id, unit]));
   for (const unit of units) {
-    if (unit.side === "team" || unit.disabled || !unit.patrol || unit.patrol.route.length === 0) continue;
+    if (unit.side === "team" || unit.disabled) continue;
+    const hasRoute = unit.patrol && unit.patrol.route.length > 0;
+    if (!hasRoute && !grid) continue;
 
     if (unit.targetId !== null) {
       const target = byId.get(unit.targetId);
       const engaged =
         target && !target.disabled && distanceBetween(unit, target) <= combatStats(unit).range;
-      if (engaged) continue;
+      if (engaged) {
+        unit.path = [];
+        continue;
+      }
       unit.targetId = null;
     }
 
+    const stopRange = combatStats(unit).range * STOP_RANGE_FACTOR;
+    const sight = unit.definition.stats.awareness * SIGHT_TILES_PER_AWARENESS;
+    const seen = grid
+      ? nearestVisibleOperator(unit, units, unit.alertedBy ? sight * LOSE_SIGHT_FACTOR : sight)
+      : null;
+
+    if (seen) {
+      if (!unit.alertedBy) events.push({ type: "spotted", unitId: unit.id, targetId: seen.id });
+      unit.alertedBy = seen.id;
+      if (distanceBetween(unit, seen) <= stopRange) {
+        unit.path = [];
+        continue;
+      }
+      const goal = tileOf(seen.position);
+      const end = unit.path.at(-1);
+      if (!end || Math.abs(end.x - goal.x) + Math.abs(end.y - goal.y) > 1) {
+        unit.path = findPath(grid, tileOf(unit.position), goal);
+      }
+      followPath(unit, deltaSeconds, CHASE_SPEED_FACTOR);
+      continue;
+    }
+    unit.alertedBy = null;
+
+    if (!hasRoute) continue;
+    if (unit.path.length > 0) {
+      followPath(unit, deltaSeconds, PATROL_SPEED_FACTOR);
+      continue;
+    }
+
     const { route } = unit.patrol;
+    const waypoint = route[unit.patrol.index % route.length];
+    // Far from the route after a chase: walk back along real streets.
+    if (grid && distanceBetween(unit, { position: waypoint }) > 1.5) {
+      unit.path = findPath(grid, tileOf(unit.position), waypoint);
+      if (unit.path.length > 0) {
+        followPath(unit, deltaSeconds, PATROL_SPEED_FACTOR);
+        continue;
+      }
+    }
     let remaining = deltaSeconds * unit.definition.stats.speed * 0.7 * PATROL_SPEED_FACTOR;
     while (remaining > 0) {
       const destination = route[unit.patrol.index % route.length];
@@ -83,6 +177,7 @@ export function advancePatrols(units, deltaSeconds) {
       }
     }
   }
+  return events;
 }
 
 function distanceBetween(left, right) {
