@@ -537,6 +537,18 @@ shows that it satisfies maintainability, accessibility, and licensing goals.
 - Add the strategic map using an original geography and faction structure.
 - Implement research, equipment purchasing, character upgrades, recruitment,
   economy, mission branching, and campaign persistence.
+- **World map mission selection.** Choosing an operation happens on an original
+  world map: each mission is a region on the map that the player clicks, replacing
+  the plain list. Regions show their state (locked, open, completed), a hover or
+  focus card gives the name, objective types and number of watchers, and the map is
+  fully usable by keyboard and screen reader (regions are also listed as buttons).
+  It is drawn procedurally with original geography, so it needs no map assets.
+- **Street life.** The city is populated with civilians (men and women, with
+  cyberpunk street styling: women in dark clothes, black tights and skirts, men in
+  neon-trimmed jackets, never trench coats, which belong to the squad) who walk the
+  streets and flee gunfire, and with cyberpunk police who patrol and open fire on any
+  operator they see with a weapon drawn. Killing a civilian costs funds (more for a
+  police officer) and is recorded for achievements and the debrief.
 - **Mission variety.** No two operations in a row may be won the same way, and
   restoring relays is only one kind of job. The objective types to build and mix
   across the campaign are: interact (restore a relay, download from a server,
