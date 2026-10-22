@@ -43,6 +43,48 @@ export function advanceUnits(units, deltaSeconds) {
   return arrivals;
 }
 
+const PATROL_SPEED_FACTOR = 0.45;
+
+/**
+ * Walk opposition units that have a patrol route. A patrolling unit holds its
+ * position while it has a target in pulse range and resumes once the target is
+ * disabled or out of range.
+ */
+export function advancePatrols(units, deltaSeconds) {
+  const byId = new Map(units.map((unit) => [unit.id, unit]));
+  for (const unit of units) {
+    if (unit.side === "team" || unit.disabled || !unit.patrol || unit.patrol.route.length === 0) continue;
+
+    if (unit.targetId !== null) {
+      const target = byId.get(unit.targetId);
+      const engaged =
+        target && !target.disabled && distanceBetween(unit, target) <= combatStats(unit).range;
+      if (engaged) continue;
+      unit.targetId = null;
+    }
+
+    const { route } = unit.patrol;
+    let remaining = deltaSeconds * unit.definition.stats.speed * 0.7 * PATROL_SPEED_FACTOR;
+    while (remaining > 0) {
+      const destination = route[unit.patrol.index % route.length];
+      const offsetX = destination.x - unit.position.x;
+      const offsetY = destination.y - unit.position.y;
+      const distance = Math.hypot(offsetX, offsetY);
+      if (distance <= remaining + ARRIVAL_EPSILON) {
+        unit.position = { ...destination };
+        unit.patrol.index = (unit.patrol.index + 1) % route.length;
+        remaining = Math.max(0, remaining - distance);
+      } else {
+        unit.position = {
+          x: unit.position.x + (offsetX / distance) * remaining,
+          y: unit.position.y + (offsetY / distance) * remaining,
+        };
+        remaining = 0;
+      }
+    }
+  }
+}
+
 function distanceBetween(left, right) {
   return Math.hypot(
     left.position.x - right.position.x,

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 import {
+  buildPatrolRoute,
   createTileGrid,
   isTerrainWalkable,
   findPath,
@@ -26,7 +27,7 @@ import {
   visibleBounds,
   zoomCamera,
 } from "./camera.js";
-import { advanceCombat, advanceUnits, consumeFixedSteps } from "./simulation.js";
+import { advanceCombat, advancePatrols, advanceUnits, consumeFixedSteps } from "./simulation.js";
 import {
   LEGACY_LOCAL_SAVE_KEYS,
   LOCAL_SAVE_KEY,
@@ -298,6 +299,9 @@ async function loadGame() {
       side: definition.role === "operator" ? "team" : "opposition",
       position: { ...placement.position },
       initialPosition: { ...placement.position },
+      patrol: placement.patrol
+        ? { route: buildPatrolRoute(state.grid, placement.position, placement.patrol), index: 0 }
+        : null,
       path: [],
       equipment: placement.equipment.map((path) => {
         const equipment = equipmentDefinitions.get(path);
@@ -361,6 +365,9 @@ function saveContext() {
         },
       ]),
     ),
+    patrolLengths: Object.fromEntries(
+      state.units.map((unit) => [unit.id, unit.patrol?.route.length ?? 0]),
+    ),
     initialUnits: Object.fromEntries(
       state.units.map((unit) => [unit.id, { position: { ...unit.initialPosition } }]),
     ),
@@ -377,6 +384,7 @@ function applySaveSnapshot(snapshot) {
     unit.cooldownRemaining = saved.cooldownRemaining;
     unit.targetId = saved.targetId;
     unit.disabled = saved.disabled;
+    if (unit.patrol) unit.patrol.index = saved.patrolIndex;
   }
   const objectivesById = new Map(
     snapshot.objectives.map((objective) => [objective.id, objective]),
@@ -615,8 +623,13 @@ function spriteSheetFor(unit) {
 }
 
 // Eight facings, 0 toward the camera, increasing clockwise as seen on screen.
+function isPatrolling(unit) {
+  return Boolean(unit.patrol && unit.patrol.route.length > 0 && !unit.targetId && !unit.disabled);
+}
+
 function updateFacing(unit, viewport) {
   let toward = unit.path[0] ?? null;
+  if (!toward && isPatrolling(unit)) toward = unit.patrol.route[unit.patrol.index];
   if (!toward && unit.targetId) {
     toward = state.units.find((item) => item.id === unit.targetId)?.position ?? null;
   }
@@ -631,7 +644,7 @@ function updateFacing(unit, viewport) {
 
 function drawSprite(unit, sheet, viewport, size) {
   updateFacing(unit, viewport);
-  const moving = unit.path.length > 0 && !unit.disabled;
+  const moving = (unit.path.length > 0 && !unit.disabled) || isPatrolling(unit);
   const animation = sheet.animations.find((item) => item.name === (moving ? "walk" : "idle"));
   const clock = reduceMotion ? 0 : (state.elapsed + unit.id.length * 0.13) / animation.seconds;
   const frame = Math.floor((clock % 1) * animation.frames) % animation.frames;
@@ -895,6 +908,7 @@ function simulationStep(deltaSeconds) {
     interfaceChanged = true;
     interfaceChanged = completeObjectivesAt(arrival.position) || interfaceChanged;
   }
+  advancePatrols(state.units, deltaSeconds);
   const combatEvents = advanceCombat(state.units, deltaSeconds);
   if (combatEvents.length > 0) {
     interfaceChanged = true;
@@ -1417,6 +1431,9 @@ state.modal = true;
 // Browser tests add ?e2e to reach states that take too long to play out.
 if (new URLSearchParams(location.search).has("e2e")) {
   window.opensyndTest = {
+    positions() {
+      return Object.fromEntries(state.units.map((unit) => [unit.id, { ...unit.position }]));
+    },
     disableOperators() {
       for (const unit of state.units) {
         if (unit.side === "team") {

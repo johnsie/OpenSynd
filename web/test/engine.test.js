@@ -5,6 +5,7 @@ import test from "node:test";
 
 import {
   applyGates,
+  buildPatrolRoute,
   createTileGrid,
   formationTiles,
   isTerrainWalkable,
@@ -18,6 +19,7 @@ import {
 import {
   FIXED_STEP_SECONDS,
   advanceCombat,
+  advancePatrols,
   advanceUnits,
   consumeFixedSteps,
 } from "../src/simulation.js";
@@ -209,4 +211,64 @@ test("formation tiles are distinct, walkable and nearest first", () => {
   assert.ok(tiles.every((tile) => isWalkable(grid, tile.x, tile.y)));
   assert.deepEqual(formationTiles(grid, { x: 2, y: 1 }, 3), []);
   assert.equal(formationTiles(grid, { x: 0, y: 0 }, 100).length, 17);
+});
+
+function patrolUnit(route, overrides = {}) {
+  return {
+    id: "guard",
+    side: "opposition",
+    definition: { stats: { speed: 3.25, range: 2.5, attack: 6, cooldown: 1.2 } },
+    position: { ...route[0] },
+    targetId: null,
+    disabled: false,
+    patrol: { route, index: 1 },
+    ...overrides,
+  };
+}
+
+test("patrol routes loop through the waypoints and back to the start", () => {
+  const grid = createTileGrid(map);
+  const route = buildPatrolRoute(grid, { x: 0, y: 1 }, [{ x: 4, y: 1 }]);
+  assert.deepEqual(route.at(-1), { x: 0, y: 1 });
+  assert.ok(route.some((tile) => tile.x === 4 && tile.y === 1));
+  assert.deepEqual(buildPatrolRoute(grid, { x: 0, y: 1 }, [{ x: 2, y: 1 }]), []);
+});
+
+test("a patrol walks its route at a steady pace and loops", () => {
+  const route = [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 2, y: 0 }, { x: 1, y: 0 }];
+  const guard = patrolUnit(route);
+  const visited = [];
+  for (let step = 0; step < 600; step += 1) {
+    advancePatrols([guard], FIXED_STEP_SECONDS);
+    visited.push(guard.patrol.index);
+  }
+  assert.ok(guard.position.x >= 0 && guard.position.x <= 2);
+  assert.ok(new Set(visited).size === route.length);
+  // About 1 tile per second, so 600 steps (20 s) covers roughly 20 tiles of route.
+  assert.ok(visited.filter((index, at) => index === 0 && visited[at - 1] === 3).length >= 4);
+});
+
+test("a patrol is repeatable, holds while engaged, and ignores disabled units", () => {
+  const route = [{ x: 0, y: 0 }, { x: 3, y: 0 }];
+  const run = () => {
+    const guard = patrolUnit(route);
+    for (let step = 0; step < 90; step += 1) advancePatrols([guard], FIXED_STEP_SECONDS);
+    return guard.position;
+  };
+  assert.deepEqual(run(), run());
+
+  const target = { id: "op", side: "team", disabled: false, position: { x: 1, y: 1 } };
+  const guard = patrolUnit(route, { targetId: "op" });
+  const before = { ...guard.position };
+  advancePatrols([guard, target], 1);
+  assert.deepEqual(guard.position, before);
+
+  target.position = { x: 40, y: 40 };
+  advancePatrols([guard, target], 1);
+  assert.equal(guard.targetId, null);
+  assert.notDeepEqual(guard.position, before);
+
+  const down = patrolUnit(route, { disabled: true });
+  advancePatrols([down], 1);
+  assert.deepEqual(down.position, route[0]);
 });

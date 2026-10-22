@@ -12,7 +12,7 @@
     "notes": "Created from the original OpenSynd design brief without imported media; pending maintainer provenance and similarity review."
   },
   "maps": ["maps/signal-yard.map.json"],
-  "units": ["units/field-operator.unit.json", "units/watcher-drone.unit.json"],
+  "units": ["units/field-operator.unit.json", "units/security-watcher.unit.json"],
   "equipment": [
     "equipment/civic-pulse-emitter.equipment.json",
     "equipment/field-repair-kit.equipment.json"

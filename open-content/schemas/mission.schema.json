@@ -37,7 +37,13 @@
         "id": { "$ref": "#/$defs/id" },
         "unit": { "$ref": "#/$defs/path" },
         "position": { "$ref": "#/$defs/position" },
-        "equipment": { "$ref": "#/$defs/pathList" }
+        "equipment": { "$ref": "#/$defs/pathList" },
+        "patrol": {
+          "type": "array",
+          "description": "Waypoints an opposition unit walks after its start, returning to the start and repeating.",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/position" }
+        }
       }
     },
     "pathList": {

@@ -40,7 +40,9 @@ ZONES = [
     {"id": "gate-panel", "kind": "interaction", "position": {"x": 99, "y": 99}, "width": 2, "height": 2},
     {"id": "safe-exit", "kind": "exit", "position": {"x": 122, "y": 110}, "width": 4, "height": 4},
 ]
-WATCHERS = [(28, 40), (51, 52), (70, 62), (88, 75), (100, 88), (110, 99)]
+# Patrol starts and far waypoints used by the First Light mission; all must be reachable.
+WATCHERS = [(28, 34), (28, 46), (44, 52), (58, 52), (70, 56), (70, 70), (80, 75), (96, 75),
+            (100, 84), (100, 96), (104, 99), (114, 99)]
 
 
 def region(name, x, y, w, h, surface, walkable, elevation, color):

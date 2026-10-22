@@ -64,6 +64,12 @@ for (const [name, type, executablePath] of targets) {
     await page.waitForSelector("#roster button");
     assert.match(await page.locator("#title-dialog").innerText(), /First Light/);
     await page.click("#begin-button");
+    // Watchers patrol: their positions change on their own.
+    const before = await page.evaluate(() => window.opensyndTest.positions());
+    await page.waitForTimeout(1500);
+    const after = await page.evaluate(() => window.opensyndTest.positions());
+    assert.notDeepEqual(after["watcher-one"], before["watcher-one"]);
+    assert.deepEqual(after["operator-one"], before["operator-one"]);
     assert.match(await page.locator("#objective-list").innerText(), /service gate/i);
     await page.locator("#roster button").first().click();
     assert.doesNotMatch(await page.locator("#selected-readout").innerText(), /No operator selected/);

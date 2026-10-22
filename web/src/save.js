@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 export const SAVE_FORMAT = "opensynd-save";
-export const SAVE_VERSION = 3;
-export const LOCAL_SAVE_KEY = "opensynd.save.v3";
-export const LEGACY_LOCAL_SAVE_KEYS = ["opensynd.save.v2", "opensynd.save.v1"];
+export const SAVE_VERSION = 4;
+export const LOCAL_SAVE_KEY = "opensynd.save.v4";
+export const LEGACY_LOCAL_SAVE_KEYS = ["opensynd.save.v3", "opensynd.save.v2", "opensynd.save.v1"];
 
 function fail(message) {
   throw new Error(`Invalid OpenSynd save: ${message}`);
@@ -54,6 +54,7 @@ export function createSaveSnapshot(state, createdAt = new Date().toISOString()) 
       cooldownRemaining: unit.cooldownRemaining,
       targetId: unit.targetId,
       disabled: unit.disabled,
+      patrolIndex: unit.patrol?.index ?? 0,
     })),
     objectives: state.objectives.map((objective) => ({
       id: objective.id,
@@ -115,6 +116,14 @@ export function validateSaveSnapshot(value, context) {
     if (unit.disabled && (path.length > 0 || unit.targetId !== null)) {
       fail(`${unit.id} cannot have orders while disabled`);
     }
+    const patrolLength = context.patrolLengths?.[unit.id] ?? 0;
+    if (
+      !Number.isInteger(unit.patrolIndex) ||
+      unit.patrolIndex < 0 ||
+      unit.patrolIndex >= Math.max(1, patrolLength)
+    ) {
+      fail(`${unit.id} patrol position is invalid`);
+    }
     return {
       id: unit.id,
       position,
@@ -123,6 +132,7 @@ export function validateSaveSnapshot(value, context) {
       cooldownRemaining: unit.cooldownRemaining,
       targetId: unit.targetId,
       disabled: unit.disabled,
+      patrolIndex: unit.patrolIndex,
     };
   });
 
@@ -205,8 +215,16 @@ export function migrateSaveSnapshot(value, context) {
       });
     migrated = {
       ...migrated,
-      formatVersion: SAVE_VERSION,
+      formatVersion: 3,
       units: [...migrated.units, ...addedUnits],
+    };
+  }
+  if (migrated.formatVersion === 3) {
+    // Version 4 tracks each patrolling unit's place along its route.
+    migrated = {
+      ...migrated,
+      formatVersion: SAVE_VERSION,
+      units: migrated.units.map((unit) => ({ ...unit, patrolIndex: 0 })),
     };
   }
   // Missions may gain objectives after a save was written; they start incomplete.

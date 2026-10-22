@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-import { createTileGrid, findPath, isWalkable } from "../src/engine.js";
+import { buildPatrolRoute, createTileGrid, findPath, isWalkable } from "../src/engine.js";
 import {
   gateOpen,
   missionComplete,
@@ -13,7 +13,7 @@ import {
   resolveInteraction,
   syncGates,
 } from "../src/mission.js";
-import { FIXED_STEP_SECONDS, advanceCombat, advanceUnits } from "../src/simulation.js";
+import { FIXED_STEP_SECONDS, advanceCombat, advancePatrols, advanceUnits } from "../src/simulation.js";
 
 const read = async (path) =>
   JSON.parse(await readFile(new URL(`../content/${path}`, import.meta.url), "utf8"));
@@ -120,7 +120,7 @@ async function loadSquad() {
   const mission = await read("missions/restore-relay.mission.json");
   const definitions = {
     operator: await read("units/field-operator.unit.json"),
-    drone: await read("units/watcher-drone.unit.json"),
+    drone: await read("units/security-watcher.unit.json"),
   };
   const equipment = {
     "equipment/civic-pulse-emitter.equipment.json": await read("equipment/civic-pulse-emitter.equipment.json"),
@@ -149,6 +149,7 @@ test("a squad fight against a watcher resolves identically on every run", async 
     const units = await loadSquad();
     const byId = Object.fromEntries(units.map((unit) => [unit.id, unit]));
     // Two operators close to within pulse range of the first watcher and engage it.
+    byId["watcher-one"].position = { x: 28, y: 40 };
     byId["operator-one"].position = { x: 26, y: 40 };
     byId["operator-two"].position = { x: 26, y: 41 };
     byId["operator-one"].targetId = "watcher-one";
@@ -206,6 +207,7 @@ test("an undefended squad loses to the watchers at a repeatable step", async () 
     const units = await loadSquad();
     const byId = Object.fromEntries(units.map((unit) => [unit.id, unit]));
     // Everyone stands inside both watchers' range and never fights back.
+    byId["watcher-one"].position = { x: 28, y: 40 };
     const centre = { x: 27, y: 40 };
     for (const [index, unit] of units.entries()) {
       unit.position = { x: centre.x + (index % 3) * 0.5, y: centre.y + Math.floor(index / 3) * 0.5 };
@@ -224,4 +226,35 @@ test("an undefended squad loses to the watchers at a repeatable step", async () 
   assert.equal(runs[0].outcome, "failure");
   // Golden value at 30 Hz: about 13 seconds of sustained fire, no watcher touched.
   assert.deepEqual(runs[0], { step: 397, outcome: "failure", watchers: 45 });
+});
+
+test("every First Light watcher patrols a real route that stays on walkable ground", async () => {
+  const mission = await read("missions/restore-relay.mission.json");
+  const map = await read(mission.map);
+  const definition = await read("units/security-watcher.unit.json");
+  const grid = createTileGrid(map);
+  const watchers = mission.opponents.map((placement) => {
+    const route = buildPatrolRoute(grid, placement.position, placement.patrol);
+    assert.ok(route.length > 0, `${placement.id} has no valid patrol route`);
+    return {
+      id: placement.id,
+      side: "opposition",
+      definition,
+      position: { ...placement.position },
+      targetId: null,
+      disabled: false,
+      patrol: { route, index: 0 },
+    };
+  });
+
+  const startedAt = watchers.map((unit) => ({ ...unit.position }));
+  for (let step = 0; step < 30 * 120; step += 1) {
+    advancePatrols(watchers, FIXED_STEP_SECONDS);
+    if (step % 30 === 0) {
+      for (const unit of watchers) {
+        assert.ok(isWalkable(grid, Math.round(unit.position.x), Math.round(unit.position.y)));
+      }
+    }
+  }
+  assert.ok(watchers.some((unit, index) => unit.position.x !== startedAt[index].x || unit.position.y !== startedAt[index].y));
 });

@@ -58,57 +58,93 @@
   "opponents": [
     {
       "id": "watcher-one",
-      "unit": "units/watcher-drone.unit.json",
+      "unit": "units/security-watcher.unit.json",
       "position": {
         "x": 28,
-        "y": 40
+        "y": 34
       },
-      "equipment": []
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 28,
+          "y": 46
+        }
+      ]
     },
     {
       "id": "watcher-two",
-      "unit": "units/watcher-drone.unit.json",
+      "unit": "units/security-watcher.unit.json",
       "position": {
-        "x": 51,
+        "x": 44,
         "y": 52
       },
-      "equipment": []
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 58,
+          "y": 52
+        }
+      ]
     },
     {
       "id": "watcher-three",
-      "unit": "units/watcher-drone.unit.json",
+      "unit": "units/security-watcher.unit.json",
       "position": {
         "x": 70,
-        "y": 62
+        "y": 56
       },
-      "equipment": []
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 70,
+          "y": 70
+        }
+      ]
     },
     {
       "id": "watcher-four",
-      "unit": "units/watcher-drone.unit.json",
+      "unit": "units/security-watcher.unit.json",
       "position": {
-        "x": 88,
+        "x": 80,
         "y": 75
       },
-      "equipment": []
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 96,
+          "y": 75
+        }
+      ]
     },
     {
       "id": "watcher-five",
-      "unit": "units/watcher-drone.unit.json",
+      "unit": "units/security-watcher.unit.json",
       "position": {
         "x": 100,
-        "y": 88
+        "y": 84
       },
-      "equipment": []
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 100,
+          "y": 96
+        }
+      ]
     },
     {
       "id": "watcher-six",
-      "unit": "units/watcher-drone.unit.json",
+      "unit": "units/security-watcher.unit.json",
       "position": {
-        "x": 110,
+        "x": 104,
         "y": 99
       },
-      "equipment": []
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 114,
+          "y": 99
+        }
+      ]
     }
   ],
   "objectives": [

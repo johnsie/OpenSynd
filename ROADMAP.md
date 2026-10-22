@@ -50,7 +50,7 @@ boundaries, fixed-step timing, repeatable movement, and save validation. Players
 can use a browser-local save slot or export and import human-readable,
 versioned JSON; imported state is validated before use and never sent to a
 service. The same fixed-step layer now resolves deterministic disabling-pulse
-combat, cooldowns, damage, drone retaliation, and unit shutdown. Combat state
+combat, cooldowns, damage, watcher retaliation, and unit shutdown. Combat state
 is covered by replay fixtures and tested save migrations. The developer mission
 now fields four operators, requires deliberate
 relay interaction rather than completing objectives on contact, and includes a
@@ -80,6 +80,11 @@ verifies that every objective is reachable and that the exit is sealed until
 the gate opens. The browser client has a scrolling, zoomable camera that draws
 only visible tiles (about 60 fps fully zoomed out), drag-to-pan, a minimap, and
 remappable camera keys.
+
+Security watchers now patrol deterministic routes built from mission waypoints
+(`patrol` in the mission schema). A patrolling watcher holds position while it
+has a target in pulse range and resumes afterwards. Save format version 4 stores
+each unit's place along its route, with a tested migration from version 3.
 
 The prototype also has an original generative score (`web/src/music.js`): a
 four-chord loop in A minor with bass, pad and a delayed arpeggio, synthesized in

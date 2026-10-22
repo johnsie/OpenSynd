@@ -58,7 +58,7 @@ every opponent. Combat is sometimes necessary, but eliminating all enemies is
 not the default objective.
 
 Force is a tactical cost, not the strategic objective. The first vertical
-slice uses explicitly non-random disabling pulses against watcher drones so the
+slice uses explicitly non-random disabling pulses against security watchers so the
 player can protect a restoration route without turning elimination into the
 win condition. Later equipment may create stronger trade-offs between speed,
 infrastructure damage, public trust, and operator safety.

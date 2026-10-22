@@ -165,3 +165,28 @@ test("saves written before a mission gained an objective load with it incomplete
   assert.deepEqual(parsed.objectives.map((objective) => objective.id), context.objectiveIds);
   assert.equal(parsed.objectives[1].complete, false);
 });
+
+test("version 3 saves migrate with every unit at the start of its patrol", () => {
+  const snapshot = createSaveSnapshot(state, "2026-10-22T12:00:00.000Z");
+  const older = {
+    ...snapshot,
+    formatVersion: 3,
+    units: snapshot.units.map(({ patrolIndex, ...unit }) => unit),
+  };
+  const parsed = parseSaveSnapshot(JSON.stringify(older), context);
+  assert.equal(parsed.formatVersion, SAVE_VERSION);
+  assert.ok(parsed.units.every((unit) => unit.patrolIndex === 0));
+});
+
+test("save validation rejects patrol positions outside the route", () => {
+  const snapshot = createSaveSnapshot(state, "2026-10-22T12:00:00.000Z");
+  const patrolling = { ...context, patrolLengths: { [snapshot.units[0].id]: 4 } };
+  const withIndex = (patrolIndex) => ({
+    ...snapshot,
+    units: snapshot.units.map((unit, index) => (index === 0 ? { ...unit, patrolIndex } : unit)),
+  });
+  assert.doesNotThrow(() => validateSaveSnapshot(withIndex(3), patrolling));
+  assert.throws(() => validateSaveSnapshot(withIndex(4), patrolling), /patrol position/);
+  assert.throws(() => validateSaveSnapshot(withIndex(1), context), /patrol position/);
+  assert.throws(() => validateSaveSnapshot(withIndex(-1), patrolling), /patrol position/);
+});

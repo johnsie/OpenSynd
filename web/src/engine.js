@@ -133,3 +133,17 @@ export function formationTiles(grid, centre, count) {
   }
   return tiles;
 }
+
+// Tiles a patrol walks, in order: from the start through each waypoint and back
+// to the start. Returns [] if any leg has no route, so a bad patrol is inert.
+export function buildPatrolRoute(grid, start, waypoints) {
+  const route = [];
+  let from = start;
+  for (const next of [...waypoints, start]) {
+    const leg = findPath(grid, from, next);
+    if (leg.length === 0 && (from.x !== next.x || from.y !== next.y)) return [];
+    route.push(...leg);
+    from = next;
+  }
+  return route;
+}

@@ -290,6 +290,20 @@ class Validation:
                     path, rectangle, dimensions["width"], dimensions["height"],
                     f"placement {placement_id}",
                 )
+                patrol = placement.get("patrol")
+                if patrol is not None:
+                    if group_name != "opponents":
+                        self.error(path, f"only opponents may patrol: {placement_id}")
+                    if not isinstance(patrol, list) or not patrol:
+                        self.error(path, f"placement {placement_id} patrol must be a non-empty array")
+                    else:
+                        for waypoint in patrol:
+                            point = dict(waypoint) if isinstance(waypoint, dict) else {}
+                            point.update({"width": 1, "height": 1})
+                            self.validate_rectangle(
+                                path, point, dimensions["width"], dimensions["height"],
+                                f"patrol waypoint of {placement_id}",
+                            )
 
         objective_ids: set[str] = set()
         objectives = value["objectives"]
