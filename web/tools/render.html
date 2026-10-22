@@ -153,6 +153,155 @@
     place(box(headHeight * 0.95, headHeight * 0.14, headHeight * 0.2, glow(kit.glow)), offset(eyeLevel, 0, 0, headHeight * 0.4), "Head");
   }
 
+  // Street clothes for the city's people: no trench coats (those are the squad's). `kit.style` is
+  // "woman" (dark top, black tights, a short skirt), "man" (a neon-trimmed cyberpunk jacket with a
+  // mohawk and a cyber eye) or "police" (a helmet with a visor, armour and a flashing light bar).
+  function addStreetKit(root, scene, kit, mixer, idleClip) {
+    mixer.clipAction(idleClip).play();
+    mixer.setTime(0);
+    root.updateMatrixWorld(true);
+    const bone = (name) => root.getObjectByName(name);
+    const at = (name) => bone(name).getWorldPosition(new THREE.Vector3());
+    const hips = at("Hips");
+    const chest = at("Spine2");
+    const neck = at("Neck");
+    const head = at("Head");
+    const headTop = at("HeadTop_End");
+    const leftUp = at("LeftUpLeg");
+    const rightUp = at("RightUpLeg");
+    const unit = leftUp.distanceTo(rightUp);
+    const headHeight = head.distanceTo(headTop);
+    const right = leftUp.clone().sub(rightUp).setY(0).normalize();
+    const up = new THREE.Vector3(0, 1, 0);
+    const forward = new THREE.Vector3().crossVectors(right, up);
+    const orientation = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(right, up, forward));
+    const offset = (base, x, y, z) => base.clone().addScaledVector(right, x).addScaledVector(up, y).addScaledVector(forward, z);
+    const material = (color, roughness = 0.85) => new THREE.MeshStandardMaterial({ color: rgb(color), roughness });
+    const glow = (color) => new THREE.MeshBasicMaterial({ color: rgb(color) });
+    const place = (mesh, position, boneName) => {
+      mesh.position.copy(position);
+      mesh.quaternion.copy(orientation);
+      scene.add(mesh);
+      mesh.updateMatrixWorld(true);
+      bone(boneName).attach(mesh);
+    };
+    const box = (w, h, d, mat) => new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+    const limb = (from, to, radiusFrom, radiusTo, mat, boneName, start = 0, end = 1) => {
+      const a = at(from).lerp(at(to), start);
+      const b = at(from).lerp(at(to), end);
+      const direction = b.clone().sub(a);
+      const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radiusTo, radiusFrom, direction.length() * 1.06, 10), mat);
+      mesh.position.copy(a.clone().lerp(b, 0.5));
+      mesh.quaternion.setFromUnitVectors(up, direction.normalize());
+      scene.add(mesh);
+      mesh.updateMatrixWorld(true);
+      bone(boneName).attach(mesh);
+    };
+    const boots = material(kit.boots, 0.5);
+    const accent = glow(kit.glow);
+    const bootsOn = (shinFraction, toeScale) => {
+      for (const side of ["Left", "Right"]) {
+        const knee = at(`${side}Leg`);
+        const ankle = at(`${side}Foot`);
+        const toes = at(`${side}ToeBase`);
+        const shin = knee.distanceTo(ankle) * shinFraction;
+        const cylinder = new THREE.Mesh(new THREE.CylinderGeometry(unit * 0.3, unit * 0.36, shin, 12), boots);
+        place(cylinder, ankle.clone().add(new THREE.Vector3(0, shin * 0.5 - unit * 0.12, 0)), `${side}Leg`);
+        const toeLength = ankle.distanceTo(toes) + unit * 0.5;
+        place(box(unit * 0.7, unit * 0.5, toeLength * toeScale, boots), offset(ankle, 0, -unit * 0.3, toeLength * 0.34), `${side}Foot`);
+      }
+    };
+    const gloves = (mat, radius = 0.3) => {
+      for (const side of ["Left", "Right"]) {
+        const hand = new THREE.Mesh(new THREE.SphereGeometry(unit * radius, 10, 8), mat);
+        place(hand, at(`${side}Hand`).add(new THREE.Vector3(0, -unit * 0.03, 0)), `${side}Hand`);
+      }
+    };
+
+    if (kit.style === "woman") {
+      // Dark glamour: a short skirt, glossy thigh-high heeled boots with a neon garter line, a laced
+      // corset, a choker and long hair.
+      const kneeY = at("LeftLeg").y;
+      const length = (hips.y - kneeY) * 0.42;
+      const skirt = new THREE.MeshStandardMaterial({ color: rgb(kit.skirt), roughness: 0.9, side: THREE.DoubleSide });
+      place(new THREE.Mesh(new THREE.CylinderGeometry(unit * 0.9, unit * 1.4, length, 20, 1, true), skirt),
+        new THREE.Vector3(hips.x, hips.y - length * 0.4, hips.z), "Hips");
+      place(new THREE.Mesh(new THREE.CylinderGeometry(unit * 1.4, unit * 1.4, unit * 0.05, 20, 1, true), accent),
+        new THREE.Vector3(hips.x, hips.y - length * 0.4 - length / 2, hips.z), "Hips");
+      const gloss = new THREE.MeshStandardMaterial({ color: rgb(kit.boots), roughness: 0.22, metalness: 0.15 });
+      for (const side of ["Left", "Right"]) {
+        // Over-the-knee boots: a shaped thigh, a slim calf, a neon band at the top, a stiletto heel.
+        limb(`${side}UpLeg`, `${side}Leg`, unit * 0.46, unit * 0.36, gloss, `${side}UpLeg`, 0.3, 1.02);
+        limb(`${side}Leg`, `${side}Foot`, unit * 0.36, unit * 0.27, gloss, `${side}Leg`, -0.02, 1.0);
+        limb(`${side}UpLeg`, `${side}Leg`, unit * 0.48, unit * 0.48, accent, `${side}UpLeg`, 0.28, 0.33);
+        const ankle = at(`${side}Foot`);
+        const toes = at(`${side}ToeBase`);
+        const toeLength = ankle.distanceTo(toes) + unit * 0.5;
+        place(box(unit * 0.7, unit * 0.55, toeLength * 1.8, gloss), offset(ankle, 0, -unit * 0.32, toeLength * 0.45), `${side}Foot`);
+        place(box(unit * 0.14, unit * 0.62, unit * 0.14, gloss), offset(ankle, 0, -unit * 0.52, -unit * 0.22), `${side}Foot`);
+      }
+      // A laced corset with a neon lacing line, and a wide belt.
+      place(box(unit * 1.25, unit * 0.62, unit * 0.9, material(kit.belt, 0.4)), offset(hips, 0, unit * 0.55, 0), "Hips");
+      place(box(unit * 0.07, unit * 0.62, unit * 0.05, accent), offset(hips, 0, unit * 0.55, unit * 0.47), "Hips");
+      // Long hair down the back, a fringe and a glowing choker.
+      const hair = material(kit.hair, 0.8);
+      const mane = box(headHeight * 0.95, headHeight * 1.6, headHeight * 0.34, hair);
+      place(mane, offset(head, 0, -headHeight * 0.4, -headHeight * 0.52), "Head");
+      const fringe = new THREE.Mesh(new THREE.SphereGeometry(headHeight * 0.58, 16, 10), hair);
+      fringe.scale.set(1, 0.5, 1.05);
+      place(fringe, offset(headTop, 0, -headHeight * 0.12, 0), "Head");
+      place(box(unit * 0.62, unit * 0.07, unit * 0.62, accent), offset(neck, 0, unit * 0.02, 0.01), "Neck");
+      // Long fingerless gloves in glossy black.
+      for (const side of ["Left", "Right"]) {
+        limb(`${side}ForeArm`, `${side}Hand`, unit * 0.31, unit * 0.27, gloss, `${side}ForeArm`, 0.15, 1.0);
+      }
+    } else if (kit.style === "man") {
+      // Cyberpunk man: high collar, a metal shoulder pad with a neon edge, a neon chest stripe, a
+      // mohawk, a cyber eye and a cybernetic forearm.
+      const jacket = material(kit.collar);
+      const metal = new THREE.MeshStandardMaterial({ color: rgb(kit.metal), roughness: 0.3, metalness: 0.9 });
+      place(box(unit * 1.0, unit * 0.5, unit * 0.95, jacket), offset(neck, 0, -unit * 0.1, 0), "Neck");
+      place(box(unit * 1.02, unit * 0.05, unit * 0.97, accent), offset(neck, 0, unit * 0.15, 0), "Neck");
+      place(box(unit * 0.7, unit * 0.2, unit * 0.62, metal), offset(neck, unit * 0.95, -unit * 0.05, 0), "Spine2");
+      place(box(unit * 0.7, unit * 0.05, unit * 0.08, accent), offset(neck, unit * 0.95, unit * 0.06, unit * 0.3), "Spine2");
+      place(box(unit * 0.12, unit * 1.2, unit * 0.06, accent), offset(chest, -unit * 0.25, unit * 0.1, unit * 0.62), "Spine2");
+      place(box(unit * 1.75, unit * 0.18, unit * 1.0, material(kit.belt)), offset(hips, 0, unit * 0.15, 0), "Hips");
+      limb("RightForeArm", "RightHand", unit * 0.36, unit * 0.3, metal, "RightForeArm", 0.3, 0.98);
+      limb("RightForeArm", "RightHand", unit * 0.38, unit * 0.38, accent, "RightForeArm", 0.5, 0.56);
+      bootsOn(0.7, 1.5);
+      gloves(material(kit.belt, 0.5), 0.3);
+      place(box(headHeight * 0.14, headHeight * 0.5, headHeight * 1.0, glow(kit.crest)), offset(headTop, 0, -headHeight * 0.02, 0), "Head");
+      const eye = offset(head.clone().lerp(headTop, 0.45), -headHeight * 0.22, 0, headHeight * 0.42);
+      place(box(headHeight * 0.34, headHeight * 0.16, headHeight * 0.12, accent), eye, "Head");
+    } else {
+      // Police: armour plate with a badge, shoulder pads with a red and blue light strip, a visored
+      // helmet with a light bar, a belt with a holster, gloves and boots.
+      const armour = material(kit.armour, 0.6);
+      const helmet = material(kit.helmet, 0.45);
+      place(box(unit * 1.5, unit * 1.1, unit * 0.3, armour), offset(chest, 0, unit * 0.1, unit * 0.58), "Spine2");
+      place(box(unit * 0.3, unit * 0.3, unit * 0.06, glow([235, 240, 255])), offset(chest, unit * 0.4, unit * 0.35, unit * 0.76), "Spine2");
+      place(box(unit * 1.5, unit * 0.06, unit * 0.06, accent), offset(chest, 0, unit * 0.62, unit * 0.74), "Spine2");
+      for (const side of [-1, 1]) {
+        place(box(unit * 0.6, unit * 0.16, unit * 0.55, armour), offset(neck, side * unit * 0.95, -unit * 0.08, 0), "Spine2");
+        const strip = box(unit * 0.6, unit * 0.05, unit * 0.08, glow(side < 0 ? [255, 80, 90] : [80, 150, 255]));
+        place(strip, offset(neck, side * unit * 0.95, 0.0, unit * 0.27), "Spine2");
+      }
+      place(box(unit * 1.75, unit * 0.22, unit * 1.0, material(kit.belt)), offset(hips, 0, unit * 0.15, 0), "Hips");
+      place(box(unit * 0.3, unit * 0.65, unit * 0.4, material(kit.belt)), offset(hips, -unit * 0.9, -unit * 0.25, 0), "Hips");
+      bootsOn(0.8, 1.5);
+      gloves(material(kit.belt, 0.5), 0.3);
+      const dome = new THREE.Mesh(new THREE.SphereGeometry(headHeight * 0.66, 20, 14), helmet);
+      dome.scale.set(1, 0.85, 1.1);
+      place(dome, offset(head.clone().lerp(headTop, 0.55), 0, headHeight * 0.02, 0), "Head");
+      const eyeLevel = head.clone().lerp(headTop, 0.4);
+      place(box(headHeight * 1.0, headHeight * 0.2, headHeight * 0.25, accent), offset(eyeLevel, 0, 0, headHeight * 0.45), "Head");
+      for (const [colour, side] of [[[255, 80, 90], -1], [[80, 150, 255], 1]]) {
+        const light = box(headHeight * 0.4, headHeight * 0.12, headHeight * 0.14, glow(colour));
+        place(light, offset(headTop, side * headHeight * 0.22, headHeight * 0.1, 0), "Head");
+      }
+    }
+  }
+
   // Turn a bone so that the line from it to its child points along `direction` (world space),
   // keeping its twist. Used to place the arms.
   function aimBone(bone, child, direction) {
@@ -323,7 +472,8 @@
       if (!clips[name]) throw new Error(`No animation matching ${wanted}`);
     }
     const mixer = new THREE.AnimationMixer(root);
-    if (kit) addUniformKit(root, scene, kit, mixer, clips.idle);
+    if (kit?.style) addStreetKit(root, scene, kit, mixer, clips.idle);
+    else if (kit) addUniformKit(root, scene, kit, mixer, clips.idle);
     // An armed variant holds its weapon in both hands: the weapon is built after the kit so it
     // is measured in the same idle pose, and the arms are solved onto it every frame.
     const aimed = aim ? addAimedWeapon(root, scene, aim, mixer, clips.idle) : null;

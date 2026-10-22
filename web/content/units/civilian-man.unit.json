@@ -1,0 +1,29 @@
+{
+  "formatVersion": 1,
+  "id": "developer.civilian-man",
+  "name": "Civilian",
+  "license": "CC0-1.0",
+  "role": "civilian",
+  "stats": {
+    "vitality": 40,
+    "speed": 3.0,
+    "awareness": 40,
+    "attack": 0,
+    "range": 1,
+    "cooldown": 1.0
+  },
+  "abilities": [
+    "wander"
+  ],
+  "appearance": {
+    "shape": "circle",
+    "primaryColor": "#2f3a44",
+    "accentColor": "#42d6d0",
+    "marker": "C",
+    "sprites": [
+      "civilian-man-1",
+      "civilian-man-2",
+      "civilian-man-3"
+    ]
+  }
+}

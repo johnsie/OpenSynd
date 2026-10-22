@@ -209,5 +209,349 @@
     "failure": "Every operator has been disabled. The relays stay silent and the gate stays locked. Regroup and try a different approach."
   },
   "title": "Signal Yard is back on the mesh",
-  "trainingBudget": 8
+  "trainingBudget": 8,
+  "bystanders": [
+    {
+      "id": "civilian-1",
+      "unit": "units/civilian-woman.unit.json",
+      "position": {
+        "x": 8,
+        "y": 76
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 8,
+          "y": 76
+        },
+        {
+          "x": 21,
+          "y": 76
+        }
+      ]
+    },
+    {
+      "id": "civilian-2",
+      "unit": "units/civilian-man.unit.json",
+      "position": {
+        "x": 124,
+        "y": 8
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 124,
+          "y": 8
+        },
+        {
+          "x": 124,
+          "y": 20
+        }
+      ]
+    },
+    {
+      "id": "civilian-3",
+      "unit": "units/civilian-woman.unit.json",
+      "position": {
+        "x": 27,
+        "y": 32
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 27,
+          "y": 32
+        },
+        {
+          "x": 27,
+          "y": 42
+        }
+      ]
+    },
+    {
+      "id": "civilian-4",
+      "unit": "units/civilian-man.unit.json",
+      "position": {
+        "x": 50,
+        "y": 100
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 50,
+          "y": 100
+        },
+        {
+          "x": 63,
+          "y": 100
+        }
+      ]
+    },
+    {
+      "id": "civilian-5",
+      "unit": "units/civilian-woman.unit.json",
+      "position": {
+        "x": 32,
+        "y": 123
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 32,
+          "y": 123
+        },
+        {
+          "x": 45,
+          "y": 123
+        }
+      ]
+    },
+    {
+      "id": "civilian-6",
+      "unit": "units/civilian-man.unit.json",
+      "position": {
+        "x": 99,
+        "y": 50
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 99,
+          "y": 50
+        },
+        {
+          "x": 99,
+          "y": 68
+        }
+      ]
+    },
+    {
+      "id": "civilian-7",
+      "unit": "units/civilian-woman.unit.json",
+      "position": {
+        "x": 86,
+        "y": 75
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 86,
+          "y": 75
+        },
+        {
+          "x": 103,
+          "y": 75
+        }
+      ]
+    },
+    {
+      "id": "civilian-8",
+      "unit": "units/civilian-man.unit.json",
+      "position": {
+        "x": 51,
+        "y": 68
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 51,
+          "y": 68
+        },
+        {
+          "x": 51,
+          "y": 82
+        }
+      ]
+    },
+    {
+      "id": "civilian-9",
+      "unit": "units/civilian-woman.unit.json",
+      "position": {
+        "x": 38,
+        "y": 52
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 38,
+          "y": 52
+        },
+        {
+          "x": 51,
+          "y": 52
+        }
+      ]
+    },
+    {
+      "id": "civilian-10",
+      "unit": "units/civilian-man.unit.json",
+      "position": {
+        "x": 8,
+        "y": 100
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 8,
+          "y": 100
+        },
+        {
+          "x": 22,
+          "y": 100
+        }
+      ]
+    },
+    {
+      "id": "civilian-11",
+      "unit": "units/civilian-woman.unit.json",
+      "position": {
+        "x": 27,
+        "y": 14
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 27,
+          "y": 14
+        },
+        {
+          "x": 27,
+          "y": 25
+        }
+      ]
+    },
+    {
+      "id": "civilian-12",
+      "unit": "units/civilian-man.unit.json",
+      "position": {
+        "x": 123,
+        "y": 62
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 123,
+          "y": 62
+        },
+        {
+          "x": 123,
+          "y": 73
+        }
+      ]
+    },
+    {
+      "id": "civilian-13",
+      "unit": "units/civilian-woman.unit.json",
+      "position": {
+        "x": 51,
+        "y": 26
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 51,
+          "y": 26
+        },
+        {
+          "x": 51,
+          "y": 43
+        }
+      ]
+    },
+    {
+      "id": "civilian-14",
+      "unit": "units/civilian-man.unit.json",
+      "position": {
+        "x": 27,
+        "y": 86
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 27,
+          "y": 86
+        },
+        {
+          "x": 27,
+          "y": 104
+        }
+      ]
+    },
+    {
+      "id": "police-15",
+      "unit": "units/city-police.unit.json",
+      "position": {
+        "x": 76,
+        "y": 69
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 76,
+          "y": 69
+        },
+        {
+          "x": 76,
+          "y": 56
+        }
+      ]
+    },
+    {
+      "id": "police-16",
+      "unit": "units/city-police.unit.json",
+      "position": {
+        "x": 38,
+        "y": 51
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 38,
+          "y": 51
+        },
+        {
+          "x": 49,
+          "y": 51
+        }
+      ]
+    },
+    {
+      "id": "police-17",
+      "unit": "units/city-police.unit.json",
+      "position": {
+        "x": 20,
+        "y": 52
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 20,
+          "y": 52
+        },
+        {
+          "x": 8,
+          "y": 52
+        }
+      ]
+    },
+    {
+      "id": "police-18",
+      "unit": "units/city-police.unit.json",
+      "position": {
+        "x": 52,
+        "y": 78
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 52,
+          "y": 78
+        },
+        {
+          "x": 52,
+          "y": 68
+        }
+      ]
+    }
+  ]
 }

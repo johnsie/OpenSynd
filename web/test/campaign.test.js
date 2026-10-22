@@ -4,6 +4,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  CIVILIAN_PENALTY,
+  POLICE_PENALTY,
+  penalise,
   SLOTS_PER_OPERATIVE,
   earnAchievement,
   earnTime,
@@ -213,4 +216,12 @@ test("selling an item returns half its price and packs the loadout", () => {
   assert.equal(sold.funds, 7, "half of the pulse emitter's 15");
   assert.deepEqual(loadoutFor(sold, "op1", defaults), ["kit"]);
   assert.equal(sellFromSlot(campaign, "op1", 5, shop, defaults), campaign, "nothing in that slot");
+});
+
+test("harming bystanders costs funds, but never below zero", () => {
+  const campaign = { ...emptyCampaign(), funds: 100 };
+  assert.equal(penalise(campaign, CIVILIAN_PENALTY).funds, 60);
+  assert.ok(POLICE_PENALTY > CIVILIAN_PENALTY, "police cost more");
+  assert.equal(penalise(campaign, 500).funds, 0);
+  assert.equal(penalise(campaign, -5).funds, 100, "a negative penalty never pays");
 });

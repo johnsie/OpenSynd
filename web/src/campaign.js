@@ -80,6 +80,14 @@ export function earnTime(campaign, seconds) {
   return { ...campaign, funds: campaign.funds + whole, carry: total - whole };
 }
 
+// What harming bystanders costs. Funds never go below zero.
+export const CIVILIAN_PENALTY = 40;
+export const POLICE_PENALTY = 80;
+
+export function penalise(campaign, amount) {
+  return { ...campaign, funds: Math.max(0, campaign.funds - Math.max(0, amount)) };
+}
+
 // An achievement pays its reward once, ever.
 export function earnAchievement(campaign, achievement) {
   if (campaign.achievements.includes(achievement.id)) return campaign;

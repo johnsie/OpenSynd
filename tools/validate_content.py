@@ -198,6 +198,12 @@ class Validation:
         if not isinstance(appearance, dict):
             self.error(path, "appearance must be an object")
             return
+        sprites = appearance.get("sprites")
+        if sprites is not None and (
+            not isinstance(sprites, list) or not sprites
+            or not all(isinstance(item, str) and ID_PATTERN.fullmatch(item) for item in sprites)
+        ):
+            self.error(path, "appearance.sprites must be a non-empty list of ids")
         for field in ("primaryColor", "accentColor"):
             if COLOR_PATTERN.fullmatch(str(appearance.get(field))) is None:
                 self.error(path, f"appearance.{field} must be a six-digit hex color")
@@ -270,8 +276,8 @@ class Validation:
         dimensions = map_value["dimensions"]
 
         placement_ids: set[str] = set()
-        for group_name in ("team", "opponents"):
-            group = value[group_name]
+        for group_name in ("team", "opponents", "bystanders"):
+            group = value.get(group_name, [])
             if not isinstance(group, list):
                 self.error(path, f"{group_name} must be an array")
                 continue
@@ -310,8 +316,8 @@ class Validation:
                 )
                 patrol = placement.get("patrol")
                 if patrol is not None:
-                    if group_name != "opponents":
-                        self.error(path, f"only opponents may patrol: {placement_id}")
+                    if group_name == "team":
+                        self.error(path, f"only opponents and bystanders may patrol: {placement_id}")
                     if not isinstance(patrol, list) or not patrol:
                         self.error(path, f"placement {placement_id} patrol must be a non-empty array")
                     else:

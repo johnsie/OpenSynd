@@ -21,7 +21,10 @@
   "units": [
     "units/field-operator.unit.json",
     "units/security-watcher.unit.json",
-    "units/site-warden.unit.json"
+    "units/site-warden.unit.json",
+    "units/civilian-woman.unit.json",
+    "units/civilian-man.unit.json",
+    "units/city-police.unit.json"
   ],
   "equipment": [
     "equipment/civic-pulse-emitter.equipment.json",

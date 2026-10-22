@@ -303,6 +303,29 @@ export function migrateSaveSnapshot(value, context) {
       })),
     };
   }
+  // Missions may gain units after a save was written (street life, say); they start as in the
+  // mission, standing at their first position and unhurt.
+  if (migrated.formatVersion === SAVE_VERSION && Array.isArray(migrated.units) && Array.isArray(context.unitIds)) {
+    const have = new Set(migrated.units.map((unit) => unit?.id));
+    const added = context.unitIds
+      .filter((id) => !have.has(id))
+      .map((id) => ({
+        id,
+        position: { ...context.initialUnits[id].position },
+        path: [],
+        health: context.unitRules[id].vitality,
+        cooldownRemaining: 0,
+        targetId: null,
+        disabled: false,
+        patrolIndex: 0,
+        levels: defaultLevels(),
+        stamina: 1,
+        focus: 1,
+        equipment: (context.initialEquipment?.[id] ?? []).map((item) => ({ ...item })),
+        looted: [],
+      }));
+    if (added.length > 0) migrated = { ...migrated, units: [...migrated.units, ...added] };
+  }
   // Missions may gain objectives after a save was written; they start incomplete.
   if (Array.isArray(migrated.objectives) && Array.isArray(context.objectiveIds)) {
     const known = new Set(migrated.objectives.map((objective) => objective?.id));

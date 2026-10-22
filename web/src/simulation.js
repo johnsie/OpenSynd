@@ -157,6 +157,9 @@ export function stealthFactor(unit) {
 // gates and water are see-through. Anything off the map blocks.
 const SEE_THROUGH_SURFACES = new Set(["service-fence", "runoff-channel"]);
 export const SIGHT_STEP = 0.25;
+export const PANIC_SECONDS = 6;
+export const PANIC_RADIUS = 10;
+const PANIC_SPEED_FACTOR = 1.6;
 // A chasing watcher keeps hold of a quarry this close even round a corner.
 export const LOST_TRACK_CLOSE = 4;
 
@@ -183,11 +186,17 @@ export function hasLineOfSight(grid, from, to) {
   return true;
 }
 
-function nearestVisibleOperator(unit, units, sight, grid = null) {
+// An operator with a weapon drawn (selected, or firing a moment ago). Police only react to these.
+export function gunOut(unit, now) {
+  return now !== null && now !== undefined && Boolean(heldWeapon(unit, now));
+}
+
+function nearestVisibleOperator(unit, units, sight, grid = null, accept = null) {
   let best = null;
   let bestDistance = Infinity;
   for (const candidate of units) {
     if (candidate.side !== "team" || candidate.disabled) continue;
+    if (accept && !accept(candidate)) continue;
     const distance = distanceBetween(unit, candidate);
     const holdsTrack = unit.alertedBy === candidate.id && distance <= LOST_TRACK_CLOSE;
     if (
@@ -210,7 +219,7 @@ function nearestVisibleOperator(unit, units, sight, grid = null) {
  * one it only follows its route. Returns "spotted" events when a watcher first
  * notices an operator.
  */
-export function advancePatrols(units, deltaSeconds, grid = null) {
+export function advancePatrols(units, deltaSeconds, grid = null, now = null) {
   const events = [];
   const byId = new Map(units.map((unit) => [unit.id, unit]));
   for (const unit of units) {
@@ -224,7 +233,8 @@ export function advancePatrols(units, deltaSeconds, grid = null) {
         target &&
         !target.disabled &&
         distanceBetween(unit, target) <= combatStats(unit).range &&
-        hasLineOfSight(grid, unit.position, target.position);
+        hasLineOfSight(grid, unit.position, target.position) &&
+        (unit.side !== "police" || gunOut(target, now));
       if (engaged) {
         unit.path = [];
         continue;
@@ -236,15 +246,28 @@ export function advancePatrols(units, deltaSeconds, grid = null) {
     const called = units.some(
       (other) =>
         other !== unit &&
-        other.side !== "team" &&
+        other.side === "opposition" &&
         !other.disabled &&
         other.alertedBy &&
         distanceBetween(unit, other) <= CALL_RADIUS,
     );
     const sight = unit.definition.stats.awareness * SIGHT_TILES_PER_AWARENESS * (called ? CALL_SIGHT_FACTOR : 1);
-    const seen = grid
-      ? nearestVisibleOperator(unit, units, unit.alertedBy ? sight * LOSE_SIGHT_FACTOR : sight, grid)
+    // Civilians notice nothing; police only notice operators who have a weapon out.
+    const watching = grid && unit.side !== "civilian";
+    const seen = watching
+      ? nearestVisibleOperator(
+          unit,
+          units,
+          unit.alertedBy ? sight * LOSE_SIGHT_FACTOR : sight,
+          grid,
+          unit.side === "police" ? (candidate) => gunOut(candidate, now) : null,
+        )
       : null;
+
+    if (unit.side === "civilian" && now !== null && now < (unit.panicUntil ?? 0) && unit.path.length > 0) {
+      followPath(unit, deltaSeconds, PANIC_SPEED_FACTOR);
+      continue;
+    }
 
     if (seen) {
       if (!unit.alertedBy) events.push({ type: "spotted", unitId: unit.id, targetId: seen.id });
@@ -308,13 +331,14 @@ function distanceBetween(left, right) {
   );
 }
 
-function automaticTarget(attacker, units, grid = null) {
+function automaticTarget(attacker, units, grid = null, now = null) {
   const stats = combatStats(attacker);
   return units
     .filter(
       (candidate) =>
         !candidate.disabled &&
-        candidate.side !== attacker.side &&
+        candidate.side === "team" &&
+        (attacker.side !== "police" || gunOut(candidate, now)) &&
         distanceBetween(attacker, candidate) <= stats.range &&
         hasLineOfSight(grid, attacker.position, candidate.position),
     )
@@ -398,7 +422,7 @@ export function roundsLeft(unit) {
 }
 
 /** Advance cooldowns and resolve deterministic, non-random combat pulses. */
-export function advanceCombat(units, deltaSeconds, grid = null) {
+export function advanceCombat(units, deltaSeconds, grid = null, now = null) {
   const events = [];
   const byId = new Map(units.map((unit) => [unit.id, unit]));
 
@@ -409,8 +433,9 @@ export function advanceCombat(units, deltaSeconds, grid = null) {
       attacker.cooldownRemaining - deltaSeconds,
     );
 
-    if (attacker.side === "opposition" && attacker.targetId === null) {
-      attacker.targetId = automaticTarget(attacker, units, grid)?.id ?? null;
+    const hostile = attacker.side === "opposition" || (attacker.side === "police" && attacker.alertedBy);
+    if (hostile && attacker.targetId === null) {
+      attacker.targetId = automaticTarget(attacker, units, grid, now)?.id ?? null;
     }
 
     const target = byId.get(attacker.targetId);
@@ -548,4 +573,42 @@ export function consumeFixedSteps(clock, elapsedSeconds, step) {
 
   if (clock.accumulator < ARRIVAL_EPSILON) clock.accumulator = 0;
   return steps;
+}
+
+/**
+ * Gunfire at `source` sends civilians within PANIC_RADIUS running away from it for PANIC_SECONDS.
+ * Each picks the furthest reachable tile in the direction away (trying a few angles), or stays
+ * put, frightened, when boxed in. Returns how many started to flee.
+ */
+export function startPanic(units, source, grid, now) {
+  let fled = 0;
+  for (const unit of units) {
+    if (unit.side !== "civilian" || unit.disabled) continue;
+    const away = { x: unit.position.x - source.x, y: unit.position.y - source.y };
+    const distance = Math.hypot(away.x, away.y);
+    if (distance > PANIC_RADIUS) continue;
+    const base = distance < 0.01 ? 0 : Math.atan2(away.y, away.x);
+    unit.panicUntil = now + PANIC_SECONDS;
+    unit.path = [];
+    for (const reach of [14, 9, 5]) {
+      let done = false;
+      for (const turn of [0, 0.6, -0.6, 1.2, -1.2]) {
+        const angle = base + turn;
+        const goal = tileOf({
+          x: unit.position.x + Math.cos(angle) * reach,
+          y: unit.position.y + Math.sin(angle) * reach,
+        });
+        if (!grid[goal.y]?.[goal.x]?.walkable) continue;
+        const path = findPath(grid, tileOf(unit.position), goal);
+        if (path.length > 0) {
+          unit.path = path;
+          fled += 1;
+          done = true;
+          break;
+        }
+      }
+      if (done) break;
+    }
+  }
+  return fled;
 }

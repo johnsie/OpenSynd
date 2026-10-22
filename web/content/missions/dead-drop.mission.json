@@ -364,5 +364,349 @@
       "description": "Extract through the east side of the depot."
     }
   ],
-  "trainingBudget": 9
+  "trainingBudget": 9,
+  "bystanders": [
+    {
+      "id": "civilian-1",
+      "unit": "units/civilian-woman.unit.json",
+      "position": {
+        "x": 14,
+        "y": 26
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 14,
+          "y": 26
+        },
+        {
+          "x": 32,
+          "y": 26
+        }
+      ]
+    },
+    {
+      "id": "civilian-2",
+      "unit": "units/civilian-man.unit.json",
+      "position": {
+        "x": 25,
+        "y": 32
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 25,
+          "y": 32
+        },
+        {
+          "x": 25,
+          "y": 44
+        }
+      ]
+    },
+    {
+      "id": "civilian-3",
+      "unit": "units/civilian-woman.unit.json",
+      "position": {
+        "x": 48,
+        "y": 50
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 48,
+          "y": 50
+        },
+        {
+          "x": 48,
+          "y": 67
+        }
+      ]
+    },
+    {
+      "id": "civilian-4",
+      "unit": "units/civilian-man.unit.json",
+      "position": {
+        "x": 26,
+        "y": 48
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 26,
+          "y": 48
+        },
+        {
+          "x": 41,
+          "y": 48
+        }
+      ]
+    },
+    {
+      "id": "civilian-5",
+      "unit": "units/civilian-woman.unit.json",
+      "position": {
+        "x": 56,
+        "y": 26
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 56,
+          "y": 26
+        },
+        {
+          "x": 70,
+          "y": 26
+        }
+      ]
+    },
+    {
+      "id": "civilian-6",
+      "unit": "units/civilian-man.unit.json",
+      "position": {
+        "x": 20,
+        "y": 92
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 20,
+          "y": 92
+        },
+        {
+          "x": 31,
+          "y": 92
+        }
+      ]
+    },
+    {
+      "id": "civilian-7",
+      "unit": "units/civilian-woman.unit.json",
+      "position": {
+        "x": 48,
+        "y": 14
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 48,
+          "y": 14
+        },
+        {
+          "x": 48,
+          "y": 25
+        }
+      ]
+    },
+    {
+      "id": "civilian-8",
+      "unit": "units/civilian-man.unit.json",
+      "position": {
+        "x": 26,
+        "y": 50
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 26,
+          "y": 50
+        },
+        {
+          "x": 26,
+          "y": 64
+        }
+      ]
+    },
+    {
+      "id": "civilian-9",
+      "unit": "units/civilian-woman.unit.json",
+      "position": {
+        "x": 69,
+        "y": 14
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 69,
+          "y": 14
+        },
+        {
+          "x": 69,
+          "y": 28
+        }
+      ]
+    },
+    {
+      "id": "civilian-10",
+      "unit": "units/civilian-man.unit.json",
+      "position": {
+        "x": 69,
+        "y": 8
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 69,
+          "y": 8
+        },
+        {
+          "x": 69,
+          "y": 19
+        }
+      ]
+    },
+    {
+      "id": "civilian-11",
+      "unit": "units/civilian-woman.unit.json",
+      "position": {
+        "x": 48,
+        "y": 56
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 48,
+          "y": 56
+        },
+        {
+          "x": 48,
+          "y": 66
+        }
+      ]
+    },
+    {
+      "id": "civilian-12",
+      "unit": "units/civilian-man.unit.json",
+      "position": {
+        "x": 14,
+        "y": 48
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 14,
+          "y": 48
+        },
+        {
+          "x": 25,
+          "y": 48
+        }
+      ]
+    },
+    {
+      "id": "civilian-13",
+      "unit": "units/civilian-woman.unit.json",
+      "position": {
+        "x": 26,
+        "y": 8
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 26,
+          "y": 8
+        },
+        {
+          "x": 26,
+          "y": 19
+        }
+      ]
+    },
+    {
+      "id": "civilian-14",
+      "unit": "units/civilian-man.unit.json",
+      "position": {
+        "x": 8,
+        "y": 69
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 8,
+          "y": 69
+        },
+        {
+          "x": 19,
+          "y": 69
+        }
+      ]
+    },
+    {
+      "id": "police-15",
+      "unit": "units/city-police.unit.json",
+      "position": {
+        "x": 26,
+        "y": 70
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 26,
+          "y": 70
+        },
+        {
+          "x": 43,
+          "y": 70
+        }
+      ]
+    },
+    {
+      "id": "police-16",
+      "unit": "units/city-police.unit.json",
+      "position": {
+        "x": 62,
+        "y": 48
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 62,
+          "y": 48
+        },
+        {
+          "x": 77,
+          "y": 48
+        }
+      ]
+    },
+    {
+      "id": "police-17",
+      "unit": "units/city-police.unit.json",
+      "position": {
+        "x": 8,
+        "y": 92
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 8,
+          "y": 92
+        },
+        {
+          "x": 24,
+          "y": 92
+        }
+      ]
+    },
+    {
+      "id": "police-18",
+      "unit": "units/city-police.unit.json",
+      "position": {
+        "x": 53,
+        "y": 26
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 53,
+          "y": 26
+        },
+        {
+          "x": 38,
+          "y": 26
+        }
+      ]
+    }
+  ]
 }

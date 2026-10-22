@@ -11,7 +11,7 @@
     "id": { "$ref": "#/$defs/id" },
     "name": { "type": "string", "minLength": 1, "maxLength": 80 },
     "license": { "enum": ["CC0-1.0", "CC-BY-4.0"] },
-    "role": { "enum": ["operator", "civilian", "security", "drone"] },
+    "role": { "enum": ["operator", "civilian", "police", "security", "drone"] },
     "stats": {
       "type": "object",
       "additionalProperties": false,
@@ -38,7 +38,13 @@
         "shape": { "enum": ["diamond", "hexagon", "circle", "kite"] },
         "primaryColor": { "$ref": "#/$defs/color" },
         "accentColor": { "$ref": "#/$defs/color" },
-        "marker": { "type": "string", "minLength": 1, "maxLength": 3 }
+        "marker": { "type": "string", "minLength": 1, "maxLength": 3 },
+        "sprites": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/id" },
+          "description": "Sprite sheets to hand out in turn to units of this kind, so a crowd is not made of clones."
+        }
       }
     }
   },

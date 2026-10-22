@@ -1,0 +1,29 @@
+{
+  "formatVersion": 1,
+  "id": "developer.city-police",
+  "name": "Police Officer",
+  "license": "CC0-1.0",
+  "role": "police",
+  "stats": {
+    "vitality": 90,
+    "speed": 4.0,
+    "awareness": 75,
+    "attack": 10,
+    "range": 4.5,
+    "cooldown": 1.0
+  },
+  "abilities": [
+    "observe",
+    "enforce"
+  ],
+  "appearance": {
+    "shape": "circle",
+    "primaryColor": "#1d2a44",
+    "accentColor": "#4aa3ff",
+    "marker": "P",
+    "sprites": [
+      "police-1",
+      "police-2"
+    ]
+  }
+}

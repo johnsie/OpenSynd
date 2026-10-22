@@ -55,8 +55,11 @@ import {
   captureItems,
   earnAchievement,
   earnTime,
+  CIVILIAN_PENALTY,
+  POLICE_PENALTY,
   emptyCampaign,
   isItemAvailable,
+  penalise,
   loadoutFor,
   netCost,
   nextTrackCost,
@@ -91,6 +94,7 @@ import {
   roundsLeft,
   advanceFocus,
   advancePatrols,
+  startPanic,
   advanceUnits,
   consumeFixedSteps,
 } from "./simulation.js";
@@ -313,6 +317,8 @@ document.querySelector("#settings-form").addEventListener("input", () => {
 applyTextScale();
 
 const SPRITE_SKINS = ["operative-one", "operative-two", "operative-three", "operative-four"];
+// Which side of the fight a unit definition's role puts it on.
+const SIDE_BY_ROLE = { operator: "team", civilian: "civilian", police: "police" };
 const WATCHER_SKINS = ["watcher-one", "watcher-two"];
 const sprites = { manifest: null, images: new Map() };
 
@@ -442,12 +448,12 @@ async function loadGame(index = state.missionIndex) {
     complete: false,
   }));
   syncGates();
-  state.units = [...mission.team, ...mission.opponents].map((placement) => {
+  state.units = [...mission.team, ...mission.opponents, ...(mission.bystanders ?? [])].map((placement) => {
     const definition = unitDefinitions.get(placement.unit);
     return {
       ...placement,
       definition,
-      side: definition.role === "operator" ? "team" : "opposition",
+      side: SIDE_BY_ROLE[definition.role] ?? "opposition",
       position: { ...placement.position },
       initialPosition: { ...placement.position },
       alertedBy: null,
@@ -1448,8 +1454,17 @@ function spriteSheetFor(unit) {
   if (!sprites.manifest) return null;
   const sheets = sprites.manifest.sheets;
   let key;
+  const looks = unit.definition.appearance.sprites;
+  if (looks) {
+    // Civilians and police: each kind hands its looks out in turn, so a crowd is not clones.
+    const index = state.units.filter((item) => item.definition === unit.definition).indexOf(unit);
+    key = looks[index % looks.length];
+    // A police officer who has spotted a drawn weapon has their own out.
+    if (unit.side === "police" && unit.alertedBy && !unit.disabled && sheets[`${key}-pulse`]) return sheets[`${key}-pulse`];
+    return sheets[key] ?? null;
+  }
   if (unit.side !== "team") {
-    const index = state.units.filter((item) => item.side !== "team").indexOf(unit);
+    const index = state.units.filter((item) => item.side === "opposition").indexOf(unit);
     key = WATCHER_SKINS[index % WATCHER_SKINS.length];
   } else {
     const index = state.units.filter((item) => item.side === "team").indexOf(unit);
@@ -1580,7 +1595,7 @@ function drawUnit(unit, viewport) {
   context.fillRect(-size, size * 1.5, size * 2, 3);
   context.fillStyle = unit.disabled ? "#58646a" : healthRatio > 0.35 ? "#79d59b" : "#ff6b62";
   context.fillRect(-size, size * 1.5, size * 2 * healthRatio, 3);
-  if (unit.side === "opposition" && unit.alertedBy && !unit.disabled) {
+  if ((unit.side === "opposition" || unit.side === "police") && unit.alertedBy && !unit.disabled) {
     // An alert marker over a watcher that has noticed the squad and is giving chase.
     const pulse = reduceMotion ? 1 : 0.8 + 0.2 * Math.sin(state.elapsed * 8);
     context.fillStyle = `rgba(255, 107, 98, ${pulse})`;
@@ -1654,6 +1669,7 @@ function draw() {
 
 const minimap = document.querySelector("#minimap");
 const miniContext = minimap.getContext("2d");
+const MINI_UNIT_COLOURS = { team: "#42d6d0", opposition: "#ff6b62", police: "#4aa3ff", civilian: "#8d9aa3" };
 const MINI_COLORS = {
   "runoff-channel": "#1f5568",
   "signal-grate": "#7a96a0",
@@ -1704,7 +1720,7 @@ function drawMinimap(viewport) {
   for (const unit of state.units) {
     if (unit.disabled) continue;
     const point = miniProject(unit.position, state.map);
-    miniContext.fillStyle = unit.side === "team" ? "#42d6d0" : "#ff6b62";
+    miniContext.fillStyle = MINI_UNIT_COLOURS[unit.side] ?? "#ff6b62";
     miniContext.fillRect(Math.round(point.x) - 1, Math.round(point.y) - 1, 3, 3);
   }
   // The area the main view currently shows.
@@ -1884,6 +1900,14 @@ function knockBack(victim, shooter) {
   victim.hitDirection = { x: x / length, y: y / length };
 }
 
+// A civilian or police officer has been killed: it costs funds and goes on the record.
+function harmBystander(unit, cost, counter) {
+  state.opStats[counter] += 1;
+  state.campaign = penalise(state.campaign, cost);
+  updateFundsReadout();
+  persistCampaign();
+}
+
 // Effects, counters and messages for shots, from automatic combat and from shots fired by hand.
 function handleCombatEvents(combatEvents) {
   for (const event of combatEvents) {
@@ -1897,7 +1921,11 @@ function handleCombatEvents(combatEvents) {
       } else {
         addEffect(state.effects, "puff", { to: event.end, spin: Math.random() * 3 });
       }
-      if (shooter) shooter.firedAt = state.elapsed;
+      if (shooter) {
+        shooter.firedAt = state.elapsed;
+        // Gunfire sends nearby civilians running.
+        startPanic(state.units, shooter.position, state.grid, state.elapsed);
+      }
       if (event.outOfRounds && shooter?.side === "team") {
         setStatus(`${shooter.definition.name}: ${event.weapon} is out of rounds.`);
         audio.play("alert");
@@ -1905,6 +1933,8 @@ function handleCombatEvents(combatEvents) {
     } else if (event.type === "disabled") {
       const down = state.units.find((item) => item.id === event.unitId);
       if (down.side === "opposition") state.opStats.watchersDisabled += 1;
+      else if (down.side === "civilian") harmBystander(down, CIVILIAN_PENALTY, "civiliansHarmed");
+      else if (down.side === "police") harmBystander(down, POLICE_PENALTY, "policeHarmed");
       else state.opStats.operatorsDisabled += 1;
     }
   }
@@ -1912,11 +1942,16 @@ function handleCombatEvents(combatEvents) {
   if (latest.type === "disabled") {
     audio.play("disabled");
     const unit = state.units.find((item) => item.id === latest.unitId);
-    setStatus(
-      unit.side === "opposition"
-        ? `${unit.definition.name} disabled. Route is clearer.`
-        : `${unit.definition.name} disabled. Select another operator.`,
-    );
+    if (unit.side === "civilian" || unit.side === "police") {
+      const cost = unit.side === "police" ? POLICE_PENALTY : CIVILIAN_PENALTY;
+      setStatus(`${unit.definition.name} killed. The city notices: -${cost} funds.`);
+    } else {
+      setStatus(
+        unit.side === "opposition"
+          ? `${unit.definition.name} disabled. Route is clearer.`
+          : `${unit.definition.name} disabled. Select another operator.`,
+      );
+    }
     pruneSelection();
   } else if (latest.type === "damage") {
     const target = state.units.find((item) => item.id === latest.targetId);
@@ -1959,7 +1994,7 @@ function simulationStep(deltaSeconds) {
     interfaceChanged = true;
     interfaceChanged = completeObjectivesAt(arrival.position) || interfaceChanged;
   }
-  for (const event of advancePatrols(state.units, deltaSeconds, state.grid)) {
+  for (const event of advancePatrols(state.units, deltaSeconds, state.grid, state.elapsed)) {
     const watcher = state.units.find((unit) => unit.id === event.unitId);
     const spotted = state.units.find((unit) => unit.id === event.targetId);
     setStatus(`${watcher.definition.name} spotted ${spotted.definition.name}! It is closing in.`);
@@ -1967,7 +2002,7 @@ function simulationStep(deltaSeconds) {
     state.opStats.spotted += 1;
     interfaceChanged = true;
   }
-  const combatEvents = advanceCombat(state.units, deltaSeconds, state.grid);
+  const combatEvents = advanceCombat(state.units, deltaSeconds, state.grid, state.elapsed);
   if (combatEvents.length > 0) {
     interfaceChanged = true;
     handleCombatEvents(combatEvents);
@@ -2014,6 +2049,9 @@ function showOutcome(outcome) {
     ["Time", formatDuration(state.missionSeconds)],
     ["Operators disabled", String(teamDown)],
     ["Watchers disabled", String(watchersDown)],
+    ...(state.opStats.civiliansHarmed + state.opStats.policeHarmed > 0
+      ? [["Bystanders killed", String(state.opStats.civiliansHarmed + state.opStats.policeHarmed)]]
+      : []),
   ]) {
     const term = document.createElement("dt");
     term.textContent = label;

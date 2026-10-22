@@ -549,6 +549,16 @@ shows that it satisfies maintainability, accessibility, and licensing goals.
   streets and flee gunfire, and with cyberpunk police who patrol and open fire on any
   operator they see with a weapon drawn. Killing a civilian costs funds (more for a
   police officer) and is recorded for achievements and the debrief.
+  Implemented: both are in every operation (`bystanders` in the mission files, 18 per map),
+  drawn from original sprite sheets rendered by `web/tools/render-sprites.mjs` (men with a
+  neon-trimmed jacket, mohawk and cyber eye; women in dark glamour with a short skirt, glossy
+  thigh-high heeled boots, a corset and a choker; police with visored helmets and light bars).
+  Civilians walk the streets and run from gunfire within ten tiles for six seconds. Police
+  patrol, ignore an operator whose weapon is away, and chase and shoot one who has a weapon
+  out (selected or just fired) in line of sight, stopping when it is put away. Killing a
+  civilian costs 40 funds and a police officer 80 (never below zero), is shown in the debrief,
+  and rules out the Clean hands achievement. Not yet built: police calling for backup and
+  civilians reacting to each other.
 - **Mission variety.** No two operations in a row may be won the same way, and
   restoring relays is only one kind of job. The objective types to build and mix
   across the campaign are: interact (restore a relay, download from a server,

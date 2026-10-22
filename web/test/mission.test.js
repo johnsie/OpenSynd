@@ -306,9 +306,14 @@ test("every mission in the pack has a story, debrief and valid patrols", async (
     assert.ok(mission.story && mission.title, `${file} needs a story and a title`);
     assert.ok(mission.debrief?.success && mission.debrief?.failure, `${file} needs a debrief`);
     const grid = createTileGrid(await read(mission.map));
-    for (const placement of mission.opponents.filter((entry) => entry.patrol)) {
+    for (const placement of [...mission.opponents, ...(mission.bystanders ?? [])].filter((entry) => entry.patrol)) {
       assert.ok(buildPatrolRoute(grid, placement.position, placement.patrol).length > 0, `${placement.id} in ${file}`);
     }
+    const bystanders = mission.bystanders ?? [];
+    assert.ok(bystanders.length >= 10, `${file} should have people on its streets`);
+    assert.ok(bystanders.some((entry) => entry.unit.includes("city-police")), `${file} needs police`);
+    assert.ok(bystanders.some((entry) => entry.unit.includes("civilian-woman")));
+    assert.ok(bystanders.some((entry) => entry.unit.includes("civilian-man")));
   }
 });
 

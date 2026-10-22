@@ -25,6 +25,8 @@ import {
   advancePursuit,
   fireManual,
   advancePatrols,
+  gunOut,
+  startPanic,
   advanceUnits,
   combatStats,
   heldWeapon,
@@ -972,4 +974,65 @@ test("watchers do not spot operators hidden behind a building, and cannot shoot 
   const shooter = { ...operatorAt(7, 2, { id: "shooter", cooldownRemaining: 0 }), side: "opposition", targetId: null };
   const target = operatorAt(10.5, 2, { cooldownRemaining: 0, targetId: null });
   assert.deepEqual(advanceCombat([shooter, target], FIXED_STEP_SECONDS, grid), []);
+});
+
+function copAt(x, y, overrides = {}) {
+  return patrolUnit([{ x, y }, { x: x + 1, y }], {
+    id: "cop",
+    side: "police",
+    alertedBy: null,
+    cooldownRemaining: 0,
+    definition: { stats: { speed: 4, range: 4.5, attack: 10, cooldown: 1, awareness: 75 } },
+    ...overrides,
+  });
+}
+
+test("police ignore an operator with no weapon out, but act on one who draws it", () => {
+  const grid = createTileGrid(streetMap);
+  const cop = copAt(6, 2);
+  const operator = operatorAt(12, 2, { activeSlot: null, targetId: null, equipment: [weaponItem(12, 3.25, 0.75)] });
+  assert.equal(gunOut(operator, 10), false);
+  assert.deepEqual(advancePatrols([cop, operator], 1, grid, 10), [], "no gun, no interest");
+  operator.activeSlot = 0;
+  assert.equal(gunOut(operator, 10), true);
+  assert.equal(gunOut(operator, null), false, "without a clock police cannot react");
+  const events = advancePatrols([cop, operator], 1, grid, 10);
+  assert.deepEqual(events, [{ type: "spotted", unitId: "cop", targetId: "op" }]);
+  assert.equal(cop.alertedBy, "op");
+});
+
+test("police shoot an armed operator in range and stop when the weapon is put away", () => {
+  const grid = createTileGrid(streetMap);
+  const cop = copAt(6, 2, { alertedBy: "op" });
+  const operator = operatorAt(9, 2, { activeSlot: 0, targetId: null, equipment: [weaponItem(12, 3.25, 0.75)] });
+  const first = advanceCombat([cop, operator], FIXED_STEP_SECONDS, grid, 10);
+  assert.equal(first.filter((event) => event.type === "damage" && event.attackerId === "cop").length, 1);
+  operator.activeSlot = null;
+  advancePatrols([cop, operator], 1, grid, 10);
+  assert.equal(cop.targetId, null, "the weapon is away: the cop holds fire");
+  assert.deepEqual(advanceCombat([cop, operator], 1, grid, 20), []);
+});
+
+test("watchers and police never shoot civilians, and civilians notice no one", () => {
+  const grid = createTileGrid(streetMap);
+  const civilian = patrolUnit([{ x: 7, y: 2 }, { x: 8, y: 2 }], { id: "civ", side: "civilian", cooldownRemaining: 0 });
+  const watcher = patrolUnit([{ x: 5, y: 2 }, { x: 6, y: 2 }], { cooldownRemaining: 0 });
+  assert.deepEqual(advanceCombat([watcher, civilian], 1, grid, 10), []);
+  const operator = operatorAt(8, 2, { activeSlot: 0, equipment: [weaponItem(12, 3.25, 0.75)] });
+  assert.deepEqual(advancePatrols([civilian, operator], 1, grid, 10), []);
+  assert.equal(civilian.alertedBy ?? null, null);
+});
+
+test("gunfire sends nearby civilians running away from it for a few seconds", () => {
+  const grid = createTileGrid(streetMap);
+  const near = patrolUnit([{ x: 20, y: 2 }, { x: 22, y: 2 }], { id: "near", side: "civilian" });
+  const far = patrolUnit([{ x: 38, y: 2 }, { x: 39, y: 2 }], { id: "far", side: "civilian" });
+  const fled = startPanic([near, far], { x: 16, y: 2 }, grid, 100);
+  assert.equal(fled, 1, "only the one within earshot");
+  assert.ok(near.path.length > 0 && near.path.at(-1).x > near.position.x, "runs away from the shooter");
+  assert.equal(far.path.length, 0);
+  const start = near.position.x;
+  for (let step = 0; step < 30; step += 1) advancePatrols([near, far], FIXED_STEP_SECONDS, grid, 100);
+  const sprinted = near.position.x - start;
+  assert.ok(sprinted > 2.5, `ran ${sprinted} tiles in a second`);
 });

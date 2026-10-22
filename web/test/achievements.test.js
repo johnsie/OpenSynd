@@ -32,10 +32,11 @@ test("finish-line achievements need a successful outcome", () => {
   assert.deepEqual(ids(newlyEarned(stats, [])), [], "an unfinished operation earns no finish awards");
 
   stats.outcome = "success";
-  assert.deepEqual(ids(newlyEarned(stats, [])), ["whole-squad", "quick-work", "ghost"]);
+  assert.deepEqual(ids(newlyEarned(stats, [])), ["whole-squad", "quick-work", "ghost", "clean-hands"]);
 
   stats.operatorsDisabled = 1;
   stats.spotted = 2;
+  stats.civiliansHarmed = 1;
   stats.seconds = 500;
   assert.deepEqual(ids(newlyEarned(stats, [])), []);
 
@@ -55,4 +56,15 @@ test("every achievement has a name, description and a positive reward", () => {
 test("clearing the streets needs at least one watcher to exist", () => {
   const stats = newStats(0);
   assert.deepEqual(ids(newlyEarned(stats, [])), []);
+});
+
+test("clean hands needs a win with no civilian or police casualties", () => {
+  const stats = newStats(3);
+  stats.outcome = "success";
+  assert.ok(ids(newlyEarned(stats, [])).includes("clean-hands"));
+  stats.civiliansHarmed = 1;
+  assert.ok(!ids(newlyEarned(stats, [])).includes("clean-hands"));
+  stats.civiliansHarmed = 0;
+  stats.policeHarmed = 1;
+  assert.ok(!ids(newlyEarned(stats, [])).includes("clean-hands"));
 });

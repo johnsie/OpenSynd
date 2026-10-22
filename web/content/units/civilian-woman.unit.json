@@ -1,0 +1,28 @@
+{
+  "formatVersion": 1,
+  "id": "developer.civilian-woman",
+  "name": "Civilian",
+  "license": "CC0-1.0",
+  "role": "civilian",
+  "stats": {
+    "vitality": 40,
+    "speed": 3.0,
+    "awareness": 40,
+    "attack": 0,
+    "range": 1,
+    "cooldown": 1.0
+  },
+  "abilities": [
+    "wander"
+  ],
+  "appearance": {
+    "shape": "circle",
+    "primaryColor": "#2a2a36",
+    "accentColor": "#e86bd6",
+    "marker": "C",
+    "sprites": [
+      "civilian-woman-1",
+      "civilian-woman-2"
+    ]
+  }
+}

@@ -322,3 +322,20 @@ test("items and loot round-trip and invalid inventories are rejected", () => {
   assert.throws(() => validateSaveSnapshot(withEquipment([], ["ghost"]), known), /loot record/);
   assert.throws(() => validateSaveSnapshot(withEquipment("none"), known), /too many items/);
 });
+
+test("a save from before the street was populated loads, with the new bystanders standing at their start", () => {
+  const snapshot = createSaveSnapshot(state, "2026-10-22T12:00:00.000Z");
+  const richer = {
+    ...context,
+    unitIds: [...context.unitIds, "civilian-1"],
+    unitRules: { ...context.unitRules, "civilian-1": { side: "civilian", vitality: 40, cooldown: 1 } },
+    initialUnits: { ...context.initialUnits, "civilian-1": { position: { x: 5, y: 4 } } },
+    patrolLengths: { "civilian-1": 2 },
+  };
+  const parsed = parseSaveSnapshot(JSON.stringify(snapshot), richer);
+  const added = parsed.units.find((unit) => unit.id === "civilian-1");
+  assert.deepEqual(added.position, { x: 5, y: 4 });
+  assert.equal(added.health, 40);
+  assert.equal(added.disabled, false);
+  assert.equal(parsed.units.length, 3);
+});

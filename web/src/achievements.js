@@ -54,6 +54,13 @@ export const ACHIEVEMENTS = Object.freeze([
     reward: 50,
     earned: (stats) => stats.outcome === "success" && stats.spotted === 0,
   },
+  {
+    id: "clean-hands",
+    name: "Clean hands",
+    description: "Finish an operation without harming a civilian or a police officer.",
+    reward: 40,
+    earned: (stats) => stats.outcome === "success" && stats.civiliansHarmed === 0 && stats.policeHarmed === 0,
+  },
 ]);
 
 export function newStats(watchersTotal) {
@@ -64,6 +71,8 @@ export function newStats(watchersTotal) {
     objectivesCompleted: 0,
     itemsLooted: 0,
     spotted: 0,
+    civiliansHarmed: 0,
+    policeHarmed: 0,
     seconds: 0,
     outcome: "active",
   };

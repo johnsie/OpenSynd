@@ -83,12 +83,12 @@ const humanAnimations = {
     },
   },
 };
-const humanJob = (name, skin, kit) => ({
+const humanJob = (name, skin, kit, palette = null) => ({
   name,
   options: {
     model: human,
     animations: humanAnimations,
-    palette: uniform.palette.map((color, index) => (index === 0 ? skin : color)),
+    palette: palette ?? uniform.palette.map((color, index) => (index === 0 ? skin : color)),
     kit,
   },
 });
@@ -99,9 +99,44 @@ const jobs = [
   ),
 ];
 
+// The city's people: civilians in street clothes and police, none in the squad's trench coat.
+const street = {
+  boots: [14, 14, 18],
+  belt: [16, 18, 24],
+  metal: [150, 160, 176],
+};
+const bystanderJobs = [
+  // Women: dark clothes, black tights (the trousers colour) and a short skirt.
+  ["civilian-woman-1", [255, 209, 159], [20, 16, 22], [34, 30, 46], [10, 10, 12],
+    { style: "woman", skirt: [28, 24, 38], hair: [24, 18, 26], glow: [232, 107, 214] }],
+  ["civilian-woman-2", [196, 146, 104], [96, 34, 44], [26, 34, 40], [10, 10, 12],
+    { style: "woman", skirt: [22, 26, 34], hair: [96, 34, 44], glow: [66, 214, 208] }],
+  // Men: cyberpunk street fashion in loud jackets and neon accents.
+  ["civilian-man-1", [233, 186, 140], [20, 16, 14], [74, 44, 118], [30, 32, 42],
+    { style: "man", collar: [58, 34, 94], crest: [232, 107, 214], glow: [232, 107, 214] }],
+  ["civilian-man-2", [156, 114, 72], [18, 18, 22], [22, 84, 96], [26, 30, 38],
+    { style: "man", collar: [18, 66, 76], crest: [66, 214, 208], glow: [66, 214, 208] }],
+  ["civilian-man-3", [255, 209, 159], [40, 30, 18], [110, 56, 38], [32, 30, 36],
+    { style: "man", collar: [84, 42, 30], crest: [245, 195, 90], glow: [245, 195, 90] }],
+  // Police: navy armour, a visored helmet and a red and blue light bar.
+  ["police-1", [233, 186, 140], [20, 16, 14], [22, 34, 64], [16, 20, 34],
+    { style: "police", armour: [34, 48, 84], helmet: [24, 34, 60], glow: [74, 163, 255] }],
+  ["police-2", [196, 146, 104], [20, 16, 14], [22, 34, 64], [16, 20, 34],
+    { style: "police", armour: [30, 42, 76], helmet: [20, 30, 54], glow: [74, 163, 255] }],
+];
+for (const [name, skin, hair, jacket, trousers, extra] of bystanderJobs) {
+  jobs.push(
+    humanJob(name, skin, { ...street, ...extra }, [skin, street.boots, hair, jacket, trousers]),
+  );
+}
+const isOnlyNew = (name) => name.startsWith("civilian-") || name.startsWith("police-");
+
 // Armed variants: the same characters holding each weapon in both hands, for when it is selected.
 for (const job of [...jobs]) {
-  for (const weapon of ["pulse", "heavy-pulse"]) {
+  // Only the police ever hold a weapon among the city's people, and only a pistol.
+  const police = job.name.startsWith("police-");
+  const weapons = job.name.startsWith("civilian-") ? [] : police ? ["pulse"] : ["pulse", "heavy-pulse"];
+  for (const weapon of weapons) {
     jobs.push({ name: `${job.name}-${weapon}`, options: { ...job.options, aim: weapon } });
   }
 }
@@ -117,8 +152,12 @@ try {
   await page.goto(`http://127.0.0.1:${server.address().port}/`);
   await page.waitForFunction(() => window.ready === true, null, { timeout: 30000 });
   await mkdir(output, { recursive: true });
-  const manifest = { source: "Quaternius Animated Human (CC0-1.0)", sheets: {} };
+  // ONLY=street renders just the civilians and police, leaving the existing sheets untouched.
+  const onlyStreet = process.env.ONLY === "street";
+  let manifest = { source: "Quaternius Animated Human (CC0-1.0)", sheets: {} };
+  if (onlyStreet) manifest = JSON.parse(await readFile(join(output, "sprites.json"), "utf8"));
   for (const { name, options } of jobs) {
+    if (onlyStreet && !isOnlyNew(name)) continue;
     const result = await page.evaluate((job) => window.renderSheet(job), options);
     await writeFile(join(output, `${name}.png`), Buffer.from(result.png.split(",")[1], "base64"));
     manifest.sheets[name] = { file: `${name}.png`, ...result.meta };
