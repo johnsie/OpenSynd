@@ -1,78 +1,84 @@
-#include <string>
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+#include <cerrno>
+#include <cstdio>
+#include <cstring>
 #include <fstream>
+#include <string>
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <dirent.h>
-#include <unistd.h>
+#include <sys/stat.h>
 
-#ifdef WIN32
-# define mkdir(path, mode) _mkdir(path)
-#else
-# include <sys/stat.h>
-#endif
+namespace {
 
-int traverse(const char *src, const char *dst, const char *but_not)
+bool makeDirectory(const std::string &path)
 {
-    DIR *d = opendir(src);
-    if (!d) {
-        fprintf(stderr, "Unable to open source directory `%s'.\n", src);
-        return 1;
-    }
-
-    int ret = 0;
-    struct dirent *ent;
-    for (ent = readdir(d); ent; ent = readdir(d)) {
-        if (!strcmp(ent->d_name, ".") || !strcmp(ent->d_name, "..") || !strcmp(ent->d_name, but_not)) {
-            continue;
-        }
-
-        std::string path(src);
-        path.push_back('/');
-        path.append(ent->d_name);
-
-        struct stat st;
-        if (stat(path.c_str(), &st)) {
-            fprintf(stderr, "Unable to stat `%s`.\n", path.c_str());
-            ret = 1;
-            continue;
-        }
-
-        std::string dstpath(dst);
-        dstpath.push_back('/');
-        dstpath.append(ent->d_name);
-
-        if (S_ISDIR(st.st_mode)) {
-            mkdir(dstpath.c_str(), 0755);
-            ret |= traverse(path.c_str(), dstpath.c_str(), but_not);
-        } else {
-            std::ifstream inf(path.c_str(), std::ios_base::in|std::ios_base::binary);
-            std::ofstream outf(dstpath.c_str(), std::ios_base::out|std::ios_base::binary);
-            while (inf.good()) {
-                char buf[8192];
-                size_t n = inf.readsome(buf, 8192);
-                if (n > 0) outf.write(buf, n);
-                if (n == 0) break;
-            }
-        }
-    }
-
-    return ret;
+    return mkdir(path.c_str(), 0755) == 0 || errno == EEXIST;
 }
+
+bool copyFile(const std::string &source, const std::string &destination)
+{
+    std::ifstream input(source.c_str(), std::ios::in | std::ios::binary);
+    std::ofstream output(destination.c_str(), std::ios::out | std::ios::binary);
+    if (!input || !output) {
+        return false;
+    }
+
+    char buffer[8192];
+    while (input) {
+        input.read(buffer, sizeof(buffer));
+        output.write(buffer, input.gcount());
+    }
+    return input.eof() && output.good();
+}
+
+bool copyDirectory(const std::string &source, const std::string &destination,
+                   const std::string &excludedName)
+{
+    DIR *directory = opendir(source.c_str());
+    if (directory == NULL) {
+        std::fprintf(stderr, "Unable to open source directory '%s'.\n",
+                     source.c_str());
+        return false;
+    }
+
+    bool succeeded = makeDirectory(destination);
+    struct dirent *entry;
+    while (succeeded && (entry = readdir(directory)) != NULL) {
+        const std::string name(entry->d_name);
+        if (name == "." || name == ".." || name == excludedName) {
+            continue;
+        }
+
+        const std::string sourcePath = source + "/" + name;
+        const std::string destinationPath = destination + "/" + name;
+        struct stat details;
+        if (lstat(sourcePath.c_str(), &details) != 0) {
+            std::fprintf(stderr, "Unable to inspect '%s'.\n", sourcePath.c_str());
+            succeeded = false;
+        } else if (S_ISDIR(details.st_mode)) {
+            succeeded = copyDirectory(sourcePath, destinationPath, excludedName);
+        } else if (S_ISREG(details.st_mode)) {
+            succeeded = copyFile(sourcePath, destinationPath);
+        } else {
+            std::fprintf(stderr, "Unsupported resource type '%s'.\n",
+                         sourcePath.c_str());
+            succeeded = false;
+        }
+    }
+
+    closedir(directory);
+    return succeeded;
+}
+
+}  // namespace
 
 int main(int argc, char **argv)
 {
     if (argc != 4) {
-        fprintf(stderr, "Usage: copy_but <source> <destination> <but>\n");
+        std::fprintf(stderr, "Usage: copy_but <source> <destination> <excluded-name>\n");
         return 1;
     }
 
-    char *src = argv[1];
-    char *dst = argv[2];
-    char *but_not = argv[3];
-
-    mkdir(dst, 0755);
-
-    return traverse(src, dst, but_not);
+    return copyDirectory(argv[1], argv[2], argv[3]) ? 0 : 1;
 }
-

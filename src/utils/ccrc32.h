@@ -1,36 +1,29 @@
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//  Copyright � NetworkDLS 2002, All rights reserved
-//
-// THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF 
-// ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO 
-// THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A 
-// PARTICULAR PURPOSE.
-//
-// Modified by Bohdan Stelmakh for use in Freesynd
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-#ifndef _CCRC32_H
-#define _CCRC32_H
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// SPDX-License-Identifier: GPL-2.0-or-later
 
-class CCRC32{
+#ifndef FREESYND_UTILS_CCRC32_H
+#define FREESYND_UTILS_CCRC32_H
 
-    public:
-        CCRC32(void);
-        ~CCRC32(void);
+#include <cstddef>
 
-        void Initialize(void);
+// Compatibility wrapper for the CRC-32 API used by the legacy data checker.
+// This implementation uses the reflected CRC-32/ISO-HDLC polynomial.
+class CCRC32 {
+public:
+    CCRC32();
+    ~CCRC32();
 
-        bool FileCRC(const char *sFileName, unsigned int *ulOutCRC, size_t ulBufferSize);
+    void Initialize();
 
-        unsigned int FullCRC(const unsigned char *sData, size_t ulDataLength);
-        void FullCRC(const unsigned char *sData, size_t ulLength, unsigned int *ulOutCRC);
+    bool FileCRC(const char *fileName, unsigned int *outCrc,
+                 std::size_t bufferSize);
+    unsigned int FullCRC(const unsigned char *data, std::size_t dataLength);
+    void FullCRC(const unsigned char *data, std::size_t dataLength,
+                 unsigned int *outCrc);
+    void PartialCRC(unsigned int *crc, const unsigned char *data,
+                    std::size_t dataLength);
 
-        void PartialCRC(unsigned int *ulCRC, const unsigned char *sData, size_t ulDataLength);
-
-    private:
-        unsigned int Reflect(unsigned int ulReflect, const char cChar);
-        unsigned int ulTable[256]; // CRC lookup table array.
+private:
+    unsigned int table_[256];
 };
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #endif
