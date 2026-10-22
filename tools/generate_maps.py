@@ -26,8 +26,11 @@ FENCE_COLOR = "#3a4650"
 WALL_COLOR = "#46505a"
 
 
-def zone(zone_id, kind, x, y, width, height):
-    return {"id": zone_id, "kind": kind, "position": {"x": x, "y": y}, "width": width, "height": height}
+def zone(zone_id, kind, x, y, width, height, prop=None):
+    value = {"id": zone_id, "kind": kind, "position": {"x": x, "y": y}, "width": width, "height": height}
+    if prop:
+        value["prop"] = prop
+    return value
 
 
 LAYOUTS = [
@@ -50,9 +53,9 @@ LAYOUTS = [
         "entry": (2, 62),
         "zones": [
             zone("team-entry", "entry", 2, 62, 2, 2),
-            zone("west-relay", "interaction", 27, 51, 2, 2),
-            zone("east-relay", "interaction", 99, 75, 2, 2),
-            zone("gate-panel", "interaction", 99, 99, 2, 2),
+            zone("west-relay", "interaction", 27, 51, 2, 2, "relay"),
+            zone("east-relay", "interaction", 99, 75, 2, 2, "relay"),
+            zone("gate-panel", "interaction", 99, 99, 2, 2, "console"),
             zone("safe-exit", "exit", 122, 110, 4, 4),
         ],
         "watch_points": [(28, 34), (28, 46), (44, 52), (58, 52), (70, 56), (70, 70), (80, 75), (96, 75),
@@ -77,15 +80,42 @@ LAYOUTS = [
         "entry": (2, 48),
         "zones": [
             zone("team-entry", "entry", 2, 48, 2, 2),
-            zone("relay-one", "interaction", 25, 25, 2, 2),
-            zone("relay-two", "interaction", 47, 69, 2, 2),
-            zone("relay-three", "interaction", 69, 47, 2, 2),
-            zone("gate-panel", "interaction", 69, 25, 2, 2),
+            zone("relay-one", "interaction", 25, 25, 2, 2, "relay"),
+            zone("relay-two", "interaction", 47, 69, 2, 2, "relay"),
+            zone("relay-three", "interaction", 69, 47, 2, 2, "relay"),
+            zone("gate-panel", "interaction", 69, 25, 2, 2, "console"),
             zone("safe-exit", "exit", 88, 14, 4, 4),
         ],
         "watch_points": [(25, 12), (25, 22), (36, 25), (44, 25), (47, 56), (47, 66), (56, 47), (66, 47),
                          (69, 36), (69, 44), (69, 58), (69, 66), (58, 69), (50, 69), (75, 25), (79, 25),
                          (49, 68), (71, 46), (71, 27), (79, 18), (80, 13), (70, 30)],
+    },
+    {
+        "id": "developer.freight-depot",
+        "file": "freight-depot.map.json",
+        "name": "Freight Depot",
+        "size": 96,
+        "seed": 909090,
+        "period": 22,
+        "block": 18,
+        "first": 6,
+        "blocks": 4,
+        "open_columns": [],
+        "channel": None,
+        "compound": None,
+        "fences": [],
+        "gate": None,
+        "entry": (2, 48),
+        "zones": [
+            zone("team-entry", "entry", 2, 48, 2, 2),
+            zone("vault-server", "interaction", 69, 69, 2, 2, "server"),
+            zone("uplink-hold", "hold", 46, 46, 4, 4, "beacon"),
+            zone("safe-exit", "exit", 88, 46, 4, 4),
+        ],
+        "watch_points": [(25, 10), (25, 40), (25, 58), (25, 86), (47, 8), (47, 38), (40, 47),
+                         (56, 47), (69, 8), (69, 38), (69, 52), (69, 62), (69, 78), (69, 90),
+                         (91, 10), (91, 40), (91, 58), (91, 86), (12, 69), (40, 69), (30, 91),
+                         (60, 91), (12, 25), (40, 25), (64, 69), (76, 69), (69, 62), (69, 76)],
     },
 ]
 
@@ -121,8 +151,9 @@ def build(layout: dict) -> dict:
                                   "signal-grate", True, 1, "#59717a"))
 
     props = random.Random(layout["seed"] + 1)
-    cx, cy, cw, ch = layout["compound"]
-    keep_clear = (cx - 1, cy - 1, cw + 1, ch + 1)
+    compound = layout["compound"]
+    cx, cy, cw, ch = compound or (0, 0, 0, 0)
+    keep_clear = (cx - 1, cy - 1, cw + 1, ch + 1) if compound else (-10, -10, 0, 0)
     for i in range(layout["blocks"]):
         if i in layout["open_columns"]:
             continue
@@ -173,11 +204,19 @@ def build(layout: dict) -> dict:
         if item["kind"] == "interaction":
             regions.append(region(f"{item['id']}-base", item["position"]["x"], item["position"]["y"],
                                   item["width"], item["height"], "relay-pad", True, 1, "#8b6b32"))
-    regions.append(region("compound-floor", cx + 1, cy + 1, cw - 1, ch - 1, "service-concrete", True, 0, "#2b3a36"))
+    if compound:
+        regions.append(region("compound-floor", cx + 1, cy + 1, cw - 1, ch - 1, "service-concrete", True, 0, "#2b3a36"))
     for name, x, y, w, h in layout["fences"]:
         regions.append(region(name, x, y, w, h, "service-fence", False, 1, FENCE_COLOR))
 
-    gx, gy, gw, gh = layout["gate"]
+    gate = layout["gate"]
+    objects = []
+    if gate:
+        gx, gy, gw, gh = gate
+        objects.append({
+            "id": "service-gate", "kind": "gate", "position": {"x": gx, "y": gy},
+            "width": gw, "height": gh, "control": "gate-panel",
+        })
     return {
         "formatVersion": 1,
         "id": layout["id"],
@@ -188,10 +227,7 @@ def build(layout: dict) -> dict:
         "cellSize": {"width": 80, "height": 40},
         "regions": regions,
         "zones": layout["zones"],
-        "objects": [{
-            "id": "service-gate", "kind": "gate", "position": {"x": gx, "y": gy},
-            "width": gw, "height": gh, "control": "gate-panel",
-        }],
+        "objects": objects,
     }
 
 
@@ -202,10 +238,11 @@ def walkable_grid(map_value: dict, layout: dict, gate_open: bool) -> list[list[b
         for y in range(r["y"], r["y"] + r["height"]):
             for x in range(r["x"], r["x"] + r["width"]):
                 grid[y][x] = r["walkable"]
-    gx, gy, gw, gh = layout["gate"]
-    for y in range(gy, gy + gh):
-        for x in range(gx, gx + gw):
-            grid[y][x] = gate_open
+    if layout["gate"]:
+        gx, gy, gw, gh = layout["gate"]
+        for y in range(gy, gy + gh):
+            for x in range(gx, gx + gw):
+                grid[y][x] = gate_open
     return grid
 
 
@@ -230,7 +267,7 @@ def verify(map_value: dict, layout: dict) -> None:
     after = reachable(opened, layout["entry"])
     for item in layout["zones"]:
         point = (item["position"]["x"], item["position"]["y"])
-        if item["kind"] == "exit":
+        if item["kind"] == "exit" and layout["gate"]:
             assert point not in before, f"{layout['name']}: the exit must be sealed until the gate opens"
             assert point in after, f"{layout['name']}: the exit must be reachable once the gate opens"
         else:

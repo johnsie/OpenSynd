@@ -6,10 +6,13 @@ import test from "node:test";
 
 import { buildPatrolRoute, createTileGrid, findPath, isWalkable } from "../src/engine.js";
 import {
+  advanceHold,
   gateOpen,
+  isOpenTarget,
   missionComplete,
   missionOutcome,
   resolveArrival,
+  resolveDisabled,
   resolveInteraction,
   syncGates,
 } from "../src/mission.js";
@@ -306,5 +309,57 @@ test("every mission in the pack has a story, debrief and valid patrols", async (
     for (const placement of mission.opponents.filter((entry) => entry.patrol)) {
       assert.ok(buildPatrolRoute(grid, placement.position, placement.patrol).length > 0, `${placement.id} in ${file}`);
     }
+  }
+});
+
+const holdZones = [{ id: "uplink", kind: "hold", position: { x: 4, y: 4 }, width: 2, height: 2 }];
+const operatorIn = (x, y, extra = {}) => ({ id: "op", side: "team", disabled: false, position: { x, y }, ...extra });
+
+test("a disable objective completes only when every named target is down", () => {
+  const objectives = [{ id: "d", type: "disable", targets: ["a", "b"], required: true, complete: false }];
+  const units = [
+    { id: "a", side: "opposition", disabled: true },
+    { id: "b", side: "opposition", disabled: false },
+  ];
+  assert.deepEqual(resolveDisabled(objectives, units), []);
+  assert.equal(isOpenTarget(objectives, "b"), true);
+  assert.equal(isOpenTarget(objectives, "op"), false);
+  units[1].disabled = true;
+  assert.equal(resolveDisabled(objectives, units).length, 1);
+  assert.equal(objectives[0].complete, true);
+  assert.equal(isOpenTarget(objectives, "b"), false, "no marker once the objective is done");
+  // A disable objective is never completed by walking somewhere.
+  assert.deepEqual(resolveArrival(objectives, [], { x: 0, y: 0 }), []);
+});
+
+test("a hold objective counts time in its zone, drains when left, and completes at the target", () => {
+  const objective = { id: "h", type: "hold", targetZone: "uplink", holdSeconds: 10, required: true, complete: false };
+  const objectives = [objective];
+  assert.deepEqual(advanceHold(objectives, holdZones, [operatorIn(0, 0)], 5), []);
+  assert.equal(objective.progress, 0, "nobody there yet");
+  advanceHold(objectives, holdZones, [operatorIn(4, 4)], 6);
+  assert.equal(objective.progress, 6);
+  advanceHold(objectives, holdZones, [operatorIn(0, 0)], 2);
+  assert.equal(objective.progress, 2, "drains at twice the rate");
+  advanceHold(objectives, holdZones, [operatorIn(4, 4, { disabled: true })], 5);
+  assert.equal(objective.progress, 0, "a disabled operator does not hold it");
+  assert.deepEqual(advanceHold(objectives, holdZones, [operatorIn(5, 5)], 9.9), []);
+  const done = advanceHold(objectives, holdZones, [operatorIn(5, 5)], 0.2);
+  assert.equal(done.length, 1);
+  assert.equal(objective.complete, true);
+  assert.deepEqual(advanceHold(objectives, holdZones, [operatorIn(5, 5)], 5), [], "only completes once");
+  assert.deepEqual(resolveArrival(objectives, holdZones, { x: 4, y: 4 }), [], "walking in does not complete it");
+});
+
+test("Dead Drop mixes objective types and every target and zone it names exists", async () => {
+  const pack = await read("pack.json");
+  const mission = await read(pack.missions.find((file) => file.includes("dead-drop")));
+  const map = await read(mission.map);
+  const types = new Set(mission.objectives.map((objective) => objective.type));
+  assert.ok(["interact", "disable", "hold", "extract"].every((type) => types.has(type)));
+  const placements = new Set(mission.opponents.map((entry) => entry.id));
+  for (const objective of mission.objectives) {
+    if (objective.type === "disable") assert.ok(objective.targets.every((id) => placements.has(id)));
+    else assert.ok(map.zones.some((zone) => zone.id === objective.targetZone), objective.id);
   }
 });

@@ -15,11 +15,13 @@
   },
   "maps": [
     "maps/signal-yard.map.json",
-    "maps/audit-yard.map.json"
+    "maps/audit-yard.map.json",
+    "maps/freight-depot.map.json"
   ],
   "units": [
     "units/field-operator.unit.json",
-    "units/security-watcher.unit.json"
+    "units/security-watcher.unit.json",
+    "units/site-warden.unit.json"
   ],
   "equipment": [
     "equipment/civic-pulse-emitter.equipment.json",
@@ -30,6 +32,7 @@
   ],
   "missions": [
     "missions/restore-relay.mission.json",
-    "missions/quiet-hours.mission.json"
+    "missions/quiet-hours.mission.json",
+    "missions/dead-drop.mission.json"
   ]
 }

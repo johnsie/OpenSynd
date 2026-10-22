@@ -184,6 +184,18 @@ watcher already chasing someone within four tiles keeps hold of them round a cor
 balance bot now rewards patience: Quiet Hours is won 25% of runs when rushing, 88% steadily
 and 100% carefully.
 
+Operations are no longer all about relays. Objectives now have several types: interact (restore a
+relay, operate a panel, download from a server), disable (named targets, shown with a pulsing
+TARGET marker until they fall), hold (keep an able operator in a zone for a set time; progress
+drains at twice the rate when the zone is left, and shows in the objective list and as a green
+fill on the zone), reach a zone, and extract. The third operation, Dead Drop on the new Freight
+Depot map, mixes download, disable the Site Warden (a tougher watcher who carries a heavy
+emitter you can loot), hold the central uplink beacon for 20 seconds while every watcher
+converges, and extract through an open east side (no gate this time). Props are chosen per zone
+(`prop`: relay pylon, console, vault server rack, uplink beacon). Hold progress is not kept in
+saves (it restarts from zero when a save is loaded). The balance bot plays all three types; Dead
+Drop wins 67% rushing, 98% steady and 97% careful.
+
 Buildings are drawn as single structures rather than stacks of tile cubes
 (`web/src/buildings.js` for the rules, `drawBuilding` in `web/src/app.js`): one block per
 `utility-building` region with solid walls, a dark base plinth, a ledge at every floor and

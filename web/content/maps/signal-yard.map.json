@@ -1364,7 +1364,8 @@
     "y": 51
    },
    "width": 2,
-   "height": 2
+   "height": 2,
+   "prop": "relay"
   },
   {
    "id": "east-relay",
@@ -1374,7 +1375,8 @@
     "y": 75
    },
    "width": 2,
-   "height": 2
+   "height": 2,
+   "prop": "relay"
   },
   {
    "id": "gate-panel",
@@ -1384,7 +1386,8 @@
     "y": 99
    },
    "width": 2,
-   "height": 2
+   "height": 2,
+   "prop": "console"
   },
   {
    "id": "safe-exit",

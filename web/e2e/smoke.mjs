@@ -65,7 +65,7 @@ for (const [name, type, executablePath] of targets) {
     assert.match(await page.locator("#title-dialog").innerText(), /First Light/);
     // A fresh browser has only the first operation open.
     const missionButtons = page.locator("#mission-list button");
-    assert.equal(await missionButtons.count(), 2);
+    assert.equal(await missionButtons.count(), 3);
     assert.equal(await missionButtons.nth(0).isDisabled(), false);
     assert.equal(await missionButtons.nth(1).isDisabled(), true);
     assert.match(await missionButtons.nth(1).innerText(), /LOCKED/);
@@ -376,10 +376,23 @@ for (const [name, type, executablePath] of targets) {
     await page.waitForFunction(() =>
       document.querySelector("#status-message").textContent.includes("Local map established"),
     );
-    // The last mission has no next operation.
+    // The second mission leads to a third that is not about relays at all.
     await page.evaluate(() => window.opensyndTest.completeObjectives());
     await page.waitForSelector("#outcome-dialog[open]");
     assert.match(await page.locator("#outcome-heading").innerText(), /audit trail/i);
+    assert.equal(await page.locator("#next-button").isVisible(), true);
+    await page.click("#next-button");
+    await page.waitForSelector("#title-dialog[open]");
+    assert.match(await page.locator("#title-heading").innerText(), /Dead Drop/);
+    await page.click("#begin-button");
+    assert.match(await page.locator("#operation-eyebrow").innerText(), /OPERATION 03/);
+    const objectiveText = await page.locator("#objective-list").innerText();
+    assert.match(objectiveText, /Disable the site warden/);
+    assert.match(objectiveText, /Hold the central uplink for 20 seconds .*\(0 \/ 20 s\)/);
+    assert.equal(await page.locator("#objective-list li").count(), 4, "different jobs, not three relays");
+    // The last mission has no next operation.
+    await page.evaluate(() => window.opensyndTest.completeObjectives());
+    await page.waitForSelector("#outcome-dialog[open]");
     assert.equal(await page.locator("#next-button").isVisible(), false);
     // The operations list shows what is done and what is open, and reopens from the header.
     await page.click("#outcome-close");

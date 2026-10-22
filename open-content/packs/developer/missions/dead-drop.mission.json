@@ -1,0 +1,368 @@
+{
+  "formatVersion": 1,
+  "id": "developer.dead-drop",
+  "name": "Dead Drop",
+  "license": "CC0-1.0",
+  "title": "The ledger is out",
+  "briefing": "The Freight Depot's vault server holds the ledger that proves where the district's water money went. Download it, remove the site warden who guards the vault, and then hold the uplink at the depot's central crossing long enough to broadcast it. Every watcher in the depot will converge on the uplink, so pick your ground before you start.",
+  "story": "Dead Drop: the last copy of the ledger sits in a vault server at the Freight Depot, and the depot's warden answers only to the administrators. Your team has one night to download the ledger, silence the warden, and keep the central uplink alive until the broadcast completes, then walk out the east side.",
+  "debrief": {
+    "success": "The ledger is on every screen in the district. The warden is down, the broadcast finished, and your team is back in the dark before morning.",
+    "failure": "The team is down before the broadcast finished. The ledger stays in the vault. Take the warden out first, and hold the uplink only once the streets around it are quiet."
+  },
+  "map": "maps/freight-depot.map.json",
+  "team": [
+    {
+      "id": "operator-one",
+      "unit": "units/field-operator.unit.json",
+      "position": {
+        "x": 2,
+        "y": 48
+      },
+      "equipment": [
+        "equipment/civic-pulse-emitter.equipment.json",
+        "equipment/field-repair-kit.equipment.json"
+      ]
+    },
+    {
+      "id": "operator-two",
+      "unit": "units/field-operator.unit.json",
+      "position": {
+        "x": 3,
+        "y": 48
+      },
+      "equipment": [
+        "equipment/civic-pulse-emitter.equipment.json",
+        "equipment/field-repair-kit.equipment.json"
+      ]
+    },
+    {
+      "id": "operator-three",
+      "unit": "units/field-operator.unit.json",
+      "position": {
+        "x": 2,
+        "y": 49
+      },
+      "equipment": [
+        "equipment/civic-pulse-emitter.equipment.json",
+        "equipment/field-repair-kit.equipment.json"
+      ]
+    },
+    {
+      "id": "operator-four",
+      "unit": "units/field-operator.unit.json",
+      "position": {
+        "x": 3,
+        "y": 49
+      },
+      "equipment": [
+        "equipment/civic-pulse-emitter.equipment.json",
+        "equipment/field-repair-kit.equipment.json"
+      ]
+    }
+  ],
+  "opponents": [
+    {
+      "id": "watcher-one",
+      "unit": "units/security-watcher.unit.json",
+      "position": {
+        "x": 25,
+        "y": 10
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 25,
+          "y": 10
+        },
+        {
+          "x": 25,
+          "y": 40
+        }
+      ]
+    },
+    {
+      "id": "watcher-two",
+      "unit": "units/security-watcher.unit.json",
+      "position": {
+        "x": 25,
+        "y": 58
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 25,
+          "y": 58
+        },
+        {
+          "x": 25,
+          "y": 86
+        }
+      ]
+    },
+    {
+      "id": "watcher-three",
+      "unit": "units/security-watcher.unit.json",
+      "position": {
+        "x": 47,
+        "y": 8
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 47,
+          "y": 8
+        },
+        {
+          "x": 47,
+          "y": 38
+        }
+      ]
+    },
+    {
+      "id": "watcher-four",
+      "unit": "units/security-watcher.unit.json",
+      "position": {
+        "x": 40,
+        "y": 47
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 40,
+          "y": 47
+        },
+        {
+          "x": 56,
+          "y": 47
+        }
+      ]
+    },
+    {
+      "id": "watcher-five",
+      "unit": "units/security-watcher.unit.json",
+      "position": {
+        "x": 69,
+        "y": 8
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 69,
+          "y": 8
+        },
+        {
+          "x": 69,
+          "y": 38
+        }
+      ]
+    },
+    {
+      "id": "watcher-six",
+      "unit": "units/security-watcher.unit.json",
+      "position": {
+        "x": 69,
+        "y": 52
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 69,
+          "y": 52
+        },
+        {
+          "x": 69,
+          "y": 62
+        }
+      ]
+    },
+    {
+      "id": "watcher-seven",
+      "unit": "units/security-watcher.unit.json",
+      "position": {
+        "x": 69,
+        "y": 78
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 69,
+          "y": 78
+        },
+        {
+          "x": 69,
+          "y": 90
+        }
+      ]
+    },
+    {
+      "id": "watcher-eight",
+      "unit": "units/security-watcher.unit.json",
+      "position": {
+        "x": 91,
+        "y": 10
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 91,
+          "y": 10
+        },
+        {
+          "x": 91,
+          "y": 40
+        }
+      ]
+    },
+    {
+      "id": "watcher-nine",
+      "unit": "units/security-watcher.unit.json",
+      "position": {
+        "x": 91,
+        "y": 58
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 91,
+          "y": 58
+        },
+        {
+          "x": 91,
+          "y": 86
+        }
+      ]
+    },
+    {
+      "id": "watcher-ten",
+      "unit": "units/security-watcher.unit.json",
+      "position": {
+        "x": 12,
+        "y": 69
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 12,
+          "y": 69
+        },
+        {
+          "x": 40,
+          "y": 69
+        }
+      ]
+    },
+    {
+      "id": "watcher-eleven",
+      "unit": "units/security-watcher.unit.json",
+      "position": {
+        "x": 30,
+        "y": 91
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 30,
+          "y": 91
+        },
+        {
+          "x": 60,
+          "y": 91
+        }
+      ]
+    },
+    {
+      "id": "watcher-twelve",
+      "unit": "units/security-watcher.unit.json",
+      "position": {
+        "x": 12,
+        "y": 25
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 12,
+          "y": 25
+        },
+        {
+          "x": 40,
+          "y": 25
+        }
+      ]
+    },
+    {
+      "id": "warden",
+      "unit": "units/site-warden.unit.json",
+      "position": {
+        "x": 64,
+        "y": 69
+      },
+      "equipment": [
+        "equipment/heavy-pulse-emitter.equipment.json"
+      ],
+      "patrol": [
+        {
+          "x": 64,
+          "y": 69
+        },
+        {
+          "x": 76,
+          "y": 69
+        }
+      ]
+    },
+    {
+      "id": "vault-guard",
+      "unit": "units/security-watcher.unit.json",
+      "position": {
+        "x": 69,
+        "y": 62
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 69,
+          "y": 62
+        },
+        {
+          "x": 69,
+          "y": 76
+        }
+      ]
+    }
+  ],
+  "objectives": [
+    {
+      "id": "download-ledger",
+      "type": "interact",
+      "targetZone": "vault-server",
+      "required": true,
+      "description": "Download the ledger from the vault server."
+    },
+    {
+      "id": "disable-warden",
+      "type": "disable",
+      "targets": [
+        "warden"
+      ],
+      "required": true,
+      "description": "Disable the site warden."
+    },
+    {
+      "id": "broadcast-ledger",
+      "type": "hold",
+      "targetZone": "uplink-hold",
+      "holdSeconds": 20,
+      "required": true,
+      "description": "Hold the central uplink for 20 seconds while the ledger broadcasts."
+    },
+    {
+      "id": "leave-depot",
+      "type": "extract",
+      "targetZone": "safe-exit",
+      "required": true,
+      "description": "Extract through the east side of the depot."
+    }
+  ],
+  "trainingBudget": 9
+}

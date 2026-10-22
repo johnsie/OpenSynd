@@ -946,7 +946,8 @@
     "y": 25
    },
    "width": 2,
-   "height": 2
+   "height": 2,
+   "prop": "relay"
   },
   {
    "id": "relay-two",
@@ -956,7 +957,8 @@
     "y": 69
    },
    "width": 2,
-   "height": 2
+   "height": 2,
+   "prop": "relay"
   },
   {
    "id": "relay-three",
@@ -966,7 +968,8 @@
     "y": 47
    },
    "width": 2,
-   "height": 2
+   "height": 2,
+   "prop": "relay"
   },
   {
    "id": "gate-panel",
@@ -976,7 +979,8 @@
     "y": 25
    },
    "width": 2,
-   "height": 2
+   "height": 2,
+   "prop": "console"
   },
   {
    "id": "safe-exit",

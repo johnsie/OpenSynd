@@ -1,0 +1,25 @@
+{
+  "formatVersion": 1,
+  "id": "developer.site-warden",
+  "name": "Site Warden",
+  "license": "CC0-1.0",
+  "role": "security",
+  "stats": {
+    "vitality": 150,
+    "speed": 4.0,
+    "awareness": 100,
+    "attack": 14,
+    "range": 4.5,
+    "cooldown": 0.9
+  },
+  "abilities": [
+    "observe",
+    "raise-alert"
+  ],
+  "appearance": {
+    "shape": "hexagon",
+    "primaryColor": "#3d454d",
+    "accentColor": "#e86bd6",
+    "marker": "D"
+  }
+}

@@ -72,7 +72,8 @@
       "required": ["id", "kind", "position", "width", "height"],
       "properties": {
         "id": { "$ref": "#/$defs/id" },
-        "kind": { "enum": ["entry", "exit", "interaction", "deployment", "trigger"] },
+        "kind": { "enum": ["entry", "exit", "interaction", "hold", "deployment", "trigger"] },
+        "prop": { "enum": ["relay", "console", "server", "beacon"], "description": "How an interaction or hold zone is drawn." },
         "position": { "$ref": "#/$defs/position" },
         "width": { "type": "integer", "minimum": 1 },
         "height": { "type": "integer", "minimum": 1 }

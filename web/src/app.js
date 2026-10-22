@@ -1,7 +1,17 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 import { createOverlay, createTileSprites } from "./textures.js";
-import { FENCE_SURFACE, WALL_SURFACE, drawConsole, drawFenceTile, drawGateTile, drawRelay, drawWallTile } from "./structures.js";
+import {
+  FENCE_SURFACE,
+  WALL_SURFACE,
+  drawBeacon,
+  drawConsole,
+  drawFenceTile,
+  drawGateTile,
+  drawRelay,
+  drawServer,
+  drawWallTile,
+} from "./structures.js";
 import { BUILDING_SURFACE, buildingStyle, buildingsFromMap, drawOrder, seededRandom } from "./buildings.js";
 import {
   buildPatrolRoute,
@@ -102,7 +112,7 @@ import {
 import {
   missionComplete as isMissionComplete,
   missionOutcome,
-  resolveArrival, syncGates as syncMissionGates,
+  advanceHold, isOpenTarget, resolveArrival, resolveDisabled, syncGates as syncMissionGates,
 } from "./mission.js";
 import {
   addEffect,
@@ -416,7 +426,7 @@ async function loadGame(index = state.missionIndex) {
   // Relay pylons and the gate console stand on their pads. Their footprint is the pad's first tile
   // so operatives standing on the pad are drawn in front of them.
   state.structures = map.zones
-    .filter((zone) => zone.kind === "interaction")
+    .filter((zone) => zone.kind === "interaction" || zone.kind === "hold")
     .map((zone) => ({
       id: zone.id,
       x: zone.position.x,
@@ -424,7 +434,7 @@ async function loadGame(index = state.missionIndex) {
       width: 1,
       height: 1,
       centre: { x: zone.position.x + (zone.width - 1) / 2, y: zone.position.y + (zone.height - 1) / 2 },
-      structure: zone.id.includes("gate") ? "console" : "relay",
+      structure: zone.prop ?? (zone.kind === "hold" ? "beacon" : zone.id.includes("gate") ? "console" : "relay"),
       elevation: state.grid[zone.position.y][zone.position.x]?.elevation ?? 0,
     }));
   state.objectives = mission.objectives.map((objective) => ({
@@ -1335,11 +1345,22 @@ function drawBuilding(building, viewport, size) {
   return bounds;
 }
 
+const STRUCTURE_DRAWERS = { relay: drawRelay, console: drawConsole, server: drawServer, beacon: drawBeacon };
+
 function drawStructure(structure, viewport) {
-  const complete = state.objectives.find((objective) => objective.targetZone === structure.id)?.complete ?? false;
+  const objective = state.objectives.find((item) => item.targetZone === structure.id);
+  const complete = objective?.complete ?? false;
+  const progress = objective?.holdSeconds ? (objective.progress ?? 0) / objective.holdSeconds : 0;
   const project = propProjector(viewport, structure.elevation);
-  const draw = structure.structure === "console" ? drawConsole : drawRelay;
-  draw(context, project, structure.centre, viewport.cellSize.height, complete, performance.now());
+  STRUCTURE_DRAWERS[structure.structure](
+    context,
+    project,
+    structure.centre,
+    viewport.cellSize.height,
+    complete,
+    performance.now(),
+    progress,
+  );
 }
 
 // Operatives behind a building keep a faint ring so they are never lost from view.
@@ -1373,12 +1394,17 @@ function drawZones(viewport) {
     const x1 = x0 + zone.width;
     const y1 = y0 + zone.height;
     const points = [corner(x0, y0), corner(x1, y0), corner(x1, y1), corner(x0, y1)];
-    const colour = complete ? "121, 213, 155" : zone.kind === "interaction" ? "225, 179, 90" : "66, 214, 208";
+    const colour = complete ? "121, 213, 155" : zone.kind === "interaction" || zone.kind === "hold" ? "225, 179, 90" : "66, 214, 208";
+    const holdFraction = objective?.holdSeconds ? (objective.progress ?? 0) / objective.holdSeconds : 0;
     context.beginPath();
     points.forEach((point, index) => (index === 0 ? context.moveTo(point.x, point.y) : context.lineTo(point.x, point.y)));
     context.closePath();
     context.fillStyle = `rgba(${colour}, ${zone.kind === "interaction" ? 0.06 : 0.1})`;
     context.fill();
+    if (holdFraction > 0 && !complete) {
+      context.fillStyle = `rgba(121, 213, 155, ${0.08 + 0.3 * holdFraction})`;
+      context.fill();
+    }
     context.strokeStyle = `rgba(${colour}, .9)`;
     context.lineWidth = 2;
     context.setLineDash(zone.kind === "interaction" ? [] : [10, 6]);
@@ -1566,6 +1592,27 @@ function drawUnit(unit, viewport) {
     context.strokeText("!", 0, -size * 2.7);
     context.fillText("!", 0, -size * 2.7);
   }
+  if (!unit.disabled && isOpenTarget(state.objectives, unit.id)) {
+    // A named target of an open objective: a pulsing diamond and label above the head.
+    const pulse = reduceMotion ? 1 : 0.75 + 0.25 * Math.sin(state.elapsed * 5);
+    const top = -size * (unit.alertedBy ? 4.6 : 3.2);
+    context.fillStyle = `rgba(232, 107, 214, ${pulse})`;
+    context.beginPath();
+    context.moveTo(0, top + size * 0.9);
+    context.lineTo(size * 0.55, top + size * 0.35);
+    context.lineTo(0, top - size * 0.2);
+    context.lineTo(-size * 0.55, top + size * 0.35);
+    context.closePath();
+    context.fill();
+    context.font = `700 ${Math.max(9, size * 0.7)}px ui-sans-serif, sans-serif`;
+    context.textAlign = "center";
+    context.textBaseline = "alphabetic";
+    context.strokeStyle = "rgba(0, 0, 0, 0.85)";
+    context.lineWidth = 3;
+    context.strokeText("TARGET", 0, top - size * 0.4);
+    context.fillStyle = "#f6c6ef";
+    context.fillText("TARGET", 0, top - size * 0.4);
+  }
   if (unit.disabled) {
     context.strokeStyle = "#ff6b62";
     context.lineWidth = 2;
@@ -1648,7 +1695,7 @@ function drawMinimap(viewport) {
   }
   for (const zone of state.map.zones) {
     const objective = state.objectives.find((item) => item.targetZone === zone.id);
-    if (zone.kind === "interaction" || zone.kind === "exit") {
+    if (zone.kind === "interaction" || zone.kind === "hold" || zone.kind === "exit") {
       const point = miniProject(zone.position, state.map);
       miniContext.strokeStyle = objective?.complete ? "#79d59b" : "#e1b35a";
       miniContext.strokeRect(Math.round(point.x - 3), Math.floor(point.y) - 2, 6, 4);
@@ -1925,6 +1972,16 @@ function simulationStep(deltaSeconds) {
     interfaceChanged = true;
     handleCombatEvents(combatEvents);
   }
+  for (const event of [
+    ...resolveDisabled(state.objectives, state.units),
+    ...advanceHold(state.objectives, state.map.zones, state.units, deltaSeconds),
+  ]) {
+    state.opStats.objectivesCompleted += 1;
+    syncGates();
+    audio.play("objective");
+    setStatus(`${event.objective.description} Commitment fulfilled.`);
+    interfaceChanged = true;
+  }
   if (interfaceChanged) renderInterface();
 }
 
@@ -2054,6 +2111,9 @@ function update(deltaSeconds) {
   if (state.meterClock >= 0.2) {
     state.meterClock = 0;
     updateMeters();
+    if (state.objectives.some((objective) => objective.type === "hold" && !objective.complete && objective.progress > 0)) {
+      renderInterface();
+    }
   }
   for (const unit of state.units) {
     const effective = effectiveLevels(unit.levels, unit.stamina, unit.focus);
@@ -2113,7 +2173,7 @@ function nearbyInteraction() {
 function performInteraction() {
   const candidate = interactionCandidate();
   if (!candidate) {
-    setStatus("No unrestored relay is within reach.");
+    setStatus("Nothing to use is within reach.");
     return;
   }
   const { unit, objective } = candidate;
@@ -3125,6 +3185,9 @@ function renderInterface() {
     ...state.objectives.map((objective) => {
       const item = document.createElement("li");
       item.textContent = objective.description;
+      if (objective.type === "hold" && !objective.complete) {
+        item.textContent += ` (${Math.floor(objective.progress ?? 0)} / ${objective.holdSeconds} s)`;
+      }
       item.classList.toggle("complete", objective.complete);
       item.setAttribute(
         "aria-label",
@@ -3247,7 +3310,8 @@ function renderInterface() {
   const unit = selectedUnit();
   const interaction = nearbyInteraction();
   actionButton.disabled = interaction === null;
-  actionLabel.textContent = interaction ? "Restore nearby relay" : "Restore relay";
+  const prop = interaction ? state.map.zones.find((zone) => zone.id === interaction.targetZone)?.prop : null;
+  actionLabel.textContent = prop === "server" ? "Download data" : interaction ? "Restore nearby relay" : "Restore relay";
   const repairKit = equipmentWithAction(unit, "restore-vitality");
   const canRepair = Boolean(
     unit &&

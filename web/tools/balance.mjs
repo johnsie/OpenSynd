@@ -12,7 +12,7 @@ import { fileURLToPath } from "node:url";
 import { ACHIEVEMENTS, newStats, newlyEarned } from "../src/achievements.js";
 import { buildPatrolRoute, createTileGrid, findPath, formationTiles, zoneContains } from "../src/engine.js";
 import { energyItem, findLoot, lootBody, lootableBody, nearestLootable, useEnergyItem } from "../src/inventory.js";
-import { missionOutcome, resolveArrival, resolveInteraction, syncGates } from "../src/mission.js";
+import { advanceHold, missionOutcome, resolveArrival, resolveDisabled, resolveInteraction, syncGates } from "../src/mission.js";
 import {
   FIXED_STEP_SECONDS,
   advanceCombat,
@@ -20,6 +20,7 @@ import {
   advancePatrols,
   advanceUnits,
   combatStats,
+  hasLineOfSight,
   roundsLeft,
 } from "../src/simulation.js";
 import { defaultLevels } from "../src/stats.js";
@@ -170,9 +171,30 @@ function playOnce(world, tactics) {
 
     const next = objectives.find((objective) => !objective.complete);
     if (!next) return;
+    if (next.type === "disable") {
+      // Go after the named targets: close in until every operator has a clear line and is in range.
+      const target = live.find((unit) => next.targets.includes(unit.id));
+      if (!target) return;
+      for (const unit of active) {
+        if (roundsLeft(unit) === 0) continue;
+        const inRange = dist(unit, target) <= combatStats(unit, dist(unit, target)).range;
+        if (inRange && hasLineOfSight(grid, unit.position, target.position)) {
+          unit.path = [];
+          unit.targetId = target.id;
+        } else if (unit.path.length === 0) {
+          send(unit, tileOf(target.position));
+        }
+      }
+      return;
+    }
     const zone = zoneOf(next);
     const centre = { x: zone.position.x, y: zone.position.y };
     const inZone = (unit) => zoneContains(zone, tileOf(unit.position));
+    if (next.type === "hold") {
+      // Stand in the zone until the clock runs out.
+      if (active.every((unit) => unit.path.length === 0) && !active.some(inZone)) moveSquad(centre);
+      return;
+    }
     if (next.type === "interact") {
       const there = active.find((unit) => unit.path.length === 0 && inZone(unit));
       if (there && resolveInteraction(objectives, map.zones, tileOf(there.position))) {
@@ -206,6 +228,10 @@ function playOnce(world, tactics) {
       syncGates(grid, map, objectives);
     }
     advanceFocus(units, FIXED_STEP_SECONDS);
+    for (const event of [...resolveDisabled(objectives, units), ...advanceHold(objectives, map.zones, units, FIXED_STEP_SECONDS)]) {
+      if (event.type === "complete") stats.objectivesCompleted += 1;
+      syncGates(grid, map, objectives);
+    }
     for (const event of advancePatrols(units, FIXED_STEP_SECONDS, grid)) {
       if (event.type === "spotted") stats.spotted += 1;
     }

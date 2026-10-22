@@ -336,8 +336,19 @@ class Validation:
             if objective_id in objective_ids:
                 self.error(path, f"duplicate objective id: {objective_id}")
             objective_ids.add(objective_id)
+            kind = objective.get("type")
+            if kind == "disable":
+                targets = objective.get("targets")
+                opponents = {item.get("id") for item in value["opponents"] if isinstance(item, dict)}
+                if not isinstance(targets, list) or not targets or not set(targets) <= opponents:
+                    self.error(path, f"objective {objective_id} must list opposition placements to disable")
+                continue
             if objective.get("targetZone") not in zones:
                 self.error(path, f"unknown target zone: {objective.get('targetZone')}")
+            if kind == "hold":
+                seconds = objective.get("holdSeconds")
+                if not isinstance(seconds, (int, float)) or isinstance(seconds, bool) or seconds <= 0:
+                    self.error(path, f"objective {objective_id} needs a positive holdSeconds")
 
     def validate_pack(self, pack_path: Path) -> None:
         pack_root = pack_path.parent

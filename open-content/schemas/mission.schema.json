@@ -66,11 +66,18 @@
     "objective": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "type", "targetZone", "required", "description"],
+      "required": ["id", "type", "required", "description"],
       "properties": {
         "id": { "$ref": "#/$defs/id" },
-        "type": { "enum": ["reach-zone", "interact", "protect", "disable", "extract"] },
-        "targetZone": { "$ref": "#/$defs/id" },
+        "type": { "enum": ["reach-zone", "interact", "protect", "disable", "hold", "extract"] },
+        "targetZone": { "$ref": "#/$defs/id", "description": "The zone to reach, use, hold or extract through. Not used by disable." },
+        "targets": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/id" },
+          "description": "disable: the opposition placements that must all be disabled."
+        },
+        "holdSeconds": { "type": "number", "exclusiveMinimum": 0, "description": "hold: seconds an operator must stay in the zone." },
         "required": { "type": "boolean" },
         "description": { "type": "string", "minLength": 1, "maxLength": 240 }
       }

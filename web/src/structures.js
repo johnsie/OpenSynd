@@ -266,3 +266,106 @@ export function drawGateTile(context, p, tile, cellHeight, open, time) {
   context.setLineDash([]);
   context.globalAlpha = 1;
 }
+
+// A box on the ground: the two faces the camera sees, and a lighter cap.
+function drawBox(context, p, cx, cy, halfX, halfY, z0, z1, wallColour, capColour) {
+  const lift = (point, z) => ({ x: point.x, y: point.y - z });
+  const west = p(cx - halfX, cy + halfY, 0);
+  const south = p(cx + halfX, cy + halfY, 0);
+  const east = p(cx + halfX, cy - halfY, 0);
+  const north = p(cx - halfX, cy - halfY, 0);
+  context.fillStyle = wallColour;
+  polygon(context, [lift(west, z1), lift(south, z1), lift(south, z0), lift(west, z0)]);
+  context.fill();
+  context.fillStyle = wallColour;
+  polygon(context, [lift(south, z1), lift(east, z1), lift(east, z0), lift(south, z0)]);
+  context.fill();
+  context.fillStyle = "rgba(0, 0, 0, .3)";
+  context.fill();
+  context.fillStyle = capColour;
+  polygon(context, [north, east, south, west].map((point) => lift(point, z1)));
+  context.fill();
+  return { west, south, east, lift };
+}
+
+// The vault server: a tall rack with rows of blinking lights on its face and a screen strip.
+// The lights turn steady green once the data has been downloaded.
+export function drawServer(context, p, { x, y }, cellHeight, complete, time) {
+  const height = cellHeight * 2.3;
+  const { west, south, lift } = drawBox(context, p, x, y, 0.46, 0.34, 0, height, "#34414a", "#566570");
+  const lights = complete ? ["#79d59b"] : ["#42d6d0", "#e1b35a", "#e86bd6"];
+  const rows = 9;
+  for (let row = 0; row < rows; row += 1) {
+    const z = cellHeight * 0.25 + (row / rows) * (height - cellHeight * 0.7);
+    for (let column = 0; column < 4; column += 1) {
+      const u = 0.12 + column * 0.2;
+      const lit = complete || Math.sin(time / 170 + row * 1.7 + column * 2.3) > -0.2;
+      if (!lit) continue;
+      const a = {
+        x: west.x + (south.x - west.x) * u,
+        y: west.y + (south.y - west.y) * u,
+      };
+      context.fillStyle = lights[(row + column) % lights.length];
+      context.globalAlpha = 0.9;
+      const point = lift(a, z);
+      context.fillRect(point.x - 1.5, point.y - 1, 3, 2);
+    }
+  }
+  context.globalAlpha = 1;
+  // A dark screen strip across the top of the face.
+  context.fillStyle = "#10181d";
+  polygon(context, [
+    lift(west, height - cellHeight * 0.35),
+    lift(south, height - cellHeight * 0.35),
+    lift(south, height - cellHeight * 0.1),
+    lift(west, height - cellHeight * 0.1),
+  ]);
+  context.fill();
+  const glow = complete ? "#79d59b" : "#42d6d0";
+  const centre = lift({ x: (west.x + south.x) / 2, y: (west.y + south.y) / 2 }, height + cellHeight * 0.25);
+  context.globalAlpha = 0.3 + 0.2 * Math.sin(time / 300);
+  context.fillStyle = glow;
+  context.beginPath();
+  context.arc(centre.x, centre.y, 7, 0, Math.PI * 2);
+  context.fill();
+  context.globalAlpha = 1;
+}
+
+// The uplink beacon: a mast with a dish. Rings of signal rise from it, stronger the longer it has
+// been held, and it stands steady green with a full beam once the broadcast is done.
+export function drawBeacon(context, p, { x, y }, cellHeight, complete, time, progress = 0) {
+  const lift = (point, z) => ({ x: point.x, y: point.y - z });
+  drawBox(context, p, x, y, 0.5, 0.5, 0, cellHeight * 0.3, "#4d5a64", "#6c7b86");
+  drawBox(context, p, x, y, 0.14, 0.14, cellHeight * 0.3, cellHeight * 2.6, "#5b6a75", "#8fa0ab");
+  const base = p(x, y, 0);
+  const colour = complete ? "121, 213, 155" : "232, 107, 214";
+  const strength = complete ? 1 : 0.25 + 0.75 * progress;
+  // A dish near the top, tilted skyward.
+  const dish = lift(base, cellHeight * 2.4);
+  context.fillStyle = "#9fb0ba";
+  context.beginPath();
+  context.ellipse(dish.x, dish.y, cellHeight * 0.5, cellHeight * 0.22, -0.4, 0, Math.PI * 2);
+  context.fill();
+  context.fillStyle = `rgba(${colour}, ${0.5 + 0.4 * strength})`;
+  context.beginPath();
+  context.ellipse(dish.x, dish.y, cellHeight * 0.32, cellHeight * 0.13, -0.4, 0, Math.PI * 2);
+  context.fill();
+  // Rising signal rings.
+  for (let ring = 0; ring < 3; ring += 1) {
+    const phase = ((time / 1100 + ring / 3) % 1);
+    const centre = lift(base, cellHeight * (2.7 + phase * 2.4));
+    context.strokeStyle = `rgba(${colour}, ${(1 - phase) * 0.8 * strength})`;
+    context.lineWidth = 1.5;
+    context.beginPath();
+    context.ellipse(centre.x, centre.y, cellHeight * (0.35 + phase * 0.6), cellHeight * (0.16 + phase * 0.28), 0, 0, Math.PI * 2);
+    context.stroke();
+  }
+  if (complete || progress > 0) {
+    const top = lift(base, cellHeight * 2.7);
+    const beam = context.createLinearGradient(0, top.y, 0, top.y - cellHeight * 6);
+    beam.addColorStop(0, `rgba(${colour}, ${0.45 * strength})`);
+    beam.addColorStop(1, `rgba(${colour}, 0)`);
+    context.fillStyle = beam;
+    context.fillRect(top.x - 3, top.y - cellHeight * 6, 6, cellHeight * 6);
+  }
+}
