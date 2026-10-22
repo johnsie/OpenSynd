@@ -1065,6 +1065,14 @@ function drawBuilding(building, viewport, size) {
   // A point on a wall: u along it (0..1), z up from the ground.
   const onWall = (from, to, u, z) => ({ x: from.x + (to.x - from.x) * u, y: from.y + (to.y - from.y) * u - z });
 
+  // The quadrilateral on a wall between u0..u1 along it and heights z0..z1.
+  const strip = (wall, u0, u1, z0, z1) => [
+    onWall(wall.from, wall.to, u0, z1),
+    onWall(wall.from, wall.to, u1, z1),
+    onWall(wall.from, wall.to, u1, z0),
+    onWall(wall.from, wall.to, u0, z0),
+  ];
+
   // A plain block: two walls and a roof face. Windows are added separately on the tall walls.
   const block = (rect, z0, z1, wallColour, roofColour) => {
     const west = topPoint(rect.x0, rect.y1, 0);
@@ -1077,7 +1085,7 @@ function drawBuilding(building, viewport, size) {
     ];
     for (const wall of walls) {
       context.fillStyle = shade(wallColour, wall.shadeBy);
-      quad([onWall(wall.from, wall.to, 0, z1), onWall(wall.from, wall.to, 1, z1), onWall(wall.from, wall.to, 1, z0), onWall(wall.from, wall.to, 0, z0)]);
+      quad(strip(wall, 0, 1, z0, z1));
       context.fill();
     }
     context.fillStyle = roofColour;
@@ -1093,7 +1101,7 @@ function drawBuilding(building, viewport, size) {
   for (const [index, wall] of walls.entries()) {
     const tone = index === 0 ? 0.28 : 0.4;
     context.fillStyle = `rgba(0, 0, 0, ${tone})`;
-    quad([onWall(wall.from, wall.to, 0, floorHeight * 0.45), onWall(wall.from, wall.to, 1, floorHeight * 0.45), onWall(wall.from, wall.to, 1, 0), onWall(wall.from, wall.to, 0, 0)]);
+    quad(strip(wall, 0, 1, 0, floorHeight * 0.45));
     context.fill();
     context.strokeStyle = index === 0 ? "rgba(255, 255, 255, .13)" : "rgba(255, 255, 255, .07)";
     context.lineWidth = 1;
@@ -1117,8 +1125,7 @@ function drawBuilding(building, viewport, size) {
         const u1 = (bay + 0.78) / bays;
         const z0 = floor * floorHeight + floorHeight * 0.18;
         const z1 = floor * floorHeight + floorHeight * 0.74;
-        const window = [onWall(wall.from, wall.to, u0, z1), onWall(wall.from, wall.to, u1, z1), onWall(wall.from, wall.to, u1, z0), onWall(wall.from, wall.to, u0, z0)];
-        (random() < style.lit * 0.6 ? lit : glass).push(window);
+        (random() < style.lit * 0.6 ? lit : glass).push(strip(wall, u0, u1, z0, z1));
       }
     }
     const fillAll = (list, colour) => {
