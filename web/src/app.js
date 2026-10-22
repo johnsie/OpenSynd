@@ -69,7 +69,7 @@ import {
 import {
   advanceCombat,
   combatStats,
-  pickWeapon,
+  heldWeapon,
   roundsLeft,
   advanceFocus,
   advancePatrols,
@@ -1104,11 +1104,14 @@ function drawSprite(unit, sheet, viewport, size) {
     drawSize,
     drawSize,
   );
-  // The weapon the unit would fire (the selected one, or the best loaded one) is in its hand: a
-  // transparent layer rendered from the same frames, drawn over the body.
-  const carried = unit.disabled ? null : pickWeapon(unit).item;
+  // A weapon is in the hand only while it is selected (see heldWeapon): a transparent layer
+  // rendered from the same frames, drawn over the body.
+  const carried = heldWeapon(unit);
   const weaponSheet = carried && sprites.manifest.sheets[`weapon-${carried.definition.icon}`];
   if (weaponSheet) {
+    // A dark halo keeps the weapon readable against the coat and the ground.
+    context.shadowColor = "rgba(0, 0, 0, 0.95)";
+    context.shadowBlur = 3;
     context.drawImage(
       sprites.images.get(weaponSheet.file),
       frame * source,
@@ -2323,6 +2326,10 @@ if (new URLSearchParams(location.search).has("e2e")) {
       unit.position = { x: other.position.x + dx, y: other.position.y + dy };
       unit.path = [];
       renderInterface();
+    },
+    held(id) {
+      const unit = state.units.find((item) => item.id === id);
+      return heldWeapon(unit)?.definition.name ?? null;
     },
     focusOn(id) {
       const unit = state.units.find((item) => item.id === id);

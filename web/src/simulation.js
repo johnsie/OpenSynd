@@ -268,6 +268,20 @@ export function pickWeapon(unit, distance = null) {
   return { item: pick, stats: pick.definition.effect };
 }
 
+/**
+ * The weapon a unit is seen holding, or null. An operative holds a weapon only while one is
+ * selected (and it still has rounds); with none selected the hands are empty. A watcher has no
+ * selection, so it draws its best loaded weapon while it is alert or has a target.
+ */
+export function heldWeapon(unit) {
+  if (unit.disabled) return null;
+  if (unit.side === "team") {
+    const chosen = Number.isInteger(unit.activeSlot) ? unit.equipment?.[unit.activeSlot] : null;
+    return chosen && chosen.definition.action === "disable-pulse" && chosen.charges !== 0 ? chosen : null;
+  }
+  return unit.alertedBy || unit.targetId ? pickWeapon(unit).item : null;
+}
+
 export function combatStats(unit, distance = null) {
   return pickWeapon(unit, distance).stats;
 }

@@ -169,29 +169,47 @@
     const orientation = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(right, up, forward));
     const offset = (base, x, y, z) =>
       base.clone().addScaledVector(right, x).addScaledVector(up, y).addScaledVector(forward, z);
-    const metal = new THREE.MeshStandardMaterial({ color: rgb([112, 124, 140]), roughness: 0.4, metalness: 0.6 });
-    const trim = new THREE.MeshStandardMaterial({ color: rgb([240, 190, 90]), roughness: 0.4, metalness: 0.3 });
-    const glow = new THREE.MeshBasicMaterial({ color: rgb([110, 240, 235]) });
-    const part = (w, h, d, material, position) => {
-      const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
-      mesh.position.copy(position);
+    const steel = new THREE.MeshStandardMaterial({ color: rgb([176, 188, 204]), roughness: 0.35, metalness: 0.55 });
+    const dark = new THREE.MeshStandardMaterial({ color: rgb([34, 38, 48]), roughness: 0.6, metalness: 0.3 });
+    const trim = new THREE.MeshStandardMaterial({ color: rgb([245, 195, 90]), roughness: 0.4, metalness: 0.3 });
+    const glow = new THREE.MeshBasicMaterial({ color: rgb([120, 245, 240]) });
+    // Weapons are drawn larger than life so they read at game scale, and held a little away from the body.
+    const SCALE = 2.2;
+    const part = (w, h, d, material, x, y, z) => {
+      const mesh = new THREE.Mesh(
+        new THREE.BoxGeometry(unit * w * SCALE, unit * h * SCALE, unit * d * SCALE),
+        material,
+      );
+      mesh.position.copy(offset(hand, unit * (x + 0.12) * SCALE, unit * y * SCALE, unit * z * SCALE));
       mesh.quaternion.copy(orientation);
       scene.add(mesh);
       mesh.updateMatrixWorld(true);
       bone("RightHand").attach(mesh);
     };
-    // Sizes are in hip-widths; the grip sits in the hand and the barrel points forward.
+    // Dimensions are in hip-widths (x right, y up, z forward). The grip sits in the hand,
+    // the barrel points forward, and the details (sights, guard, magazine) make it read as a gun.
     if (type === "heavy-pulse") {
-      part(unit * 0.34, unit * 0.3, unit * 1.9, metal, offset(hand, 0, unit * 0.08, unit * 0.9));
-      part(unit * 0.2, unit * 0.14, unit * 1.2, trim, offset(hand, 0, unit * 0.3, unit * 0.8));
-      part(unit * 0.22, unit * 0.5, unit * 0.28, metal, offset(hand, 0, -unit * 0.2, unit * 0.1));
-      part(unit * 0.4, unit * 0.4, unit * 0.2, glow, offset(hand, 0, unit * 0.08, unit * 1.9));
-      part(unit * 0.4, unit * 0.4, unit * 0.5, metal, offset(hand, 0, unit * 0.08, unit * -0.2));
+      part(0.3, 0.34, 1.0, steel, 0, 0.1, 0.55); // receiver
+      part(0.24, 0.24, 1.1, dark, 0, 0.1, 1.55); // barrel shroud
+      part(0.12, 0.12, 0.45, steel, 0, 0.1, 2.3); // barrel
+      part(0.4, 0.4, 0.14, glow, 0, 0.1, 2.55); // emitter
+      part(0.24, 0.4, 0.7, dark, 0, 0.05, -0.4); // stock
+      part(0.22, 0.55, 0.24, dark, 0, -0.22, 0.12); // grip
+      part(0.24, 0.5, 0.34, trim, 0, -0.28, 0.85); // battery pack
+      part(0.16, 0.28, 0.18, dark, 0, -0.2, 1.5); // foregrip
+      part(0.18, 0.18, 0.65, dark, 0, 0.4, 0.75); // scope
+      part(0.2, 0.2, 0.08, glow, 0, 0.4, 1.12); // scope lens
+      part(0.1, 0.06, 0.8, trim, 0, 0.3, 0.55); // top rail
     } else {
-      part(unit * 0.26, unit * 0.24, unit * 1.0, metal, offset(hand, 0, unit * 0.06, unit * 0.5));
-      part(unit * 0.22, unit * 0.46, unit * 0.26, metal, offset(hand, 0, -unit * 0.17, unit * 0.06));
-      part(unit * 0.16, unit * 0.08, unit * 0.7, trim, offset(hand, 0, unit * 0.22, unit * 0.5));
-      part(unit * 0.3, unit * 0.3, unit * 0.16, glow, offset(hand, 0, unit * 0.06, unit * 1.04));
+      part(0.22, 0.24, 0.9, steel, 0, 0.12, 0.5); // slide
+      part(0.14, 0.14, 0.3, dark, 0, 0.1, 1.1); // barrel
+      part(0.3, 0.3, 0.12, glow, 0, 0.1, 1.3); // emitter
+      part(0.22, 0.58, 0.26, dark, 0, -0.22, 0.1); // grip
+      part(0.07, 0.07, 0.34, dark, 0, -0.04, 0.5); // trigger guard (bottom)
+      part(0.07, 0.2, 0.07, dark, 0, -0.1, 0.66); // trigger guard (front)
+      part(0.08, 0.1, 0.1, trim, 0, 0.3, 0.1); // rear sight
+      part(0.08, 0.1, 0.1, trim, 0, 0.3, 0.95); // front sight
+      part(0.1, 0.05, 0.6, trim, 0, 0.26, 0.5); // slide stripe
     }
   }
 

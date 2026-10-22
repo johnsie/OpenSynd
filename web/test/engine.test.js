@@ -23,6 +23,7 @@ import {
   advancePatrols,
   advanceUnits,
   combatStats,
+  heldWeapon,
   roundsLeft,
   stealthFactor,
   consumeFixedSteps,
@@ -664,4 +665,31 @@ test("an armed unit with no rounds left cannot fire or pick targets; an unarmed 
   const bare = { ...patrolUnit([{ x: 0, y: 0 }, { x: 3, y: 0 }]), side: "opposition", equipment: [] };
   advanceCombat([bare, operatorAt(1, 0, { health: 100 })], FIXED_STEP_SECONDS);
   assert.notEqual(bare.targetId, null, "the unarmed watcher fights with its own stats");
+});
+
+test("an operative holds a weapon only while one is selected and loaded", () => {
+  const pistol = roundsWeapon(5);
+  const rifle = roundsWeapon(3, 20, 4.5, 1.4);
+  const medkit = { definition: { action: "restore-vitality", effect: { restoreVitality: 30 } }, charges: 1 };
+  const operative = shooterWith([pistol, medkit, rifle]);
+
+  assert.equal(heldWeapon(operative), null, "nothing selected: hands empty");
+  assert.equal(heldWeapon({ ...operative, activeSlot: 0 }), pistol);
+  assert.equal(heldWeapon({ ...operative, activeSlot: 2 }), rifle);
+  assert.equal(heldWeapon({ ...operative, activeSlot: 1 }), null, "a medkit is not a weapon");
+  assert.equal(heldWeapon({ ...operative, activeSlot: 9 }), null, "an empty slot holds nothing");
+  assert.equal(heldWeapon({ ...operative, activeSlot: 0, disabled: true }), null, "disabled units drop it");
+
+  // A selected weapon with no rounds left is put away.
+  assert.equal(heldWeapon({ ...operative, equipment: [roundsWeapon(0)], activeSlot: 0 }), null);
+});
+
+test("a watcher draws its weapon only while it is alert or fighting", () => {
+  const rifle = roundsWeapon(10, 20, 4.5, 1.4);
+  const watcher = { ...patrolUnit([{ x: 0, y: 0 }, { x: 3, y: 0 }]), side: "opposition", equipment: [rifle] };
+  assert.equal(heldWeapon(watcher), null, "on patrol: carried, not drawn");
+  assert.equal(heldWeapon({ ...watcher, alertedBy: "op" }), rifle, "alert: weapon out");
+  assert.equal(heldWeapon({ ...watcher, targetId: "op" }), rifle, "fighting: weapon out");
+  assert.equal(heldWeapon({ ...watcher, alertedBy: "op", equipment: [] }), null, "unarmed watchers hold nothing");
+  assert.equal(heldWeapon({ ...watcher, alertedBy: "op", disabled: true }), null);
 });

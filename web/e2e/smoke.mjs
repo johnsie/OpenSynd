@@ -238,11 +238,15 @@ for (const [name, type, executablePath] of targets) {
     assert.equal(await page.locator(".roster-item").first().locator(".slot:not(.empty)").count(), 2);
     assert.equal(await firstSquares.first().locator(".charges").innerText(), "24");
     // Clicking a weapon square selects it (click again for automatic choice); a repair kit at full health explains itself.
+    // No weapon selected: nothing in the hands. Selecting one puts it in the hand; selecting it again puts it away.
+    assert.equal(await page.evaluate(() => window.opensyndTest.held("operator-one")), null);
     await firstSquares.first().click();
     assert.equal(await firstSquares.first().getAttribute("aria-pressed"), "true");
+    assert.equal(await page.evaluate(() => window.opensyndTest.held("operator-one")), "Civic Pulse Emitter");
     assert.match(await page.locator("#status-message").innerText(), /Civic Pulse Emitter selected/);
     await firstSquares.first().click();
     assert.equal(await firstSquares.first().getAttribute("aria-pressed"), "false");
+    assert.equal(await page.evaluate(() => window.opensyndTest.held("operator-one")), null);
     assert.match(await page.locator("#status-message").innerText(), /automatic weapon choice/);
     await firstSquares.nth(1).click();
     assert.match(await page.locator("#status-message").innerText(), /integrity is already full/);
