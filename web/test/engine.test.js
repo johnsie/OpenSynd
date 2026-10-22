@@ -6,6 +6,7 @@ import test from "node:test";
 import {
   applyGates,
   createTileGrid,
+  formationTiles,
   isTerrainWalkable,
   isWalkable,
   findObjectiveAtPosition,
@@ -197,4 +198,15 @@ test("gates never make blocked terrain walkable", () => {
   const grid = [[{ x: 0, y: 0, walkable: false }]];
   applyGates(grid, [{ id: "g", position: { x: 0, y: 0 }, width: 1, height: 1 }], () => true);
   assert.equal(isWalkable(grid, 0, 0), false);
+});
+
+test("formation tiles are distinct, walkable and nearest first", () => {
+  const grid = createTileGrid(map);
+  const tiles = formationTiles(grid, { x: 1, y: 1 }, 4);
+  assert.equal(tiles.length, 4);
+  assert.deepEqual(tiles[0], { x: 1, y: 1 });
+  assert.equal(new Set(tiles.map((tile) => `${tile.x},${tile.y}`)).size, 4);
+  assert.ok(tiles.every((tile) => isWalkable(grid, tile.x, tile.y)));
+  assert.deepEqual(formationTiles(grid, { x: 2, y: 1 }, 3), []);
+  assert.equal(formationTiles(grid, { x: 0, y: 0 }, 100).length, 17);
 });

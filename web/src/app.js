@@ -4,6 +4,7 @@ import {
   createTileGrid,
   isTerrainWalkable,
   findPath,
+  formationTiles,
   findObjectiveAtPosition,
   gridToScreen,
   isWalkable,
@@ -223,6 +224,7 @@ async function loadSprites() {
 }
 
 const state = {
+  group: false,
   outcome: "active",
   missionSeconds: 0,
   modal: false,
@@ -292,6 +294,7 @@ async function loadGame() {
   // Reset only now that the new units exist, or the old squad would re-trigger the outcome.
   state.outcome = "active";
   state.missionSeconds = 0;
+  state.group = false;
   state.selectedId = mission.team[0].id;
   state.cursor = { ...mission.team[0].position };
   state.paused = false;
@@ -362,6 +365,7 @@ function applySaveSnapshot(snapshot) {
     objective.complete = objectivesById.get(objective.id).complete;
   }
   syncGates();
+  state.group = false;
   state.selectedId = snapshot.selectedId;
   state.cursor = { ...snapshot.cursor };
   state.paused = false;
@@ -658,7 +662,8 @@ function drawUnit(unit, viewport) {
   context.ellipse(0, size * 1.05, size * 0.9, size * 0.35, 0, 0, Math.PI * 2);
   context.fill();
 
-  if (unit.id === state.selectedId) {
+  const inGroup = state.group && unit.side === "team" && !unit.disabled;
+  if (unit.id === state.selectedId || inGroup) {
     context.strokeStyle = "#42d6d0";
     context.lineWidth = 2;
     context.beginPath();
@@ -899,27 +904,37 @@ function completeObjectivesAt(position) {
   return changed;
 }
 
+// The operator who can interact right now (any group member in group mode) and what with.
+function interactionCandidate() {
+  const candidates = state.group ? activeOperators() : [selectedUnit()];
+  for (const unit of candidates) {
+    if (!unit || unit.disabled || unit.path.length > 0) continue;
+    const objective = findObjectiveAtPosition(
+      state.objectives,
+      state.map.zones,
+      { x: Math.round(unit.position.x), y: Math.round(unit.position.y) },
+      "interact",
+    );
+    if (objective) return { unit, objective };
+  }
+  return null;
+}
+
 function nearbyInteraction() {
-  const unit = selectedUnit();
-  if (!unit || unit.disabled || unit.path.length > 0) return null;
-  return findObjectiveAtPosition(
-    state.objectives,
-    state.map.zones,
-    { x: Math.round(unit.position.x), y: Math.round(unit.position.y) },
-    "interact",
-  );
+  return interactionCandidate()?.objective ?? null;
 }
 
 function performInteraction() {
-  const objective = nearbyInteraction();
-  if (!objective) {
+  const candidate = interactionCandidate();
+  if (!candidate) {
     setStatus("No unrestored relay is within reach.");
     return;
   }
+  const { unit, objective } = candidate;
   objective.complete = true;
   syncGates();
   audio.play("objective");
-  if (selectedUnit()) addEffect(state.effects, "restore", { unitId: selectedUnit().id });
+  addEffect(state.effects, "restore", { unitId: unit.id });
   setStatus(`${objective.description} Commitment fulfilled.`);
   renderInterface();
 }
@@ -943,6 +958,7 @@ function selectUnit(id) {
     return;
   }
   state.selectedId = id;
+  state.group = false;
   const unit = selectedUnit();
   if (unit) state.cursor = { x: Math.round(unit.position.x), y: Math.round(unit.position.y) };
   setStatus(`${unit?.definition.name ?? "Operator"} selected.`);
@@ -951,13 +967,74 @@ function selectUnit(id) {
   canvas.focus();
 }
 
-function issueMove(destination) {
-  const unit = selectedUnit();
-  if (!unit || unit.side !== "team" || unit.disabled) return;
+function activeOperators() {
+  return state.units.filter((unit) => unit.side === "team" && !unit.disabled);
+}
+
+function selectAll() {
+  const operators = activeOperators();
+  if (operators.length === 0) {
+    setStatus("No operators are available.");
+    return;
+  }
+  state.group = true;
+  if (!operators.some((unit) => unit.id === state.selectedId)) state.selectedId = operators[0].id;
+  setStatus(`All ${operators.length} operators selected.`);
+  audio.play("select");
+  renderInterface();
+  canvas.focus();
+}
+
+// Order one operator along a route; returns the number of steps, or 0 if there is none.
+function orderMove(unit, destination) {
   unit.targetId = null;
   const start = { x: Math.round(unit.position.x), y: Math.round(unit.position.y) };
   const path = findPath(state.grid, start, destination);
-  if (path.length === 0) {
+  if (path.length === 0) return 0;
+  unit.position = start;
+  unit.path = path;
+  if (reduceMotion) {
+    for (const step of path) completeObjectivesAt(step);
+    unit.position = { ...destination };
+    unit.path = [];
+  }
+  return path.length;
+}
+
+// Spread a group over distinct tiles around the destination, nearest tile first.
+function groupDestinations(operators, destination) {
+  const free = formationTiles(state.grid, destination, operators.length);
+  const assignments = [];
+  for (const unit of [...operators].sort((left, right) => (left.id < right.id ? -1 : 1))) {
+    let best = 0;
+    for (let index = 1; index < free.length; index += 1) {
+      const distance = (tile) => Math.hypot(tile.x - unit.position.x, tile.y - unit.position.y);
+      if (distance(free[index]) < distance(free[best])) best = index;
+    }
+    if (free.length > 0) assignments.push([unit, free.splice(best, 1)[0]]);
+  }
+  return assignments;
+}
+
+function issueMove(destination) {
+  if (state.group) {
+    const assignments = groupDestinations(activeOperators(), destination);
+    const moving = assignments.filter(([unit, tile]) => orderMove(unit, tile) > 0);
+    if (moving.length === 0) {
+      setStatus("No safe route to that tile.");
+      return;
+    }
+    state.cursor = { ...destination };
+    audio.play("move");
+    setStatus(`${moving.length} operators moving.`);
+    renderInterface();
+    return;
+  }
+  const unit = selectedUnit();
+  if (!unit || unit.side !== "team" || unit.disabled) return;
+  const start = { x: Math.round(unit.position.x), y: Math.round(unit.position.y) };
+  const steps = orderMove(unit, destination);
+  if (steps === 0) {
     setStatus(
       start.x === destination.x && start.y === destination.y
         ? "Operator is already at that position."
@@ -965,53 +1042,59 @@ function issueMove(destination) {
     );
     return;
   }
-  unit.position = start;
-  unit.path = path;
   state.cursor = { ...destination };
   audio.play("move");
-  if (reduceMotion) {
-    let objectiveChanged = false;
-    for (const step of path) {
-      objectiveChanged = completeObjectivesAt(step) || objectiveChanged;
-    }
-    unit.position = { ...destination };
-    unit.path = [];
-    if (!objectiveChanged) {
-      setStatus(`Route completed: ${path.length} grid steps.`);
-    }
-  } else {
-    setStatus(`Route accepted: ${path.length} grid steps.`);
-  }
+  setStatus(reduceMotion ? `Route completed: ${steps} grid steps.` : `Route accepted: ${steps} grid steps.`);
   renderInterface();
 }
 
-function issueAttack(targetId) {
-  const attacker = selectedUnit();
-  const target = state.units.find((unit) => unit.id === targetId);
-  if (!attacker || attacker.disabled || !target || target.side !== "opposition") return;
-  if (target.disabled) {
-    setStatus("That watcher is already disabled.");
-    return;
-  }
+function lockPulse(attacker, target) {
+  const pulse = equipmentWithAction(attacker, "disable-pulse");
+  if (!pulse) return "no-tool";
   const distance = Math.hypot(
     attacker.position.x - target.position.x,
     attacker.position.y - target.position.y,
   );
-  const pulse = equipmentWithAction(attacker, "disable-pulse");
-  if (!pulse) {
-    setStatus("This operator has no disabling tool equipped.");
-    return;
-  }
-  const stats = combatStats(attacker);
-  if (distance > stats.range) {
+  if (distance > combatStats(attacker).range) {
     attacker.targetId = null;
-    setStatus(
-      `Target is out of range. Move within ${stats.range} tiles, then target again.`,
-    );
-    return;
+    return "out-of-range";
   }
   attacker.path = [];
   attacker.targetId = target.id;
+  return "locked";
+}
+
+function issueAttack(targetId) {
+  const target = state.units.find((unit) => unit.id === targetId);
+  if (!target || target.side !== "opposition") return;
+  if (target.disabled) {
+    setStatus("That watcher is already disabled.");
+    return;
+  }
+  if (state.group) {
+    const operators = activeOperators();
+    const locked = operators.filter((unit) => lockPulse(unit, target) === "locked");
+    if (locked.length === 0) {
+      setStatus("No selected operator is within pulse range. Move closer, then target again.");
+      return;
+    }
+    setStatus(`Pulse locked on ${target.definition.name} by ${locked.length} of ${operators.length} operators.`);
+    audio.play("pulse");
+    renderInterface();
+    canvas.focus();
+    return;
+  }
+  const attacker = selectedUnit();
+  if (!attacker || attacker.disabled) return;
+  const result = lockPulse(attacker, target);
+  if (result === "no-tool") {
+    setStatus("This operator has no disabling tool equipped.");
+    return;
+  }
+  if (result === "out-of-range") {
+    setStatus(`Target is out of range. Move within ${combatStats(attacker).range} tiles, then target again.`);
+    return;
+  }
   setStatus(`Disabling pulse locked on ${target.definition.name}.`);
   audio.play("pulse");
   renderInterface();
@@ -1108,8 +1191,12 @@ canvas.addEventListener("keydown", (event) => {
   } else if (action === "repair") {
     event.preventDefault();
     useRepairKit();
+  } else if (action === "selectAll") {
+    event.preventDefault();
+    selectAll();
   } else if (action === "deselect") {
     state.selectedId = null;
+    state.group = false;
     renderInterface();
   }
 });
@@ -1145,6 +1232,7 @@ for (const button of document.querySelectorAll("[data-cursor-x]")) {
   });
 }
 moveButton.addEventListener("click", () => issueMove(state.cursor));
+document.querySelector("#select-all-button").addEventListener("click", selectAll);
 actionButton.addEventListener("click", performInteraction);
 repairButton.addEventListener("click", useRepairKit);
 saveButton.addEventListener("click", saveLocally);
@@ -1204,13 +1292,19 @@ function renderInterface() {
   const completed = state.objectives.filter((objective) => objective.complete).length;
   objectiveCount.textContent = `${completed} / ${state.objectives.length}`;
 
+  const selectAllButton = document.querySelector("#select-all-button");
+  selectAllButton.textContent = `Select all (${bindingLabel(bindings.selectAll)})`;
+  selectAllButton.setAttribute("aria-pressed", String(state.group));
   const operators = state.units.filter((unit) => unit.side === "team");
   rosterElement.replaceChildren(
     ...operators.map((unit, index) => {
       const button = document.createElement("button");
       button.type = "button";
       button.disabled = unit.disabled;
-      button.setAttribute("aria-pressed", String(unit.id === state.selectedId));
+      button.setAttribute(
+        "aria-pressed",
+        String(unit.id === state.selectedId || (state.group && !unit.disabled)),
+      );
       button.addEventListener("click", () => selectUnit(unit.id));
       const pad = (value) => Math.round(value).toString().padStart(2, "0");
       const location = `${pad(unit.position.x)}:${pad(unit.position.y)}`;

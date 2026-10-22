@@ -113,3 +113,23 @@ export function findObjectiveAtPosition(objectives, zones, position, type) {
     return zone ? zoneContains(zone, position) : false;
   }) ?? null;
 }
+
+// Nearest walkable tiles to `centre`, in breadth-first order, so a group can
+// move to distinct tiles around one destination. The centre comes first.
+export function formationTiles(grid, centre, count) {
+  if (!isWalkable(grid, centre.x, centre.y) || count < 1) return [];
+  const directions = [{ x: 1, y: 0 }, { x: 0, y: 1 }, { x: -1, y: 0 }, { x: 0, y: -1 }];
+  const seen = new Set([`${centre.x},${centre.y}`]);
+  const tiles = [{ x: centre.x, y: centre.y }];
+  for (let index = 0; index < tiles.length && tiles.length < count; index += 1) {
+    for (const direction of directions) {
+      const next = { x: tiles[index].x + direction.x, y: tiles[index].y + direction.y };
+      const key = `${next.x},${next.y}`;
+      if (seen.has(key) || !isWalkable(grid, next.x, next.y)) continue;
+      seen.add(key);
+      tiles.push(next);
+      if (tiles.length === count) break;
+    }
+  }
+  return tiles;
+}

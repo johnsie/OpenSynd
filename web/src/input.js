@@ -8,6 +8,7 @@ export const ACTIONS = Object.freeze([
   "move",
   "interact",
   "repair",
+  "selectAll",
   "deselect",
   "pause",
 ]);
@@ -21,6 +22,7 @@ export const DEFAULT_BINDINGS = Object.freeze({
   move: "Enter",
   interact: "e",
   repair: "r",
+  selectAll: "a",
   deselect: "Escape",
   pause: "Space",
 });
@@ -62,6 +64,7 @@ export const ACTION_LABELS = Object.freeze({
   move: "Move selected operator",
   interact: "Interact",
   repair: "Use repair kit",
+  selectAll: "Select all operators",
   deselect: "Deselect",
   pause: "Pause / resume",
 });

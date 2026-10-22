@@ -74,6 +74,18 @@ for (const [name, type, executablePath] of targets) {
     await page.waitForTimeout(300);
     assert.match(await page.locator("#status-message").innerText(), /Route/);
 
+    // Select all operators with the A key, then check they all show as selected.
+    await page.keyboard.press("a");
+    const pressed = await page.locator("#roster button").evaluateAll((buttons) =>
+      buttons.map((button) => button.getAttribute("aria-pressed")),
+    );
+    assert.deepEqual(pressed, ["true", "true", "true", "true"]);
+    await page.click("#select-all-button");
+    assert.match(await page.locator("#status-message").innerText(), /All 4 operators selected/);
+    // A group move sends several operators at once.
+    await page.keyboard.press("ArrowRight");
+    await page.keyboard.press("Enter");
+    assert.match(await page.locator("#status-message").innerText(), /4 operators moving/);
     await page.keyboard.press("Space");
     assert.equal(await page.locator("#pause-button").getAttribute("aria-pressed"), "true");
 
