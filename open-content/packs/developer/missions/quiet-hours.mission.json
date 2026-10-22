@@ -219,5 +219,6 @@
       "required": true,
       "description": "Extract through the records compound."
     }
-  ]
+  ],
+  "trainingBudget": 9
 }

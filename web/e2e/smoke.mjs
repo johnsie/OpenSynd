@@ -97,6 +97,18 @@ for (const [name, type, executablePath] of targets) {
     assert.equal(await page.locator('[aria-label="Brain of Field Operator 3 4 of 5"]').count(), 1);
     assert.equal(await page.locator('[aria-label="Brain of Field Operator 1 4 of 5"]').count(), 0);
     await page.getByRole("button", { name: "Lower Brain for Field Operator 3" }).click();
+    // Training points are limited: with Legs at 5 there is nothing left for Brain until Legs comes down.
+    await page.getByRole("button", { name: "Raise Legs for Field Operator 1" }).click();
+    assert.equal(
+      await page.getByRole("button", { name: "Raise Brain for Field Operator 1" }).isDisabled(),
+      true,
+    );
+    assert.match(await page.locator(".roster-item").first().innerText(), /Training points 0 left/);
+    await page.getByRole("button", { name: "Lower Legs for Field Operator 1" }).click();
+    assert.equal(
+      await page.getByRole("button", { name: "Raise Brain for Field Operator 1" }).isDisabled(),
+      false,
+    );
     // Pick two operators with the roster checkboxes.
     await page.getByLabel("Include Field Operator 2 in the selection").check();
     await page.getByLabel("Include Field Operator 3 in the selection").check();
@@ -201,6 +213,14 @@ for (const [name, type, executablePath] of targets) {
     await page.locator("#game-canvas").focus();
     await page.keyboard.press("Space");
     assert.equal(await page.locator("#pause-button").getAttribute("aria-pressed"), "false");
+    // Leaving an operation in progress asks first; keeping playing changes nothing.
+    await page.evaluate(() => window.opensyndTest.markInProgress());
+    await page.click("#reset-button");
+    await page.waitForSelector("#confirm-dialog[open]");
+    assert.match(await page.locator("#confirm-text").innerText(), /restarts this operation/);
+    await page.click("#confirm-cancel");
+    await page.waitForFunction(() => !document.querySelector("#confirm-dialog").open);
+    assert.equal(await page.locator("#outcome-dialog[open]").count(), 0);
     // Failure screen: disable every operator and wait for the outcome dialog.
     await page.evaluate(() => window.opensyndTest.disableOperators());
     await page.waitForSelector("#outcome-dialog[open]");

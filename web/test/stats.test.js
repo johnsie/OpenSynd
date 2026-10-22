@@ -9,6 +9,8 @@ import {
   cooldownMultiplier,
   defaultLevels,
   isValidLevel,
+  levelPoints,
+  pointsLeft,
   effectiveLevels,
   focusDrainPerSecond,
   isValidMeter,
@@ -109,4 +111,24 @@ test("a strong, rested operator beats the baseline and a spent one falls to it o
   assert.equal(isValidMeter(0.5), true);
   assert.equal(isValidMeter(1.1), false);
   assert.equal(isValidMeter(NaN), false);
+});
+
+test("training points limit how far the bars can be raised together", () => {
+  const levels = defaultLevels();
+  assert.equal(levelPoints(levels), 6);
+  assert.equal(pointsLeft(levels, 8), 2);
+
+  let next = adjustLevel(levels, "speed", 1, 8);
+  next = adjustLevel(next, "speed", 1, 8);
+  assert.deepEqual(next, { speed: 5, brain: 3 });
+  assert.equal(pointsLeft(next, 8), 0);
+
+  // Out of points: Brain cannot go up until Legs comes down.
+  assert.equal(adjustLevel(next, "brain", 1, 8), next);
+  const traded = adjustLevel(adjustLevel(next, "speed", -1, 8), "brain", 1, 8);
+  assert.deepEqual(traded, { speed: 4, brain: 4 });
+
+  // Lowering always works, and no budget means no limit.
+  assert.deepEqual(adjustLevel({ speed: 5, brain: 5 }, "brain", -1, 8), { speed: 5, brain: 4 });
+  assert.deepEqual(adjustLevel({ speed: 5, brain: 4 }, "brain", 1), { speed: 5, brain: 5 });
 });

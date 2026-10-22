@@ -64,8 +64,10 @@ import {
   BAR_LABELS,
   LEVEL_MAX,
   LEVEL_MIN,
+  TRAINING_BUDGET_DEFAULT,
   adjustLevel,
   defaultLevels,
+  pointsLeft,
 } from "./stats.js";
 import { isSelected, prune, selectMany, selectOnly, toggle } from "./selection.js";
 import {
@@ -272,6 +274,7 @@ async function loadSprites() {
 }
 
 const state = {
+  trainingBudget: TRAINING_BUDGET_DEFAULT,
   progress: emptyProgress(),
   missionList: [],
   missionIndex: 0,
@@ -372,6 +375,7 @@ async function loadGame(index = state.missionIndex) {
   briefingText.textContent = mission.briefing;
   state.missionIndex = index;
   state.missionCount = pack.missions.length;
+  state.trainingBudget = mission.trainingBudget ?? TRAINING_BUDGET_DEFAULT;
   if (state.missionList.length !== pack.missions.length) {
     state.missionList = await Promise.all(
       pack.missions.map(async (path) => {
@@ -410,6 +414,28 @@ function describeMission(mission, map, index) {
   minimap.setAttribute("aria-label", `Minimap of ${map.name}. Click to move the view.`);
 }
 
+const confirmDialog = document.querySelector("#confirm-dialog");
+
+// An in-page confirmation (native confirm() blocks and cannot be styled or tested reliably).
+function confirmLeave(message) {
+  document.querySelector("#confirm-text").textContent = message;
+  return new Promise((resolve) => {
+    const finish = (answer) => {
+      confirmDialog.removeEventListener("close", onClose);
+      resolve(answer);
+    };
+    const onClose = () => finish(confirmDialog.returnValue === "accept");
+    confirmDialog.addEventListener("close", onClose);
+    confirmDialog.returnValue = "cancel";
+    confirmDialog.showModal();
+  });
+}
+
+// True once the player has put real time into an operation that is not over.
+function operationInProgress() {
+  return state.outcome === "active" && state.missionSeconds > 5;
+}
+
 const missionListElement = document.querySelector("#mission-list");
 
 // Operations the player may start: the first, plus any whose predecessor is complete.
@@ -433,8 +459,14 @@ function renderMissionList() {
         ? `${entry.objectives} objectives · ${entry.watchers} watchers`
         : `Complete ${state.missionList[index - 1].name} to unlock this operation.`;
       button.append(name, status, note);
-      button.addEventListener("click", () => {
+      button.addEventListener("click", async () => {
         if (index === state.missionIndex) return;
+        if (
+          operationInProgress() &&
+          !(await confirmLeave("Switching operations abandons the one in progress. Save first if you want to come back to it."))
+        ) {
+          return;
+        }
         loadGame(index).catch(showFatalError);
       });
       return button;
@@ -1618,7 +1650,8 @@ window.addEventListener("keydown", (event) => {
     togglePause();
   }
 });
-resetButton.addEventListener("click", () => {
+resetButton.addEventListener("click", async () => {
+  if (operationInProgress() && !(await confirmLeave("Resetting restarts this operation from the beginning."))) return;
   loadGame(state.missionIndex).catch(showFatalError);
 });
 for (const button of document.querySelectorAll("[data-cursor-x]")) {
@@ -1664,6 +1697,8 @@ document.querySelector("#reset-progress").addEventListener("click", () => {
   renderMissionList();
   setStatus("Completed operations cleared.");
 });
+document.querySelector("#confirm-accept").addEventListener("click", () => confirmDialog.close("accept"));
+document.querySelector("#confirm-cancel").addEventListener("click", () => confirmDialog.close("cancel"));
 document.querySelector("#begin-button").addEventListener("click", () => titleDialog.close());
 document.querySelector("#replay-button").addEventListener("click", () => {
   outcomeDialog.close();
@@ -1710,6 +1745,9 @@ if (new URLSearchParams(location.search).has("e2e")) {
       const unit = state.units.find((item) => item.id === id);
       unit.position = { x, y };
       unit.path = [];
+    },
+    markInProgress() {
+      state.missionSeconds = 30;
     },
     completeObjectives() {
       for (const objective of state.objectives) objective.complete = true;
@@ -1800,14 +1838,19 @@ function levelBar(unit, bar, label) {
 function applyLevelChange(targets, bar, delta, subject) {
   let changed = 0;
   for (const unit of targets) {
-    const next = adjustLevel(unit.levels, bar, delta);
+    const next = adjustLevel(unit.levels, bar, delta, state.trainingBudget);
     if (next !== unit.levels) {
       unit.levels = next;
       changed += 1;
     }
   }
   if (changed === 0) {
-    setStatus(`${BAR_LABELS[bar]} cannot go ${delta > 0 ? "higher" : "lower"}.`);
+    const outOfPoints = delta > 0 && targets.some((unit) => unit.levels[bar] < LEVEL_MAX);
+    setStatus(
+      outOfPoints
+        ? "No training points left: lower another bar first."
+        : `${BAR_LABELS[bar]} cannot go ${delta > 0 ? "higher" : "lower"}.`,
+    );
     return;
   }
   setStatus(`${subject}: ${BAR_LABELS[bar]} ${delta > 0 ? "raised" : "lowered"}.`);
@@ -1835,7 +1878,8 @@ function renderTraining() {
   document.querySelector("#training-heading").textContent = picked.length > 1
     ? `${picked.length} operators selected`
     : unit
-      ? `${unit.definition.name} ${state.units.filter((item) => item.side === "team").indexOf(unit) + 1}`
+      ? `${unit.definition.name} ${state.units.filter((item) => item.side === "team").indexOf(unit) + 1}` +
+        ` · ${pointsLeft(unit.levels, state.trainingBudget)} points left`
       : "Operative bars";
   container.replaceChildren(
     ...BARS.map((bar) => {
@@ -1855,7 +1899,7 @@ function renderTraining() {
       raise.type = "button";
       raise.textContent = "+";
       raise.setAttribute("aria-label", `Raise ${BAR_LABELS[bar]}`);
-      raise.disabled = !unit || level >= LEVEL_MAX;
+      raise.disabled = !unit || level >= LEVEL_MAX || pointsLeft(unit.levels, state.trainingBudget) <= 0;
       raise.addEventListener("click", () => adjustTraining(bar, 1));
       row.append(label, levelBar(unit, bar, BAR_LABELS[bar]), lower, raise);
       return row;
@@ -1940,7 +1984,8 @@ function renderInterface() {
         const raise = document.createElement("button");
         raise.type = "button";
         raise.textContent = "+";
-        raise.disabled = unit.disabled || unit.levels[bar] >= LEVEL_MAX;
+        raise.disabled =
+          unit.disabled || unit.levels[bar] >= LEVEL_MAX || pointsLeft(unit.levels, state.trainingBudget) <= 0;
         raise.setAttribute("aria-label", `Raise ${BAR_LABELS[bar]} for ${label}`);
         raise.addEventListener("click", () => adjustOperator(unit, bar, 1));
         group.append(BAR_LABELS[bar], levelBar(unit, bar, `${BAR_LABELS[bar]} of ${label}`), lower, raise);
@@ -1949,6 +1994,13 @@ function renderInterface() {
       const meters = document.createElement("div");
       meters.className = "meters";
       meters.append(makeMeter(unit, "stamina", label), makeMeter(unit, "focus", label));
+      const points = document.createElement("span");
+      points.className = "points";
+      const left = pointsLeft(unit.levels, state.trainingBudget);
+      points.textContent = `Training points ${left} left`;
+      points.title = `Each operator may spend ${state.trainingBudget} points across Legs and Brain.`;
+      points.classList.toggle("none", left <= 0);
+      bars.append(points);
       item.append(checkbox, button, bars, meters);
       return item;
     }),

@@ -458,3 +458,5 @@ details.panel-section > p, details.panel-section > div { margin-top: 0.5rem; }
 .mission-list button small { grid-column: 1 / -1; color: var(--muted); }
 .mission-list button[aria-pressed="true"] small { color: inherit; }
 .mission-list .state { font-size: 0.8rem; letter-spacing: 0.05em; }
+.roster-bars .points { flex-basis: 100%; font-size: 0.72rem; color: var(--muted); }
+.roster-bars .points.none { color: var(--amber); }

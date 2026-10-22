@@ -43,11 +43,26 @@ export function maxCooldownMultiplier() {
   return cooldownMultiplier({ brain: LEVEL_MIN });
 }
 
+// Each operator has a limited pool of training points: the sum of their bar levels
+// may not exceed the mission's budget, so raising one bar means lowering another.
+export const TRAINING_BUDGET_DEFAULT = 8;
+
+export function levelPoints(levels) {
+  return BARS.reduce((sum, bar) => sum + (levels?.[bar] ?? LEVEL_DEFAULT), 0);
+}
+
+export function pointsLeft(levels, budget = TRAINING_BUDGET_DEFAULT) {
+  return budget - levelPoints(levels);
+}
+
 // Returns the new levels, or the same object if the change is not allowed.
-export function adjustLevel(levels, bar, delta) {
+// Raising a bar needs a free training point; lowering always works.
+export function adjustLevel(levels, bar, delta, budget = Infinity) {
   if (!BARS.includes(bar)) return levels;
   const next = clampLevel(levels[bar] + delta);
-  return next === levels[bar] ? levels : { ...levels, [bar]: next };
+  if (next === levels[bar]) return levels;
+  if (next > levels[bar] && levelPoints(levels) + (next - levels[bar]) > budget) return levels;
+  return { ...levels, [bar]: next };
 }
 
 // Fatigue. Two meters run from 1 (fresh) to 0 (spent) and each takes levels off

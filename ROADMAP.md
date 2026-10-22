@@ -104,6 +104,12 @@ operation is remembered in this browser (`web/src/progress.js`, a tolerant,
 tested record), unlocks the next, and an Operations button in the header reopens
 the list at any time; a Settings button clears completed operations.
 
+Training now costs points: each mission sets a per-operator budget
+(`trainingBudget`: 8 for First Light, 9 for Quiet Hours) that the Legs and Brain
+levels may not exceed in total, so raising one bar means lowering the other.
+Leaving an operation in progress (switching operations or resetting) asks for
+confirmation first.
+
 Fatigue takes levels off the bars. Each operator has two meters: Stamina, which
 walking drains (60 seconds from fresh to empty at Legs level 3, longer with
 stronger legs) and standing still recovers slowly (70 seconds from empty), and
