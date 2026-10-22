@@ -72,6 +72,12 @@ that pins fixed-step counts for every leg. Units are drawn from 8-direction
 sprite sheets rendered from CC0 Quaternius models, all registered as
 `quarantined` until a named reviewer approves them.
 
+A dependency-free style check (`tools/check_style.py`) enforces SPDX headers,
+final newlines, no tabs or trailing whitespace, a line-length limit, and no
+stray `console.log` in game or test code. It runs in CI alongside syntax
+checks; a full linter would add transitive dependencies that each need a
+provenance record, so it remains an open decision.
+
 ## Non-negotiable principles
 
 1. **No original game data.** Development, tests, demos, releases, screenshots,

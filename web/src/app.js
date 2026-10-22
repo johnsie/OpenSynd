@@ -1108,7 +1108,8 @@ function renderInterface() {
       button.disabled = unit.disabled;
       button.setAttribute("aria-pressed", String(unit.id === state.selectedId));
       button.addEventListener("click", () => selectUnit(unit.id));
-      const location = `${Math.round(unit.position.x).toString().padStart(2, "0")}:${Math.round(unit.position.y).toString().padStart(2, "0")}`;
+      const pad = (value) => Math.round(value).toString().padStart(2, "0");
+      const location = `${pad(unit.position.x)}:${pad(unit.position.y)}`;
       const glyph = document.createElement("span");
       glyph.className = "operator-glyph";
       glyph.setAttribute("aria-hidden", "true");
@@ -1158,8 +1159,12 @@ function renderInterface() {
   repairLabel.textContent = repairKit
     ? `Use repair kit (${repairKit.charges ?? "∞"})`
     : "No repair kit";
+  let orders = " · awaiting order";
+  if (unit?.path.length) orders = ` · moving · ${unit.path.length} steps remain`;
+  else if (unit?.targetId) orders = " · pulse target locked";
   selectedReadout.textContent = unit
-    ? `${unit.definition.name} · integrity ${unit.health}/${unit.definition.stats.vitality} · at ${Math.round(unit.position.x)}, ${Math.round(unit.position.y)}${unit.path.length ? ` · moving · ${unit.path.length} steps remain` : unit.targetId ? " · pulse target locked" : " · awaiting order"}`
+    ? `${unit.definition.name} · integrity ${unit.health}/${unit.definition.stats.vitality}` +
+      ` · at ${Math.round(unit.position.x)}, ${Math.round(unit.position.y)}${orders}`
     : "No operator selected.";
 }
 

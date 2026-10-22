@@ -19,6 +19,9 @@ jobs:
     - name: Validate source licenses
       run: python3 tools/check_source_licenses.py
 
+    - name: Check source style
+      run: python3 tools/check_style.py
+
     - name: Validate npm dependency registry
       run: python3 tools/check_dependencies.py
 

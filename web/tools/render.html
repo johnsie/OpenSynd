@@ -100,7 +100,8 @@
     place(box(unit * 1.5, unit * 0.06, unit * 0.06, glow(kit.glow)), offset(chest, 0, unit * 0.38, unit * 0.62), "Spine2");
     for (const side of [-1, 1]) {
       place(box(unit * 0.55, unit * 0.1, unit * 0.45, rig), offset(neck, side * unit * 0.95, -unit * 0.1, 0), "Spine2");
-      place(box(unit * 0.55, unit * 0.04, unit * 0.05, glow(kit.glow)), offset(neck, side * unit * 0.95, -unit * 0.03, unit * 0.2), "Spine2");
+      const edge = box(unit * 0.55, unit * 0.04, unit * 0.05, glow(kit.glow));
+      place(edge, offset(neck, side * unit * 0.95, -unit * 0.03, unit * 0.2), "Spine2");
       // Popped collar flaps with a neon edge.
       const flap = box(unit * 0.35, unit * 0.55, unit * 0.08, coat);
       flap.rotateZ(side * 0.3);

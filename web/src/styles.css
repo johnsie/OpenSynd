@@ -225,7 +225,13 @@ canvas:focus-visible { box-shadow: inset 0 0 0 2px var(--public); }
 .count-badge { padding: 0.3rem 0.45rem; color: var(--public); border: 1px solid var(--line); font: 0.72rem ui-monospace, monospace; }
 
 .objective-list { list-style: none; padding: 0; margin: 0.8rem 0 0; display: grid; gap: 0.6rem; }
-.objective-list li { position: relative; padding: 0.65rem 0.65rem 0.65rem 2.1rem; color: var(--muted); background: var(--panel); border-left: 2px solid var(--amber); }
+.objective-list li {
+  position: relative;
+  padding: 0.65rem 0.65rem 0.65rem 2.1rem;
+  color: var(--muted);
+  background: var(--panel);
+  border-left: 2px solid var(--amber);
+}
 .objective-list li::before { content: "◇"; position: absolute; left: 0.65rem; color: var(--amber); }
 .objective-list li.complete { color: var(--ink); border-color: var(--restored); }
 .objective-list li.complete::before { content: "◆"; color: var(--restored); }
