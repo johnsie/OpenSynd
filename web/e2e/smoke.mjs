@@ -199,15 +199,15 @@ for (const [name, type, executablePath] of targets) {
     await page.click("#settings-button");
     await page.locator("#setting-muted").check();
     await page.getByRole("button", { name: /^Interact:/ }).click();
-    await page.keyboard.press("f");
-    assert.match(await page.locator("#binding-message").innerText(), /now F/);
+    await page.keyboard.press("g");
+    assert.match(await page.locator("#binding-message").innerText(), /now G/);
     await page.getByRole("button", { name: /^Use repair kit:/ }).click();
-    await page.keyboard.press("f");
+    await page.keyboard.press("g");
     assert.match(await page.locator("#binding-message").innerText(), /already used/);
     await page.click("#close-settings");
     const stored = await page.evaluate(() => localStorage.getItem("opensynd.settings.v1"));
     assert.match(stored, /"muted": true/);
-    assert.match(stored, /"interact": "f"/);
+    assert.match(stored, /"interact": "g"/);
 
     // The game was paused above; resume (Space only works with the canvas focused).
     await page.locator("#game-canvas").focus();
@@ -231,8 +231,24 @@ for (const [name, type, executablePath] of targets) {
     await page.waitForFunction(() =>
       document.querySelector("#status-message").textContent.includes("Local map established"),
     );
+    // Loot: a disabled watcher's weapon can be taken by an operator standing next to it.
+    assert.match(await page.locator(".roster-item").first().innerText(), /Items 2\/8/);
+    await page.evaluate(() => {
+      window.opensyndTest.disableUnit("watcher-one");
+      window.opensyndTest.placeNear("operator-one", "watcher-one");
+    });
+    await page.waitForFunction(() => !document.querySelector("#loot-button").disabled);
+    assert.match(await page.locator("#loot-label").innerText(), /Loot 1 item/);
+    await page.locator("#game-canvas").focus();
+    await page.keyboard.press("f");
+    assert.match(await page.locator("#status-message").innerText(), /looted Heavy Pulse Emitter/);
+    assert.match(await page.locator("#achievement-toast").innerText(), /Scavenger/);
+    assert.match(await page.locator(".roster-item").first().innerText(), /Items 3\/8/);
+    assert.match(await page.locator(".roster-item").first().innerText(), /Heavy Pulse Emitter/);
+    // The watcher has nothing left to loot, so the button waits for another body.
+    await page.waitForFunction(() => document.querySelector("#loot-button").disabled);
     // A watcher notices an operator who walks into its sight and raises the alert.
-    await page.evaluate(() => window.opensyndTest.placeUnit("operator-one", 28, 28));
+    await page.evaluate(() => window.opensyndTest.placeNear("operator-one", "watcher-two", 0, 7));
     await page.waitForFunction(
       () => document.querySelector("#status-message").textContent.includes("spotted"),
     );

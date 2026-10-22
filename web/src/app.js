@@ -43,6 +43,7 @@ import {
   serializeCampaign,
 } from "./campaign.js";
 import { newStats, newlyEarned } from "./achievements.js";
+import { energyItem, findLoot, freeSlots, inLootReach, lootBody, lootableBody, useEnergyItem } from "./inventory.js";
 import {
   advanceCombat,
   combatStats,
@@ -938,6 +939,17 @@ function drawUnit(unit, viewport) {
   context.fillRect(-size, size * 1.5, size * 2, 3);
   context.fillStyle = unit.disabled ? "#58646a" : healthRatio > 0.35 ? "#79d59b" : "#ff6b62";
   context.fillRect(-size, size * 1.5, size * 2 * healthRatio, 3);
+  if (lootableBody(unit)) {
+    // A marker over a body that still carries gear an operator can loot.
+    context.fillStyle = "#e1b35a";
+    context.beginPath();
+    context.moveTo(0, -size * 2.3);
+    context.lineTo(size * 0.45, -size * 1.85);
+    context.lineTo(0, -size * 1.4);
+    context.lineTo(-size * 0.45, -size * 1.85);
+    context.closePath();
+    context.fill();
+  }
   if (unit.disabled) {
     context.strokeStyle = "#ff6b62";
     context.lineWidth = 2;
@@ -1116,6 +1128,15 @@ function simulationStep(deltaSeconds) {
       unit.tired = false;
     }
   }
+  for (const unit of state.units) {
+    if (!unit.lootTargetId || unit.path.length > 0) continue;
+    const body = state.units.find((item) => item.id === unit.lootTargetId);
+    unit.lootTargetId = null;
+    if (body && lootableBody(body) && inLootReach(unit, body)) {
+      lootNow(unit, body);
+      interfaceChanged = true;
+    }
+  }
   for (const arrival of arrivals) {
     interfaceChanged = true;
     interfaceChanged = completeObjectivesAt(arrival.position) || interfaceChanged;
@@ -1217,7 +1238,8 @@ function checkAchievements() {
   for (const achievement of newlyEarned(state.opStats, state.campaign.achievements)) {
     state.campaign = earnAchievement(state.campaign, achievement);
     state.earnedThisRun.push(achievement);
-    setStatus(`Achievement: ${achievement.name} (+${achievement.reward} funds). ${achievement.description}`);
+    document.querySelector("#achievement-toast").textContent =
+      `Achievement: ${achievement.name} (+${achievement.reward} funds). ${achievement.description}`;
     audio.play("objective");
     persistCampaign();
   }
@@ -1452,6 +1474,7 @@ function selectAll() {
 // Order one operator along a route; returns the number of steps, or 0 if there is none.
 function orderMove(unit, destination) {
   unit.targetId = null;
+  unit.lootTargetId = null;
   const start = { x: Math.round(unit.position.x), y: Math.round(unit.position.y) };
   const path = findPath(state.grid, start, destination);
   if (path.length === 0) return 0;
@@ -1533,7 +1556,8 @@ function issueAttack(targetId) {
   const target = state.units.find((unit) => unit.id === targetId);
   if (!target || target.side !== "opposition") return;
   if (target.disabled) {
-    setStatus("That watcher is already disabled.");
+    if (lootableBody(target)) goLoot(target);
+    else setStatus("That watcher is already disabled and has nothing left to loot.");
     return;
   }
   const squad = selectedOperators();
@@ -1585,6 +1609,86 @@ function useRepairKit() {
   setStatus(`${kit.definition.name} restored ${restored} integrity.`);
   audio.play("repair");
   addEffect(state.effects, "repair", { unitId: unit.id });
+  renderInterface();
+}
+
+// The selected operator who most needs a stimulant and has one to use.
+function useStim() {
+  const candidates = selectedOperators().filter((unit) => energyItem(unit));
+  if (candidates.length === 0) {
+    setStatus("No stim injector is available.");
+    return;
+  }
+  candidates.sort((left, right) => Math.min(left.stamina, left.focus) - Math.min(right.stamina, right.focus));
+  for (const unit of candidates) {
+    const item = useEnergyItem(unit);
+    if (!item) continue;
+    setStatus(`${unit.definition.name} used a ${item.definition.name}: stamina and focus restored.`);
+    audio.play("repair");
+    addEffect(state.effects, "repair", { unitId: unit.id });
+    updateMeters();
+    renderInterface();
+    return;
+  }
+  setStatus("Stamina and focus are already full.");
+}
+
+// Take a disabled watcher's gear with one of the selected operators.
+function lootNow(operator, body) {
+  const { taken, left } = lootBody(operator, body);
+  operator.lootTargetId = null;
+  if (taken.length === 0) {
+    setStatus(`${operator.definition.name} has no free slots (${SLOTS_PER_OPERATIVE} items maximum).`);
+    return;
+  }
+  state.opStats.itemsLooted += taken.length;
+  const names = taken.map((item) => item.definition.name).join(", ");
+  setStatus(
+    `${operator.definition.name} looted ${names}.` +
+      (left > 0 ? ` ${left} item${left > 1 ? "s" : ""} left behind: no free slots.` : ""),
+  );
+  audio.play("objective");
+  addEffect(state.effects, "restore", { unitId: operator.id });
+  checkAchievements();
+  renderInterface();
+}
+
+function lootAction() {
+  const found = findLoot(selectedOperators(), state.units);
+  if (found) {
+    lootNow(found.operator, found.body);
+    return;
+  }
+  const bodies = state.units.filter(lootableBody);
+  setStatus(
+    bodies.length > 0
+      ? "Walk a selected operator next to a disabled watcher, or click the body, to loot it."
+      : "There is nothing to loot yet. Disable a watcher that carries gear.",
+  );
+}
+
+// Send the nearest selected operator to a body; they loot it on arrival.
+function goLoot(body) {
+  const squad = selectedOperators();
+  if (squad.length === 0) return;
+  const nearest = squad.reduce((best, unit) =>
+    Math.hypot(unit.position.x - body.position.x, unit.position.y - body.position.y) <
+    Math.hypot(best.position.x - body.position.x, best.position.y - body.position.y)
+      ? unit
+      : best,
+  );
+  if (inLootReach(nearest, body)) {
+    lootNow(nearest, body);
+    return;
+  }
+  const steps = orderMove(nearest, { x: Math.round(body.position.x), y: Math.round(body.position.y) });
+  if (steps === 0) {
+    setStatus("No safe route to that body.");
+    return;
+  }
+  nearest.lootTargetId = body.id;
+  audio.play("move");
+  setStatus(`${nearest.definition.name} is going to loot ${body.definition.name}.`);
   renderInterface();
 }
 
@@ -1734,6 +1838,12 @@ canvas.addEventListener("keydown", (event) => {
   } else if (action === "repair") {
     event.preventDefault();
     useRepairKit();
+  } else if (action === "useStim") {
+    event.preventDefault();
+    useStim();
+  } else if (action === "loot") {
+    event.preventDefault();
+    lootAction();
   } else if (action === "selectAll") {
     event.preventDefault();
     selectAll();
@@ -1785,6 +1895,8 @@ moveButton.addEventListener("click", () => issueMove(state.cursor));
 document.querySelector("#select-all-button").addEventListener("click", selectAll);
 actionButton.addEventListener("click", performInteraction);
 repairButton.addEventListener("click", useRepairKit);
+document.querySelector("#stim-button").addEventListener("click", useStim);
+document.querySelector("#loot-button").addEventListener("click", lootAction);
 saveButton.addEventListener("click", saveLocally);
 loadButton.addEventListener("click", loadLocally);
 exportButton.addEventListener("click", exportSave);
@@ -1853,6 +1965,21 @@ if (new URLSearchParams(location.search).has("e2e")) {
     },
     setStamina(id, value) {
       state.units.find((item) => item.id === id).stamina = value;
+    },
+    disableUnit(id) {
+      const unit = state.units.find((item) => item.id === id);
+      unit.health = 0;
+      unit.disabled = true;
+      unit.path = [];
+      unit.targetId = null;
+      renderInterface();
+    },
+    placeNear(id, otherId, dx = 1, dy = 0) {
+      const other = state.units.find((item) => item.id === otherId);
+      const unit = state.units.find((item) => item.id === id);
+      unit.position = { x: other.position.x + dx, y: other.position.y + dy };
+      unit.path = [];
+      renderInterface();
     },
     placeUnit(id, x, y) {
       const unit = state.units.find((item) => item.id === id);
@@ -2111,6 +2238,11 @@ function renderInterface() {
       points.className = "points";
       const left = pointsLeft(unit.levels, state.trainingBudget);
       points.textContent = `Training points ${left} left`;
+      const carried = document.createElement("span");
+      carried.className = "points";
+      const names = unit.equipment.map((item) => item.definition.name).join(", ") || "none";
+      carried.textContent = `Items ${unit.equipment.length}/${SLOTS_PER_OPERATIVE}: ${names}`;
+      bars.append(carried);
       points.title = `Each operator may spend ${state.trainingBudget} points across Legs and Brain.`;
       points.classList.toggle("none", left <= 0);
       bars.append(points);
@@ -2153,6 +2285,20 @@ function renderInterface() {
     repairKit.charges !== 0,
   );
   repairButton.disabled = !canRepair;
+  const stimButton = document.querySelector("#stim-button");
+  const stimmers = selectedOperators().filter((candidate) => energyItem(candidate));
+  stimButton.disabled = stimmers.length === 0;
+  const doses = stimmers.reduce((sum, candidate) => sum + (energyItem(candidate).charges ?? 1), 0);
+  document.querySelector("#stim-label").textContent = stimmers.length ? `Use stim (${doses})` : "No stim";
+  const lootButton = document.querySelector("#loot-button");
+  const nearBody = findLoot(selectedOperators(), state.units);
+  const bodies = state.units.filter(lootableBody).length;
+  lootButton.disabled = !nearBody && bodies === 0;
+  document.querySelector("#loot-label").textContent = nearBody
+    ? `Loot ${nearBody.body.equipment.length} item${nearBody.body.equipment.length > 1 ? "s" : ""}`
+    : bodies > 0
+      ? "Loot (walk closer)"
+      : "Loot body";
   repairLabel.textContent = repairKit
     ? `Use repair kit (${repairKit.charges ?? "∞"})`
     : "No repair kit";
