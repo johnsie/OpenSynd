@@ -52,7 +52,8 @@ uniform with a crimson beret). The operatives wear
 one shared khaki trench coat over a dark uniform; only skin tone differs. The
 coat, visor, beret, belt, shoulder boards, boots and cybernetic left forearm
 are generated parts attached to the skeleton in
-`tools/render.html`, not imported art. They carry no agency or organisation
+`tools/render.html`, not imported art. The walk is the CC0 clip with arm, torso
+and head swing damped toward the idle pose for a stiff, serious march. They carry no agency or organisation
 marks. Regenerate with:
 
 ```

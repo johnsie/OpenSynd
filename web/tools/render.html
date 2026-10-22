@@ -200,6 +200,11 @@
     }
     const mixer = new THREE.AnimationMixer(root);
     if (kit) addUniformKit(root, scene, kit, mixer, clips.idle);
+    // The idle pose (arms down, head level) is the reference for a stiffer, more serious gait.
+    const restPose = {};
+    root.traverse((node) => {
+      if (node.isBone) restPose[node.name] = node.quaternion.clone();
+    });
 
     const frameCounts = Object.fromEntries(names.map((name) => [name, animations[name].frames]));
     const maxFrames = Math.max(...Object.values(frameCounts));
@@ -220,6 +225,11 @@
         pivot.rotation.y = (direction * Math.PI * 2) / DIRECTIONS;
         for (let frame = 0; frame < frames; frame += 1) {
           mixer.setTime((seconds * frame) / frames);
+          // Blend selected bones toward the rest pose: 0 keeps the clip, 1 freezes the bone.
+          for (const [boneName, amount] of Object.entries(animations[name].posture ?? {})) {
+            const bone = root.getObjectByName(boneName);
+            if (bone && restPose[boneName]) bone.quaternion.slerp(restPose[boneName], amount);
+          }
           renderer.render(scene, camera);
           atlasContext.drawImage(
             renderer.domElement,

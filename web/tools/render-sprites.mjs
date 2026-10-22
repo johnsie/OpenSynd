@@ -63,7 +63,25 @@ const watcherSkins = {
 };
 const humanAnimations = {
   idle: { pick: "Idle", frames: 4, window: 2 },
-  walk: { pick: "Walk", frames: 8, playback: 0.78 },
+  // A serious march: quick cadence, little arm swing, a steady head and level shoulders.
+  walk: {
+    pick: "Walk",
+    frames: 8,
+    playback: 0.66,
+    posture: {
+      LeftShoulder: 0.6,
+      RightShoulder: 0.6,
+      LeftArm: 0.7,
+      RightArm: 0.7,
+      LeftForeArm: 0.45,
+      RightForeArm: 0.45,
+      Spine: 0.5,
+      Spine1: 0.5,
+      Spine2: 0.5,
+      Neck: 0.8,
+      Head: 0.8,
+    },
+  },
 };
 const humanJob = (name, skin, kit) => ({
   name,
