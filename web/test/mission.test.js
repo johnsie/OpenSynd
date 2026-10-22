@@ -195,3 +195,29 @@ test("mission outcome is active, success or failure", () => {
   objectives[0].complete = true;
   assert.equal(missionOutcome(objectives, [operator(true), drone]), "success");
 });
+
+test("an undefended squad loses to the watchers at a repeatable step", async () => {
+  const runs = [];
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const units = await loadSquad();
+    const byId = Object.fromEntries(units.map((unit) => [unit.id, unit]));
+    // Everyone stands inside both watchers' range and never fights back.
+    const centre = { x: 8, y: 6 };
+    for (const [index, unit] of units.entries()) {
+      unit.position = { x: centre.x + (index % 3) * 0.5, y: centre.y + Math.floor(index / 3) * 0.5 };
+    }
+    const objectives = [{ id: "a", required: true, complete: false }];
+
+    let step = 0;
+    while (missionOutcome(objectives, units) === "active" && step < 20000) {
+      step += 1;
+      advanceCombat(units, FIXED_STEP_SECONDS);
+    }
+    runs.push({ step, outcome: missionOutcome(objectives, units), watchers: byId["watcher-one"].health });
+  }
+
+  assert.deepEqual(runs[0], runs[1]);
+  assert.equal(runs[0].outcome, "failure");
+  // Golden value at 30 Hz: about 39.7 seconds of sustained fire, no watcher touched.
+  assert.deepEqual(runs[0], { step: 1190, outcome: "failure", watchers: 45 });
+});

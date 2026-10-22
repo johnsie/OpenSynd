@@ -249,8 +249,6 @@ async function readJson(path) {
 
 async function loadGame() {
   await loadSprites();
-  state.outcome = "active";
-  state.missionSeconds = 0;
   const pack = await readJson("content/pack.json");
   const missionPath = pack.missions[0];
   const mission = await readJson(`content/${missionPath}`);
@@ -291,6 +289,9 @@ async function loadGame() {
       disabled: false,
     };
   });
+  // Reset only now that the new units exist, or the old squad would re-trigger the outcome.
+  state.outcome = "active";
+  state.missionSeconds = 0;
   state.selectedId = mission.team[0].id;
   state.cursor = { ...mission.team[0].position };
   state.paused = false;
@@ -1165,6 +1166,24 @@ document.querySelector("#replay-button").addEventListener("click", () => {
 document.querySelector("#outcome-close").addEventListener("click", () => outcomeDialog.close());
 titleDialog.showModal();
 state.modal = true;
+// Browser tests add ?e2e to reach states that take too long to play out.
+if (new URLSearchParams(location.search).has("e2e")) {
+  window.opensyndTest = {
+    disableOperators() {
+      for (const unit of state.units) {
+        if (unit.side === "team") {
+          unit.health = 0;
+          unit.disabled = true;
+          unit.path = [];
+          unit.targetId = null;
+        }
+      }
+    },
+    completeObjectives() {
+      for (const objective of state.objectives) objective.complete = true;
+    },
+  };
+}
 document.querySelector("#about-button").addEventListener("click", () => aboutDialog.showModal());
 document.querySelector("#close-about").addEventListener("click", () => aboutDialog.close());
 

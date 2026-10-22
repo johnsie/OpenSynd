@@ -60,7 +60,7 @@ for (const [name, type, executablePath] of targets) {
     const page = await browser.newPage();
     const errors = [];
     page.on("pageerror", (error) => errors.push(error.message));
-    await page.goto(url);
+    await page.goto(`${url}?e2e`);
     await page.waitForSelector("#roster button");
     assert.match(await page.locator("#title-dialog").innerText(), /First Light/);
     await page.click("#begin-button");
@@ -90,11 +90,30 @@ for (const [name, type, executablePath] of targets) {
     assert.match(stored, /"muted": true/);
     assert.match(stored, /"interact": "f"/);
 
+    // The game was paused above; resume (Space only works with the canvas focused).
+    await page.locator("#game-canvas").focus();
+    await page.keyboard.press("Space");
+    assert.equal(await page.locator("#pause-button").getAttribute("aria-pressed"), "false");
+    // Failure screen: disable every operator and wait for the outcome dialog.
+    await page.evaluate(() => window.opensyndTest.disableOperators());
+    await page.waitForSelector("#outcome-dialog[open]");
+    assert.match(await page.locator("#outcome-heading").innerText(), /gone dark/);
+    // Replaying restarts the mission with everyone active again.
+    await page.click("#replay-button");
+    await page.waitForFunction(() => !document.querySelector("#outcome-dialog").open);
+    await page.waitForFunction(() =>
+      document.querySelector("#status-message").textContent.includes("Local map established"),
+    );
+    // Success screen: complete every objective.
+    await page.evaluate(() => window.opensyndTest.completeObjectives());
+    await page.waitForSelector("#outcome-dialog[open]");
+    assert.match(await page.locator("#outcome-heading").innerText(), /back on the mesh/);
+
     assert.deepEqual(errors, []);
     console.log(`ok ${name}`);
   } catch (error) {
     failed = true;
-    console.error(`FAIL ${name}: ${error.message}`);
+    console.error(`FAIL ${name}: ${error.message}\n${error.stack.split("\n").filter((l) => l.includes("smoke.mjs")).join("\n")}`);
   } finally {
     await browser.close();
   }
