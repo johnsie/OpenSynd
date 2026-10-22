@@ -42,6 +42,7 @@
               <button id="pause-button" type="button" aria-pressed="false">
                 <span id="pause-label">Pause</span> <kbd>Space</kbd>
               </button>
+              <button id="operations-button" type="button">Operations</button>
               <button id="reset-button" type="button">Reset operation</button>
             </div>
           </div>
@@ -187,6 +188,7 @@
         </li>
         <li>Space pauses. Keys can be changed in Settings.</li>
       </ul>
+      <div id="mission-list" class="mission-list" role="group" aria-label="Operations"></div>
       <button id="begin-button" type="button" class="primary">Begin operation</button>
     </dialog>
 
@@ -232,6 +234,7 @@
           <button id="reset-bindings" type="button">Restore default keys</button>
           <p id="binding-message" class="hint" role="status"></p>
         </fieldset>
+        <button id="reset-progress" type="button">Reset completed operations</button>
         <p class="hint">Settings are stored only in this browser. Motion changes apply on reload.</p>
       </form>
     </dialog>

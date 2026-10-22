@@ -446,3 +446,15 @@ details.panel-section > p, details.panel-section > div { margin-top: 0.5rem; }
   background: transparent;
   border: 1px dashed var(--amber);
 }
+.mission-list { display: grid; gap: 0.4rem; margin: 1rem 0; }
+.mission-list button {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.2rem 1rem;
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+}
+.mission-list button small { grid-column: 1 / -1; color: var(--muted); }
+.mission-list button[aria-pressed="true"] small { color: inherit; }
+.mission-list .state { font-size: 0.8rem; letter-spacing: 0.05em; }

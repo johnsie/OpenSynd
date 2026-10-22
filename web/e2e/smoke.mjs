@@ -63,6 +63,12 @@ for (const [name, type, executablePath] of targets) {
     await page.goto(`${url}?e2e`);
     await page.waitForSelector(".roster-select");
     assert.match(await page.locator("#title-dialog").innerText(), /First Light/);
+    // A fresh browser has only the first operation open.
+    const missionButtons = page.locator("#mission-list button");
+    assert.equal(await missionButtons.count(), 2);
+    assert.equal(await missionButtons.nth(0).isDisabled(), false);
+    assert.equal(await missionButtons.nth(1).isDisabled(), true);
+    assert.match(await missionButtons.nth(1).innerText(), /LOCKED/);
     await page.click("#begin-button");
     // Watchers patrol: their positions change on their own.
     const before = await page.evaluate(() => window.opensyndTest.positions());
@@ -214,6 +220,9 @@ for (const [name, type, executablePath] of targets) {
     await page.evaluate(() => window.opensyndTest.completeObjectives());
     await page.waitForSelector("#outcome-dialog[open]");
     assert.match(await page.locator("#outcome-heading").innerText(), /back on the mesh/);
+    // Finishing an operation is remembered in this browser.
+    const remembered = await page.evaluate(() => localStorage.getItem("opensynd.progress.v1"));
+    assert.match(remembered, /developer\.restore-relay/);
     // The first mission leads to the next one, which has its own name, story and map.
     assert.equal(await page.locator("#next-button").isVisible(), true);
     await page.click("#next-button");
@@ -231,6 +240,20 @@ for (const [name, type, executablePath] of targets) {
     await page.waitForSelector("#outcome-dialog[open]");
     assert.match(await page.locator("#outcome-heading").innerText(), /audit trail/i);
     assert.equal(await page.locator("#next-button").isVisible(), false);
+    // The operations list shows what is done and what is open, and reopens from the header.
+    await page.click("#outcome-close");
+    await page.click("#operations-button");
+    await page.waitForSelector("#title-dialog[open]");
+    assert.match(await missionButtons.nth(0).innerText(), /COMPLETED/);
+    assert.equal(await missionButtons.nth(1).isDisabled(), false);
+    await missionButtons.nth(0).click();
+    await page.waitForFunction(() => document.querySelector("#title-heading").textContent.includes("First Light"));
+    await missionButtons.nth(1).click();
+    await page.waitForFunction(() => document.querySelector("#title-heading").textContent.includes("Quiet Hours"));
+    await page.click("#begin-button");
+    await page.waitForFunction(() =>
+      document.querySelector("#status-message").textContent.includes("Local map established"),
+    );
 
 
     assert.deepEqual(errors, []);

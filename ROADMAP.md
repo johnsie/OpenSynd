@@ -98,6 +98,11 @@ patrolling watchers). Missions carry their own story, success headline and
 debrief text; the success screen offers "Next operation", each operation has its
 own local save slot, and `tools/generate_maps.py` builds and verifies both maps.
 Each mission has a golden full-playthrough test.
+The title screen is an operations list: each operation shows its objective and
+watcher counts and whether it is available, completed or locked. Finishing an
+operation is remembered in this browser (`web/src/progress.js`, a tolerant,
+tested record), unlocks the next, and an Operations button in the header reopens
+the list at any time; a Settings button clears completed operations.
 
 Fatigue takes levels off the bars. Each operator has two meters: Stamina, which
 walking drains (60 seconds from fresh to empty at Legs level 3, longer with

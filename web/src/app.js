@@ -68,6 +68,15 @@ import {
   defaultLevels,
 } from "./stats.js";
 import { isSelected, prune, selectMany, selectOnly, toggle } from "./selection.js";
+import {
+  PROGRESS_KEY,
+  emptyProgress,
+  isCompleted,
+  isUnlocked,
+  markCompleted,
+  parseProgress,
+  serializeProgress,
+} from "./progress.js";
 import { createMusic } from "./music.js";
 import { createAudio } from "./audio.js";
 import { SETTINGS_KEY, parseSettings, prefersReducedMotion, serializeSettings } from "./settings.js";
@@ -263,6 +272,8 @@ async function loadSprites() {
 }
 
 const state = {
+  progress: emptyProgress(),
+  missionList: [],
   missionIndex: 0,
   missionCount: 1,
   edge: { x: 0, y: 0 },
@@ -361,7 +372,22 @@ async function loadGame(index = state.missionIndex) {
   briefingText.textContent = mission.briefing;
   state.missionIndex = index;
   state.missionCount = pack.missions.length;
+  if (state.missionList.length !== pack.missions.length) {
+    state.missionList = await Promise.all(
+      pack.missions.map(async (path) => {
+        const entry = await readJson(`content/${path}`);
+        return {
+          id: entry.id,
+          name: entry.name,
+          objectives: entry.objectives.length,
+          watchers: entry.opponents.length,
+        };
+      }),
+    );
+  }
+  state.progress = parseProgress(readStored(PROGRESS_KEY));
   describeMission(mission, map, index);
+  renderMissionList();
   setStatus("Local map established. Select a relay route.");
   updateLoadButton();
   renderInterface();
@@ -376,12 +402,52 @@ function describeMission(mission, map, index) {
   const number = String(index + 1).padStart(2, "0");
   document.querySelector("#operation-eyebrow").textContent = `OPERATION ${number}`;
   document.querySelector("#operation-title").textContent = mission.name;
-  document.querySelector("#brief-title").textContent = mission.title ?? mission.name;
+  document.querySelector("#brief-title").textContent = mission.name;
   document.querySelector("#title-heading").textContent = `OpenSynd: ${mission.name}`;
   document.querySelector("#title-story").textContent = mission.story ?? mission.briefing;
   document.title = `OpenSynd — ${mission.name}`;
   canvas.setAttribute("aria-label", `Isometric view of ${map.name}. Select an operator and choose a destination.`);
   minimap.setAttribute("aria-label", `Minimap of ${map.name}. Click to move the view.`);
+}
+
+const missionListElement = document.querySelector("#mission-list");
+
+// Operations the player may start: the first, plus any whose predecessor is complete.
+function renderMissionList() {
+  const ids = state.missionList.map((entry) => entry.id);
+  missionListElement.replaceChildren(
+    ...state.missionList.map((entry, index) => {
+      const unlocked = isUnlocked(state.progress, ids, index);
+      const done = isCompleted(state.progress, entry.id);
+      const button = document.createElement("button");
+      button.type = "button";
+      button.disabled = !unlocked;
+      button.setAttribute("aria-pressed", String(index === state.missionIndex));
+      const name = document.createElement("span");
+      name.textContent = `Operation ${String(index + 1).padStart(2, "0")} · ${entry.name}`;
+      const status = document.createElement("span");
+      status.className = "state";
+      status.textContent = done ? "COMPLETED" : unlocked ? "AVAILABLE" : "LOCKED";
+      const note = document.createElement("small");
+      note.textContent = unlocked
+        ? `${entry.objectives} objectives · ${entry.watchers} watchers`
+        : `Complete ${state.missionList[index - 1].name} to unlock this operation.`;
+      button.append(name, status, note);
+      button.addEventListener("click", () => {
+        if (index === state.missionIndex) return;
+        loadGame(index).catch(showFatalError);
+      });
+      return button;
+    }),
+  );
+}
+
+function saveProgress() {
+  try {
+    localStorage.setItem(PROGRESS_KEY, serializeProgress(state.progress));
+  } catch {
+    // Progress still counts for this session when storage is unavailable.
+  }
 }
 
 function equipmentWithAction(unit, action) {
@@ -1056,6 +1122,11 @@ function checkOutcome() {
   const outcome = missionOutcome(state.objectives, state.units);
   if (outcome === "active") return;
   state.outcome = outcome;
+  if (outcome === "success") {
+    state.progress = markCompleted(state.progress, state.mission.id);
+    saveProgress();
+    renderMissionList();
+  }
   showOutcome(outcome);
 }
 
@@ -1579,6 +1650,20 @@ for (const dialog of [titleDialog, outcomeDialog]) {
     canvas.focus();
   });
 }
+document.querySelector("#operations-button").addEventListener("click", () => {
+  state.modal = true;
+  titleDialog.showModal();
+});
+document.querySelector("#reset-progress").addEventListener("click", () => {
+  state.progress = emptyProgress();
+  try {
+    localStorage.removeItem(PROGRESS_KEY);
+  } catch {
+    // Nothing stored, nothing to clear.
+  }
+  renderMissionList();
+  setStatus("Completed operations cleared.");
+});
 document.querySelector("#begin-button").addEventListener("click", () => titleDialog.close());
 document.querySelector("#replay-button").addEventListener("click", () => {
   outcomeDialog.close();

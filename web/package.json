@@ -7,7 +7,7 @@
   "scripts": {
     "build": "node build.mjs",
     "e2e": "node build.mjs && node e2e/smoke.mjs",
-    "test": "node --check src/app.js && node --check src/engine.js && node --check src/save.js && node --check src/simulation.js && node --check src/settings.js && node --check src/audio.js && node --check src/input.js && node --check src/effects.js && node --check src/mission.js && node --check src/music.js && node --check src/camera.js && node --check src/stats.js && node --check src/selection.js && node --test test/*.test.js"
+    "test": "node --check src/app.js && node --check src/engine.js && node --check src/save.js && node --check src/simulation.js && node --check src/settings.js && node --check src/audio.js && node --check src/input.js && node --check src/effects.js && node --check src/mission.js && node --check src/music.js && node --check src/camera.js && node --check src/stats.js && node --check src/selection.js && node --check src/progress.js && node --test test/*.test.js"
   },
   "devDependencies": {
     "playwright-core": "^1.64.1",
