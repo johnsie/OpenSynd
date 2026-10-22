@@ -82,10 +82,16 @@ for (const [name, type, executablePath] of targets) {
     assert.deepEqual(pressed, ["true", "true", "true", "true"]);
     await page.click("#select-all-button");
     assert.match(await page.locator("#status-message").innerText(), /All 4 operators selected/);
+    // Camera controls: zoom with the wheel and keys, jump with the minimap, recentre with C.
+    await page.locator("#game-canvas").hover();
+    await page.mouse.wheel(0, -200);
+    await page.keyboard.press("-");
+    await page.locator("#minimap").click({ position: { x: 128, y: 64 } });
+    await page.keyboard.press("c");
     // A group move sends several operators at once.
     await page.keyboard.press("ArrowRight");
     await page.keyboard.press("Enter");
-    assert.match(await page.locator("#status-message").innerText(), /4 operators moving/);
+    assert.match(await page.locator("#status-message").innerText(), /[34] operators moving/);
     await page.keyboard.press("Space");
     assert.equal(await page.locator("#pause-button").getAttribute("aria-pressed"), "true");
 

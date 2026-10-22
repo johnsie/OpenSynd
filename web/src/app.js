@@ -11,6 +11,21 @@ import {
   screenToGrid,
   zoneContains,
 } from "./engine.js";
+import {
+  centreOn,
+  clampCamera,
+  createCamera,
+  followTarget,
+  forEachVisibleTile,
+  miniProject,
+  miniSize,
+  miniUnproject,
+  nearEdge,
+  panByScreen,
+  viewportFor as cameraViewport,
+  visibleBounds,
+  zoomCamera,
+} from "./camera.js";
 import { advanceCombat, advanceUnits, consumeFixedSteps } from "./simulation.js";
 import {
   LEGACY_LOCAL_SAVE_KEYS,
@@ -225,6 +240,8 @@ async function loadSprites() {
 }
 
 const state = {
+  camera: createCamera({ x: 0, y: 0 }),
+  miniTerrain: null,
   group: false,
   outcome: "active",
   missionSeconds: 0,
@@ -296,6 +313,8 @@ async function loadGame() {
   state.outcome = "active";
   state.missionSeconds = 0;
   state.group = false;
+  state.camera = createCamera(mission.team[0].position);
+  buildMiniTerrain();
   state.selectedId = mission.team[0].id;
   state.cursor = { ...mission.team[0].position };
   state.paused = false;
@@ -474,29 +493,21 @@ function resizeCanvas() {
 }
 
 function viewportFor(size) {
-  const map = state.map;
-  const base = map.cellSize;
-  const horizontalExtent = (map.dimensions.width + map.dimensions.height) * (base.width / 2);
-  const verticalExtent = (map.dimensions.width + map.dimensions.height) * (base.height / 2);
-  const scale = Math.min(1, (size.width - 28) / horizontalExtent, (size.height - 105) / verticalExtent);
-  const cellSize = { width: base.width * scale, height: base.height * scale };
-  const centerOffset =
-    ((map.dimensions.width - map.dimensions.height) * cellSize.width) / 4;
-  return {
-    cellSize,
-    origin: { x: size.width / 2 - centerOffset, y: 54 },
-    width: size.width,
-    height: size.height,
-  };
+  return cameraViewport(state.camera, state.map, size);
 }
 
+const shadeCache = new Map();
+
 function shade(hex, amount) {
-  const value = Number.parseInt(hex.slice(1), 16);
-  const clamp = (part) => Math.max(0, Math.min(255, part));
-  const red = clamp((value >> 16) + amount);
-  const green = clamp(((value >> 8) & 255) + amount);
-  const blue = clamp((value & 255) + amount);
-  return `rgb(${red}, ${green}, ${blue})`;
+  const key = `${hex}${amount}`;
+  let result = shadeCache.get(key);
+  if (result === undefined) {
+    const value = Number.parseInt(hex.slice(1), 16);
+    const clamp = (part) => Math.max(0, Math.min(255, part));
+    result = `rgb(${clamp((value >> 16) + amount)}, ${clamp(((value >> 8) & 255) + amount)}, ${clamp((value & 255) + amount)})`;
+    shadeCache.set(key, result);
+  }
+  return result;
 }
 
 function diamond(center, cellSize) {
@@ -733,9 +744,7 @@ function draw() {
   state.viewport = viewport;
   context.clearRect(0, 0, size.width, size.height);
 
-  const tiles = state.grid.flat().filter(Boolean);
-  tiles.sort((left, right) => left.x + left.y - (right.x + right.y));
-  for (const tile of tiles) drawTile(tile, viewport);
+  forEachVisibleTile(state.grid, visibleBounds(viewport, state.map), (tile) => drawTile(tile, viewport));
   drawZones(viewport);
   drawCursor(viewport);
 
@@ -744,7 +753,92 @@ function draw() {
   );
   for (const unit of units) drawUnit(unit, viewport);
   drawEffects(viewport);
+  drawMinimap(viewport);
 }
+
+const minimap = document.querySelector("#minimap");
+const miniContext = minimap.getContext("2d");
+const MINI_COLORS = {
+  "runoff-channel": "#1f5568",
+  "signal-grate": "#7a96a0",
+  "utility-building": "#12171b",
+  "service-fence": "#6b7a84",
+  "relay-pad": "#e1b35a",
+};
+
+// Terrain never changes, so it is painted once per mission and reused each frame.
+function buildMiniTerrain() {
+  const { width, height } = miniSize(state.map);
+  const canvasElement = document.createElement("canvas");
+  canvasElement.width = width;
+  canvasElement.height = height;
+  const painter = canvasElement.getContext("2d");
+  for (const row of state.grid) {
+    for (const tile of row) {
+      if (!tile) continue;
+      const point = miniProject(tile, state.map);
+      painter.fillStyle = MINI_COLORS[tile.surface] ?? "#3a4750";
+      painter.fillRect(Math.round(point.x - 1), Math.floor(point.y), 2, 1);
+    }
+  }
+  state.miniTerrain = canvasElement;
+  minimap.width = width;
+  minimap.height = height;
+}
+
+function drawMinimap(viewport) {
+  if (!state.miniTerrain) return;
+  miniContext.clearRect(0, 0, minimap.width, minimap.height);
+  miniContext.drawImage(state.miniTerrain, 0, 0);
+  for (const gate of state.map.objects ?? []) {
+    const open = state.grid[gate.position.y][gate.position.x].walkable;
+    const point = miniProject(gate.position, state.map);
+    miniContext.fillStyle = open ? "#79d59b" : "#ff6b62";
+    miniContext.fillRect(Math.round(point.x - 2), Math.floor(point.y) - 1, 4, 3);
+  }
+  for (const zone of state.map.zones) {
+    const objective = state.objectives.find((item) => item.targetZone === zone.id);
+    if (zone.kind === "interaction" || zone.kind === "exit") {
+      const point = miniProject(zone.position, state.map);
+      miniContext.strokeStyle = objective?.complete ? "#79d59b" : "#e1b35a";
+      miniContext.strokeRect(Math.round(point.x - 3), Math.floor(point.y) - 2, 6, 4);
+    }
+  }
+  for (const unit of state.units) {
+    if (unit.disabled) continue;
+    const point = miniProject(unit.position, state.map);
+    miniContext.fillStyle = unit.side === "team" ? "#42d6d0" : "#ff6b62";
+    miniContext.fillRect(Math.round(point.x) - 1, Math.round(point.y) - 1, 3, 3);
+  }
+  // The area the main view currently shows.
+  const corners = [
+    { x: 0, y: 0 },
+    { x: viewport.width, y: 0 },
+    { x: viewport.width, y: viewport.height },
+    { x: 0, y: viewport.height },
+  ].map((corner) => miniProject(screenToGrid(corner, viewport.cellSize, viewport.origin), state.map));
+  miniContext.strokeStyle = "rgba(255, 255, 255, .85)";
+  miniContext.lineWidth = 1;
+  miniContext.beginPath();
+  corners.forEach((point, index) => {
+    if (index === 0) miniContext.moveTo(point.x, point.y);
+    else miniContext.lineTo(point.x, point.y);
+  });
+  miniContext.closePath();
+  miniContext.stroke();
+}
+
+minimap.addEventListener("click", (event) => {
+  if (!state.map) return;
+  const bounds = minimap.getBoundingClientRect();
+  const point = {
+    x: ((event.clientX - bounds.left) / bounds.width) * minimap.width,
+    y: ((event.clientY - bounds.top) / bounds.height) * minimap.height,
+  };
+  centreOn(state.camera, miniUnproject(point, state.map));
+  clampCamera(state.camera, state.map);
+  canvas.focus();
+});
 
 function unitScreenPoint(unit, viewport) {
   const tile = state.grid[Math.round(unit.position.y)]?.[Math.round(unit.position.x)];
@@ -946,6 +1040,7 @@ function performInteraction() {
 function frame(time) {
   const delta = Math.min((time - state.lastFrame) / 1000, 0.05);
   state.lastFrame = time;
+  if (state.map) followTarget(state.camera, delta, reduceMotion);
   update(delta);
   draw();
   requestAnimationFrame(frame);
@@ -964,7 +1059,10 @@ function selectUnit(id) {
   state.selectedId = id;
   state.group = false;
   const unit = selectedUnit();
-  if (unit) state.cursor = { x: Math.round(unit.position.x), y: Math.round(unit.position.y) };
+  if (unit) {
+    state.cursor = { x: Math.round(unit.position.x), y: Math.round(unit.position.y) };
+    centreOn(state.camera, unit.position);
+  }
   setStatus(`${unit?.definition.name ?? "Operator"} selected.`);
   audio.play("select");
   renderInterface();
@@ -983,6 +1081,10 @@ function selectAll() {
   }
   state.group = true;
   if (!operators.some((unit) => unit.id === state.selectedId)) state.selectedId = operators[0].id;
+  centreOn(state.camera, {
+    x: operators.reduce((sum, unit) => sum + unit.position.x, 0) / operators.length,
+    y: operators.reduce((sum, unit) => sum + unit.position.y, 0) / operators.length,
+  });
   setStatus(`All ${operators.length} operators selected.`);
   audio.play("select");
   renderInterface();
@@ -1147,7 +1249,57 @@ function hitUnit(position) {
   return closest;
 }
 
+// Scroll the view when the cursor nears the edge of the canvas.
+function followCursor() {
+  if (state.viewport && nearEdge(state.cursor, state.viewport)) centreOn(state.camera, state.cursor);
+}
+
+function centreOnSelection() {
+  const unit = selectedUnit();
+  if (unit) centreOn(state.camera, unit.position);
+}
+
+// Dragging the map pans it; a drag must not also count as a click.
+const drag = { pointerId: null, lastX: 0, lastY: 0, moved: 0, active: false, suppressClick: false };
+canvas.addEventListener("pointerdown", (event) => {
+  if (!state.map || event.button !== 0) return;
+  Object.assign(drag, { pointerId: event.pointerId, lastX: event.clientX, lastY: event.clientY, moved: 0, active: false });
+});
+canvas.addEventListener("pointermove", (event) => {
+  if (drag.pointerId !== event.pointerId || !state.viewport) return;
+  const deltaX = event.clientX - drag.lastX;
+  const deltaY = event.clientY - drag.lastY;
+  drag.lastX = event.clientX;
+  drag.lastY = event.clientY;
+  drag.moved += Math.abs(deltaX) + Math.abs(deltaY);
+  if (!drag.active) {
+    if (drag.moved < 8) return;
+    drag.active = true;
+    canvas.setPointerCapture(event.pointerId);
+  }
+  drag.suppressClick = true;
+  panByScreen(state.camera, deltaX, deltaY, state.viewport, state.map);
+});
+for (const type of ["pointerup", "pointercancel"]) {
+  canvas.addEventListener(type, (event) => {
+    if (drag.pointerId === event.pointerId) Object.assign(drag, { pointerId: null, active: false });
+  });
+}
+canvas.addEventListener(
+  "wheel",
+  (event) => {
+    if (!state.map) return;
+    event.preventDefault();
+    zoomCamera(state.camera, event.deltaY < 0 ? 1.12 : 1 / 1.12);
+  },
+  { passive: false },
+);
+
 canvas.addEventListener("click", (event) => {
+  if (drag.suppressClick) {
+    drag.suppressClick = false;
+    return;
+  }
   if (!state.map || !state.viewport) return;
   const bounds = canvas.getBoundingClientRect();
   const position = { x: event.clientX - bounds.left, y: event.clientY - bounds.top };
@@ -1186,6 +1338,13 @@ canvas.addEventListener("keydown", (event) => {
       0,
       Math.min(state.map.dimensions.height - 1, state.cursor.y + moves[action].y),
     );
+    followCursor();
+  } else if (action === "centre") {
+    event.preventDefault();
+    centreOnSelection();
+  } else if (action === "zoomIn" || action === "zoomOut") {
+    event.preventDefault();
+    zoomCamera(state.camera, action === "zoomIn" ? 1.15 : 1 / 1.15);
   } else if (action === "move") {
     event.preventDefault();
     issueMove(state.cursor);
@@ -1233,6 +1392,7 @@ for (const button of document.querySelectorAll("[data-cursor-x]")) {
       0,
       Math.min(state.map.dimensions.height - 1, state.cursor.y + Number(button.dataset.cursorY)),
     );
+    followCursor();
   });
 }
 moveButton.addEventListener("click", () => issueMove(state.cursor));

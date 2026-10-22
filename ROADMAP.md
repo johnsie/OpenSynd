@@ -72,6 +72,15 @@ that pins fixed-step counts for every leg. Units are drawn from 8-direction
 sprite sheets rendered from a CC0 Quaternius model, all registered as
 `quarantined` until a named reviewer approves them.
 
+Level 1 ("First Light") now runs on a 128 × 128 tile map (16,384 tiles) generated
+deterministically by `tools/generate_signal_yard.py`: a grid of city blocks, a
+runoff channel crossed by four bridges, three plaza intersections for the
+relays and gate panel, and a fenced compound with one gate. The generator
+verifies that every objective is reachable and that the exit is sealed until
+the gate opens. The browser client has a scrolling, zoomable camera that draws
+only visible tiles (about 60 fps fully zoomed out), drag-to-pan, a minimap, and
+remappable camera keys.
+
 The prototype also has an original generative score (`web/src/music.js`): a
 four-chord loop in A minor with bass, pad and a delayed arpeggio, synthesized in
 the browser with its own on/off and volume settings, so no audio asset needs

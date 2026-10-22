@@ -54,6 +54,12 @@
               tabindex="0"
               aria-label="Isometric view of Signal Yard. Select an operator and choose a destination."
             ></canvas>
+            <canvas
+              id="minimap"
+              width="256"
+              height="128"
+              aria-label="Minimap of Signal Yard. Click to move the view."
+            ></canvas>
             <div class="scanlines" aria-hidden="true"></div>
             <div class="map-key" aria-hidden="true">
               <span><i class="key-public"></i> Public network</span>
@@ -173,6 +179,7 @@
         <li>Stand on a relay or panel and press E to restore it.</li>
         <li>Disable watchers with the pulse emitter from close range; keep your team intact.</li>
         <li>Press A, or use Select all, to order the whole team at once.</li>
+        <li>The yard is large: drag to pan, scroll or +/- to zoom, C to centre on your team, or click the minimap.</li>
         <li>Space pauses. Keys can be changed in Settings.</li>
       </ul>
       <button id="begin-button" type="button" class="primary">Begin operation</button>

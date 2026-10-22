@@ -9,6 +9,9 @@ export const ACTIONS = Object.freeze([
   "interact",
   "repair",
   "selectAll",
+  "centre",
+  "zoomIn",
+  "zoomOut",
   "deselect",
   "pause",
 ]);
@@ -23,6 +26,9 @@ export const DEFAULT_BINDINGS = Object.freeze({
   interact: "e",
   repair: "r",
   selectAll: "a",
+  centre: "c",
+  zoomIn: "=",
+  zoomOut: "-",
   deselect: "Escape",
   pause: "Space",
 });
@@ -65,6 +71,9 @@ export const ACTION_LABELS = Object.freeze({
   interact: "Interact",
   repair: "Use repair kit",
   selectAll: "Select all operators",
+  centre: "Centre view on selection",
+  zoomIn: "Zoom in",
+  zoomOut: "Zoom out",
   deselect: "Deselect",
   pause: "Pause / resume",
 });

@@ -180,12 +180,12 @@ test("a closed gate blocks the route to the exit until its control opens", async
     await readFile(new URL("../content/maps/signal-yard.map.json", import.meta.url), "utf8"),
   );
   const grid = createTileGrid(map);
-  const start = { x: 12, y: 9 };
-  const exit = { x: 14, y: 9 };
+  const start = { x: 116, y: 110 };
+  const exit = { x: 122, y: 110 };
 
   applyGates(grid, map.objects, () => false);
   assert.deepEqual(findPath(grid, start, exit), []);
-  assert.equal(isTerrainWalkable(grid, 13, 9), true);
+  assert.equal(isTerrainWalkable(grid, 117, 110), true);
 
   applyGates(grid, map.objects, () => true);
   assert.ok(findPath(grid, start, exit).length > 0);

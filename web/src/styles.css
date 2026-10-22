@@ -309,3 +309,17 @@ dialog a { color: var(--public); }
 .outcome-stats dt { color: var(--muted); }
 .outcome-stats dd { margin: 0; }
 dialog .primary { margin-right: 0.5rem; }
+#minimap {
+  position: absolute;
+  right: 0.75rem;
+  bottom: 0.75rem;
+  width: 256px;
+  height: 128px;
+  min-height: 0;
+  border: 1px solid var(--public);
+  background: rgba(3, 8, 10, 0.82);
+  cursor: pointer;
+}
+@media (max-width: 700px) {
+  #minimap { width: 160px; height: 80px; }
+}

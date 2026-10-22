@@ -73,22 +73,22 @@ test("a full First Light playthrough completes in order and is repeatable", asyn
     const steps = [];
 
     // The exit is sealed until the control panel is used.
-    assert.equal(isWalkable(game.grid, 13, 9), false);
-    assert.deepEqual(findPath(game.grid, { x: 12, y: 9 }, { x: 14, y: 9 }), []);
+    assert.equal(isWalkable(game.grid, 117, 110), false);
+    assert.deepEqual(findPath(game.grid, { x: 116, y: 110 }, { x: 122, y: 110 }), []);
 
-    steps.push(walk(game, { x: 3, y: 3 }));
+    steps.push(walk(game, { x: 27, y: 51 }));
     assert.ok(interact(game));
-    steps.push(walk(game, { x: 11, y: 7 }));
+    steps.push(walk(game, { x: 99, y: 75 }));
     assert.ok(interact(game));
     assert.equal(missionComplete(game.objectives), false);
 
-    steps.push(walk(game, { x: 11, y: 10 }));
+    steps.push(walk(game, { x: 99, y: 99 }));
     assert.equal(gateOpen(game.objectives, game.map.objects[0]), false);
     assert.ok(interact(game));
     assert.equal(gateOpen(game.objectives, game.map.objects[0]), true);
-    assert.equal(isWalkable(game.grid, 13, 9), true);
+    assert.equal(isWalkable(game.grid, 117, 110), true);
 
-    steps.push(walk(game, { x: 14, y: 9 }));
+    steps.push(walk(game, { x: 122, y: 110 }));
     assert.equal(missionComplete(game.objectives), true);
     runs.push({ log: game.log, steps });
   }
@@ -97,7 +97,7 @@ test("a full First Light playthrough completes in order and is repeatable", asyn
   assert.deepEqual(runs[0], runs[1]);
   // Golden values: fixed-step counts for each leg at 30 Hz. A change here means
   // routes or movement speed changed and replays need regenerating.
-  assert.deepEqual(runs[0].steps, [39, 115, 29, 39]);
+  assert.deepEqual(runs[0].steps, [343, 915, 229, 324]);
 });
 
 test("extraction stays blocked until every other required objective is complete", () => {
@@ -149,8 +149,8 @@ test("a squad fight against a watcher resolves identically on every run", async 
     const units = await loadSquad();
     const byId = Object.fromEntries(units.map((unit) => [unit.id, unit]));
     // Two operators close to within pulse range of the first watcher and engage it.
-    byId["operator-one"].position = { x: 4, y: 3 };
-    byId["operator-two"].position = { x: 4, y: 4 };
+    byId["operator-one"].position = { x: 26, y: 40 };
+    byId["operator-two"].position = { x: 26, y: 41 };
     byId["operator-one"].targetId = "watcher-one";
     byId["operator-two"].targetId = "watcher-one";
 
@@ -171,7 +171,7 @@ test("a squad fight against a watcher resolves identically on every run", async 
   assert.equal(run.events.at(-1).type, "disabled");
   assert.equal(run.events.at(-1).unitId, "watcher-one");
   // Golden values at 30 Hz: the watcher falls on step 24 after six pulses and
-  // lands one retaliation hit; the far watcher is untouched.
+  // lands one retaliation hit; the other watchers are untouched.
   assert.equal(run.events.at(-1).step, 24);
   assert.equal(run.events.length, 6);
   assert.deepEqual(run.health, {
@@ -181,6 +181,10 @@ test("a squad fight against a watcher resolves identically on every run", async 
     "operator-four": 100,
     "watcher-one": 0,
     "watcher-two": 45,
+    "watcher-three": 45,
+    "watcher-four": 45,
+    "watcher-five": 45,
+    "watcher-six": 45,
   });
 });
 
@@ -202,7 +206,7 @@ test("an undefended squad loses to the watchers at a repeatable step", async () 
     const units = await loadSquad();
     const byId = Object.fromEntries(units.map((unit) => [unit.id, unit]));
     // Everyone stands inside both watchers' range and never fights back.
-    const centre = { x: 8, y: 6 };
+    const centre = { x: 27, y: 40 };
     for (const [index, unit] of units.entries()) {
       unit.position = { x: centre.x + (index % 3) * 0.5, y: centre.y + Math.floor(index / 3) * 0.5 };
     }
@@ -218,6 +222,6 @@ test("an undefended squad loses to the watchers at a repeatable step", async () 
 
   assert.deepEqual(runs[0], runs[1]);
   assert.equal(runs[0].outcome, "failure");
-  // Golden value at 30 Hz: about 39.7 seconds of sustained fire, no watcher touched.
-  assert.deepEqual(runs[0], { step: 1190, outcome: "failure", watchers: 45 });
+  // Golden value at 30 Hz: about 13 seconds of sustained fire, no watcher touched.
+  assert.deepEqual(runs[0], { step: 397, outcome: "failure", watchers: 45 });
 });
