@@ -11,6 +11,7 @@ art-source/opensynd-skins/. Requires Pillow.
 from __future__ import annotations
 
 import colorsys
+import json
 from pathlib import Path
 
 from PIL import Image
@@ -67,6 +68,16 @@ def main() -> None:
     for name, look in OPERATIVES.items():
         recolour(source, look).save(OUTPUT / f"{name}.png")
         print(f"wrote {name}")
+    # Colours for the 3D coat, beret and boots added by render-sprites.mjs.
+    looks = {
+        name: {
+            "coat": look["coat"],
+            "beret": [int(c * 0.35) for c in look["accent"]],
+            "boots": [38, 36, 31],
+        }
+        for name, look in OPERATIVES.items()
+    }
+    (OUTPUT / "looks.json").write_text(json.dumps(looks, indent=2) + "\n")
 
 
 if __name__ == "__main__":

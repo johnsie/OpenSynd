@@ -33,6 +33,7 @@ const server = createServer(async (request, response) => {
 });
 await new Promise((done) => server.listen(0, "127.0.0.1", done));
 
+const looks = JSON.parse(await readFile(join(root, "art-source/opensynd-skins/looks.json"), "utf8"));
 const skins = ["operative-one", "operative-two", "operative-three", "operative-four"];
 const animations = {
   idle: { url: `${source}/Animations/idle.fbx`, frames: 4 },
@@ -58,6 +59,7 @@ try {
         model: `${source}/Model/characterMedium.fbx`,
         skin: `/art-source/opensynd-skins/${skin}.png`,
         animations,
+        look: looks[skin],
       },
     );
     await writeFile(join(output, `${skin}.png`), Buffer.from(result.png.split(",")[1], "base64"));

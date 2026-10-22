@@ -60,3 +60,7 @@ vector shapes.
 Operative skins are recoloured from the Kenney suit skin by `tools/make-skins.py`
 (needs Pillow): beige coats with a per-operative accent colour, hair and skin
 tone. They carry no agency or organisation marks.
+
+`tools/render.html` also builds a belted trench-coat skirt, collar, beret and
+military boots as rigid parts attached to the skeleton, and shrinks the head
+slightly for adult proportions. These are generated, not imported.

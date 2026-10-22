@@ -593,7 +593,7 @@ function drawSprite(unit, sheet, viewport, size) {
   const direction = unit.facing ?? 0;
   const image = sprites.images.get(sheet.file);
   const source = sheet.frameSize;
-  const drawSize = viewport.cellSize.height * 2.9;
+  const drawSize = viewport.cellSize.height * 3.3;
   context.save();
   if (unit.disabled) context.globalAlpha = 0.55;
   // The figure's feet sit about 84% down its frame; anchor them to the tile.

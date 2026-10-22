@@ -16,7 +16,79 @@
   const load = (url) => loader.loadAsync(url);
   const textureLoader = new THREE.TextureLoader();
 
-  window.renderSheet = async ({ model, skin, animations }) => {
+  // Rigid trench coat skirt, belt, collar, beret and boots, built in the bind pose
+  // and attached to bones so they follow every animation.
+  function addOutfit(root, look, rgb, bone) {
+    root.updateMatrixWorld(true);
+    const at = (name) => bone(name).getWorldPosition(new THREE.Vector3());
+    const hips = at("Hips");
+    const leftUp = at("LeftUpLeg");
+    const rightUp = at("RightUpLeg");
+    const hipWidth = leftUp.distanceTo(rightUp);
+    const knee = at("LeftLeg");
+    const ankle = at("LeftFoot");
+    const toes = at("LeftToes");
+    const head = at("Head");
+    const headEnd = at("Head_end");
+    const headHeight = head.distanceTo(headEnd);
+
+    const coat = new THREE.MeshStandardMaterial({ color: rgb(look.coat), roughness: 0.9, side: THREE.DoubleSide });
+    const coatDark = new THREE.MeshStandardMaterial({ color: rgb(look.coat).multiplyScalar(0.7), roughness: 0.9 });
+    const boots = new THREE.MeshStandardMaterial({ color: rgb(look.boots), roughness: 0.6 });
+    const beret = new THREE.MeshStandardMaterial({ color: rgb(look.beret), roughness: 1 });
+
+    const place = (mesh, position, boneName) => {
+      mesh.position.copy(position);
+      root.add(mesh);
+      root.updateMatrixWorld(true);
+      bone(boneName).attach(mesh);
+    };
+
+    // Coat skirt: a flared open cone around each thigh, down past the knee.
+    const skirtHeight = (hips.y - knee.y) * 1.25;
+    for (const [side, upPosition] of [["Left", leftUp], ["Right", rightUp]]) {
+      const cone = new THREE.Mesh(
+        new THREE.CylinderGeometry(hipWidth * 0.62, hipWidth * 0.95, skirtHeight, 14, 1, true),
+        coat,
+      );
+      place(cone, new THREE.Vector3(upPosition.x, hips.y - skirtHeight * 0.42, upPosition.z), `${side}UpLeg`);
+    }
+    const back = new THREE.Mesh(new THREE.BoxGeometry(hipWidth * 1.5, skirtHeight * 0.9, hipWidth * 0.12), coat);
+    place(back, new THREE.Vector3(hips.x, hips.y - skirtHeight * 0.38, hips.z - hipWidth * 0.55), "Hips");
+
+    // Belt and collar.
+    const belt = new THREE.Mesh(new THREE.CylinderGeometry(hipWidth * 0.78, hipWidth * 0.78, hipWidth * 0.14, 16), coatDark);
+    place(belt, new THREE.Vector3(hips.x, hips.y + hipWidth * 0.32, hips.z), "Spine");
+    const neck = at("Neck");
+    for (const side of [-1, 1]) {
+      const collar = new THREE.Mesh(new THREE.BoxGeometry(hipWidth * 0.3, hipWidth * 0.34, hipWidth * 0.12), coat);
+      collar.rotation.z = side * 0.35;
+      place(collar, new THREE.Vector3(neck.x + side * hipWidth * 0.2, neck.y - hipWidth * 0.12, neck.z + hipWidth * 0.2), "Neck");
+    }
+
+    // Military boots: shin cylinder plus a toe box on each foot.
+    const shinLength = (knee.y - ankle.y) * 0.62;
+    for (const side of ["Left", "Right"]) {
+      const footX = Math.abs(ankle.x) * (side === "Left" ? Math.sign(leftUp.x) : Math.sign(rightUp.x));
+      const shin = new THREE.Mesh(new THREE.CylinderGeometry(hipWidth * 0.33, hipWidth * 0.38, shinLength, 12), boots);
+      place(shin, new THREE.Vector3(footX, ankle.y + shinLength * 0.5 - hipWidth * 0.02, ankle.z), `${side}Leg`);
+      const foot = new THREE.Mesh(
+        new THREE.BoxGeometry(hipWidth * 0.66, hipWidth * 0.46, Math.abs(toes.z - ankle.z) + hipWidth * 0.8),
+        boots,
+      );
+      place(foot, new THREE.Vector3(footX, ankle.y - hipWidth * 0.05, (toes.z + ankle.z) / 2 + hipWidth * 0.1), `${side}Foot`);
+    }
+
+    // Beret: a flattened dome tipped slightly to one side.
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(headHeight * 0.5, 20, 12), beret);
+    dome.scale.set(1, 0.42, 1.05);
+    dome.rotation.z = 0.18;
+    place(dome, new THREE.Vector3(head.x + headHeight * 0.05, headEnd.y - headHeight * 0.12, head.z), "Head");
+
+    return bone("Head");
+  }
+
+  window.renderSheet = async ({ model, skin, animations, look }) => {
     const size = FRAME * SUPERSAMPLE;
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, preserveDrawingBuffer: true });
     renderer.setSize(size, size);
@@ -39,6 +111,11 @@
         node.frustumCulled = false;
       }
     });
+
+    const rgb = (values) => new THREE.Color().setRGB(values[0] / 255, values[1] / 255, values[2] / 255, THREE.SRGBColorSpace);
+    const bone = (name) => root.getObjectByName(name);
+    let headBone = null;
+    if (look) headBone = addOutfit(root, look, rgb, bone);
 
     const pivot = new THREE.Group();
     pivot.add(root);
@@ -81,6 +158,8 @@
         pivot.rotation.y = (direction * Math.PI * 2) / DIRECTIONS;
         for (let frame = 0; frame < frames; frame += 1) {
           mixer.setTime((clip.duration * frame) / frames);
+          // Animation scale tracks reset the head each frame; shrink it for adult proportions.
+          if (headBone) headBone.scale.multiplyScalar(0.8);
           renderer.render(scene, camera);
           atlasContext.drawImage(
             renderer.domElement,
