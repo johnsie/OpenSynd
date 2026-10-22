@@ -5,6 +5,8 @@
 export const LEVEL_MIN = 1;
 export const LEVEL_MAX = 5;
 export const LEVEL_DEFAULT = 3;
+import { brainEffect, heartEffect } from "./campaign.js";
+
 export const BARS = Object.freeze(["speed", "brain"]);
 // The key stays "speed" so saves keep working; the label is "Legs".
 export const BAR_LABELS = Object.freeze({ speed: "Legs", brain: "Brain" });
@@ -97,16 +99,19 @@ function clampMeter(value) {
   return Math.min(METER_FULL, Math.max(METER_EMPTY, value ?? METER_FULL));
 }
 
-export function nextStamina(stamina, levels, walking, deltaSeconds) {
+// `research` holds the cyborg heart and brain levels from the campaign; they scale the rates.
+export function nextStamina(stamina, levels, walking, deltaSeconds, research) {
+  const heart = heartEffect(research?.heart ?? 0);
   const change = walking
-    ? -staminaDrainPerSecond(levels) * deltaSeconds
-    : deltaSeconds / STAMINA_RECOVER_SECONDS;
+    ? -staminaDrainPerSecond(levels) * heart.drain * deltaSeconds
+    : (deltaSeconds / STAMINA_RECOVER_SECONDS) * heart.recover;
   return clampMeter((stamina ?? METER_FULL) + change);
 }
 
-export function nextFocus(focus, levels, deltaSeconds) {
-  const drain = focusDrainPerSecond(levels);
-  const change = drain > 0 ? -drain * deltaSeconds : deltaSeconds / FOCUS_RECOVER_SECONDS;
+export function nextFocus(focus, levels, deltaSeconds, research) {
+  const brain = brainEffect(research?.brain ?? 0);
+  const drain = focusDrainPerSecond(levels) * brain.drain;
+  const change = drain > 0 ? -drain * deltaSeconds : (deltaSeconds / FOCUS_RECOVER_SECONDS) * brain.recover;
   return clampMeter((focus ?? METER_FULL) + change);
 }
 

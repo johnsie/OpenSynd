@@ -171,3 +171,19 @@ export function heartEffect(level) {
 export function brainEffect(level) {
   return { drain: 1 - 0.15 * level, recover: 1 + 0.15 * level };
 }
+
+// Items kept from a successful operation: captured gear counts as researched and
+// is added to the operative's loadout while there is room.
+export function captureItems(campaign, operatorId, itemIds, catalog, defaults) {
+  let next = campaign;
+  for (const id of itemIds) {
+    const item = catalog.find((entry) => entry.id === id);
+    if (!item) continue;
+    if (!isItemAvailable(next, item)) next = { ...next, items: [...next.items, id] };
+    const loadout = loadoutFor(next, operatorId, defaults);
+    if (loadout.length < SLOTS_PER_OPERATIVE) {
+      next = { ...next, loadouts: { ...next.loadouts, [operatorId]: [...loadout, id] } };
+    }
+  }
+  return next;
+}

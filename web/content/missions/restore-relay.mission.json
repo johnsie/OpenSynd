@@ -63,7 +63,9 @@
         "x": 28,
         "y": 34
       },
-      "equipment": [],
+      "equipment": [
+        "equipment/heavy-pulse-emitter.equipment.json"
+      ],
       "patrol": [
         {
           "x": 28,
@@ -93,7 +95,9 @@
         "x": 70,
         "y": 56
       },
-      "equipment": [],
+      "equipment": [
+        "equipment/shadow-cloak.equipment.json"
+      ],
       "patrol": [
         {
           "x": 70,
@@ -123,7 +127,9 @@
         "x": 100,
         "y": 84
       },
-      "equipment": [],
+      "equipment": [
+        "equipment/stim-injector.equipment.json"
+      ],
       "patrol": [
         {
           "x": 100,

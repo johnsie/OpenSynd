@@ -1,0 +1,16 @@
+{
+  "formatVersion": 1,
+  "id": "developer.heavy-pulse-emitter",
+  "name": "Heavy Pulse Emitter",
+  "description": "A two-handed emitter: longer reach and a harder hit, but a slow recharge.",
+  "license": "CC0-1.0",
+  "type": "tool",
+  "action": "disable-pulse",
+  "charges": null,
+  "researchCost": 60,
+  "effect": {
+    "attack": 20,
+    "range": 4.5,
+    "cooldown": 1.4
+  }
+}

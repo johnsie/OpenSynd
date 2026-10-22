@@ -8,6 +8,7 @@ import {
   earnAchievement,
   earnTime,
   brainEffect,
+  captureItems,
   canResearchItem,
   canResearchTrack,
   emptyCampaign,
@@ -140,4 +141,19 @@ test("the campaign round-trips and damaged data is repaired or ignored", () => {
     funds: 0, carry: 0, heart: 5, brain: 0, items: ["a"], loadouts: { op: ["x", "y"] }, achievements: [],
   });
   assert.equal(parseCampaign(JSON.stringify({ loadouts: { o: Array(20).fill("kit") } })).loadouts.o.length, 8);
+});
+
+test("captured gear counts as researched and joins the loadout while there is room", () => {
+  const defaults = ["pulse", "kit"];
+  let campaign = captureItems(emptyCampaign(), "op1", ["heavy", "stim"], catalog, defaults);
+  assert.deepEqual(campaign.items, ["heavy", "stim"]);
+  assert.deepEqual(loadoutFor(campaign, "op1", defaults), ["pulse", "kit", "heavy", "stim"]);
+  assert.equal(isItemAvailable(campaign, catalog[2]), true, "no research needed any more");
+
+  // Unknown items are ignored; a full loadout still unlocks the item but cannot hold it.
+  campaign = { ...emptyCampaign(), loadouts: { op1: Array(8).fill("kit") } };
+  campaign = captureItems(campaign, "op1", ["ghost", "heavy"], catalog, defaults);
+  assert.deepEqual(campaign.items, ["heavy"]);
+  assert.equal(campaign.loadouts.op1.length, 8);
+  assert.ok(!campaign.loadouts.op1.includes("heavy"));
 });

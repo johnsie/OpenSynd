@@ -1,0 +1,14 @@
+{
+  "formatVersion": 1,
+  "id": "developer.shadow-cloak",
+  "name": "Shadow Cloak",
+  "description": "Bends light around the wearer so watchers see them from only 60% of the usual distance.",
+  "license": "CC0-1.0",
+  "type": "tool",
+  "action": "stealth",
+  "charges": null,
+  "researchCost": 50,
+  "effect": {
+    "sightFactor": 0.6
+  }
+}

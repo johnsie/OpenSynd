@@ -22,6 +22,8 @@ import {
   advanceFocus,
   advancePatrols,
   advanceUnits,
+  combatStats,
+  stealthFactor,
   consumeFixedSteps,
 } from "../src/simulation.js";
 
@@ -489,4 +491,57 @@ test("tired legs fall to a lower effective level, but strong legs resist it", ()
   assert.ok(weak <= average && average < strong);
   // Spent Legs 5 walk like a rested level 3.
   assert.ok(Math.abs(strong - 3.15) < 0.4);
+});
+
+function weaponItem(attack, range, cooldown) {
+  return { definition: { action: "disable-pulse", effect: { attack, range, cooldown } }, charges: null };
+}
+
+test("a unit fights with the hardest-hitting weapon that reaches its target", () => {
+  const light = { attack: 12, range: 3.25, cooldown: 0.75 };
+  const heavy = { attack: 20, range: 4.5, cooldown: 1.4 };
+  const carrier = { ...operatorAt(0, 0), equipment: [weaponItem(12, 3.25, 0.75), weaponItem(20, 4.5, 1.4)] };
+
+  assert.deepEqual(combatStats(carrier), heavy, "reach is the longest weapon");
+  assert.deepEqual(combatStats(carrier, 2), heavy, "the heavy weapon hits harder when both reach");
+  assert.deepEqual(combatStats(carrier, 4), heavy, "only the heavy weapon reaches 4 tiles");
+  assert.deepEqual(combatStats(carrier, 9), heavy, "out of reach falls back to the longest");
+  const lightOnly = { ...operatorAt(0, 0), equipment: [weaponItem(12, 3.25, 0.75)] };
+  assert.deepEqual(combatStats(lightOnly, 2), light);
+
+  const unarmed = { ...operatorAt(0, 0), equipment: [] };
+  assert.equal(combatStats(unarmed), unarmed.definition.stats, "no weapon: the unit's own stats");
+});
+
+test("an armed watcher hits harder and from further away", () => {
+  const shotFrom = (equipment, gap) => {
+    const watcher = patrolUnit([{ x: 5, y: 2 }, { x: 8, y: 2 }], { equipment });
+    watcher.position = { x: 5, y: 2 };
+    watcher.targetId = "op";
+    watcher.cooldownRemaining = 0;
+    const target = operatorAt(5 + gap, 2, { health: 100 });
+    const events = advanceCombat([watcher, target], FIXED_STEP_SECONDS);
+    return events.filter((event) => event.type === "damage").map((event) => event.amount);
+  };
+  assert.deepEqual(shotFrom([], 2), [6], "the watcher's own stats");
+  assert.deepEqual(shotFrom([weaponItem(20, 4.5, 1.4)], 2), [20]);
+  assert.deepEqual(shotFrom([], 4), [], "bare watchers cannot reach 4 tiles");
+  assert.deepEqual(shotFrom([weaponItem(20, 4.5, 1.4)], 4), [20], "the heavy emitter can");
+});
+
+test("a shadow cloak shortens how far a watcher sees its wearer", () => {
+  const grid = createTileGrid(streetMap);
+  const cloak = { definition: { action: "stealth", effect: { sightFactor: 0.6 } }, charges: null };
+  const spottedAt = (equipment, gap) => {
+    const guard = patrolUnit([{ x: 2, y: 2 }, { x: 4, y: 2 }]);
+    guard.position = { x: 2, y: 2 };
+    const operator = operatorAt(2 + gap, 2, { equipment });
+    return advancePatrols([guard, operator], FIXED_STEP_SECONDS, grid).length > 0;
+  };
+  // Awareness 85 gives a sight of 8.5 tiles; a cloak cuts it to 5.1.
+  assert.equal(spottedAt([], 7), true);
+  assert.equal(spottedAt([cloak], 7), false);
+  assert.equal(spottedAt([cloak], 4), true);
+  assert.equal(stealthFactor({ equipment: [cloak, { definition: { action: "stealth", effect: { sightFactor: 0.8 } } }] }), 0.6);
+  assert.equal(stealthFactor({}), 1);
 });

@@ -132,3 +132,15 @@ test("training points limit how far the bars can be raised together", () => {
   assert.deepEqual(adjustLevel({ speed: 5, brain: 5 }, "brain", -1, 8), { speed: 5, brain: 4 });
   assert.deepEqual(adjustLevel({ speed: 5, brain: 4 }, "brain", 1), { speed: 5, brain: 5 });
 });
+
+test("cyborg heart and brain research slow the drains and speed the recovery", () => {
+  const levels = defaultLevels();
+  const baseline = nextStamina(1, levels, true, 30);
+  const researched = nextStamina(1, levels, true, 30, { heart: 5 });
+  assert.ok(researched > baseline, "a stronger heart tires slower");
+  assert.ok(nextStamina(0, levels, false, 30, { heart: 5 }) > nextStamina(0, levels, false, 30));
+
+  const strained = { speed: 3, brain: 5 };
+  assert.ok(nextFocus(1, strained, 20, { brain: 5 }) > nextFocus(1, strained, 20));
+  assert.ok(nextFocus(0, { speed: 3, brain: 2 }, 20, { brain: 5 }) > nextFocus(0, { speed: 3, brain: 2 }, 20));
+});

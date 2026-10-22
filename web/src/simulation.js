@@ -12,7 +12,7 @@ const ARRIVAL_EPSILON = 1e-9;
 export function advanceFocus(units, deltaSeconds) {
   for (const unit of units) {
     if (unit.side !== "team" || unit.disabled) continue;
-    unit.focus = nextFocus(unit.focus, unit.levels, deltaSeconds);
+    unit.focus = nextFocus(unit.focus, unit.levels, deltaSeconds, unit.research);
   }
 }
 
@@ -30,7 +30,7 @@ export function advanceUnits(units, deltaSeconds) {
     if (unit.side !== "team") continue;
     // Walking drains stamina; standing still recovers it.
     const walking = unit.path.length > 0 && !unit.disabled;
-    unit.stamina = nextStamina(unit.stamina, unit.levels, walking, deltaSeconds);
+    unit.stamina = nextStamina(unit.stamina, unit.levels, walking, deltaSeconds, unit.research);
     if (!walking) continue;
 
     // Tired legs take levels off the Legs bar, so the pace follows the effective level.
@@ -93,13 +93,22 @@ function tileOf(position) {
   return { x: Math.round(position.x), y: Math.round(position.y) };
 }
 
+// Equipment that shortens how far watchers can see its wearer (the best cloak counts).
+export function stealthFactor(unit) {
+  let factor = 1;
+  for (const item of unit.equipment ?? []) {
+    if (item.definition.action === "stealth") factor = Math.min(factor, item.definition.effect.sightFactor);
+  }
+  return factor;
+}
+
 function nearestVisibleOperator(unit, units, sight) {
   let best = null;
-  let bestDistance = sight;
+  let bestDistance = Infinity;
   for (const candidate of units) {
     if (candidate.side !== "team" || candidate.disabled) continue;
     const distance = distanceBetween(unit, candidate);
-    if (distance <= bestDistance) {
+    if (distance <= sight * stealthFactor(candidate) && distance < bestDistance) {
       best = candidate;
       bestDistance = distance;
     }
@@ -218,10 +227,25 @@ function automaticTarget(attacker, units) {
     )[0] ?? null;
 }
 
-function combatStats(unit) {
-  return unit.equipment?.find(
-    (item) => item.definition.action === "disable-pulse",
-  )?.definition.effect ?? unit.definition.stats;
+// Pulse weapons carried by a unit; a unit with none fights with its own stats.
+function pulseWeapons(unit) {
+  return (unit.equipment ?? [])
+    .filter((item) => item.definition.action === "disable-pulse")
+    .map((item) => item.definition.effect);
+}
+
+/**
+ * The weapon stats a unit fights with. Without a distance this is its reach (the
+ * longest-ranged weapon); with one, the hardest-hitting weapon that reaches that
+ * far, falling back to the longest-ranged one when the target is out of reach.
+ */
+export function combatStats(unit, distance = null) {
+  const weapons = pulseWeapons(unit);
+  if (weapons.length === 0) return unit.definition.stats;
+  const longest = weapons.reduce((best, weapon) => (weapon.range > best.range ? weapon : best));
+  if (distance === null) return longest;
+  const usable = weapons.filter((weapon) => weapon.range >= distance);
+  return usable.length === 0 ? longest : usable.reduce((best, weapon) => (weapon.attack > best.attack ? weapon : best));
 }
 
 /** Advance cooldowns and resolve deterministic, non-random combat pulses. */
@@ -245,13 +269,9 @@ export function advanceCombat(units, deltaSeconds) {
       attacker.targetId = null;
       continue;
     }
-    const stats = combatStats(attacker);
-    if (
-      distanceBetween(attacker, target) > stats.range ||
-      attacker.cooldownRemaining > ARRIVAL_EPSILON
-    ) {
-      continue;
-    }
+    const distance = distanceBetween(attacker, target);
+    const stats = combatStats(attacker, distance);
+    if (distance > stats.range || attacker.cooldownRemaining > ARRIVAL_EPSILON) continue;
 
     const amount = stats.attack;
     target.health = Math.max(0, target.health - amount);

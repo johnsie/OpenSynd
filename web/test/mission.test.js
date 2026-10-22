@@ -123,10 +123,10 @@ async function loadSquad() {
     operator: await read("units/field-operator.unit.json"),
     drone: await read("units/security-watcher.unit.json"),
   };
-  const equipment = {
-    "equipment/civic-pulse-emitter.equipment.json": await read("equipment/civic-pulse-emitter.equipment.json"),
-    "equipment/field-repair-kit.equipment.json": await read("equipment/field-repair-kit.equipment.json"),
-  };
+  const pack = await read("pack.json");
+  const equipment = Object.fromEntries(
+    await Promise.all(pack.equipment.map(async (path) => [path, await read(path)])),
+  );
   return [...mission.team, ...mission.opponents].map((placement) => {
     const definition = placement.unit.includes("operator") ? definitions.operator : definitions.drone;
     return {
@@ -173,11 +173,11 @@ test("a squad fight against a watcher resolves identically on every run", async 
   assert.equal(run.events.at(-1).type, "disabled");
   assert.equal(run.events.at(-1).unitId, "watcher-one");
   // Golden values at 30 Hz: the watcher falls on step 24 after six pulses and
-  // lands one retaliation hit; the other watchers are untouched.
+  // lands one heavy-pulse retaliation hit (20); the other watchers are untouched.
   assert.equal(run.events.at(-1).step, 24);
   assert.equal(run.events.length, 6);
   assert.deepEqual(run.health, {
-    "operator-one": 94,
+    "operator-one": 80,
     "operator-two": 100,
     "operator-three": 100,
     "operator-four": 100,
@@ -225,8 +225,8 @@ test("an undefended squad loses to the watchers at a repeatable step", async () 
 
   assert.deepEqual(runs[0], runs[1]);
   assert.equal(runs[0].outcome, "failure");
-  // Golden value at 30 Hz: about 13 seconds of sustained fire, no watcher touched.
-  assert.deepEqual(runs[0], { step: 397, outcome: "failure", watchers: 45 });
+  // Golden value at 30 Hz: about 10 seconds of sustained fire from a heavy-pulse watcher, no watcher touched.
+  assert.deepEqual(runs[0], { step: 295, outcome: "failure", watchers: 45 });
 });
 
 test("every First Light watcher patrols a real route that stays on walkable ground", async () => {

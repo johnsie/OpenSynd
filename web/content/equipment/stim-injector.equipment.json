@@ -1,0 +1,15 @@
+{
+  "formatVersion": 1,
+  "id": "developer.stim-injector",
+  "name": "Stim Injector",
+  "description": "Two doses that restore half of an operator's stamina and focus.",
+  "license": "CC0-1.0",
+  "type": "consumable",
+  "action": "restore-energy",
+  "charges": 2,
+  "researchCost": 40,
+  "effect": {
+    "restoreStamina": 0.5,
+    "restoreFocus": 0.5
+  }
+}

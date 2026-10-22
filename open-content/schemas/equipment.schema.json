@@ -13,7 +13,8 @@
     "description": { "type": "string", "minLength": 1, "maxLength": 240 },
     "license": { "enum": ["CC0-1.0", "CC-BY-4.0"] },
     "type": { "enum": ["tool", "consumable"] },
-    "action": { "enum": ["disable-pulse", "restore-vitality"] },
+    "action": { "enum": ["disable-pulse", "restore-vitality", "restore-energy", "stealth"] },
+    "researchCost": { "type": "integer", "minimum": 0, "maximum": 500, "description": "Funds needed to research this item; 0 or absent means it is available from the start." },
     "charges": { "type": ["integer", "null"], "minimum": 1, "maximum": 99 },
     "effect": {
       "type": "object",
@@ -22,7 +23,10 @@
         "attack": { "type": "integer", "minimum": 1, "maximum": 1000 },
         "range": { "type": "number", "exclusiveMinimum": 0, "maximum": 50 },
         "cooldown": { "type": "number", "exclusiveMinimum": 0, "maximum": 60 },
-        "restoreVitality": { "type": "integer", "minimum": 1, "maximum": 1000 }
+        "restoreVitality": { "type": "integer", "minimum": 1, "maximum": 1000 },
+        "restoreStamina": { "type": "number", "minimum": 0, "maximum": 1 },
+        "restoreFocus": { "type": "number", "minimum": 0, "maximum": 1 },
+        "sightFactor": { "type": "number", "minimum": 0.1, "maximum": 1 }
       },
       "minProperties": 1
     }

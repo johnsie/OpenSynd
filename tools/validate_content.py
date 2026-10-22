@@ -212,7 +212,7 @@ class Validation:
         self.validate_identity(path, value)
         if value["type"] not in {"tool", "consumable"}:
             self.error(path, f"unsupported equipment type: {value['type']!r}")
-        if value["action"] not in {"disable-pulse", "restore-vitality"}:
+        if value["action"] not in {"disable-pulse", "restore-vitality", "restore-energy", "stealth"}:
             self.error(path, f"unsupported equipment action: {value['action']!r}")
         charges = value["charges"]
         if charges is not None and (
@@ -231,6 +231,19 @@ class Validation:
             or effect["restoreVitality"] <= 0
         ):
             self.error(path, "restore-vitality effect requires positive restoreVitality")
+        elif value["action"] == "restore-energy" and not (
+            isinstance(effect.get("restoreStamina"), (int, float))
+            or isinstance(effect.get("restoreFocus"), (int, float))
+        ):
+            self.error(path, "restore-energy effect requires restoreStamina or restoreFocus")
+        elif value["action"] == "stealth" and not (
+            isinstance(effect.get("sightFactor"), (int, float))
+            and 0.1 <= effect["sightFactor"] <= 1
+        ):
+            self.error(path, "stealth effect requires sightFactor between 0.1 and 1")
+        cost = value.get("researchCost", 0)
+        if not isinstance(cost, int) or isinstance(cost, bool) or not 0 <= cost <= 500:
+            self.error(path, "researchCost must be an integer from 0 to 500")
 
     def validate_mission(
         self, path: Path, value: dict[str, Any], pack_root: Path,
