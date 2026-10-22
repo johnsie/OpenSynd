@@ -176,7 +176,21 @@ building's id so each always looks the same). The roof is a flat, lighter surfac
 raised parapet with a thin neon strip along the near edge, vents and a stair house sized to
 the roof, and sometimes an antenna with a blinking beacon. Buildings and units are drawn
 together back to front (`drawOrder`), so operatives pass behind towers; a hidden operative
-keeps a faint ring. Everything is procedural, so there are no model or texture assets and nothing new to
+keeps a faint ring. 
+
+The rest of the map is drawn to match. Ground is textured rather than outlined tiles
+(`web/src/textures.js`): pavement is lighter paving laid in single-tile slabs, roads are dark,
+fine-grained asphalt with a pale kerb, neon edge lines, an amber and cyan centre divider and
+lane chevrons (`drawRoad`), the channel has water ripples, bridges are grating and relay pads
+are hazard-striped. Ground sprites are painted once per zoom size and reused; building walls
+and roofs get a repeating panel and gravel overlay. Streets are separate from buildings: each
+block holds two to four separate buildings with two-tile alleys, and the generator adds low
+walls and chain-link fences along the pavement and across some alley mouths
+(`web/src/structures.js`; they block movement, never a street, and `verify()` still proves every
+objective and patrol point reachable). Relays are pylons with glowing rings that pulse amber
+and turn green with a beam once restored, the gate panel is a console with a screen, the
+service gate is a barrier of red light bars that clears when opened, and the exit is a
+chevron landing pad. Everything is procedural, so there are no model or texture assets and nothing new to
 record in `provenance/assets.json`. Walkability, pathing, shots and the minimap are
 unchanged. Not yet done: watchers still see through buildings (no line of sight).
 

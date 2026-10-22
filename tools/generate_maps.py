@@ -23,6 +23,7 @@ ROOT = Path(__file__).resolve().parents[1]
 MAP_DIRECTORIES = [ROOT / "open-content/packs/developer/maps", ROOT / "web/content/maps"]
 BUILDING_COLORS = ["#1d2227", "#20262c", "#1a1f24", "#232a30"]
 FENCE_COLOR = "#3a4650"
+WALL_COLOR = "#46505a"
 
 
 def zone(zone_id, kind, x, y, width, height):
@@ -119,6 +120,7 @@ def build(layout: dict) -> dict:
             regions.append(region(f"bridge-{row}", channel["x"], row, channel["width"], 4,
                                   "signal-grate", True, 1, "#59717a"))
 
+    props = random.Random(layout["seed"] + 1)
     cx, cy, cw, ch = layout["compound"]
     keep_clear = (cx - 1, cy - 1, cw + 1, ch + 1)
     for i in range(layout["blocks"]):
@@ -143,6 +145,29 @@ def build(layout: dict) -> dict:
             for index, (dx, dy, w, h) in enumerate(footprints):
                 regions.append(region(f"block-{i}-{j}-{'abcd'[index]}", ox + dx, oy + dy, w, h,
                                       "utility-building", False, rng.randint(2, 5), rng.choice(BUILDING_COLORS)))
+
+            # Low walls and fences along the pavement and across some alley mouths. They only ever
+            # occupy the one-tile pavement or an alley's mouth, so the streets stay open.
+            props_here = []
+            for side in ("north", "south", "west", "east"):
+                if props.random() < 0.5:
+                    length = props.randint(4, 8)
+                    start = props.randint(3, block - 3 - length)
+                    kind = props.choice(["service-fence", "service-wall"])
+                    rect = {"north": (x + start, y, length, 1), "south": (x + start, y + block - 1, length, 1),
+                            "west": (x, y + start, 1, length), "east": (x + block - 1, y + start, 1, length)}[side]
+                    props_here.append((f"{kind[8:]}-{i}-{j}-{side}", rect, kind))
+            if pattern == "pair-x" and props.random() < 0.6:
+                props_here.append((f"fence-{i}-{j}-alley", (ox + half, y, 2, 1), "service-fence"))
+            for name, rect, kind in props_here:
+                if any(intersects(rect, (z["position"]["x"] - 1, z["position"]["y"] - 1, z["width"] + 2, z["height"] + 2))
+                       for z in layout["zones"]):
+                    continue
+                if any(rect[0] <= wx < rect[0] + rect[2] and rect[1] <= wy < rect[1] + rect[3]
+                       for wx, wy in layout["watch_points"]):
+                    continue
+                regions.append(region(name, *rect, kind, False, 1 if kind == "service-fence" else 2,
+                                      FENCE_COLOR if kind == "service-fence" else WALL_COLOR))
 
     for item in layout["zones"]:
         if item["kind"] == "interaction":

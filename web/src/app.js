@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+import { createOverlay, createTileSprites } from "./textures.js";
+import { FENCE_SURFACE, WALL_SURFACE, drawConsole, drawFenceTile, drawGateTile, drawRelay, drawWallTile } from "./structures.js";
 import { BUILDING_SURFACE, buildingStyle, buildingsFromMap, drawOrder, seededRandom } from "./buildings.js";
 import {
   buildPatrolRoute,
@@ -410,6 +412,20 @@ async function loadGame(index = state.missionIndex) {
   state.mission = mission;
   state.grid = createTileGrid(map);
   state.buildings = buildingsFromMap(map);
+  // Relay pylons and the gate console stand on their pads. Their footprint is the pad's first tile
+  // so operatives standing on the pad are drawn in front of them.
+  state.structures = map.zones
+    .filter((zone) => zone.kind === "interaction")
+    .map((zone) => ({
+      id: zone.id,
+      x: zone.position.x,
+      y: zone.position.y,
+      width: 1,
+      height: 1,
+      centre: { x: zone.position.x + (zone.width - 1) / 2, y: zone.position.y + (zone.height - 1) / 2 },
+      structure: zone.id.includes("gate") ? "console" : "relay",
+      elevation: state.grid[zone.position.y][zone.position.x]?.elevation ?? 0,
+    }));
   state.objectives = mission.objectives.map((objective) => ({
     ...objective,
     complete: false,
@@ -1016,8 +1032,11 @@ function drawRoad(tile, topCenter, cellSize) {
     line(a0, b0, a1, b1, colour, 1.2, 0.9 * alpha);
   };
   if (!crossing) {
-    if (across === 0) glow(-0.42, -0.5, -0.42, 0.5, "#42d6d0");
-    if (across === lanes - 1) glow(0.42, -0.5, 0.42, 0.5, "#42d6d0");
+    // A pale kerb stone along each edge, with the neon line just inside it.
+    if (across === 0) line(-0.5, -0.5, -0.5, 0.5, "#8d9aa3", 3, 0.9);
+    if (across === lanes - 1) line(0.5, -0.5, 0.5, 0.5, "#8d9aa3", 3, 0.9);
+    if (across === 0) glow(-0.36, -0.5, -0.36, 0.5, "#42d6d0");
+    if (across === lanes - 1) glow(0.36, -0.5, 0.36, 0.5, "#42d6d0");
     const middle = lanes / 2;
     if (across === middle - 1) glow(0.46, -0.5, 0.46, 0.5, "#e1b35a");
     if (across === middle && along % 2 === 0) glow(-0.46, -0.4, -0.46, 0.4, "#9fefff");
@@ -1033,9 +1052,47 @@ function drawRoad(tile, topCenter, cellSize) {
   return true;
 }
 
+const makeCanvas = (width, height) => {
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  return canvas;
+};
+const tileSprites = createTileSprites(makeCanvas);
+const overlays = {};
+
+function overlayPattern(kind) {
+  overlays[kind] ??= context.createPattern(createOverlay(makeCanvas, kind), "repeat");
+  return overlays[kind];
+}
+
+// Fill a clipped polygon with a repeating overlay mapped onto a surface: `across` and `down` are the
+// screen vectors one 64 px pattern repeat covers along the pattern's x and y axes.
+function texturePolygon(points, kind, origin, across, down) {
+  context.save();
+  context.beginPath();
+  points.forEach((point, index) => (index === 0 ? context.moveTo(point.x, point.y) : context.lineTo(point.x, point.y)));
+  context.closePath();
+  context.clip();
+  context.transform(across.x / 64, across.y / 64, down.x / 64, down.y / 64, origin.x, origin.y);
+  context.fillStyle = overlayPattern(kind);
+  context.fillRect(-6000, -6000, 12000, 12000);
+  context.restore();
+}
+
+function propProjector(viewport, elevation = 0) {
+  const { cellSize, origin } = viewport;
+  return (gx, gy, z = 0) => ({
+    x: origin.x + (gx - gy) * (cellSize.width / 2),
+    y: origin.y + (gx + gy) * (cellSize.height / 2) - elevation * cellSize.height * 0.28 - z,
+  });
+}
+
 function drawTile(tile, viewport) {
   const { cellSize, origin } = viewport;
-  const elevationHeight = tile.elevation * cellSize.height * 0.28;
+  const prop = tile.surface === FENCE_SURFACE || tile.surface === WALL_SURFACE;
+  const elevation = prop ? 0 : tile.elevation;
+  const elevationHeight = elevation * cellSize.height * 0.28;
   const baseCenter = gridToScreen(tile, cellSize, origin, 0);
   const topCenter = { x: baseCenter.x, y: baseCenter.y - elevationHeight };
 
@@ -1059,28 +1116,19 @@ function drawTile(tile, viewport) {
     context.fill();
   }
 
-  diamond(topCenter, cellSize);
-  context.fillStyle = tile.gate ? (tile.walkable ? "#3f6b57" : "#b5524a") : tile.color;
-  context.fill();
+  const { image, offsetX, offsetY } = tileSprites(tile, cellSize.width, cellSize.height);
+  context.drawImage(image, topCenter.x + offsetX, topCenter.y + offsetY);
+
+  const project = propProjector(viewport, elevation);
   if (tile.gate) {
-    // Shape, not only colour, shows the gate state: bars when closed, a dashed rail when open.
-    context.strokeStyle = "rgba(255, 255, 255, .85)";
-    context.lineWidth = 2;
-    context.setLineDash(tile.walkable ? [6, 6] : []);
-    context.beginPath();
-    context.moveTo(topCenter.x - cellSize.width / 4, topCenter.y);
-    context.lineTo(topCenter.x + cellSize.width / 4, topCenter.y);
-    if (!tile.walkable) {
-      context.moveTo(topCenter.x, topCenter.y - cellSize.height / 4);
-      context.lineTo(topCenter.x, topCenter.y + cellSize.height / 4);
-    }
-    context.stroke();
-    context.setLineDash([]);
+    const gate = state.map.objects?.find((item) => item.id === tile.gate);
+    const gateAlong = gate && gate.width > gate.height ? "x" : "y";
+    drawGateTile(context, project, { ...tile, gateAlong }, cellSize.height, tile.walkable, performance.now());
+    return;
   }
-  if (drawRoad(tile, topCenter, cellSize)) return;
-  context.strokeStyle = tile.walkable ? "rgba(124, 161, 170, .22)" : "rgba(0, 0, 0, .5)";
-  context.lineWidth = 1;
-  context.stroke();
+  if (tile.surface === FENCE_SURFACE) drawFenceTile(context, project, tile, cellSize.height);
+  else if (tile.surface === WALL_SURFACE) drawWallTile(context, project, tile, cellSize.height, shade(tile.color, 0));
+  else drawRoad(tile, topCenter, cellSize);
 }
 
 // One building: solid walls with a base plinth, floor ledges and a few large windows per
@@ -1142,10 +1190,22 @@ function drawBuilding(building, viewport, size) {
       context.fillStyle = shade(wallColour, wall.shadeBy);
       quad(strip(wall, 0, 1, z0, z1));
       context.fill();
+      const length = wall === walls[0] ? rect.x1 - rect.x0 : rect.y1 - rect.y0;
+      const scale = 2 / Math.max(length, 0.01);
+      texturePolygon(
+        strip(wall, 0, 1, z0, z1),
+        "wall",
+        onWall(wall.from, wall.to, 0, z1),
+        { x: (wall.to.x - wall.from.x) * scale, y: (wall.to.y - wall.from.y) * scale },
+        { x: 0, y: floorHeight * 2 },
+      );
     }
     context.fillStyle = roofColour;
-    quad([north, east, south, west].map((point) => ({ x: point.x, y: point.y - z1 })));
+    const roofPoints = [north, east, south, west].map((point) => ({ x: point.x, y: point.y - z1 }));
+    quad(roofPoints);
     context.fill();
+    const roofAcross = { x: cellSize.width, y: cellSize.height };
+    texturePolygon(roofPoints, "roof", roofPoints[0], roofAcross, { x: -cellSize.width, y: cellSize.height });
     return walls;
   };
 
@@ -1274,6 +1334,13 @@ function drawBuilding(building, viewport, size) {
   return bounds;
 }
 
+function drawStructure(structure, viewport) {
+  const complete = state.objectives.find((objective) => objective.targetZone === structure.id)?.complete ?? false;
+  const project = propProjector(viewport, structure.elevation);
+  const draw = structure.structure === "console" ? drawConsole : drawRelay;
+  draw(context, project, structure.centre, viewport.cellSize.height, complete, performance.now());
+}
+
 // Operatives behind a building keep a faint ring so they are never lost from view.
 function drawHiddenOperatives(order, boxes, viewport) {
   for (const entry of order) {
@@ -1290,20 +1357,43 @@ function drawHiddenOperatives(order, boxes, viewport) {
 }
 
 function drawZones(viewport) {
+  const { cellSize, origin } = viewport;
   for (const zone of state.map.zones) {
     const objective = state.objectives.find((item) => item.targetZone === zone.id);
     const complete = objective?.complete;
-    for (let y = zone.position.y; y < zone.position.y + zone.height; y += 1) {
-      for (let x = zone.position.x; x < zone.position.x + zone.width; x += 1) {
-        const tile = state.grid[y][x];
-        const center = gridToScreen({ x, y }, viewport.cellSize, viewport.origin, tile.elevation);
-        diamond(center, viewport.cellSize);
-        context.strokeStyle = complete
-          ? "rgba(121, 213, 155, .95)"
-          : zone.kind === "exit"
-            ? "rgba(66, 214, 208, .85)"
-            : "rgba(225, 179, 90, .9)";
-        context.lineWidth = 2;
+    const first = state.grid[zone.position.y]?.[zone.position.x];
+    const lift = (first?.elevation ?? 0) * cellSize.height * 0.28;
+    const corner = (gx, gy) => ({
+      x: origin.x + (gx - gy) * (cellSize.width / 2),
+      y: origin.y + (gx + gy) * (cellSize.height / 2) - lift,
+    });
+    const x0 = zone.position.x - 0.5;
+    const y0 = zone.position.y - 0.5;
+    const x1 = x0 + zone.width;
+    const y1 = y0 + zone.height;
+    const points = [corner(x0, y0), corner(x1, y0), corner(x1, y1), corner(x0, y1)];
+    const colour = complete ? "121, 213, 155" : zone.kind === "interaction" ? "225, 179, 90" : "66, 214, 208";
+    context.beginPath();
+    points.forEach((point, index) => (index === 0 ? context.moveTo(point.x, point.y) : context.lineTo(point.x, point.y)));
+    context.closePath();
+    context.fillStyle = `rgba(${colour}, ${zone.kind === "interaction" ? 0.06 : 0.1})`;
+    context.fill();
+    context.strokeStyle = `rgba(${colour}, .9)`;
+    context.lineWidth = 2;
+    context.setLineDash(zone.kind === "interaction" ? [] : [10, 6]);
+    context.stroke();
+    context.setLineDash([]);
+    if (zone.kind === "exit") {
+      // Three chevrons pointing along the way out.
+      const centre = corner(zone.position.x + (zone.width - 1) / 2, zone.position.y + (zone.height - 1) / 2);
+      context.strokeStyle = `rgba(${colour}, .85)`;
+      context.lineWidth = 2;
+      for (const offset of [-0.55, 0, 0.55]) {
+        const y = centre.y + offset * cellSize.height * 0.6;
+        context.beginPath();
+        context.moveTo(centre.x - cellSize.width * 0.12, y - cellSize.height * 0.1);
+        context.lineTo(centre.x, y + cellSize.height * 0.08);
+        context.lineTo(centre.x + cellSize.width * 0.12, y - cellSize.height * 0.1);
         context.stroke();
       }
     }
@@ -1502,10 +1592,11 @@ function draw() {
 
   drawPickups(viewport);
   const boxes = new Map();
-  const order = drawOrder(state.buildings ?? [], state.units);
+  const order = drawOrder([...(state.buildings ?? []), ...(state.structures ?? [])], state.units);
   for (const entry of order) {
-    if (entry.kind === "building") boxes.set(entry.item, drawBuilding(entry.item, viewport, size));
-    else drawUnit(entry.item, viewport);
+    if (entry.kind !== "building") drawUnit(entry.item, viewport);
+    else if (entry.item.structure) drawStructure(entry.item, viewport);
+    else boxes.set(entry.item, drawBuilding(entry.item, viewport, size));
   }
   drawHiddenOperatives(order, boxes, viewport);
   drawAim(viewport);
@@ -1520,6 +1611,7 @@ const MINI_COLORS = {
   "signal-grate": "#7a96a0",
   "utility-building": "#12171b",
   "service-fence": "#6b7a84",
+  "service-wall": "#6b7a84",
   "relay-pad": "#e1b35a",
 };
 
