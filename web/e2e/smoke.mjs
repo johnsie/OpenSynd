@@ -122,6 +122,20 @@ for (const [name, type, executablePath] of targets) {
     await page.waitForTimeout(150);
     const settled = await page.evaluate(() => window.opensyndTest.camera());
     assert.ok(Math.abs(settled.x - cameraAfter.x) < 0.5, "panning stops when the key is released");
+    // Moving the mouse to the edge of the map pans the view, and moving away stops it.
+    const box = await page.locator("#game-canvas").boundingBox();
+    const edgeBefore = await page.evaluate(() => window.opensyndTest.camera());
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.move(box.x + box.width - 4, box.y + box.height / 2);
+    await page.waitForTimeout(500);
+    const edgeAfter = await page.evaluate(() => window.opensyndTest.camera());
+    assert.ok(edgeAfter.x - edgeBefore.x > 1, "the edge pushed the view right");
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.waitForTimeout(150);
+    const edgeStopped = await page.evaluate(() => window.opensyndTest.camera());
+    await page.waitForTimeout(300);
+    const edgeFinal = await page.evaluate(() => window.opensyndTest.camera());
+    assert.ok(Math.abs(edgeFinal.x - edgeStopped.x) < 0.01, "moving away stops the scroll");
     // Camera controls: zoom with the wheel and keys, jump with the minimap, recentre with C.
     await page.locator("#game-canvas").hover();
     await page.mouse.wheel(0, -200);

@@ -14,6 +14,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
   captions: true,
   reducedMotion: "system",
   textScale: 1,
+  edgeScroll: true,
   keyBindings: normalizeBindings({}),
 });
 
@@ -36,6 +37,7 @@ export function normalizeSettings(raw) {
   if (REDUCED_MOTION_VALUES.includes(source.reducedMotion)) {
     settings.reducedMotion = source.reducedMotion;
   }
+  if (typeof source.edgeScroll === "boolean") settings.edgeScroll = source.edgeScroll;
   if (Number.isFinite(source.textScale)) settings.textScale = clamp(source.textScale, 0.75, 2);
   settings.keyBindings = normalizeBindings(source.keyBindings);
   return settings;

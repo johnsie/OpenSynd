@@ -131,3 +131,14 @@ export function panByKeys(camera, direction, deltaSeconds, viewport, map, speed 
   // Moving the view right means the world slides left, so negate the screen delta.
   panByScreen(camera, -direction.x * step, -direction.y * step, viewport, map);
 }
+
+// Edge scrolling: the closer the pointer is to a border, the faster the view
+// pans that way. Returns a direction with each axis in [-1, 1].
+export function edgePanDirection(point, size, zone = 36) {
+  const axis = (value, extent) => {
+    if (value < zone) return -Math.min(1, (zone - value) / zone);
+    if (value > extent - zone) return Math.min(1, (value - (extent - zone)) / zone);
+    return 0;
+  };
+  return { x: axis(point.x, size.width), y: axis(point.y, size.height) };
+}

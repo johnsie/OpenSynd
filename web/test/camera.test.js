@@ -9,6 +9,7 @@ import {
   centreOn,
   clampCamera,
   createCamera,
+  edgePanDirection,
   followTarget,
   forEachVisibleTile,
   miniProject,
@@ -125,4 +126,15 @@ test("keyboard panning moves the view in the pressed direction at a steady pace"
     return Math.hypot(p.x - 500, p.y - 300);
   };
   assert.ok(Math.abs(travelled(a) - travelled(b)) < 1e-6);
+});
+
+test("edge scrolling is idle in the middle and ramps up toward each border", () => {
+  const box = { width: 1000, height: 600 };
+  assert.deepEqual(edgePanDirection({ x: 500, y: 300 }, box), { x: 0, y: 0 });
+  assert.deepEqual(edgePanDirection({ x: 0, y: 300 }, box), { x: -1, y: 0 });
+  assert.deepEqual(edgePanDirection({ x: 1000, y: 600 }, box), { x: 1, y: 1 });
+  const near = edgePanDirection({ x: 980, y: 300 }, box);
+  const touching = edgePanDirection({ x: 999, y: 300 }, box);
+  assert.ok(near.x > 0 && near.x < touching.x && touching.x <= 1);
+  assert.deepEqual(edgePanDirection({ x: 36, y: 300 }, box), { x: 0, y: 0 });
 });

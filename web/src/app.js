@@ -13,6 +13,7 @@ import {
   zoneContains,
 } from "./engine.js";
 import {
+  edgePanDirection,
   panByKeys,
   centreOn,
   clampCamera,
@@ -143,6 +144,7 @@ const settingControls = {
   music: document.querySelector("#setting-music"),
   musicVolume: document.querySelector("#setting-music-volume"),
   captions: document.querySelector("#setting-captions"),
+  edgeScroll: document.querySelector("#setting-edge"),
   reducedMotion: document.querySelector("#setting-motion"),
   textScale: document.querySelector("#setting-text"),
 };
@@ -202,6 +204,7 @@ function showSettings() {
   settingControls.music.checked = settings.music;
   settingControls.musicVolume.value = settings.musicVolume;
   settingControls.captions.checked = settings.captions;
+  settingControls.edgeScroll.checked = settings.edgeScroll;
   settingControls.reducedMotion.value = settings.reducedMotion;
   settingControls.textScale.value = settings.textScale;
   settingsDialog.showModal();
@@ -216,6 +219,7 @@ document.querySelector("#settings-form").addEventListener("input", () => {
     music: settingControls.music.checked,
     musicVolume: Number(settingControls.musicVolume.value),
     captions: settingControls.captions.checked,
+    edgeScroll: settingControls.edgeScroll.checked,
     reducedMotion: settingControls.reducedMotion.value,
     textScale: Number(settingControls.textScale.value),
   });
@@ -252,6 +256,7 @@ async function loadSprites() {
 }
 
 const state = {
+  edge: { x: 0, y: 0 },
   panKeys: new Set(),
   camera: createCamera({ x: 0, y: 0 }),
   miniTerrain: null,
@@ -1071,17 +1076,13 @@ function performInteraction() {
 function frame(time) {
   const delta = Math.min((time - state.lastFrame) / 1000, 0.05);
   state.lastFrame = time;
-  if (state.map && state.viewport && state.panKeys.size > 0) {
-    panByKeys(
-      state.camera,
-      {
-        x: (state.panKeys.has("panRight") ? 1 : 0) - (state.panKeys.has("panLeft") ? 1 : 0),
-        y: (state.panKeys.has("panDown") ? 1 : 0) - (state.panKeys.has("panUp") ? 1 : 0),
-      },
-      delta,
-      state.viewport,
-      state.map,
-    );
+  if (state.map && state.viewport) {
+    const edge = settings.edgeScroll && !state.modal && !drag.active ? state.edge : { x: 0, y: 0 };
+    const direction = {
+      x: (state.panKeys.has("panRight") ? 1 : 0) - (state.panKeys.has("panLeft") ? 1 : 0) + edge.x,
+      y: (state.panKeys.has("panDown") ? 1 : 0) - (state.panKeys.has("panUp") ? 1 : 0) + edge.y,
+    };
+    panByKeys(state.camera, direction, delta, state.viewport, state.map);
   }
   if (state.map) followTarget(state.camera, delta, reduceMotion);
   update(delta);
@@ -1371,6 +1372,19 @@ canvas.addEventListener(
   },
   { passive: false },
 );
+
+// Edge scrolling follows the mouse; touch and pen pointers never trigger it.
+canvas.addEventListener("pointermove", (event) => {
+  if (event.pointerType !== "mouse" || !state.viewport) return;
+  const bounds = canvas.getBoundingClientRect();
+  state.edge = edgePanDirection(
+    { x: event.clientX - bounds.left, y: event.clientY - bounds.top },
+    { width: bounds.width, height: bounds.height },
+  );
+});
+canvas.addEventListener("pointerleave", () => {
+  state.edge = { x: 0, y: 0 };
+});
 
 canvas.addEventListener("click", (event) => {
   if (drag.suppressClick) {

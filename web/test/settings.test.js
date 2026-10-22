@@ -76,3 +76,9 @@ test("music settings default on, clamp volume and reject bad types", () => {
   assert.equal(settings.music, true);
   assert.equal(settings.musicVolume, 1);
 });
+
+test("edge scrolling defaults on and rejects non-boolean values", () => {
+  assert.equal(DEFAULT_SETTINGS.edgeScroll, true);
+  assert.equal(normalizeSettings({ edgeScroll: false }).edgeScroll, false);
+  assert.equal(normalizeSettings({ edgeScroll: "no" }).edgeScroll, true);
+});

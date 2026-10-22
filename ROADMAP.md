@@ -80,7 +80,9 @@ verifies that every objective is reachable and that the exit is sealed until
 the gate opens. The browser client has a scrolling, zoomable camera that draws
 only visible tiles (about 60 fps fully zoomed out), drag-to-pan, a minimap, and
 remappable camera keys. Arrow keys pan the view smoothly while held; the grid
-cursor moves with I/J/K/L (remappable) and Enter issues the move.
+cursor moves with I/J/K/L (remappable) and Enter issues the move. Pushing the mouse
+to the edge of the map also pans the view, faster the closer it gets; this edge
+scrolling is a setting, ignores touch and pen, and pauses while a dialog is open.
 
 Security watchers now patrol deterministic routes built from mission waypoints
 (`patrol` in the mission schema). A patrolling watcher holds position while it
