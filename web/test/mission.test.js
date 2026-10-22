@@ -98,7 +98,7 @@ test("a full First Light playthrough completes in order and is repeatable", asyn
   // Golden values: fixed-step counts for each leg at 30 Hz. A change here means
   // routes, movement speed or fatigue changed and replays need regenerating.
   // Fatigue is included: one operator walking the whole mission with no rest slows each leg.
-  assert.deepEqual(runs[0].steps, [362, 1264, 449, 648]);
+  assert.deepEqual(runs[0].steps, [358, 1155, 366, 540]);
 });
 
 test("extraction stays blocked until every other required objective is complete", () => {

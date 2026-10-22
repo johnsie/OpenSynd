@@ -419,20 +419,30 @@ details.panel-section > p, details.panel-section > div { margin-top: 0.5rem; }
   .brand-block h1 { font-size: 1.35rem; }
   .brand-block .eyebrow { display: none; }
 }
-.stamina {
+.meters {
   grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: 3.6rem 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.2rem 0.8rem;
+}
+.meter {
+  display: grid;
+  grid-template-columns: 3rem 1fr;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.35rem;
   font-size: 0.72rem;
   color: var(--muted);
 }
-.stamina i {
+.meter i {
   display: block;
   height: 0.3rem;
   background: #79d59b;
   transition: width 0.2s linear;
 }
-.stamina.low i { background: var(--amber); }
-.stamina.empty i { background: var(--risk); }
+.meter.focus i { background: var(--public); }
+.meter.low i { background: var(--amber); }
+.meter.empty i { background: var(--risk); }
+.bar i.fatigued {
+  background: transparent;
+  border: 1px dashed var(--amber);
+}

@@ -19,6 +19,7 @@ import {
 import {
   FIXED_STEP_SECONDS,
   advanceCombat,
+  advanceFocus,
   advancePatrols,
   advanceUnits,
   consumeFixedSteps,
@@ -424,4 +425,68 @@ test("stronger legs keep their stamina longer over the same walk", () => {
     return walker.stamina;
   };
   assert.ok(staminaAfter(5) > staminaAfter(3) && staminaAfter(3) > staminaAfter(1));
+});
+
+test("turning Brain up speeds the pulse at first, then mental fatigue pulls it back", () => {
+  const shots = (brain, seconds, focus = 1) => {
+    const attacker = {
+      ...operatorAt(0, 2),
+      id: "shooter",
+      levels: { speed: 3, brain },
+      focus,
+      equipment: [{ definition: { action: "disable-pulse", effect: { attack: 1, range: 5, cooldown: 0.75 } } }],
+      cooldownRemaining: 0,
+      targetId: "dummy",
+      health: 100,
+    };
+    const dummy = {
+      ...operatorAt(1, 2),
+      id: "dummy",
+      side: "opposition",
+      health: 100000,
+      cooldownRemaining: 99,
+      targetId: null,
+    };
+    let fired = 0;
+    for (let step = 0; step < 30 * seconds; step += 1) {
+      advanceFocus([attacker], FIXED_STEP_SECONDS);
+      fired += advanceCombat([attacker, dummy], FIXED_STEP_SECONDS).filter((event) => event.type === "damage").length;
+    }
+    return { fired, focus: attacker.focus };
+  };
+
+  const early = shots(5, 10);
+  const baseline = shots(3, 10);
+  assert.ok(early.fired > baseline.fired, "a fresh Brain 5 outshoots the baseline");
+  assert.equal(baseline.focus, 1, "baseline Brain never tires");
+
+  const worn = shots(5, 10, 0);
+  assert.ok(worn.fired < early.fired, "a spent mind fires slower than a fresh one");
+  assert.ok(Math.abs(worn.fired - baseline.fired) <= 1, "spent Brain 5 falls back to the baseline");
+
+  // Running at Brain 5 for a minute leaves the mind spent; turning it down recovers it.
+  const strained = shots(5, 60);
+  assert.ok(strained.focus < 0.05);
+  const calm = shots(2, 30, strained.focus);
+  assert.ok(calm.focus > strained.focus);
+});
+
+test("tired legs fall to a lower effective level, but strong legs resist it", () => {
+  const grid = createTileGrid(streetMap);
+  const paceAfterWalking = (speed) => {
+    const walker = {
+      ...operatorAt(0, 2),
+      levels: { speed, brain: 3 },
+      stamina: 0,
+      path: findPath(grid, { x: 0, y: 2 }, { x: 39, y: 2 }),
+    };
+    for (let step = 0; step < 30; step += 1) advanceUnits([walker], FIXED_STEP_SECONDS);
+    return walker.position.x;
+  };
+  const weak = paceAfterWalking(1);
+  const average = paceAfterWalking(3);
+  const strong = paceAfterWalking(5);
+  assert.ok(weak <= average && average < strong);
+  // Spent Legs 5 walk like a rested level 3.
+  assert.ok(Math.abs(strong - 3.15) < 0.4);
 });

@@ -249,3 +249,31 @@ test("stamina round-trips and out-of-range values are rejected", () => {
   assert.throws(() => validateSaveSnapshot(withStamina(-0.1), context), /stamina/);
   assert.throws(() => validateSaveSnapshot(withStamina("full"), context), /stamina/);
 });
+
+test("version 6 saves migrate with every unit mentally fresh", () => {
+  const snapshot = createSaveSnapshot(state, "2026-10-22T12:00:00.000Z");
+  const older = {
+    ...snapshot,
+    formatVersion: 6,
+    units: snapshot.units.map(({ focus, ...unit }) => unit),
+  };
+  const parsed = parseSaveSnapshot(JSON.stringify(older), context);
+  assert.equal(parsed.formatVersion, SAVE_VERSION);
+  assert.ok(parsed.units.every((unit) => unit.focus === 1));
+});
+
+test("focus round-trips and out-of-range values are rejected", () => {
+  const strained = {
+    ...state,
+    units: state.units.map((unit, index) => (index === 0 ? { ...unit, focus: 0.4 } : unit)),
+  };
+  const snapshot = createSaveSnapshot(strained, "2026-10-22T12:00:00.000Z");
+  assert.equal(parseSaveSnapshot(JSON.stringify(snapshot), context).units[0].focus, 0.4);
+
+  const withFocus = (focus) => ({
+    ...snapshot,
+    units: snapshot.units.map((unit, index) => (index === 0 ? { ...unit, focus } : unit)),
+  });
+  assert.throws(() => validateSaveSnapshot(withFocus(2), context), /focus/);
+  assert.throws(() => validateSaveSnapshot(withFocus(null), context), /focus/);
+});

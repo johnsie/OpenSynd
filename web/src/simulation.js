@@ -1,12 +1,20 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 import { findPath } from "./engine.js";
-import { cooldownMultiplier, nextStamina, speedMultiplier, staminaSpeedFactor } from "./stats.js";
+import { cooldownMultiplier, effectiveLevels, nextFocus, nextStamina, speedMultiplier } from "./stats.js";
 
 export const FIXED_STEP_SECONDS = 1 / 30;
 export const MAX_STEPS_PER_FRAME = 8;
 
 const ARRIVAL_EPSILON = 1e-9;
+
+/** Mental fatigue: Brain turned above the baseline drains focus; otherwise it recovers. */
+export function advanceFocus(units, deltaSeconds) {
+  for (const unit of units) {
+    if (unit.side !== "team" || unit.disabled) continue;
+    unit.focus = nextFocus(unit.focus, unit.levels, deltaSeconds);
+  }
+}
 
 /**
  * Advance unit movement by one simulation step.
@@ -25,12 +33,9 @@ export function advanceUnits(units, deltaSeconds) {
     unit.stamina = nextStamina(unit.stamina, unit.levels, walking, deltaSeconds);
     if (!walking) continue;
 
-    let remaining =
-      deltaSeconds *
-      unit.definition.stats.speed *
-      speedMultiplier(unit.levels) *
-      staminaSpeedFactor(unit.stamina) *
-      0.7;
+    // Tired legs take levels off the Legs bar, so the pace follows the effective level.
+    const pace = speedMultiplier(effectiveLevels(unit.levels, unit.stamina, unit.focus));
+    let remaining = deltaSeconds * unit.definition.stats.speed * pace * 0.7;
     while (remaining > 0 && unit.path.length > 0) {
       const destination = unit.path[0];
       const offsetX = destination.x - unit.position.x;
@@ -250,7 +255,8 @@ export function advanceCombat(units, deltaSeconds) {
 
     const amount = stats.attack;
     target.health = Math.max(0, target.health - amount);
-    attacker.cooldownRemaining = stats.cooldown * cooldownMultiplier(attacker.levels);
+    attacker.cooldownRemaining =
+      stats.cooldown * cooldownMultiplier(effectiveLevels(attacker.levels, attacker.stamina, attacker.focus));
     events.push({
       type: "damage",
       attackerId: attacker.id,

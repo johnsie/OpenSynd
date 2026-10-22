@@ -50,35 +50,65 @@ export function adjustLevel(levels, bar, delta) {
   return next === levels[bar] ? levels : { ...levels, [bar]: next };
 }
 
-// Fatigue: stamina runs from 1 (fresh) to 0 (exhausted). Walking drains it,
-// standing still recovers it slowly, and tired legs walk slower.
-export const STAMINA_FULL = 1;
-export const STAMINA_EMPTY = 0;
-const DRAIN_SECONDS_AT_BASELINE = 60; // walking from fresh to empty at Legs level 3
-const RECOVER_SECONDS = 70; // resting from empty to fresh
-const EXHAUSTED_SPEED = 0.5; // share of normal pace left at zero stamina
+// Fatigue. Two meters run from 1 (fresh) to 0 (spent) and each takes levels off
+// its bar, so a tired operator is effectively trained lower than the bar says:
+//   stamina (legs): drains while walking, recovers while standing still.
+//   focus (brain): drains only while Brain is turned above the baseline, and
+//   recovers while it is at or below the baseline.
+export const METER_FULL = 1;
+export const METER_EMPTY = 0;
+const STAMINA_DRAIN_SECONDS_AT_BASELINE = 60; // walking from fresh to empty at Legs level 3
+const STAMINA_RECOVER_SECONDS = 70; // resting from empty to fresh
+const FOCUS_DRAIN_SECONDS_PER_STEP = 90; // fresh to empty at Brain 4; Brain 5 drains twice as fast
+const FOCUS_RECOVER_SECONDS = 90;
 const LEGS_ENDURANCE_STEP = 0.15;
+// An empty meter takes this many levels off its bar (never below level 1).
+export const MAX_FATIGUE_LOSS = 2;
 
 export function staminaDrainPerSecond(levels) {
   const legs = levels?.speed ?? LEVEL_DEFAULT;
-  return (1 / DRAIN_SECONDS_AT_BASELINE) * (1 - (legs - LEVEL_DEFAULT) * LEGS_ENDURANCE_STEP);
+  return (1 / STAMINA_DRAIN_SECONDS_AT_BASELINE) * (1 - (legs - LEVEL_DEFAULT) * LEGS_ENDURANCE_STEP);
 }
 
-export const STAMINA_RECOVER_PER_SECOND = 1 / RECOVER_SECONDS;
+export const STAMINA_RECOVER_PER_SECOND = 1 / STAMINA_RECOVER_SECONDS;
 
-// Pace multiplier from tiredness: 1 when fresh, EXHAUSTED_SPEED when empty.
-export function staminaSpeedFactor(stamina) {
-  const value = Math.min(STAMINA_FULL, Math.max(STAMINA_EMPTY, stamina ?? STAMINA_FULL));
-  return EXHAUSTED_SPEED + (1 - EXHAUSTED_SPEED) * value;
+// Brain above the baseline strains the mind: 0 at levels 1-3, rising with each step.
+export function focusDrainPerSecond(levels) {
+  const steps = Math.max(0, (levels?.brain ?? LEVEL_DEFAULT) - LEVEL_DEFAULT);
+  return steps / FOCUS_DRAIN_SECONDS_PER_STEP;
+}
+
+function clampMeter(value) {
+  return Math.min(METER_FULL, Math.max(METER_EMPTY, value ?? METER_FULL));
 }
 
 export function nextStamina(stamina, levels, walking, deltaSeconds) {
   const change = walking
     ? -staminaDrainPerSecond(levels) * deltaSeconds
-    : STAMINA_RECOVER_PER_SECOND * deltaSeconds;
-  return Math.min(STAMINA_FULL, Math.max(STAMINA_EMPTY, (stamina ?? STAMINA_FULL) + change));
+    : deltaSeconds / STAMINA_RECOVER_SECONDS;
+  return clampMeter((stamina ?? METER_FULL) + change);
 }
 
-export function isValidStamina(value) {
-  return Number.isFinite(value) && value >= STAMINA_EMPTY && value <= STAMINA_FULL;
+export function nextFocus(focus, levels, deltaSeconds) {
+  const drain = focusDrainPerSecond(levels);
+  const change = drain > 0 ? -drain * deltaSeconds : deltaSeconds / FOCUS_RECOVER_SECONDS;
+  return clampMeter((focus ?? METER_FULL) + change);
+}
+
+export function isValidMeter(value) {
+  return Number.isFinite(value) && value >= METER_EMPTY && value <= METER_FULL;
+}
+
+function effectiveLevel(level, meter) {
+  const loss = (METER_FULL - clampMeter(meter)) * MAX_FATIGUE_LOSS;
+  return Math.max(LEVEL_MIN, level - loss);
+}
+
+// The levels an operator actually performs at, after fatigue.
+export function effectiveLevels(levels, stamina, focus) {
+  const base = levels ?? defaultLevels();
+  return {
+    speed: effectiveLevel(base.speed, stamina),
+    brain: effectiveLevel(base.brain, focus),
+  };
 }

@@ -92,12 +92,16 @@ to 1.4x; Brain scales the pulse cooldown from 1.3x to 0.7x (shorter is
 faster). The rules are pure (`web/src/stats.js`), covered by tests, and saved
 in format version 5 with a tested migration from version 4.
 
-Legs also set endurance. Walking drains an operator's stamina (60 seconds from
-fresh to empty at Legs level 3, longer with stronger legs), tired legs slow the
-walk to as little as half pace, and standing still recovers stamina slowly (70
-seconds from empty). A roster meter shows each operator's stamina, tired units
-walk with a slower cadence, and the rules are pure and tested. Save format
-version 6 stores stamina, with a tested migration from version 5.
+Fatigue takes levels off the bars. Each operator has two meters: Stamina, which
+walking drains (60 seconds from fresh to empty at Legs level 3, longer with
+stronger legs) and standing still recovers slowly (70 seconds from empty), and
+Focus, which only drains while Brain is turned above 3 (90 seconds at Brain 4,
+45 at Brain 5) and recovers while it is 3 or lower. An empty meter takes two
+levels off its bar, never below level 1, so a spent Legs 5 walks like a rested 3
+and a spent Brain 5 fires like a rested 3. The roster shows both meters, and
+levels lost to fatigue are drawn as hollow segments on the bars. The rules are
+pure and tested, and save format version 7 stores both meters, with tested
+migrations from versions 5 and 6.
 
 Operators can be picked individually: each roster entry has a selection checkbox,
 Ctrl/Shift-click adds or removes an operator, and each entry carries its own

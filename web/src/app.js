@@ -29,7 +29,13 @@ import {
   visibleBounds,
   zoomCamera,
 } from "./camera.js";
-import { advanceCombat, advancePatrols, advanceUnits, consumeFixedSteps } from "./simulation.js";
+import {
+  advanceCombat,
+  advanceFocus,
+  advancePatrols,
+  advanceUnits,
+  consumeFixedSteps,
+} from "./simulation.js";
 import {
   LEGACY_LOCAL_SAVE_KEYS,
   LOCAL_SAVE_KEY,
@@ -51,7 +57,7 @@ import {
   resolveArrival, syncGates as syncMissionGates,
 } from "./mission.js";
 import { addEffect, advanceEffects, createEffects, effectProgress, walkBob } from "./effects.js";
-import { staminaSpeedFactor } from "./stats.js";
+import { effectiveLevels, speedMultiplier } from "./stats.js";
 import {
   BARS,
   BAR_HINTS,
@@ -320,6 +326,7 @@ async function loadGame() {
       alertedBy: null,
       levels: defaultLevels(),
       stamina: 1,
+      focus: 1,
       walkPhase: 0,
       patrol: placement.patrol
         ? { route: buildPatrolRoute(state.grid, placement.position, placement.patrol), index: 0 }
@@ -408,6 +415,7 @@ function applySaveSnapshot(snapshot) {
     unit.disabled = saved.disabled;
     unit.levels = { ...saved.levels };
     unit.stamina = saved.stamina;
+    unit.focus = saved.focus;
     if (unit.patrol) unit.patrol.index = saved.patrolIndex;
   }
   const objectivesById = new Map(
@@ -931,6 +939,7 @@ function simulationStep(deltaSeconds) {
   state.missionSeconds += deltaSeconds;
   let interfaceChanged = false;
   const arrivals = advanceUnits(state.units, deltaSeconds);
+  advanceFocus(state.units, deltaSeconds);
   for (const unit of state.units) {
     if (unit.side !== "team" || unit.disabled) continue;
     if (unit.stamina < 0.15 && unit.path.length > 0 && !unit.tired) {
@@ -1027,9 +1036,12 @@ function update(deltaSeconds) {
   state.meterClock = (state.meterClock ?? 0) + deltaSeconds;
   if (state.meterClock >= 0.2) {
     state.meterClock = 0;
-    updateStaminaMeters();
+    updateMeters();
   }
-  for (const unit of state.units) unit.walkPhase += deltaSeconds * staminaSpeedFactor(unit.stamina);
+  for (const unit of state.units) {
+    const effective = effectiveLevels(unit.levels, unit.stamina, unit.focus);
+    unit.walkPhase += deltaSeconds * speedMultiplier(effective);
+  }
   advanceEffects(state.effects, deltaSeconds);
   consumeFixedSteps(state.clock, deltaSeconds, simulationStep);
   checkOutcome();
@@ -1562,6 +1574,9 @@ if (new URLSearchParams(location.search).has("e2e")) {
         }
       }
     },
+    setFocus(id, value) {
+      state.units.find((item) => item.id === id).focus = value;
+    },
     setStamina(id, value) {
       state.units.find((item) => item.id === id).stamina = value;
     },
@@ -1578,35 +1593,82 @@ if (new URLSearchParams(location.search).has("e2e")) {
 document.querySelector("#about-button").addEventListener("click", () => aboutDialog.showModal());
 document.querySelector("#close-about").addEventListener("click", () => aboutDialog.close());
 
-function paintStamina(element, unit) {
-  const percent = Math.round(unit.stamina * 100);
-  element.classList.toggle("low", unit.stamina < 0.5 && unit.stamina >= 0.2);
-  element.classList.toggle("empty", unit.stamina < 0.2);
-  element.setAttribute("aria-label", `Stamina of ${element.dataset.label} ${percent} percent`);
-  element.title = `Stamina ${percent}%: walking tires the legs; standing still recovers slowly.`;
+const METER_TEXT = {
+  stamina: { word: "Stamina", hint: "walking tires the legs; standing still recovers slowly" },
+  focus: {
+    word: "Focus",
+    hint: "turning Brain above 3 strains the mind; at 3 or lower it recovers slowly",
+  },
+};
+
+function paintMeter(element, unit) {
+  const kind = element.dataset.kind;
+  const value = unit[kind];
+  const percent = Math.round(value * 100);
+  element.classList.toggle("low", value < 0.5 && value >= 0.2);
+  element.classList.toggle("empty", value < 0.2);
+  element.setAttribute("aria-label", `${METER_TEXT[kind].word} of ${element.dataset.label} ${percent} percent`);
+  element.title = `${METER_TEXT[kind].word} ${percent}%: ${METER_TEXT[kind].hint}.`;
   element.querySelector("i").style.width = `${percent}%`;
 }
 
-// Stamina changes every step, so update the meters in place instead of rebuilding
-// the roster (which would swallow clicks on its buttons).
-function updateStaminaMeters() {
-  for (const element of rosterElement.querySelectorAll(".stamina")) {
+function makeMeter(unit, kind, label) {
+  const meter = document.createElement("div");
+  meter.className = `meter ${kind}`;
+  meter.dataset.unit = unit.id;
+  meter.dataset.kind = kind;
+  meter.dataset.label = label;
+  meter.setAttribute("role", "img");
+  meter.append(METER_TEXT[kind].word, document.createElement("i"));
+  paintMeter(meter, unit);
+  return meter;
+}
+
+// Fatigue shows on the bars: levels lost to tiredness are drawn hollow. The
+// bar keeps its trained level, and the effective level is what actually counts.
+function paintBar(element, unit) {
+  const bar = element.dataset.bar;
+  const level = unit.levels[bar];
+  const effective = Math.round(effectiveLevels(unit.levels, unit.stamina, unit.focus)[bar]);
+  const lost = level - effective;
+  element.querySelectorAll("i").forEach((segment, index) => {
+    segment.classList.toggle("filled", index + 1 <= effective);
+    segment.classList.toggle("fatigued", index + 1 > effective && index + 1 <= level);
+  });
+  element.setAttribute(
+    "aria-label",
+    `${element.dataset.label} ${level} of ${LEVEL_MAX}${lost > 0 ? `, tired down to ${effective}` : ""}`,
+  );
+  element.title = lost > 0 ? `${BAR_LABELS[bar]} is ${lost} level${lost > 1 ? "s" : ""} lower from fatigue.` : "";
+}
+
+// Fatigue changes every step, so update the meters and bars in place instead of
+// rebuilding the roster (which would swallow clicks on its buttons).
+function updateMeters() {
+  for (const element of document.querySelectorAll(".meter")) {
     const unit = state.units.find((item) => item.id === element.dataset.unit);
-    if (unit) paintStamina(element, unit);
+    if (unit) paintMeter(element, unit);
+  }
+  for (const element of document.querySelectorAll(".bar[data-unit]")) {
+    const unit = state.units.find((item) => item.id === element.dataset.unit);
+    if (unit) paintBar(element, unit);
   }
 }
 
-function levelBar(level, label) {
-  const bar = document.createElement("span");
-  bar.className = "bar";
-  bar.setAttribute("role", "img");
-  bar.setAttribute("aria-label", `${label} ${level} of ${LEVEL_MAX}`);
-  for (let index = 1; index <= LEVEL_MAX; index += 1) {
-    const segment = document.createElement("i");
-    segment.classList.toggle("filled", index <= level);
-    bar.append(segment);
+function levelBar(unit, bar, label) {
+  const element = document.createElement("span");
+  element.className = "bar";
+  element.setAttribute("role", "img");
+  element.dataset.bar = bar;
+  element.dataset.label = label;
+  for (let index = 1; index <= LEVEL_MAX; index += 1) element.append(document.createElement("i"));
+  if (unit) {
+    element.dataset.unit = unit.id;
+    paintBar(element, unit);
+  } else {
+    element.setAttribute("aria-label", `${label} none`);
   }
-  return bar;
+  return element;
 }
 
 function applyLevelChange(targets, bar, delta, subject) {
@@ -1669,7 +1731,7 @@ function renderTraining() {
       raise.setAttribute("aria-label", `Raise ${BAR_LABELS[bar]}`);
       raise.disabled = !unit || level >= LEVEL_MAX;
       raise.addEventListener("click", () => adjustTraining(bar, 1));
-      row.append(label, levelBar(level, BAR_LABELS[bar]), lower, raise);
+      row.append(label, levelBar(unit, bar, BAR_LABELS[bar]), lower, raise);
       return row;
     }),
   );
@@ -1755,17 +1817,13 @@ function renderInterface() {
         raise.disabled = unit.disabled || unit.levels[bar] >= LEVEL_MAX;
         raise.setAttribute("aria-label", `Raise ${BAR_LABELS[bar]} for ${label}`);
         raise.addEventListener("click", () => adjustOperator(unit, bar, 1));
-        group.append(BAR_LABELS[bar], levelBar(unit.levels[bar], `${BAR_LABELS[bar]} of ${label}`), lower, raise);
+        group.append(BAR_LABELS[bar], levelBar(unit, bar, `${BAR_LABELS[bar]} of ${label}`), lower, raise);
         bars.append(group);
       }
-      const stamina = document.createElement("div");
-      stamina.className = "stamina";
-      stamina.dataset.unit = unit.id;
-      stamina.dataset.label = label;
-      stamina.setAttribute("role", "img");
-      stamina.append("Stamina", document.createElement("i"));
-      paintStamina(stamina, unit);
-      item.append(checkbox, button, bars, stamina);
+      const meters = document.createElement("div");
+      meters.className = "meters";
+      meters.append(makeMeter(unit, "stamina", label), makeMeter(unit, "focus", label));
+      item.append(checkbox, button, bars, meters);
       return item;
     }),
   );

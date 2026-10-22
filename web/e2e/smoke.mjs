@@ -146,12 +146,31 @@ for (const [name, type, executablePath] of targets) {
       await page.locator('.stamina[data-unit="operator-two"]').getAttribute("aria-label"),
       /Stamina of Field Operator 2 10 percent/,
     );
+    // Fatigue shows on the bars: a spent operator-two has hollow (lost) Legs segments.
+    await page.evaluate(() => window.opensyndTest.setStamina("operator-two", 0));
+    await page.waitForFunction(
+      () => document.querySelector('.roster .bar[data-unit="operator-two"][data-bar="speed"]')
+        .getAttribute("aria-label").includes("tired down to"),
+    );
+    assert.ok(
+      (await page.locator('.roster .bar[data-unit="operator-two"][data-bar="speed"] i.fatigued').count()) > 0,
+    );
+    assert.equal(await page.locator(".meter.focus").count(), 4);
+    // Mental fatigue lowers the Brain bar the same way.
+    await page.evaluate(() => window.opensyndTest.setFocus("operator-three", 0));
+    await page.waitForFunction(
+      () => document.querySelector('.roster .bar[data-unit="operator-three"][data-bar="brain"]')
+        .getAttribute("aria-label").includes("tired down to"),
+    );
+    await page.evaluate(() => window.opensyndTest.setFocus("operator-three", 1));
+    await page.evaluate(() => window.opensyndTest.setStamina("operator-two", 0.1));
     // Camera controls: zoom with the wheel and keys, jump with the minimap, recentre with C.
     await page.locator("#game-canvas").hover();
     await page.mouse.wheel(0, -200);
     await page.keyboard.press("-");
     await page.locator("#minimap").click({ position: { x: 128, y: 64 } });
     await page.keyboard.press("c");
+    await page.evaluate(() => window.opensyndTest.setStamina("operator-two", 1));
     // A group move sends several operators at once.
     await page.keyboard.press("l");
     await page.keyboard.press("Enter");

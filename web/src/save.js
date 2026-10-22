@@ -1,11 +1,18 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 export const SAVE_FORMAT = "opensynd-save";
-export const SAVE_VERSION = 6;
-export const LOCAL_SAVE_KEY = "opensynd.save.v6";
-export const LEGACY_LOCAL_SAVE_KEYS = ["opensynd.save.v5", "opensynd.save.v4", "opensynd.save.v3", "opensynd.save.v2", "opensynd.save.v1"];
+export const SAVE_VERSION = 7;
+export const LOCAL_SAVE_KEY = "opensynd.save.v7";
+export const LEGACY_LOCAL_SAVE_KEYS = [
+  "opensynd.save.v6",
+  "opensynd.save.v5",
+  "opensynd.save.v4",
+  "opensynd.save.v3",
+  "opensynd.save.v2",
+  "opensynd.save.v1",
+];
 
-import { BARS, defaultLevels, isValidLevel, isValidStamina, maxCooldownMultiplier } from "./stats.js";
+import { BARS, defaultLevels, isValidLevel, isValidMeter, maxCooldownMultiplier } from "./stats.js";
 
 function fail(message) {
   throw new Error(`Invalid OpenSynd save: ${message}`);
@@ -59,6 +66,7 @@ export function createSaveSnapshot(state, createdAt = new Date().toISOString()) 
       patrolIndex: unit.patrol?.index ?? 0,
       levels: { ...(unit.levels ?? defaultLevels()) },
       stamina: unit.stamina ?? 1,
+      focus: unit.focus ?? 1,
     })),
     objectives: state.objectives.map((objective) => ({
       id: objective.id,
@@ -123,7 +131,8 @@ export function validateSaveSnapshot(value, context) {
     if (!isObject(unit.levels) || !BARS.every((bar) => isValidLevel(unit.levels[bar]))) {
       fail(`${unit.id} training levels are invalid`);
     }
-    if (!isValidStamina(unit.stamina)) fail(`${unit.id} stamina is invalid`);
+    if (!isValidMeter(unit.stamina)) fail(`${unit.id} stamina is invalid`);
+    if (!isValidMeter(unit.focus)) fail(`${unit.id} focus is invalid`);
     const patrolLength = context.patrolLengths?.[unit.id] ?? 0;
     if (
       !Number.isInteger(unit.patrolIndex) ||
@@ -143,6 +152,7 @@ export function validateSaveSnapshot(value, context) {
       patrolIndex: unit.patrolIndex,
       levels: { speed: unit.levels.speed, brain: unit.levels.brain },
       stamina: unit.stamina,
+      focus: unit.focus,
     };
   });
 
@@ -249,8 +259,16 @@ export function migrateSaveSnapshot(value, context) {
     // Version 6 stores each unit's stamina; older saves start everyone fresh.
     migrated = {
       ...migrated,
-      formatVersion: SAVE_VERSION,
+      formatVersion: 6,
       units: migrated.units.map((unit) => ({ ...unit, stamina: 1 })),
+    };
+  }
+  if (migrated.formatVersion === 6) {
+    // Version 7 stores each unit's focus (mental fatigue); older saves start everyone sharp.
+    migrated = {
+      ...migrated,
+      formatVersion: SAVE_VERSION,
+      units: migrated.units.map((unit) => ({ ...unit, focus: 1 })),
     };
   }
   // Missions may gain objectives after a save was written; they start incomplete.
