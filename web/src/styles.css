@@ -432,6 +432,33 @@ details.panel-section > p, details.panel-section > div { margin-top: 0.5rem; }
   background: transparent;
   border: 1px dashed var(--amber);
 }
+.world-map { margin: 1rem 0 0.3rem; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: #081015; }
+.world-map-svg { display: block; width: 100%; height: auto; }
+.world-map-card { min-height: 2.6em; margin: 0.3rem 0 0.2rem; font-size: 0.9rem; color: var(--muted); }
+.map-sea { fill: #07161c; }
+.map-grid { color: rgba(66, 214, 208, 0.1); }
+.map-land { fill: #12252c; stroke: rgba(66, 214, 208, 0.45); stroke-width: 1.6; }
+.map-island { fill: #0f1f25; stroke: rgba(66, 214, 208, 0.25); stroke-width: 1; }
+.map-label { fill: rgba(143, 163, 170, 0.55); font: 600 13px ui-sans-serif, sans-serif; letter-spacing: 0.25em; text-anchor: middle; }
+.map-route { fill: none; stroke: rgba(143, 163, 170, 0.4); stroke-width: 2; stroke-dasharray: 8 8; }
+.map-route.done { stroke: var(--restored); }
+.map-region { cursor: pointer; outline: none; }
+.map-region-shape { fill: rgba(225, 179, 90, 0.16); stroke: var(--amber); stroke-width: 2.2; transition: fill 0.15s; }
+.map-pin { fill: var(--amber); }
+.map-region-name { fill: var(--ink); font: 700 15px ui-sans-serif, sans-serif; text-anchor: middle; paint-order: stroke; stroke: #071014; stroke-width: 4px; }
+.map-region-state { fill: var(--muted); font: 600 11px ui-sans-serif, sans-serif; letter-spacing: 0.12em; text-anchor: middle; paint-order: stroke; stroke: #071014; stroke-width: 3px; }
+.map-region.completed .map-region-shape { fill: rgba(121, 213, 155, 0.2); stroke: var(--restored); }
+.map-region.completed .map-pin { fill: var(--restored); }
+.map-region.locked { cursor: not-allowed; }
+.map-region.locked .map-region-shape { fill: rgba(143, 163, 170, 0.08); stroke: #50636b; stroke-dasharray: 5 5; }
+.map-region.locked .map-pin { fill: #50636b; }
+.map-region.locked .map-region-name { fill: var(--muted); }
+.map-region:not(.locked):hover .map-region-shape, .map-region:focus-visible .map-region-shape { fill: rgba(66, 214, 208, 0.26); stroke: var(--public); }
+.map-region:focus-visible .map-region-name { fill: var(--public); }
+.map-region.selected .map-region-shape { stroke: var(--public); stroke-width: 3.4; }
+.map-region.selected .map-pin { fill: var(--public); animation: map-pulse 1.8s ease-in-out infinite; }
+@keyframes map-pulse { 50% { r: 9; opacity: 0.6; } }
+@media (prefers-reduced-motion: reduce) { .map-region.selected .map-pin { animation: none; } }
 .mission-list { display: grid; gap: 0.4rem; margin: 1rem 0; }
 .mission-list button {
   display: grid;

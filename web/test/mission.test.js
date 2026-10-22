@@ -139,6 +139,7 @@ async function loadSquad() {
       position: { ...placement.position },
       path: [],
       equipment: placement.equipment.map((path) => ({ definition: equipment[path], charges: equipment[path].charges })),
+      activeSlot: 0, // operatives fire the weapon they have selected: the first item is the pistol
       health: definition.stats.vitality,
       cooldownRemaining: 0,
       targetId: null,

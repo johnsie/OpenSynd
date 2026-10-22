@@ -27,6 +27,12 @@ export function advancePursuit(units, grid) {
       unit.followId = null;
       continue;
     }
+    if (!hasWeaponSelected(unit) && roundsLeft(unit) !== 0) {
+      events.push({ type: "ended", unitId: unit.id, reason: "none-selected" });
+      unit.followId = null;
+      unit.targetId = null;
+      continue;
+    }
     if (roundsLeft(unit) === 0) {
       events.push({ type: "ended", unitId: unit.id, reason: "no-rounds" });
       unit.followId = null;
@@ -385,7 +391,14 @@ const DISARMED = Object.freeze({ attack: 0, range: 0, cooldown: 1 });
  * loaded weapon that reaches that far, falling back to the longest-ranged one when the
  * target is out of reach.
  */
+// Operators fire only after choosing a weapon: with nothing selected they hold fire. Once one is
+// selected and runs dry, they carry on with the next loaded weapon they have.
+export function hasWeaponSelected(unit) {
+  return unit.side !== "team" || Number.isInteger(unit.activeSlot);
+}
+
 export function pickWeapon(unit, distance = null) {
+  if (!hasWeaponSelected(unit)) return { item: null, stats: DISARMED };
   const all = pulseItems(unit);
   if (all.length === 0) return { item: null, stats: unit.definition.stats };
   const chosen = Number.isInteger(unit.activeSlot) ? unit.equipment?.[unit.activeSlot] : null;
@@ -549,7 +562,8 @@ export function fireManual(shooter, aim, units, grid) {
   if (shooter.cooldownRemaining > ARRIVAL_EPSILON) return { fired: false, reason: "recharging", events: [] };
   const { item: weapon, stats } = pickWeapon(shooter);
   if (stats.range <= 0) {
-    return { fired: false, reason: pulseItems(shooter).length === 0 ? "no-weapon" : "no-rounds", events: [] };
+    const reason = pulseItems(shooter).length === 0 ? "no-weapon" : roundsLeft(shooter) === 0 ? "no-rounds" : "none-selected";
+    return { fired: false, reason, events: [] };
   }
   const shot = castShot(shooter, aim, units, grid, stats.range);
   if (weapon && weapon.charges !== null) weapon.charges -= 1;

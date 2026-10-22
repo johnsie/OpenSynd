@@ -142,6 +142,8 @@ function combatUnits() {
     {
       id: "operator-one",
       side: "team",
+      equipment: [weaponItem(12, 3.25, 0.75)],
+      activeSlot: 0,
       definition: { stats: { attack: 12, range: 3.25, cooldown: 0.75 } },
       position: { x: 1, y: 1 },
       path: [],
@@ -374,6 +376,7 @@ test("a higher brain level fires the pulse more often", () => {
       ...operatorAt(0, 2),
       id: "shooter",
       levels: { speed: 3, brain },
+      activeSlot: 0,
       equipment: [{ definition: { action: "disable-pulse", effect: { attack: 1, range: 5, cooldown: 0.75 } } }],
       cooldownRemaining: 0,
       targetId: "dummy",
@@ -447,6 +450,7 @@ test("turning Brain up speeds the pulse at first, then mental fatigue pulls it b
       id: "shooter",
       levels: { speed: 3, brain },
       focus,
+      activeSlot: 0,
       equipment: [{ definition: { action: "disable-pulse", effect: { attack: 1, range: 5, cooldown: 0.75 } } }],
       cooldownRemaining: 0,
       targetId: "dummy",
@@ -508,20 +512,21 @@ function weaponItem(attack, range, cooldown) {
   return { definition: { action: "disable-pulse", effect: { attack, range, cooldown } }, charges: null };
 }
 
-test("a unit fights with the hardest-hitting weapon that reaches its target", () => {
+test("an operative fights only with the weapon they have selected", () => {
   const light = { attack: 12, range: 3.25, cooldown: 0.75 };
   const heavy = { attack: 20, range: 4.5, cooldown: 1.4 };
-  const carrier = { ...operatorAt(0, 0), equipment: [weaponItem(12, 3.25, 0.75), weaponItem(20, 4.5, 1.4)] };
+  const two = [weaponItem(12, 3.25, 0.75), weaponItem(20, 4.5, 1.4)];
+  const carrier = { ...operatorAt(0, 0), equipment: two };
 
-  assert.deepEqual(combatStats(carrier), heavy, "reach is the longest weapon");
-  assert.deepEqual(combatStats(carrier, 2), heavy, "the heavy weapon hits harder when both reach");
-  assert.deepEqual(combatStats(carrier, 4), heavy, "only the heavy weapon reaches 4 tiles");
-  assert.deepEqual(combatStats(carrier, 9), heavy, "out of reach falls back to the longest");
-  const lightOnly = { ...operatorAt(0, 0), equipment: [weaponItem(12, 3.25, 0.75)] };
-  assert.deepEqual(combatStats(lightOnly, 2), light);
+  assert.deepEqual(combatStats(carrier), { attack: 0, range: 0, cooldown: 1 }, "nothing selected: no shooting");
+  assert.deepEqual(combatStats({ ...carrier, activeSlot: 0 }, 2), light, "the selected light weapon");
+  assert.deepEqual(combatStats({ ...carrier, activeSlot: 1 }, 2), heavy, "the selected heavy weapon");
+  // A selected weapon that runs dry hands over to the hardest-hitting loaded one.
+  const dry = [{ ...weaponItem(12, 3.25, 0.75), charges: 0 }, weaponItem(20, 4.5, 1.4)];
+  assert.deepEqual(combatStats({ ...carrier, equipment: dry, activeSlot: 0 }), heavy);
 
-  const unarmed = { ...operatorAt(0, 0), equipment: [] };
-  assert.equal(combatStats(unarmed), unarmed.definition.stats, "no weapon: the unit's own stats");
+  const unarmed = { ...operatorAt(0, 0), equipment: [], activeSlot: null };
+  assert.deepEqual(combatStats(unarmed), { attack: 0, range: 0, cooldown: 1 }, "no weapon, no shooting");
 });
 
 test("an armed watcher hits harder and from further away", () => {
@@ -567,9 +572,9 @@ test("a chosen weapon is the one that fires, even when another would hit harder"
   carrier.activeSlot = 1;
   assert.deepEqual(combatStats(carrier, 2), heavy.definition.effect);
 
-  // Back to automatic: the best weapon for the distance.
+  // Put away: nothing fires until a weapon is selected again.
   carrier.activeSlot = null;
-  assert.deepEqual(combatStats(carrier, 2), heavy.definition.effect);
+  assert.equal(combatStats(carrier, 2).range, 0);
   // A chosen slot that is not a weapon (or is empty) is ignored.
   const tool = { definition: { action: "stealth", effect: { sightFactor: 0.6 } }, charges: null };
   const odd = { ...operatorAt(0, 0), equipment: [tool, light], activeSlot: 0 };
@@ -581,6 +586,7 @@ test("a chosen short-range weapon cannot hit a target beyond its reach", () => {
   const carrier = {
     ...operatorAt(0, 0),
     id: "shooter",
+    activeSlot: 0,
     equipment: [weaponItem(12, 3.25, 0.75), weaponItem(20, 4.5, 1.4)],
     activeSlot: 0,
     cooldownRemaining: 0,
@@ -601,6 +607,7 @@ function shooterWith(equipment, overrides = {}) {
     ...operatorAt(0, 0),
     id: "shooter",
     equipment,
+    activeSlot: 0, // operatives fire only a weapon they have selected
     cooldownRemaining: 0,
     targetId: "dummy",
     health: 100,
@@ -680,10 +687,10 @@ test("an operative holds a weapon only while one is selected and loaded", () => 
   const pistol = roundsWeapon(5);
   const rifle = roundsWeapon(3, 20, 4.5, 1.4);
   const medkit = { definition: { action: "restore-vitality", effect: { restoreVitality: 30 } }, charges: 1 };
-  const operative = shooterWith([pistol, medkit, rifle], { targetId: null });
+  const operative = shooterWith([pistol, medkit, rifle], { targetId: null, activeSlot: null });
 
   assert.equal(heldWeapon(operative), null, "nothing selected: hands empty");
-  assert.equal(heldWeapon({ ...operative, targetId: "w" }), rifle, "firing at a target: the weapon is out");
+  assert.equal(heldWeapon({ ...operative, targetId: "w" }), null, "even with a target, nothing selected means nothing out");
   assert.equal(heldWeapon({ ...operative, targetId: "w", equipment: [roundsWeapon(0)] }), null, "nothing to fire");
   assert.equal(heldWeapon({ ...operative, activeSlot: 0 }), pistol);
   assert.equal(heldWeapon({ ...operative, activeSlot: 2 }), rifle);
@@ -741,6 +748,7 @@ function chaser(x, y, equipment, overrides = {}) {
     stamina: 1,
     focus: 1,
     equipment,
+    activeSlot: 0,
     followId: "prey",
     health: 100,
     cooldownRemaining: 0,
@@ -847,6 +855,7 @@ function shooterAt(x, y, equipment, overrides = {}) {
     ...operatorAt(x, y),
     id: "gun",
     equipment,
+    activeSlot: 0,
     cooldownRemaining: 0,
     levels: { speed: 3, brain: 3 },
     stamina: 1,
@@ -938,12 +947,14 @@ test("screen positions convert back to exact grid positions for aiming", () => {
   assert.ok(Math.abs(exact.x - 3.4) < 1e-9 && Math.abs(exact.y - 1.7) < 1e-9);
 });
 
-test("a unit that has just fired by hand holds its weapon for a moment", () => {
+test("a selected weapon stays out; with none selected an operative holds nothing, even right after a shot", () => {
   const pistol = roundsWeapon(5);
-  const operative = shooterAt(0, 0, [pistol], { targetId: null, firedAt: 10 });
-  assert.equal(heldWeapon(operative, 10.5), pistol);
-  assert.equal(heldWeapon(operative, 11), null, "put away again after a moment");
-  assert.equal(heldWeapon(operative), null, "without a clock it only holds a selected or targeted weapon");
+  const selected = shooterAt(0, 0, [pistol], { targetId: null, firedAt: 10 });
+  assert.equal(heldWeapon(selected, 10.5), pistol);
+  assert.equal(heldWeapon(selected, 99), pistol, "a selected weapon stays in hand");
+  const none = { ...selected, activeSlot: null };
+  assert.equal(heldWeapon(none, 10.5), null, "cannot fire, so nothing is out");
+  assert.equal(heldWeapon(none), null);
 });
 
 const walledMap = {

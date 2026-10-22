@@ -126,8 +126,15 @@ function playOnce(world, tactics) {
     const live = watchers.filter((unit) => !unit.disabled);
     const close = live.filter((w) => active.some((o) => dist(o, w) <= tactics.engageRange));
 
-    // Upkeep: stims and repairs.
+    // Upkeep: the bot keeps its best loaded weapon selected (a player has to choose one to fire), then
+    // stims and repairs.
     for (const unit of active) {
+      let best = -1;
+      unit.equipment.forEach((item, slot) => {
+        if (item.definition.action !== "disable-pulse" || item.charges === 0) return;
+        if (best === -1 || item.definition.effect.range > unit.equipment[best].definition.effect.range) best = slot;
+      });
+      unit.activeSlot = best === -1 ? null : best;
       if ((unit.stamina < 0.2 || unit.focus < 0.2) && energyItem(unit)) useEnergyItem(unit);
       const kit = unit.equipment.find((item) => item.definition.action === "restore-vitality" && item.charges !== 0);
       if (kit && unit.health < 50) {

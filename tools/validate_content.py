@@ -277,6 +277,19 @@ class Validation:
         map_value, zones = maps[map_path]
         dimensions = map_value["dimensions"]
 
+        region = value.get("region")
+        if region is not None:
+            if (
+                not isinstance(region, dict)
+                or not isinstance(region.get("name"), str) or not region["name"]
+                or not all(
+                    isinstance(region.get(axis), (int, float)) and not isinstance(region.get(axis), bool)
+                    and 0 <= region[axis] <= 100
+                    for axis in ("x", "y")
+                )
+            ):
+                self.error(path, "region must have a name and x and y from 0 to 100")
+
         placement_ids: set[str] = set()
         for group_name in ("team", "opponents", "bystanders"):
             group = value.get(group_name, [])

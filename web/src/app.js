@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 import { createOverlay, createTileSprites } from "./textures.js";
+import { renderWorldMap } from "./worldmap.js";
 import {
   FENCE_SURFACE,
   WALL_SURFACE,
@@ -95,6 +96,7 @@ import {
   advanceFocus,
   advancePatrols,
   advancePersuasion,
+  hasWeaponSelected,
   startPanic,
   advanceUnits,
   consumeFixedSteps,
@@ -510,6 +512,7 @@ async function loadGame(index = state.missionIndex) {
           name: entry.name,
           objectives: entry.objectives.length,
           watchers: entry.opponents.length,
+          region: entry.region ?? null,
         };
       }),
     );
@@ -758,8 +761,32 @@ function operationInProgress() {
 const missionListElement = document.querySelector("#mission-list");
 
 // Operations the player may start: the first, plus any whose predecessor is complete.
+// Switch to operation `index`, asking first if that would abandon one in progress.
+async function chooseMission(index) {
+  if (index === state.missionIndex) return;
+  if (
+    operationInProgress() &&
+    !(await confirmLeave("Switching operations abandons the one in progress. Save first if you want to come back to it."))
+  ) {
+    return;
+  }
+  loadGame(index).catch(showFatalError);
+}
+
 function renderMissionList() {
   const ids = state.missionList.map((entry) => entry.id);
+  renderWorldMap({
+    container: document.querySelector("#world-map"),
+    entries: state.missionList,
+    progress: state.progress,
+    selectedIndex: state.missionIndex,
+    onSelect: chooseMission,
+    onCard: (card) => {
+      document.querySelector("#world-map-card").textContent = card
+        ? `${card.title} — ${card.place} — ${card.label}. ${card.detail}`
+        : "Choose an operation on the map, or from the list below.";
+    },
+  });
   missionListElement.replaceChildren(
     ...state.missionList.map((entry, index) => {
       const unlocked = isUnlocked(state.progress, ids, index);
@@ -778,16 +805,7 @@ function renderMissionList() {
         ? `${entry.objectives} objectives · ${entry.watchers} watchers`
         : `Complete ${state.missionList[index - 1].name} to unlock this operation.`;
       button.append(name, status, note);
-      button.addEventListener("click", async () => {
-        if (index === state.missionIndex) return;
-        if (
-          operationInProgress() &&
-          !(await confirmLeave("Switching operations abandons the one in progress. Save first if you want to come back to it."))
-        ) {
-          return;
-        }
-        loadGame(index).catch(showFatalError);
-      });
+      button.addEventListener("click", () => chooseMission(index));
       return button;
     }),
   );
@@ -2012,7 +2030,11 @@ function simulationStep(deltaSeconds) {
   state.missionSeconds += deltaSeconds;
   let interfaceChanged = false;
   for (const event of advancePursuit(state.units, state.grid)) {
-    if (event.reason === "no-rounds") {
+    if (event.reason === "none-selected") {
+      const unit = state.units.find((item) => item.id === event.unitId);
+      setStatus(`${unit.definition.name} has no weapon selected and stops the pursuit.`);
+      interfaceChanged = true;
+    } else if (event.reason === "no-rounds") {
       const unit = state.units.find((item) => item.id === event.unitId);
       setStatus(`${unit.definition.name} is out of rounds and stops the pursuit.`);
       audio.play("alert");
@@ -2468,15 +2490,15 @@ function issueAttack(targetId) {
   }
   const squad = selectedOperators();
   if (squad.length === 0) return;
-  const armed = squad.filter(
-    (unit) =>
-      unit.equipment.some((item) => item.definition.action === "disable-pulse") && roundsLeft(unit) !== 0,
-  );
+  const carrying = (unit) => unit.equipment.some((item) => item.definition.action === "disable-pulse");
+  const armed = squad.filter((unit) => carrying(unit) && roundsLeft(unit) !== 0 && hasWeaponSelected(unit));
   if (armed.length === 0) {
     setStatus(
-      squad.some((unit) => unit.equipment.some((item) => item.definition.action === "disable-pulse"))
-        ? "Out of rounds. Swap to another weapon or loot one."
-        : "No selected operator has a weapon equipped.",
+      squad.some((unit) => carrying(unit) && roundsLeft(unit) !== 0)
+        ? "No weapon selected. Click a weapon in the operator's inventory, then give the order."
+        : squad.some(carrying)
+          ? "Out of rounds. Swap to another weapon or loot one."
+          : "No selected operator has a weapon equipped.",
     );
     return;
   }
@@ -2749,6 +2771,7 @@ function fireByHand(aim) {
   }
   if (reasons.has("recharging")) setStatus("Weapon recharging.");
   else if (reasons.has("no-rounds")) setStatus("Out of rounds. Select another weapon or loot one.");
+  else if (reasons.has("none-selected")) setStatus("No weapon selected. Click a weapon in the operator's inventory first.");
   else if (reasons.has("no-weapon")) setStatus("No weapon equipped.");
 }
 
@@ -3109,7 +3132,7 @@ function pressSlot(unit, slot) {
     if (squad.length > 1 && squad.some((member) => member.id === unit.id)) {
       if (unit.activeSlot === slot) {
         clearWeaponForAll(squad, definition.id);
-        setStatus(`${squad.length} operators: automatic weapon choice.`);
+        setStatus(`${squad.length} operators: weapons put away. Select one to fire.`);
       } else {
         const { selected, missing } = selectWeaponForAll(squad, definition.id);
         unit.activeSlot = slot; // the operative clicked keeps the exact copy they clicked
@@ -3126,7 +3149,7 @@ function pressSlot(unit, slot) {
     setStatus(
       unit.activeSlot === slot
         ? `${unit.definition.name}: ${definition.name} selected. It will be the only weapon that fires.`
-        : `${unit.definition.name}: automatic weapon choice.`,
+        : `${unit.definition.name}: weapon put away. Select one to fire.`,
     );
     audio.play("select");
     renderInterface();

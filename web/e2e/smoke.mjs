@@ -129,7 +129,7 @@ for (const [name, type, executablePath] of targets) {
     assert.match(await page.locator("#status-message").innerText(), /4 operators: Civic Pulse Emitter selected/);
     await page.locator(".roster-item").first().locator(".slot").first().click();
     assert.deepEqual(await weaponPressed(), ["false", "false", "false", "false"]);
-    assert.match(await page.locator("#status-message").innerText(), /4 operators: automatic weapon choice/);
+    assert.match(await page.locator("#status-message").innerText(), /4 operators: weapons put away/);
     await page.locator(".roster-select").first().click();
     // Select all operators with the A key, then check they all show as selected.
     await page.keyboard.press("a");
@@ -250,7 +250,7 @@ for (const [name, type, executablePath] of targets) {
     assert.equal(await firstSquares.count(), 8);
     assert.equal(await page.locator(".roster-item").first().locator(".slot:not(.empty)").count(), 2);
     assert.equal(await firstSquares.first().locator(".charges").innerText(), "24");
-    // Clicking a weapon square selects it (click again for automatic choice); a repair kit at full health explains itself.
+    // Clicking a weapon square selects it (click again to put it away); a repair kit at full health explains itself.
     // No weapon selected: nothing in the hands. Selecting one puts it in the hand; selecting it again puts it away.
     assert.equal(await page.evaluate(() => window.opensyndTest.held("operator-one")), null);
     await firstSquares.first().click();
@@ -260,7 +260,7 @@ for (const [name, type, executablePath] of targets) {
     await firstSquares.first().click();
     assert.equal(await firstSquares.first().getAttribute("aria-pressed"), "false");
     assert.equal(await page.evaluate(() => window.opensyndTest.held("operator-one")), null);
-    assert.match(await page.locator("#status-message").innerText(), /automatic weapon choice/);
+    assert.match(await page.locator("#status-message").innerText(), /weapon put away/);
     await firstSquares.nth(1).click();
     assert.match(await page.locator("#status-message").innerText(), /integrity is already full/);
     await page.evaluate(() => {
@@ -307,6 +307,12 @@ for (const [name, type, executablePath] of targets) {
       window.opensyndTest.focusOn("watcher-four");
     });
     await page.locator(".roster-select").nth(1).click();
+    // Nobody fires without choosing a weapon: with none selected the order is refused.
+    await page.waitForTimeout(250);
+    const firstEnemy = await page.evaluate(() => window.opensyndTest.screenPoint("watcher-four"));
+    await page.mouse.click(firstEnemy.x, firstEnemy.y);
+    assert.match(await page.locator("#status-message").innerText(), /No weapon selected/);
+    await page.locator(".roster-item").nth(1).getByLabel(/slot \d+: Civic Pulse Emitter/).first().click();
     await page.waitForTimeout(250);
     const enemy = await page.evaluate(() => window.opensyndTest.screenPoint("watcher-four"));
     await page.mouse.move(enemy.x + 40, enemy.y + 40);
