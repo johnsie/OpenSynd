@@ -132,6 +132,31 @@ class Validation:
             rectangle = dict(position) if isinstance(position, dict) else {}
             rectangle.update({"width": zone.get("width"), "height": zone.get("height")})
             self.validate_rectangle(path, rectangle, width, height, f"zone {zone_id}")
+
+        objects = value.get("objects", [])
+        if not isinstance(objects, list):
+            self.error(path, "objects must be an array")
+            return zone_ids
+        object_ids: set[str] = set()
+        for item in objects:
+            if not isinstance(item, dict):
+                self.error(path, "every object must be an object")
+                continue
+            object_id = item.get("id")
+            if not isinstance(object_id, str) or ID_PATTERN.fullmatch(object_id) is None:
+                self.error(path, f"invalid object id: {object_id!r}")
+                continue
+            if object_id in object_ids:
+                self.error(path, f"duplicate object id: {object_id}")
+            object_ids.add(object_id)
+            if item.get("kind") != "gate":
+                self.error(path, f"object {object_id} has unsupported kind")
+            if item.get("control") not in zone_ids:
+                self.error(path, f"object {object_id} control zone does not exist")
+            position = item.get("position")
+            rectangle = dict(position) if isinstance(position, dict) else {}
+            rectangle.update({"width": item.get("width"), "height": item.get("height")})
+            self.validate_rectangle(path, rectangle, width, height, f"object {object_id}")
         return zone_ids
 
     def validate_rectangle(

@@ -4,7 +4,10 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  applyGates,
   createTileGrid,
+  isTerrainWalkable,
+  isWalkable,
   findObjectiveAtPosition,
   findPath,
   gridToScreen,
@@ -168,4 +171,30 @@ test("combat does not apply damage outside weapon range", () => {
   assert.deepEqual(advanceCombat(units, FIXED_STEP_SECONDS), []);
   assert.equal(units[0].health, 100);
   assert.equal(units[1].health, 45);
+});
+
+test("a closed gate blocks the route to the exit until its control opens", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const map = JSON.parse(
+    await readFile(new URL("../content/maps/signal-yard.map.json", import.meta.url), "utf8"),
+  );
+  const grid = createTileGrid(map);
+  const start = { x: 12, y: 9 };
+  const exit = { x: 14, y: 9 };
+
+  applyGates(grid, map.objects, () => false);
+  assert.deepEqual(findPath(grid, start, exit), []);
+  assert.equal(isTerrainWalkable(grid, 13, 9), true);
+
+  applyGates(grid, map.objects, () => true);
+  assert.ok(findPath(grid, start, exit).length > 0);
+
+  applyGates(grid, map.objects, () => false);
+  assert.deepEqual(findPath(grid, start, exit), []);
+});
+
+test("gates never make blocked terrain walkable", () => {
+  const grid = [[{ x: 0, y: 0, walkable: false }]];
+  applyGates(grid, [{ id: "g", position: { x: 0, y: 0 }, width: 1, height: 1 }], () => true);
+  assert.equal(isWalkable(grid, 0, 0), false);
 });

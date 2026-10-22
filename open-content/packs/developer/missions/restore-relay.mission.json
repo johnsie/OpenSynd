@@ -3,7 +3,7 @@
   "id": "developer.restore-relay",
   "name": "First Light",
   "license": "CC0-1.0",
-  "briefing": "Two public communication relays have been isolated from the district mesh. Restore both without damaging the runoff controls, then leave through the eastern service gate.",
+  "briefing": "Two public communication relays have been isolated from the district mesh. Restore both without damaging the runoff controls, unlock the eastern service gate at its control panel, then leave through it.",
   "map": "maps/signal-yard.map.json",
   "team": [
     { "id": "operator-one", "unit": "units/field-operator.unit.json", "position": { "x": 1, "y": 5 }, "equipment": ["equipment/civic-pulse-emitter.equipment.json", "equipment/field-repair-kit.equipment.json"] },
@@ -18,6 +18,7 @@
   "objectives": [
     { "id": "restore-west", "type": "interact", "targetZone": "west-relay", "required": true, "description": "Reconnect the western relay." },
     { "id": "restore-east", "type": "interact", "targetZone": "east-relay", "required": true, "description": "Reconnect the eastern relay." },
+    { "id": "open-gate", "type": "interact", "targetZone": "gate-panel", "required": true, "description": "Unlock the eastern service gate." },
     { "id": "leave-yard", "type": "extract", "targetZone": "safe-exit", "required": true, "description": "Extract through the eastern service gate." }
   ]
 }

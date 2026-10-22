@@ -209,5 +209,15 @@ export function migrateSaveSnapshot(value, context) {
       units: [...migrated.units, ...addedUnits],
     };
   }
+  // Missions may gain objectives after a save was written; they start incomplete.
+  if (Array.isArray(migrated.objectives) && Array.isArray(context.objectiveIds)) {
+    const known = new Set(migrated.objectives.map((objective) => objective?.id));
+    const added = context.objectiveIds
+      .filter((id) => !known.has(id))
+      .map((id) => ({ id, complete: false }));
+    if (added.length > 0) {
+      migrated = { ...migrated, objectives: [...migrated.objectives, ...added] };
+    }
+  }
   return migrated;
 }

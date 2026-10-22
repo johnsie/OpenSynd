@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 import {
+  applyGates,
   createTileGrid,
+  isTerrainWalkable,
   findPath,
   findObjectiveAtPosition,
   gridToScreen,
@@ -209,6 +211,7 @@ async function loadGame() {
     ...objective,
     complete: false,
   }));
+  syncGates();
   state.units = [...mission.team, ...mission.opponents].map((placement) => {
     const definition = unitDefinitions.get(placement.unit);
     return {
@@ -241,6 +244,14 @@ async function loadGame() {
   renderInterface();
 }
 
+function gateOpen(gate) {
+  return state.objectives.some((item) => item.targetZone === gate.control && item.complete);
+}
+
+function syncGates() {
+  applyGates(state.grid, state.map.objects ?? [], gateOpen);
+}
+
 function equipmentWithAction(unit, action) {
   return unit?.equipment.find((item) => item.definition.action === action) ?? null;
 }
@@ -258,7 +269,7 @@ function saveContext() {
       .map((unit) => unit.id),
     objectiveIds: state.objectives.map((objective) => objective.id),
     bounds: { ...state.map.dimensions },
-    isWalkable: (x, y) => isWalkable(state.grid, x, y),
+    isWalkable: (x, y) => isTerrainWalkable(state.grid, x, y),
     unitRules: Object.fromEntries(
       state.units.map((unit) => [
         unit.id,
@@ -292,6 +303,7 @@ function applySaveSnapshot(snapshot) {
   for (const objective of state.objectives) {
     objective.complete = objectivesById.get(objective.id).complete;
   }
+  syncGates();
   state.selectedId = snapshot.selectedId;
   state.cursor = { ...snapshot.cursor };
   state.paused = false;
@@ -460,8 +472,23 @@ function drawTile(tile, viewport) {
   }
 
   diamond(topCenter, cellSize);
-  context.fillStyle = tile.color;
+  context.fillStyle = tile.gate ? (tile.walkable ? "#3f6b57" : "#b5524a") : tile.color;
   context.fill();
+  if (tile.gate) {
+    // Shape, not only colour, shows the gate state: bars when closed, a dashed rail when open.
+    context.strokeStyle = "rgba(255, 255, 255, .85)";
+    context.lineWidth = 2;
+    context.setLineDash(tile.walkable ? [6, 6] : []);
+    context.beginPath();
+    context.moveTo(topCenter.x - cellSize.width / 4, topCenter.y);
+    context.lineTo(topCenter.x + cellSize.width / 4, topCenter.y);
+    if (!tile.walkable) {
+      context.moveTo(topCenter.x, topCenter.y - cellSize.height / 4);
+      context.lineTo(topCenter.x, topCenter.y + cellSize.height / 4);
+    }
+    context.stroke();
+    context.setLineDash([]);
+  }
   context.strokeStyle = tile.walkable ? "rgba(124, 161, 170, .22)" : "rgba(0, 0, 0, .5)";
   context.lineWidth = 1;
   context.stroke();
@@ -649,6 +676,7 @@ function completeObjectivesAt(position) {
       }
     }
     objective.complete = true;
+    syncGates();
     changed = true;
     audio.play("objective");
     setStatus(
@@ -678,6 +706,7 @@ function performInteraction() {
     return;
   }
   objective.complete = true;
+  syncGates();
   setStatus(`${objective.description} Commitment fulfilled.`);
   renderInterface();
 }

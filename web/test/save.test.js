@@ -157,3 +157,11 @@ test("disabled units cannot retain orders or selection", () => {
   snapshot.units[0].path = [{ x: 2, y: 2 }];
   assert.throws(() => validateSaveSnapshot(snapshot, context), /cannot have orders/);
 });
+
+test("saves written before a mission gained an objective load with it incomplete", () => {
+  const snapshot = createSaveSnapshot(state, "2026-10-22T12:00:00.000Z");
+  const older = { ...snapshot, objectives: snapshot.objectives.slice(0, 1) };
+  const parsed = parseSaveSnapshot(JSON.stringify(older), context);
+  assert.deepEqual(parsed.objectives.map((objective) => objective.id), context.objectiveIds);
+  assert.equal(parsed.objectives[1].complete, false);
+});

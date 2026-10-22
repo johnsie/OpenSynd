@@ -13,6 +13,30 @@ export function createTileGrid(map) {
   return grid;
 }
 
+// A gate blocks its tiles until `isOpen(gate)` is true. The terrain's own
+// walkability is kept in `baseWalkable` so saves can be checked without gates.
+export function applyGates(grid, gates, isOpen) {
+  for (const tile of grid.flat()) {
+    if (tile) tile.baseWalkable ??= tile.walkable;
+  }
+  for (const gate of gates) {
+    const open = isOpen(gate);
+    for (let y = gate.position.y; y < gate.position.y + gate.height; y += 1) {
+      for (let x = gate.position.x; x < gate.position.x + gate.width; x += 1) {
+        const tile = grid[y]?.[x];
+        if (!tile) continue;
+        tile.gate = gate.id;
+        tile.walkable = tile.baseWalkable && open;
+      }
+    }
+  }
+}
+
+export function isTerrainWalkable(grid, x, y) {
+  const tile = grid[y]?.[x];
+  return Boolean(tile && (tile.baseWalkable ?? tile.walkable));
+}
+
 export function isWalkable(grid, x, y) {
   return Boolean(grid[y]?.[x]?.walkable);
 }

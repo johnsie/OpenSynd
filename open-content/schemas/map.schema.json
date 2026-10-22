@@ -23,6 +23,11 @@
     "zones": {
       "type": "array",
       "items": { "$ref": "#/$defs/zone" }
+    },
+    "objects": {
+      "type": "array",
+      "description": "Interactive world objects. A gate blocks its tiles until the objective at its control zone is complete.",
+      "items": { "$ref": "#/$defs/object" }
     }
   },
   "$defs": {
@@ -71,6 +76,19 @@
         "position": { "$ref": "#/$defs/position" },
         "width": { "type": "integer", "minimum": 1 },
         "height": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "object": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "position", "width", "height", "control"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "kind": { "enum": ["gate"] },
+        "position": { "$ref": "#/$defs/position" },
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 },
+        "control": { "$ref": "#/$defs/id" }
       }
     },
     "color": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" }
