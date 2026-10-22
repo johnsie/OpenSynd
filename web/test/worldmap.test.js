@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
+import { project } from "../src/atlas.js";
 import {
   LANDMASSES,
   MAP_HEIGHT,
@@ -16,8 +17,8 @@ import {
 } from "../src/worldmap.js";
 
 const entries = [
-  { id: "a", name: "First", objectives: 4, watchers: 8, region: { name: "Alpha", x: 20, y: 40 } },
-  { id: "b", name: "Second", objectives: 4, watchers: 14, region: { name: "Beta", x: 50, y: 30 } },
+  { id: "a", name: "First", objectives: 4, watchers: 8, region: { name: "Alpha", lon: -90, lat: 40 } },
+  { id: "b", name: "Second", objectives: 4, watchers: 14, region: { name: "Beta", lon: 0, lat: 0 } },
   { id: "c", name: "Third", objectives: 4, watchers: 14 },
 ];
 
@@ -44,7 +45,8 @@ test("a region's card says what it is, its state and what is needed", () => {
 });
 
 test("regions sit where the mission says, or spread along the map when it does not say", () => {
-  assert.deepEqual(regionCentre(entries[0], 0, 3), { x: 200, y: 200 });
+  assert.deepEqual(regionCentre(entries[0], 0, 3), { x: 250, y: ((84 - 40) / 142) * MAP_HEIGHT * (142 / 142) });
+  assert.deepEqual(regionCentre(entries[1], 1, 3), { x: 500, y: (84 / 142) * MAP_HEIGHT });
   assert.deepEqual(regionCentre(entries[2], 2, 3), { x: 750, y: MAP_HEIGHT / 2 });
 });
 
@@ -52,7 +54,7 @@ test("a region's outline is repeatable, distinct per mission and stays near its 
   const centre = { x: 300, y: 200 };
   assert.deepEqual(regionShape("a", centre), regionShape("a", centre));
   assert.notDeepEqual(regionShape("a", centre), regionShape("b", centre));
-  for (const [x, y] of regionShape("a", centre)) assert.ok(Math.hypot(x - 300, y - 200) <= 60);
+  for (const [x, y] of regionShape("a", centre)) assert.ok(Math.hypot(x - 300, y - 200) <= 30);
 });
 
 test("every shipped mission is placed on land, apart from the others, inside the map", async () => {
@@ -64,8 +66,19 @@ test("every shipped mission is placed on land, apart from the others, inside the
     assert.ok(mission.region, `${file} needs a region`);
     const centre = regionCentre(mission, 0, pack.missions.length);
     assert.ok(centre.x > 0 && centre.x < MAP_WIDTH && centre.y > 0 && centre.y < MAP_HEIGHT);
-    assert.ok(LANDMASSES.some((land) => pointInPolygon(centre, land.points)), `${mission.name} should be on land`);
-    for (const other of centres) assert.ok(Math.hypot(centre.x - other.x, centre.y - other.y) > 150, "regions must not crowd");
+    const lonLat = [mission.region.lon, mission.region.lat];
+    assert.ok(LANDMASSES.some((land) => pointInPolygon(lonLat, land.points)), `${mission.name} should be on land`);
+    for (const other of centres) assert.ok(Math.hypot(centre.x - other.x, centre.y - other.y) > 60, "regions must not crowd");
     centres.push(centre);
   }
+});
+
+test("the atlas outlines are closed, in range, and the map has the proportions of the Earth", () => {
+  assert.ok(Math.abs(MAP_WIDTH / MAP_HEIGHT - 360 / 142) < 0.02);
+  for (const land of LANDMASSES) {
+    assert.ok(land.points.length >= 12, `${land.id} has an outline`);
+    for (const [lon, lat] of land.points) assert.ok(lon >= -180 && lon <= 180 && lat >= -90 && lat <= 90, land.id);
+  }
+  assert.deepEqual(project([-180, 84]), [0, 0]);
+  assert.deepEqual(project([180, -58]), [MAP_WIDTH, MAP_HEIGHT]);
 });

@@ -1,36 +1,24 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 import { hashString, seededRandom } from "./buildings.js";
+import { CONTINENTS, INLAND_SEAS, ISLANDS, MAP_HEIGHT, MAP_WIDTH, SEA_LABELS, polygonPath, project } from "./atlas.js";
 import { isCompleted, isUnlocked } from "./progress.js";
 
-// The world map used to choose an operation. Geography is original: three invented landmasses,
-// each operation a region the player clicks. Everything is drawn from the data below, so a
-// content pack only has to say where its missions sit (`region` in the mission file).
-export const MAP_WIDTH = 1000;
-export const MAP_HEIGHT = 500;
+// The world map used to choose an operation: a flat atlas of the Earth (see atlas.js) with each
+// operation a region the player clicks. A mission says where it sits with `region` (a name and a
+// longitude and latitude), so a content pack places its own operations anywhere in the world.
+export { MAP_HEIGHT, MAP_WIDTH };
+export const LANDMASSES = CONTINENTS;
 
-export const LANDMASSES = Object.freeze([
-  { id: "western-reach", label: "WESTERN REACH", points: [[40, 150], [120, 90], [230, 100], [300, 170], [340, 260], [300, 350], [220, 410], [120, 390], [60, 300]] },
-  { id: "central-mesh", label: "CENTRAL MESH", points: [[390, 90], [480, 60], [600, 80], [680, 140], [650, 220], [560, 260], [470, 240], [400, 180]] },
-  { id: "eastern-spur", label: "EASTERN SPUR", points: [[640, 300], [720, 260], [840, 270], [930, 330], [950, 420], [860, 470], [740, 450], [670, 390]] },
-]);
-
-// A few small islands for texture.
-export const ISLANDS = Object.freeze([
-  [[360, 330], [395, 315], [420, 345], [385, 370]],
-  [[880, 120], [925, 105], [940, 150], [895, 165]],
-  [[90, 440], [130, 430], [150, 465], [105, 475]],
-]);
-
-const REGION_RADIUS = 46;
+const REGION_RADIUS = 20;
 
 // An irregular outline around a centre, the same every time for the same id.
-export function regionShape(id, centre, radius = REGION_RADIUS, sides = 10) {
+export function regionShape(id, centre, radius = REGION_RADIUS, sides = 9) {
   const random = seededRandom(hashString(`region:${id}`));
   const points = [];
   for (let index = 0; index < sides; index += 1) {
     const angle = (index / sides) * Math.PI * 2;
-    const reach = radius * (0.74 + random() * 0.36);
+    const reach = radius * (0.8 + random() * 0.3);
     points.push([centre.x + Math.cos(angle) * reach, centre.y + Math.sin(angle) * reach * 0.82]);
   }
   return points;
@@ -40,12 +28,14 @@ export function regionShape(id, centre, radius = REGION_RADIUS, sides = 10) {
 // so a pack that does not describe them still gets a usable map.
 export function regionCentre(entry, index, count) {
   if (entry.region) {
-    return { x: (entry.region.x / 100) * MAP_WIDTH, y: (entry.region.y / 100) * MAP_HEIGHT };
+    const [x, y] = project([entry.region.lon, entry.region.lat]);
+    return { x, y };
   }
   return { x: ((index + 1) / (count + 1)) * MAP_WIDTH, y: MAP_HEIGHT / 2 };
 }
 
 export function pointInPolygon(point, polygon) {
+  point = Array.isArray(point) ? { x: point[0], y: point[1] } : point;
   let inside = false;
   for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i, i += 1) {
     const [xi, yi] = polygon[i];
@@ -87,6 +77,42 @@ function svg(tag, attributes = {}, children = []) {
 }
 const path = (points) => `M${points.map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`).join("L")}Z`;
 
+function text(attributes, content) {
+  const element = svg("text", attributes);
+  element.textContent = content;
+  return element;
+}
+
+// The atlas itself: sea, graticule every 30 degrees, equator and tropics, land and labels.
+function drawAtlas(root) {
+  root.append(svg("rect", { width: MAP_WIDTH, height: MAP_HEIGHT, class: "map-sea" }));
+  const lines = [];
+  for (let lon = -150; lon <= 150; lon += 30) {
+    const [x] = project([lon, 0]);
+    lines.push(`M${x.toFixed(1)} 0V${MAP_HEIGHT}`);
+  }
+  for (let lat = 60; lat >= -30; lat -= 30) {
+    const [, y] = project([0, lat]);
+    lines.push(`M0 ${y.toFixed(1)}H${MAP_WIDTH}`);
+  }
+  root.append(svg("path", { d: lines.join(""), class: "map-grid" }));
+  for (const lat of [0, 23.5, -23.5]) {
+    const [, y] = project([0, lat]);
+    root.append(svg("path", { d: `M0 ${y.toFixed(1)}H${MAP_WIDTH}`, class: lat === 0 ? "map-equator" : "map-tropic" }));
+  }
+  for (const island of ISLANDS) root.append(svg("path", { d: polygonPath(island), class: "map-island" }));
+  for (const land of CONTINENTS) root.append(svg("path", { d: polygonPath(land.points), class: "map-land" }));
+  for (const sea of INLAND_SEAS) root.append(svg("path", { d: polygonPath(sea), class: "map-inland-sea" }));
+  for (const { label, at } of SEA_LABELS) {
+    const [x, y] = project(at);
+    root.append(text({ x, y, class: "map-sea-label" }, label));
+  }
+  for (const land of CONTINENTS) {
+    const [x, y] = project(land.labelAt);
+    root.append(text({ x, y, class: "map-label" }, land.label));
+  }
+}
+
 /**
  * Draw the map into `container`. `onSelect(index)` is called when an unlocked region is chosen;
  * `onCard(card)` is told what to show (or null) when a region is hovered or focused.
@@ -96,32 +122,17 @@ export function renderWorldMap({ container, entries, progress, selectedIndex, on
   const root = svg("svg", {
     viewBox: `0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`,
     class: "world-map-svg",
+    preserveAspectRatio: "xMidYMid meet",
     role: "group",
     "aria-label": "World map of operations",
   });
-  root.append(
-    svg("defs", {}, [
-      svg("pattern", { id: "map-grid", width: 50, height: 50, patternUnits: "userSpaceOnUse" }, [
-        svg("path", { d: "M50 0H0V50", fill: "none", stroke: "currentColor", "stroke-width": 0.6 }),
-      ]),
-    ]),
-    svg("rect", { width: MAP_WIDTH, height: MAP_HEIGHT, class: "map-sea" }),
-    svg("rect", { width: MAP_WIDTH, height: MAP_HEIGHT, fill: "url(#map-grid)", class: "map-grid" }),
-  );
-  for (const island of ISLANDS) root.append(svg("path", { d: path(island), class: "map-island" }));
-  for (const land of LANDMASSES) {
-    root.append(svg("path", { d: path(land.points), class: "map-land" }));
-    const sum = land.points.reduce((total, [x, y]) => ({ x: total.x + x, y: total.y + y }), { x: 0, y: 0 });
-    const label = svg("text", { x: sum.x / land.points.length, y: sum.y / land.points.length + 70, class: "map-label" });
-    label.textContent = land.label;
-    root.append(label);
-  }
+  drawAtlas(root);
   const centres = entries.map((entry, index) => regionCentre(entry, index, entries.length));
   // The campaign's route: dashed between operations, lit once the earlier one is done.
   for (let index = 1; index < centres.length; index += 1) {
     const from = centres[index - 1];
     const to = centres[index];
-    const bend = { x: (from.x + to.x) / 2, y: Math.min(from.y, to.y) - 60 };
+    const bend = { x: (from.x + to.x) / 2, y: Math.min(from.y, to.y) - 40 };
     root.append(
       svg("path", {
         d: `M${from.x} ${from.y}Q${bend.x} ${bend.y} ${to.x} ${to.y}`,
@@ -143,14 +154,25 @@ export function renderWorldMap({ container, entries, progress, selectedIndex, on
       "data-index": index,
     });
     group.append(
+      svg("circle", { cx: centre.x, cy: centre.y, r: REGION_RADIUS * 1.7, class: "map-hit" }),
       svg("path", { d: path(regionShape(entry.id, centre)), class: "map-region-shape" }),
-      svg("circle", { cx: centre.x, cy: centre.y, r: 5, class: "map-pin" }),
+      svg("circle", { cx: centre.x, cy: centre.y, r: 4, class: "map-pin" }),
     );
-    const name = svg("text", { x: centre.x, y: centre.y + REGION_RADIUS + 18, class: "map-region-name" });
-    name.textContent = `${String(index + 1).padStart(2, "0")} ${entry.region?.name ?? entry.name}`;
-    const status = svg("text", { x: centre.x, y: centre.y + REGION_RADIUS + 34, class: "map-region-state" });
-    status.textContent = card.label;
-    group.append(name, status);
+    // Labels go to the right of the pin, except in the Americas where the open sea is to the left.
+    const lon = entry.region?.lon ?? (centre.x / MAP_WIDTH) * 360 - 180;
+    const toRight = lon > -62;
+    const anchor = toRight ? "start" : "end";
+    const labelX = centre.x + (toRight ? REGION_RADIUS + 8 : -(REGION_RADIUS + 8));
+    group.append(
+      text(
+        { x: labelX, y: centre.y - 2, class: "map-region-name", "text-anchor": anchor },
+        `${String(index + 1).padStart(2, "0")} ${card.place}`,
+      ),
+      text(
+        { x: labelX, y: centre.y + 14, class: "map-region-state", "text-anchor": anchor },
+        `${card.label} · ${entry.name}`,
+      ),
+    );
     const choose = () => {
       if (state !== "locked") onSelect(index);
       else onCard?.(card);

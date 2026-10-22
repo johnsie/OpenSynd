@@ -543,6 +543,15 @@ shows that it satisfies maintainability, accessibility, and licensing goals.
   focus card gives the name, objective types and number of watchers, and the map is
   fully usable by keyboard and screen reader (regions are also listed as buttons).
   It is drawn procedurally with original geography, so it needs no map assets.
+  Implemented: the operation screen is a flat atlas of the Earth (`web/src/atlas.js`: simplified
+  original coastlines of the continents and main islands on an equirectangular projection, with
+  graticule, equator and tropics, ocean and continent labels), filling the left of the screen with
+  the brief, operations list, a collapsible "How to play" and the buttons on the right, so
+  nothing scrolls. Each mission file says where it is with `region` (a place name, longitude and
+  latitude): First Light is in Northern Europe, Quiet Hours in Eastern North America, Dead Drop
+  in Southern Brazil. Regions show locked, available or completed, the route between them
+  lights up as operations are done, a hover or focus card gives the details, and the regions are
+  keyboard and screen-reader operable (the list stays as the accessible alternative).
 - **Street life.** The city is populated with civilians (men and women, with
   cyberpunk street styling: women in dark clothes, black tights and skirts, men in
   neon-trimmed jackets, never trench coats, which belong to the squad) who walk the

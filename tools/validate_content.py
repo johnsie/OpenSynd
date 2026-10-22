@@ -293,11 +293,11 @@ class Validation:
                 or not isinstance(region.get("name"), str) or not region["name"]
                 or not all(
                     isinstance(region.get(axis), (int, float)) and not isinstance(region.get(axis), bool)
-                    and 0 <= region[axis] <= 100
-                    for axis in ("x", "y")
+                    and low <= region[axis] <= high
+                    for axis, low, high in (("lon", -180, 180), ("lat", -58, 84))
                 )
             ):
-                self.error(path, "region must have a name and x and y from 0 to 100")
+                self.error(path, "region must have a name, a longitude from -180 to 180 and a latitude from -58 to 84")
 
         placement_ids: set[str] = set()
         for group_name in ("team", "opponents", "bystanders"):

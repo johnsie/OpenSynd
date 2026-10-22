@@ -432,33 +432,89 @@ details.panel-section > p, details.panel-section > div { margin-top: 0.5rem; }
   background: transparent;
   border: 1px dashed var(--amber);
 }
-.world-map { margin: 1rem 0 0.3rem; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: #081015; }
-.world-map-svg { display: block; width: 100%; height: auto; }
-.world-map-card { min-height: 2.6em; margin: 0.3rem 0 0.2rem; font-size: 0.9rem; color: var(--muted); }
-.map-sea { fill: #07161c; }
-.map-grid { color: rgba(66, 214, 208, 0.1); }
-.map-land { fill: #12252c; stroke: rgba(66, 214, 208, 0.45); stroke-width: 1.6; }
-.map-island { fill: #0f1f25; stroke: rgba(66, 214, 208, 0.25); stroke-width: 1; }
-.map-label { fill: rgba(143, 163, 170, 0.55); font: 600 13px ui-sans-serif, sans-serif; letter-spacing: 0.25em; text-anchor: middle; }
-.map-route { fill: none; stroke: rgba(143, 163, 170, 0.4); stroke-width: 2; stroke-dasharray: 8 8; }
+/* The title screen: the atlas on the left fills the space, the brief and controls sit on the right. */
+dialog.title-screen[open] {
+  display: flex;
+  flex-direction: column;
+  width: min(98vw, 1700px);
+  height: min(94vh, 1000px);
+  max-width: none;
+  max-height: none;
+  padding: 0.9rem 1.2rem 1rem;
+  overflow: hidden;
+}
+.title-head { flex: none; display: flex; align-items: baseline; gap: 1.2rem; }
+.title-head .eyebrow { margin: 0; }
+.title-head h2 { margin: 0; font-size: 1.5rem; }
+.title-grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 26rem);
+  gap: 1.2rem;
+  margin-top: 0.6rem;
+}
+.title-map { min-height: 0; display: flex; flex-direction: column; }
+.title-side { min-height: 0; display: flex; flex-direction: column; gap: 0.7rem; }
+.title-side #title-story { margin: 0; font-size: 0.95rem; line-height: 1.45; }
+.title-side .mission-list { margin: 0; }
+.title-actions { margin-top: auto; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.title-actions button { margin: 0; }
+.title-help summary { cursor: pointer; color: var(--public); }
+.title-help[open] { flex: 1; min-height: 0; overflow-y: auto; }
+.title-help ul { margin: 0.4rem 0 0; padding-left: 1.1rem; font-size: 0.88rem; }
+.world-map { flex: 1; min-height: 0; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: #06141a; }
+.world-map-svg { display: block; width: 100%; height: 100%; }
+.world-map-card { flex: none; min-height: 2.4em; margin: 0.4rem 0 0; font-size: 0.92rem; color: var(--muted); }
+.map-sea { fill: #06141a; }
+.map-grid { fill: none; stroke: rgba(66, 214, 208, 0.12); stroke-width: 0.8; }
+.map-equator { fill: none; stroke: rgba(225, 179, 90, 0.35); stroke-width: 1; stroke-dasharray: 6 5; }
+.map-tropic { fill: none; stroke: rgba(66, 214, 208, 0.18); stroke-width: 0.8; stroke-dasharray: 3 5; }
+.map-land { fill: #14282f; stroke: rgba(66, 214, 208, 0.55); stroke-width: 1.2; stroke-linejoin: round; }
+.map-island { fill: #12252c; stroke: rgba(66, 214, 208, 0.4); stroke-width: 0.9; stroke-linejoin: round; }
+.map-inland-sea { fill: #06141a; stroke: rgba(66, 214, 208, 0.35); stroke-width: 0.8; }
+.map-label { fill: rgba(143, 163, 170, 0.5); font: 600 11px ui-sans-serif, sans-serif; letter-spacing: 0.3em; text-anchor: middle; }
+.map-sea-label {
+  fill: rgba(66, 214, 208, 0.28);
+  font: italic 600 10px ui-sans-serif, sans-serif;
+  letter-spacing: 0.35em;
+  text-anchor: middle;
+}
+.map-route { fill: none; stroke: rgba(143, 163, 170, 0.5); stroke-width: 1.6; stroke-dasharray: 6 6; }
 .map-route.done { stroke: var(--restored); }
 .map-region { cursor: pointer; outline: none; }
-.map-region-shape { fill: rgba(225, 179, 90, 0.16); stroke: var(--amber); stroke-width: 2.2; transition: fill 0.15s; }
+.map-hit { fill: transparent; }
+.map-region-shape { fill: rgba(225, 179, 90, 0.22); stroke: var(--amber); stroke-width: 1.8; }
 .map-pin { fill: var(--amber); }
-.map-region-name { fill: var(--ink); font: 700 15px ui-sans-serif, sans-serif; text-anchor: middle; paint-order: stroke; stroke: #071014; stroke-width: 4px; }
-.map-region-state { fill: var(--muted); font: 600 11px ui-sans-serif, sans-serif; letter-spacing: 0.12em; text-anchor: middle; paint-order: stroke; stroke: #071014; stroke-width: 3px; }
-.map-region.completed .map-region-shape { fill: rgba(121, 213, 155, 0.2); stroke: var(--restored); }
+.map-region-name { fill: var(--ink); font: 700 15px ui-sans-serif, sans-serif; paint-order: stroke; stroke: #05110f; stroke-width: 3.5px; }
+.map-region-state {
+  fill: var(--muted);
+  font: 600 11px ui-sans-serif, sans-serif;
+  letter-spacing: 0.08em;
+  paint-order: stroke;
+  stroke: #05110f;
+  stroke-width: 3px;
+}
+.map-region.completed .map-region-shape { fill: rgba(121, 213, 155, 0.25); stroke: var(--restored); }
 .map-region.completed .map-pin { fill: var(--restored); }
 .map-region.locked { cursor: not-allowed; }
-.map-region.locked .map-region-shape { fill: rgba(143, 163, 170, 0.08); stroke: #50636b; stroke-dasharray: 5 5; }
+.map-region.locked .map-region-shape { fill: rgba(143, 163, 170, 0.1); stroke: #50636b; stroke-dasharray: 4 4; }
 .map-region.locked .map-pin { fill: #50636b; }
 .map-region.locked .map-region-name { fill: var(--muted); }
-.map-region:not(.locked):hover .map-region-shape, .map-region:focus-visible .map-region-shape { fill: rgba(66, 214, 208, 0.26); stroke: var(--public); }
+.map-region:not(.locked):hover .map-region-shape, .map-region:focus-visible .map-region-shape {
+  fill: rgba(66, 214, 208, 0.3);
+  stroke: var(--public);
+}
 .map-region:focus-visible .map-region-name { fill: var(--public); }
-.map-region.selected .map-region-shape { stroke: var(--public); stroke-width: 3.4; }
+.map-region.selected .map-region-shape { stroke: var(--public); stroke-width: 2.8; }
 .map-region.selected .map-pin { fill: var(--public); animation: map-pulse 1.8s ease-in-out infinite; }
-@keyframes map-pulse { 50% { r: 9; opacity: 0.6; } }
+@keyframes map-pulse { 50% { r: 7; opacity: 0.6; } }
 @media (prefers-reduced-motion: reduce) { .map-region.selected .map-pin { animation: none; } }
+@media (max-width: 900px) {
+  dialog.title-screen[open] { height: auto; max-height: 96vh; overflow-y: auto; }
+  .title-grid { grid-template-columns: 1fr; }
+  .world-map { aspect-ratio: 360 / 142; flex: none; }
+}
 .mission-list { display: grid; gap: 0.4rem; margin: 1rem 0; }
 .mission-list button {
   display: grid;

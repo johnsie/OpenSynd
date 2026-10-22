@@ -174,31 +174,43 @@
       </footer>
     </div>
 
-    <dialog id="title-dialog" aria-labelledby="title-heading">
-      <p class="eyebrow">OPEN CIVIC OPERATIONS NETWORK</p>
-      <h2 id="title-heading">OpenSynd</h2>
-      <p id="title-story">Loading the operation…</p>
-      <ul>
-        <li>Select an operator, then click a tile, or move the cursor with I/J/K/L and press Enter.</li>
-        <li>Stand on a relay, panel or server and press E to use it.</li>
-        <li>Some operations ask you to disable a marked target or hold a position for a set time.</li>
-        <li>Disable watchers with the pulse emitter from close range; keep your team intact.</li>
-        <li>Press A, or use Select all, to order the whole team at once.</li>
-        <li>Use the Legs and Brain bars to train an operator: faster walking, quicker pulse.</li>
-        <li>
-          The yard is large: drag, use the arrow keys, or push the mouse to the map edge to pan;
-          scroll or +/- to zoom,
-          C to centre on your team, or click the minimap.
-        </li>
-        <li>Funds build up while you play and from achievements. Spend them in the Research lab between operations.</li>
-        <li>F loots a disabled watcher's gear, T uses a stim. Each operator holds up to eight items.</li>
-        <li>Space pauses. Keys can be changed in Settings.</li>
-      </ul>
-      <div id="world-map" class="world-map"></div>
-      <p id="world-map-card" class="world-map-card" role="status">Choose an operation on the map, or from the list below.</p>
-      <div id="mission-list" class="mission-list" role="group" aria-label="Operations"></div>
-      <button id="open-research" type="button">Research &amp; Armoury</button>
-      <button id="begin-button" type="button" class="primary">Begin operation</button>
+    <dialog id="title-dialog" class="title-screen" aria-labelledby="title-heading">
+      <header class="title-head">
+        <p class="eyebrow">OPEN CIVIC OPERATIONS NETWORK</p>
+        <h2 id="title-heading">OpenSynd</h2>
+      </header>
+      <div class="title-grid">
+        <section class="title-map" aria-label="World map of operations">
+          <div id="world-map" class="world-map"></div>
+          <p id="world-map-card" class="world-map-card" role="status">Choose an operation on the map, or from the list.</p>
+        </section>
+        <aside class="title-side">
+          <p id="title-story">Loading the operation…</p>
+          <div id="mission-list" class="mission-list" role="group" aria-label="Operations"></div>
+          <details class="title-help">
+            <summary>How to play</summary>
+            <ul>
+              <li>Select an operator, then click a tile, or move the cursor with I/J/K/L and press Enter.</li>
+              <li>Click a weapon in an operator's inventory to select it: nobody fires without one. Right-click fires.</li>
+              <li>Stand on a relay, panel or server and press E to use it.</li>
+              <li>Some operations ask you to disable a marked target or hold a position for a set time.</li>
+              <li>Press A, or use Select all, to order the whole team at once.</li>
+              <li>Use the Legs and Brain bars to train an operator: faster walking, quicker pulse.</li>
+              <li>
+                Drag, use the arrow keys or push the mouse to the map edge to pan; scroll or +/- to zoom,
+                C to centre, or click the minimap.
+              </li>
+              <li>Funds build up while you play and from achievements. Spend them in Research &amp; Armoury.</li>
+              <li>F loots a disabled watcher's gear, T uses a stim. Each operator holds up to eight items.</li>
+              <li>Space pauses. Keys can be changed in Settings.</li>
+            </ul>
+          </details>
+          <div class="title-actions">
+            <button id="open-research" type="button">Research &amp; Armoury</button>
+            <button id="begin-button" type="button" class="primary">Begin operation</button>
+          </div>
+        </aside>
+      </div>
     </dialog>
 
     <dialog id="research-dialog" class="research" aria-labelledby="research-heading">
