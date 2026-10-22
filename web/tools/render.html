@@ -107,25 +107,30 @@
       place(flap, offset(neck, side * unit * 0.32, unit * 0.12, unit * 0.12), "Neck");
       place(box(unit * 0.04, unit * 0.5, unit * 0.09, glow(kit.glow)), offset(neck, side * unit * 0.46, unit * 0.14, unit * 0.12), "Neck");
     }
-    // Cybernetic left forearm: brushed metal with a glowing band at the wrist.
-    const elbow = at("LeftForeArm");
-    const wrist = at("LeftHand");
-    const armDirection = wrist.clone().sub(elbow);
-    const armLength = armDirection.length();
-    const along = new THREE.Quaternion().setFromUnitVectors(up, armDirection.clone().normalize());
+    // Coat sleeves over both arms and gloves over the hands, so no bare skin shows.
+    const limb = (from, to, radiusFrom, radiusTo, mat, boneName, start = 0, end = 1) => {
+      const a = at(from).lerp(at(to), start);
+      const b = at(from).lerp(at(to), end);
+      const direction = b.clone().sub(a);
+      const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radiusTo, radiusFrom, direction.length() * 1.06, 10), mat);
+      mesh.position.copy(a.clone().lerp(b, 0.5));
+      mesh.quaternion.setFromUnitVectors(up, direction.normalize());
+      scene.add(mesh);
+      mesh.updateMatrixWorld(true);
+      bone(boneName).attach(mesh);
+    };
+    const glove = material(kit.boots, 0.5);
     const metal = new THREE.MeshStandardMaterial({ color: rgb(kit.metal), roughness: 0.3, metalness: 0.9 });
-    const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(unit * 0.17, unit * 0.14, armLength * 0.85, 10), metal);
-    sleeve.position.copy(elbow.clone().lerp(wrist, 0.5));
-    sleeve.quaternion.copy(along);
-    scene.add(sleeve);
-    sleeve.updateMatrixWorld(true);
-    bone("LeftForeArm").attach(sleeve);
-    const band = new THREE.Mesh(new THREE.CylinderGeometry(unit * 0.16, unit * 0.16, unit * 0.06, 10), glow(kit.glow));
-    band.position.copy(elbow.clone().lerp(wrist, 0.82));
-    band.quaternion.copy(along);
-    scene.add(band);
-    band.updateMatrixWorld(true);
-    bone("LeftForeArm").attach(band);
+    for (const side of ["Left", "Right"]) {
+      limb(`${side}Shoulder`, `${side}Arm`, unit * 0.46, unit * 0.43, coat, `${side}Shoulder`, -0.2, 1.1);
+      limb(`${side}Arm`, `${side}ForeArm`, unit * 0.43, unit * 0.34, coat, `${side}Arm`, -0.3, 1.04);
+      limb(`${side}ForeArm`, `${side}Hand`, unit * 0.33, unit * 0.27, coat, `${side}ForeArm`, -0.04, 1.08);
+      const hand = new THREE.Mesh(new THREE.SphereGeometry(unit * 0.33, 10, 8), glove);
+      place(hand, at(`${side}Hand`).add(new THREE.Vector3(0, -unit * 0.03, 0)), `${side}Hand`);
+    }
+    // Cybernetic left forearm gauntlet: brushed metal over the sleeve with a glowing band.
+    limb("LeftForeArm", "LeftHand", unit * 0.35, unit * 0.29, metal, "LeftForeArm", 0.4, 0.98);
+    limb("LeftForeArm", "LeftHand", unit * 0.37, unit * 0.37, glow(kit.glow), "LeftForeArm", 0.55, 0.6);
     // Boots: each side from its own bones.
     for (const side of ["Left", "Right"]) {
       const knee = at(`${side}Leg`);
