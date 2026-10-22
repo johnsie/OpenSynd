@@ -82,19 +82,50 @@
     };
     const box = (w, h, d, mat) => new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
 
-    // Chest rig, pouches and a glowing trim line.
-    place(box(unit * 1.9, unit * 1.2, unit * 0.95, rig), offset(chest, 0, 0, unit * 0.1), "Spine2");
-    for (const x of [-0.6, 0, 0.6]) {
-      place(box(unit * 0.5, unit * 0.42, unit * 0.2, rig), offset(chest, unit * x, -unit * 0.28, unit * 0.62), "Spine2");
+    // Trench coat: a flared skirt around each thigh, a back panel and neon hem piping.
+    const coat = new THREE.MeshStandardMaterial({ color: rgb(kit.coat), roughness: 0.9, side: THREE.DoubleSide });
+    const kneeY = at("LeftLeg").y;
+    const skirt = (hips.y - kneeY) * 1.75;
+    for (const [side, up] of [["Left", leftUp], ["Right", rightUp]]) {
+      const top = unit * 0.66;
+      const bottom = unit * 1.0;
+      const centre = new THREE.Vector3(up.x, hips.y - skirt * 0.4, up.z);
+      place(new THREE.Mesh(new THREE.CylinderGeometry(top, bottom, skirt, 16, 1, true), coat), centre, `${side}UpLeg`);
+      const hem = new THREE.Mesh(new THREE.CylinderGeometry(bottom, bottom, unit * 0.05, 16, 1, true), glow(kit.glow));
+      place(hem, new THREE.Vector3(up.x, hips.y - skirt * 0.4 - skirt / 2, up.z), `${side}UpLeg`);
     }
+    place(box(unit * 1.6, skirt * 0.95, unit * 0.1, coat), offset(hips, 0, -skirt * 0.36, -unit * 0.6), "Hips");
+    // Belt, glowing chest trim and shoulder boards.
+    place(box(unit * 1.75, unit * 0.2, unit * 1.0, material(kit.belt)), offset(hips, 0, unit * 0.15, 0), "Hips");
     place(box(unit * 1.5, unit * 0.06, unit * 0.06, glow(kit.glow)), offset(chest, 0, unit * 0.38, unit * 0.62), "Spine2");
-    // Belt.
-    place(box(unit * 1.75, unit * 0.2, unit * 0.95, material(kit.belt)), offset(hips, 0, unit * 0.15, 0), "Hips");
-    // Shoulder boards with glowing edge.
     for (const side of [-1, 1]) {
       place(box(unit * 0.55, unit * 0.1, unit * 0.45, rig), offset(neck, side * unit * 0.95, -unit * 0.1, 0), "Spine2");
       place(box(unit * 0.55, unit * 0.04, unit * 0.05, glow(kit.glow)), offset(neck, side * unit * 0.95, -unit * 0.03, unit * 0.2), "Spine2");
+      // Popped collar flaps with a neon edge.
+      const flap = box(unit * 0.35, unit * 0.55, unit * 0.08, coat);
+      flap.rotateZ(side * 0.3);
+      place(flap, offset(neck, side * unit * 0.32, unit * 0.12, unit * 0.12), "Neck");
+      place(box(unit * 0.04, unit * 0.5, unit * 0.09, glow(kit.glow)), offset(neck, side * unit * 0.46, unit * 0.14, unit * 0.12), "Neck");
     }
+    // Cybernetic left forearm: brushed metal with a glowing band at the wrist.
+    const elbow = at("LeftForeArm");
+    const wrist = at("LeftHand");
+    const armDirection = wrist.clone().sub(elbow);
+    const armLength = armDirection.length();
+    const along = new THREE.Quaternion().setFromUnitVectors(up, armDirection.clone().normalize());
+    const metal = new THREE.MeshStandardMaterial({ color: rgb(kit.metal), roughness: 0.3, metalness: 0.9 });
+    const sleeve = new THREE.Mesh(new THREE.CylinderGeometry(unit * 0.17, unit * 0.14, armLength * 0.85, 10), metal);
+    sleeve.position.copy(elbow.clone().lerp(wrist, 0.5));
+    sleeve.quaternion.copy(along);
+    scene.add(sleeve);
+    sleeve.updateMatrixWorld(true);
+    bone("LeftForeArm").attach(sleeve);
+    const band = new THREE.Mesh(new THREE.CylinderGeometry(unit * 0.16, unit * 0.16, unit * 0.06, 10), glow(kit.glow));
+    band.position.copy(elbow.clone().lerp(wrist, 0.82));
+    band.quaternion.copy(along);
+    scene.add(band);
+    band.updateMatrixWorld(true);
+    bone("LeftForeArm").attach(band);
     // Boots: each side from its own bones.
     for (const side of ["Left", "Right"]) {
       const knee = at(`${side}Leg`);

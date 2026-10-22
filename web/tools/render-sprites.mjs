@@ -37,11 +37,14 @@ const robot = "/art-source/quaternius-animated-robot/Robot.fbx";
 
 // One shared uniform: palette is skin, boots, hair, jacket, trousers. Operatives
 // differ only in skin tone so the squad reads as uniformed but not cloned.
-// Dark gunmetal with neon cyan trim and a visor gives the cyberpunk look.
+// A worn khaki trench coat over dark gunmetal, with neon cyan piping, a visor
+// and a metal cybernetic forearm gives the cyberpunk look.
 const uniform = {
-  palette: [null, [26, 26, 32], [20, 16, 14], [62, 74, 92], [46, 55, 70]],
+  palette: [null, [26, 26, 32], [20, 16, 14], [96, 88, 70], [40, 46, 58]],
   kit: {
     rig: [34, 40, 50],
+    coat: [112, 102, 82],
+    metal: [120, 130, 146],
     belt: [14, 16, 20],
     boots: [18, 18, 22],
     beret: [28, 34, 48],

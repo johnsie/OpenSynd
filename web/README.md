@@ -48,8 +48,9 @@ Units are drawn from sprite sheets in `public/assets/sprites/`, rendered by
 `tools/render-sprites.mjs` (three.js in headless Chromium, 8 facings, idle and
 run) from two CC0 Quaternius models kept unmodified in `art-source/`: the
 animated human (operatives) and animated robot (watchers). The operatives wear
-one shared dark uniform; only skin tone differs. The visor, beret, chest rig,
-belt, shoulder boards and boots are generated parts attached to the skeleton in
+one shared khaki trench coat over a dark uniform; only skin tone differs. The
+coat, visor, beret, belt, shoulder boards, boots and cybernetic left forearm
+are generated parts attached to the skeleton in
 `tools/render.html`, not imported art. They carry no agency or organisation
 marks. Regenerate with:
 
