@@ -190,10 +190,31 @@
           scroll or +/- to zoom,
           C to centre on your team, or click the minimap.
         </li>
+        <li>Funds build up while you play and from achievements. Spend them in the Research lab between operations.</li>
+        <li>F loots a disabled watcher's gear, T uses a stim. Each operator holds up to eight items.</li>
         <li>Space pauses. Keys can be changed in Settings.</li>
       </ul>
       <div id="mission-list" class="mission-list" role="group" aria-label="Operations"></div>
+      <button id="open-research" type="button">Research lab</button>
       <button id="begin-button" type="button" class="primary">Begin operation</button>
+    </dialog>
+
+    <dialog id="research-dialog" class="research" aria-labelledby="research-heading">
+      <div class="dialog-header">
+        <div>
+          <p class="eyebrow">BETWEEN OPERATIONS</p>
+          <h2 id="research-heading">Research lab</h2>
+        </div>
+        <button id="close-research" type="button" aria-label="Close">×</button>
+      </div>
+      <p id="research-funds" class="funds-large" role="status"></p>
+      <p class="hint">Funds come from time spent on operations and from achievements. Changes apply when an operation starts.</p>
+      <h3>Cyborg research</h3>
+      <div id="research-tracks" class="research-tracks"></div>
+      <h3>New weapons and items</h3>
+      <div id="research-items" class="research-items"></div>
+      <h3>Loadouts <span class="hint">(eight slots per operative)</span></h3>
+      <div id="research-loadouts" class="research-loadouts"></div>
     </dialog>
 
     <dialog id="confirm-dialog" aria-labelledby="confirm-heading">
@@ -211,6 +232,7 @@
       <dl id="outcome-stats" class="outcome-stats"></dl>
       <button id="next-button" type="button" class="primary" hidden>Next operation</button>
       <button id="replay-button" type="button" class="primary">Replay operation</button>
+      <button id="outcome-research" type="button">Research lab</button>
       <button id="outcome-close" type="button">Review the map</button>
     </dialog>
 

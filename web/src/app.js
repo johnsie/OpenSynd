@@ -32,13 +32,20 @@ import {
 import {
   CAMPAIGN_KEY,
   SLOTS_PER_OPERATIVE,
+  TRACKS,
+  canResearchItem,
+  canResearchTrack,
   captureItems,
   earnAchievement,
   earnTime,
   emptyCampaign,
   isItemAvailable,
   loadoutFor,
+  nextTrackCost,
   parseCampaign,
+  researchItem,
+  researchTrack,
+  setSlot,
   sanitizeLoadouts,
   serializeCampaign,
 } from "./campaign.js";
@@ -358,11 +365,13 @@ async function loadGame(index = state.missionIndex) {
   );
   const equipmentDefinitions = new Map(equipmentEntries);
   state.catalog = [...equipmentDefinitions.values()];
+  state.catalogPaths = [...equipmentDefinitions.entries()];
   if (!state.campaignLoaded) {
     state.campaign = sanitizeLoadouts(parseCampaign(readStored(CAMPAIGN_KEY)), state.catalog);
     state.campaignLoaded = true;
   }
   const definitionsById = new Map(state.catalog.map((definition) => [definition.id, definition]));
+  updateFundsReadout();
 
   state.map = map;
   state.mission = mission;
@@ -460,6 +469,126 @@ function describeMission(mission, map, index) {
   canvas.setAttribute("aria-label", `Isometric view of ${map.name}. Select an operator and choose a destination.`);
   minimap.setAttribute("aria-label", `Minimap of ${map.name}. Click to move the view.`);
 }
+
+const researchDialog = document.querySelector("#research-dialog");
+
+function startingLoadout(placement) {
+  const byPath = new Map(state.catalogPaths);
+  return placement.equipment.map((path) => byPath.get(path)?.id).filter(Boolean);
+}
+
+function researchStatus(item) {
+  if ((item.researchCost ?? 0) === 0) return "STARTING ITEM";
+  return isItemAvailable(state.campaign, item) ? "RESEARCHED" : "LOCKED";
+}
+
+// The between-missions screen: spend funds on research and set each operative's slots.
+function renderResearch() {
+  const campaign = state.campaign;
+  document.querySelector("#research-funds").textContent = `Funds ${campaign.funds}`;
+
+  document.querySelector("#research-tracks").replaceChildren(
+    ...Object.entries(TRACKS).map(([track, info]) => {
+      const row = document.createElement("div");
+      row.className = "research-row";
+      const name = document.createElement("span");
+      const level = campaign[track];
+      name.textContent = `${info.label} (${info.bar}) · level ${level} of ${info.maxLevel}`;
+      const cost = nextTrackCost(campaign, track);
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = cost === null ? "Fully researched" : `Research level ${level + 1} · ${cost} funds`;
+      button.disabled = !canResearchTrack(campaign, track);
+      button.addEventListener("click", () => {
+        state.campaign = researchTrack(state.campaign, track);
+        persistCampaign();
+        updateFundsReadout();
+        renderResearch();
+      });
+      const note = document.createElement("small");
+      note.textContent = info.effect;
+      row.append(name, button, note);
+      return row;
+    }),
+  );
+
+  document.querySelector("#research-items").replaceChildren(
+    ...state.catalog.map((item) => {
+      const row = document.createElement("div");
+      row.className = "research-row";
+      const name = document.createElement("span");
+      name.textContent = item.name;
+      const control = document.createElement("span");
+      if ((item.researchCost ?? 0) > 0 && !isItemAvailable(campaign, item)) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = `Research · ${item.researchCost} funds`;
+        button.setAttribute("aria-label", `Research ${item.name} for ${item.researchCost} funds`);
+        button.disabled = !canResearchItem(campaign, item);
+        button.addEventListener("click", () => {
+          state.campaign = researchItem(state.campaign, item);
+          persistCampaign();
+          updateFundsReadout();
+          renderResearch();
+        });
+        control.append(button);
+      } else {
+        control.className = "state";
+        control.textContent = researchStatus(item);
+      }
+      const note = document.createElement("small");
+      note.textContent = item.description;
+      row.append(name, control, note);
+      return row;
+    }),
+  );
+
+  document.querySelector("#research-loadouts").replaceChildren(
+    ...state.mission.team.map((placement, index) => {
+      const defaults = startingLoadout(placement);
+      const slots = loadoutFor(campaign, placement.id, defaults);
+      const box = document.createElement("div");
+      box.className = "loadout";
+      const heading = document.createElement("h4");
+      heading.textContent = `Operator ${index + 1} · ${slots.length} of ${SLOTS_PER_OPERATIVE} slots used`;
+      box.append(heading);
+      for (let slot = 0; slot < SLOTS_PER_OPERATIVE; slot += 1) {
+        const label = document.createElement("label");
+        label.append(`Slot ${slot + 1}`);
+        const select = document.createElement("select");
+        select.setAttribute("aria-label", `Operator ${index + 1} slot ${slot + 1}`);
+        const empty = document.createElement("option");
+        empty.value = "";
+        empty.textContent = "— empty —";
+        select.append(empty);
+        for (const item of state.catalog.filter((entry) => isItemAvailable(campaign, entry))) {
+          const option = document.createElement("option");
+          option.value = item.id;
+          option.textContent = item.name;
+          select.append(option);
+        }
+        select.value = slots[slot] ?? "";
+        select.addEventListener("change", () => {
+          state.campaign = setSlot(state.campaign, placement.id, slot, select.value || null, state.catalog, defaults);
+          persistCampaign();
+          renderResearch();
+        });
+        label.append(select);
+        box.append(label);
+      }
+      return box;
+    }),
+  );
+}
+
+function openResearch() {
+  renderResearch();
+  researchDialog.showModal();
+}
+
+document.querySelector("#open-research").addEventListener("click", openResearch);
+document.querySelector("#outcome-research").addEventListener("click", openResearch);
+document.querySelector("#close-research").addEventListener("click", () => researchDialog.close());
 
 const confirmDialog = document.querySelector("#confirm-dialog");
 

@@ -110,6 +110,19 @@ levels may not exceed in total, so raising one bar means lowering the other.
 Leaving an operation in progress (switching operations or resetting) asks for
 confirmation first.
 
+The first slice of the Phase 4 economy is playable. Funds accrue at six per
+minute of play time and from one-time achievements (First signal, First contact,
+Scavenger, Clear the streets, Whole squad, Quick work, Ghost), are shown in the
+header, and persist in this browser (`web/src/campaign.js`, `achievements.js`).
+The Research lab, opened from the title screen or the outcome screen, spends
+funds on cyborg heart levels (Stamina), cyborg brain levels (Brain) and new
+items (heavy pulse emitter, stim injector, shadow cloak), and fills each
+operative's eight loadout slots with researched items. Armed watchers use their
+weapons; a disabled watcher's gear can be looted by an operator standing next to
+it (F, or clicking the body), up to the eight-slot limit, and gear kept after a
+successful operation counts as researched. Still to do: funding allocation across
+tracks over time, more items and enemy types, and a campaign map.
+
 Save format version 8 stores each unit's items (with consumable charges) and what
 it has looted, with a tested migration from version 7, so looted gear and spent
 stims survive a save and load.

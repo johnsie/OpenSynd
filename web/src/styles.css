@@ -467,3 +467,22 @@ details.panel-section > p, details.panel-section > div { margin-top: 0.5rem; }
   font-variant-numeric: tabular-nums;
 }
 .awards { color: var(--amber); }
+.research { width: min(56rem, 94vw); max-height: 92vh; overflow-y: auto; }
+.research h3 { margin: 1.2rem 0 0.4rem; font-size: 1rem; letter-spacing: 0.04em; }
+.funds-large { margin: 0.25rem 0; font-size: 1.4rem; color: var(--amber); font-variant-numeric: tabular-nums; }
+.research-tracks, .research-items { display: grid; gap: 0.5rem; }
+.research-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.2rem 1rem;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid rgba(124, 161, 170, 0.3);
+}
+.research-row small { grid-column: 1 / -1; color: var(--muted); }
+.research-row .state { color: var(--public); font-size: 0.8rem; letter-spacing: 0.05em; }
+.research-loadouts { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 0.75rem; }
+.loadout { border: 1px solid rgba(124, 161, 170, 0.3); padding: 0.5rem 0.7rem; }
+.loadout h4 { margin: 0 0 0.4rem; font-size: 0.95rem; }
+.loadout label { display: grid; grid-template-columns: 2.2rem 1fr; align-items: center; gap: 0.4rem; margin: 0.2rem 0; font-size: 0.85rem; }
+.loadout select { width: 100%; }

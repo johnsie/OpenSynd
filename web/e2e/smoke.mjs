@@ -292,6 +292,32 @@ for (const [name, type, executablePath] of targets) {
     await page.waitForSelector("#title-dialog[open]");
     assert.match(await missionButtons.nth(0).innerText(), /COMPLETED/);
     assert.equal(await missionButtons.nth(1).isDisabled(), false);
+
+    // The research lab: spend funds on the cyborg heart and a new item, then fill a slot.
+    await page.click("#open-research");
+    await page.waitForSelector("#research-dialog[open]");
+    const fundsBefore = Number((await page.locator("#research-funds").innerText()).replace(/\D/g, ""));
+    assert.ok(fundsBefore >= 60, `lab funds were ${fundsBefore}`);
+    await page.locator("#research-tracks button").first().click();
+    assert.match(await page.locator("#research-tracks").innerText(), /Cyborg heart \(Stamina\) · level 1 of 5/);
+    assert.equal(
+      Number((await page.locator("#research-funds").innerText()).replace(/\D/g, "")),
+      fundsBefore - 20,
+    );
+    await page.getByRole("button", { name: "Research Stim Injector for 40 funds" }).click();
+    assert.match(await page.locator("#research-items").innerText(), /Stim Injector[\s\S]*RESEARCHED/);
+    // An unresearched item cannot be put in a slot; a researched one can.
+    const slotOptions = await page.getByLabel("Operator 1 slot 3").locator("option").allInnerTexts();
+    assert.ok(slotOptions.includes("Stim Injector"));
+    assert.ok(!slotOptions.includes("Shadow Cloak"));
+    await page.getByLabel("Operator 1 slot 3").selectOption({ label: "Stim Injector" });
+    assert.match(await page.locator(".loadout h4").first().innerText(), /3 of 8 slots used/);
+    const campaignRecord = await page.evaluate(() => JSON.parse(localStorage.getItem("opensynd.campaign.v1")));
+    assert.equal(campaignRecord.heart, 1);
+    assert.deepEqual(campaignRecord.loadouts["operator-one"].at(-1), "developer.stim-injector");
+    await page.click("#close-research");
+    await page.waitForFunction(() => !document.querySelector("#research-dialog").open);
+
     await missionButtons.nth(0).click();
     await page.waitForFunction(() => document.querySelector("#title-heading").textContent.includes("First Light"));
     await missionButtons.nth(1).click();
