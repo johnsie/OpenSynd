@@ -1199,6 +1199,18 @@ function drawUnit(unit, viewport) {
   context.fillRect(-size, size * 1.5, size * 2, 3);
   context.fillStyle = unit.disabled ? "#58646a" : healthRatio > 0.35 ? "#79d59b" : "#ff6b62";
   context.fillRect(-size, size * 1.5, size * 2 * healthRatio, 3);
+  if (unit.side === "opposition" && unit.alertedBy && !unit.disabled) {
+    // An alert marker over a watcher that has noticed the squad and is giving chase.
+    const pulse = reduceMotion ? 1 : 0.8 + 0.2 * Math.sin(state.elapsed * 8);
+    context.fillStyle = `rgba(255, 107, 98, ${pulse})`;
+    context.font = `800 ${Math.max(20, size * 2.2)}px ui-sans-serif, sans-serif`;
+    context.textAlign = "center";
+    context.textBaseline = "alphabetic";
+    context.strokeStyle = "rgba(0, 0, 0, 0.8)";
+    context.lineWidth = 3;
+    context.strokeText("!", 0, -size * 2.7);
+    context.fillText("!", 0, -size * 2.7);
+  }
   if (unit.disabled) {
     context.strokeStyle = "#ff6b62";
     context.lineWidth = 2;

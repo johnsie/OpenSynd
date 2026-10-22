@@ -543,10 +543,10 @@ test("a shadow cloak shortens how far a watcher sees its wearer", () => {
     const operator = operatorAt(2 + gap, 2, { equipment });
     return advancePatrols([guard, operator], FIXED_STEP_SECONDS, grid).length > 0;
   };
-  // Awareness 85 gives a sight of 8.5 tiles; a cloak cuts it to 5.1.
-  assert.equal(spottedAt([], 7), true);
-  assert.equal(spottedAt([cloak], 7), false);
-  assert.equal(spottedAt([cloak], 4), true);
+  // Awareness 85 gives a sight of 13.6 tiles; a cloak cuts it to 8.2.
+  assert.equal(spottedAt([], 12), true);
+  assert.equal(spottedAt([cloak], 12), false);
+  assert.equal(spottedAt([cloak], 7), true);
   assert.equal(stealthFactor({ equipment: [cloak, { definition: { action: "stealth", effect: { sightFactor: 0.8 } } }] }), 0.6);
   assert.equal(stealthFactor({}), 1);
 });
@@ -701,30 +701,28 @@ test("a watcher draws its weapon only while it is alert or fighting", () => {
 
 test("a watcher that spots someone calls its neighbours, who then see further", () => {
   const grid = createTileGrid(streetMap);
-  const spotter = patrolUnit([{ x: 2, y: 2 }, { x: 4, y: 2 }]);
+  const spotter = patrolUnit([{ x: 14, y: 2 }, { x: 16, y: 2 }]);
   spotter.id = "spotter";
-  spotter.position = { x: 5, y: 2 };
-  const neighbour = patrolUnit([{ x: 2, y: 2 }, { x: 4, y: 2 }]);
+  spotter.position = { x: 14, y: 2 };
+  const neighbour = patrolUnit([{ x: 9, y: 2 }, { x: 8, y: 2 }]);
   neighbour.id = "neighbour";
-  neighbour.position = { x: 2, y: 2 };
-  // 7 tiles from the spotter (inside its sight of 8.5) but 10 from the neighbour (outside its own).
-  const operator = operatorAt(12, 2);
+  neighbour.position = { x: 9, y: 2 };
+  // 11 tiles from the spotter (inside its sight of 13.6) but 16 from the neighbour: outside its own
+  // sight, inside the 18.4 tiles a called watcher sees.
+  const operator = operatorAt(25, 2);
 
   advancePatrols([neighbour, operator], FIXED_STEP_SECONDS, grid);
   assert.equal(neighbour.alertedBy, null, "alone it does not see the operator");
 
   const events = advancePatrols([spotter, neighbour, operator], FIXED_STEP_SECONDS, grid);
   assert.deepEqual(events.map((event) => event.unitId), ["spotter", "neighbour"]);
-  assert.equal(neighbour.alertedBy, "op", "called by the spotter, it sees the same operator");
+  assert.equal(neighbour.alertedBy, "op", "called by the spotter (5 tiles away), it sees the same operator");
 
-  // Far away neighbours are not called.
-  const distant = patrolUnit([{ x: 30, y: 2 }, { x: 33, y: 2 }]);
+  // A watcher 25 tiles from the spotter is not called, and the operator is 14 tiles from it: just out of sight.
+  const distant = patrolUnit([{ x: 39, y: 2 }, { x: 38, y: 2 }]);
   distant.id = "distant";
-  distant.position = { x: 30, y: 2 };
-  // The spotter sees `operator` and is alert, but `distant` is 25 tiles from it: not called, and
-  // the other operator is 9 tiles from it, just outside its own sight.
-  const nearOperator = { ...operatorAt(21, 2), id: "other" };
-  advancePatrols([spotter, distant, operator, nearOperator], FIXED_STEP_SECONDS, grid);
+  distant.position = { x: 39, y: 2 };
+  advancePatrols([spotter, distant, operator], FIXED_STEP_SECONDS, grid);
   assert.equal(spotter.alertedBy, "op");
   assert.equal(distant.alertedBy, null);
 });

@@ -177,16 +177,24 @@ out of range it is followed again. The pursuit ends when the watcher falls, the
 operative runs out of rounds, or they are given another order (`advancePursuit` in
 `web/src/simulation.js`, with tests).
 
+Watchers see further and chase harder: sight is 0.16 tiles per point of awareness (14.4
+tiles at awareness 90, up from 9), an alert watcher keeps a squad in mind to twice that
+distance before giving up, watchers chase at their full pace (speed 4.2, about 93% of an
+operator's), a spotted squad draws neighbours within 14 tiles who then see 1.35 times
+further, and an alert watcher shows a red "!" over its head. The shadow cloak still
+shortens sight to 60%.
+
 Difficulty is measured, not guessed: `npm run balance` (web/tools/balance.mjs)
 plays every mission headlessly with a simple squad bot through the real game rules
 (patrols, chasing, combat, rounds, fatigue) under three tactics (rush, steady, careful)
 with seeded variation. The first pass showed both operations far too easy (about 98%
 wins, no operator ever lost), so watchers were toughened (75 vitality, 12 attack,
 3.25 range, 1.0 s cooldown), a spotted squad now calls watchers within 14 tiles who then
-see 1.8 times further, and guards were posted at the objectives (First Light has 8
+see further, and guards were posted at the objectives (First Light has 8
 watchers, Quiet Hours 14, with heavy-pulse guards at the gate). Current bot results:
-First Light is a gentle opener (steady 100%, rush 60%) and Quiet Hours is clearly
-harder (rush 63%, steady 70%, careful 97%, one to two operators lost on average).
+After the longer sight and harder chase, First Light is a manageable opener (steady 100%
+with one operator lost on average, rush 60%) and Quiet Hours is clearly harder (rush 57%,
+steady 77%, careful 93%, two to three operators lost on average).
 The bot does not use training, research or purchases, so human play should be easier
 than these numbers with a well-built squad.
 

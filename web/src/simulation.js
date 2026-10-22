@@ -105,14 +105,16 @@ export function advanceUnits(units, deltaSeconds) {
 }
 
 const PATROL_SPEED_FACTOR = 0.45;
-const CHASE_SPEED_FACTOR = 0.85;
-const SIGHT_TILES_PER_AWARENESS = 0.1;
-const LOSE_SIGHT_FACTOR = 1.6;
+const CHASE_SPEED_FACTOR = 1.0;
+// Awareness 90 sees 14.4 tiles: watchers notice a squad from well down the street.
+const SIGHT_TILES_PER_AWARENESS = 0.16;
+// Once alert, a watcher keeps the squad in mind to twice its sight before giving up the chase.
+const LOSE_SIGHT_FACTOR = 2.0;
 const STOP_RANGE_FACTOR = 0.9;
 // A watcher that has spotted someone calls its neighbours: those within this many tiles see
 // further, so they close in too.
 export const CALL_RADIUS = 14;
-export const CALL_SIGHT_FACTOR = 1.8;
+export const CALL_SIGHT_FACTOR = 1.35;
 
 // Walk a unit along its own `path`; returns true while it still has path left.
 function followPath(unit, deltaSeconds, speedFactor) {
