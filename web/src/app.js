@@ -588,7 +588,7 @@ function updateFacing(unit, viewport) {
 function drawSprite(unit, sheet, viewport, size) {
   updateFacing(unit, viewport);
   const moving = unit.path.length > 0 && !unit.disabled;
-  const animation = sheet.animations.find((item) => item.name === (moving ? "run" : "idle"));
+  const animation = sheet.animations.find((item) => item.name === (moving ? "walk" : "idle"));
   const clock = reduceMotion ? 0 : (state.elapsed + unit.id.length * 0.13) / animation.seconds;
   const frame = Math.floor((clock % 1) * animation.frames) % animation.frames;
   const direction = unit.facing ?? 0;

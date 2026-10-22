@@ -255,7 +255,8 @@
           name,
           row: index * DIRECTIONS,
           frames: frameCounts[name],
-          seconds: Math.min(clips[name].duration, animations[name].window ?? clips[name].duration),
+          // Playback length in the game; a shorter value than the clip gives a brisker stride.
+          seconds: animations[name].playback ?? Math.min(clips[name].duration, animations[name].window ?? clips[name].duration),
         })),
       },
     };

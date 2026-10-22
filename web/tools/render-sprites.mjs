@@ -59,7 +59,7 @@ const skins = {
 };
 const humanAnimations = {
   idle: { pick: "Idle", frames: 4, window: 2 },
-  run: { pick: "Run", frames: 8 },
+  walk: { pick: "Walk", frames: 8, playback: 0.78 },
 };
 const jobs = [
   ...Object.entries(skins).map(([name, skin]) => ({
@@ -77,7 +77,7 @@ const jobs = [
     options: {
       kind: "robot",
       model: robot,
-      animations: { idle: { pick: "Robot_Idle", frames: 4, window: 2 }, run: { pick: "Robot_Walking", frames: 8 } },
+      animations: { idle: { pick: "Robot_Idle", frames: 4, window: 2 }, walk: { pick: "Robot_Walking", frames: 8 } },
       materials: { Main: [64, 26, 52], Grey: [88, 96, 112], Black: [12, 12, 16] },
     },
   },
