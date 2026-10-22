@@ -385,3 +385,43 @@ test("a higher brain level fires the pulse more often", () => {
   assert.ok(slow < normal && normal < quick);
   assert.ok(quick / normal > 1.35 && quick / normal < 1.5);
 });
+
+test("walking tires an operator and slows them; resting recovers stamina", () => {
+  const grid = createTileGrid(streetMap);
+  const walker = {
+    ...operatorAt(0, 2),
+    levels: { speed: 3, brain: 3 },
+    stamina: 1,
+    path: findPath(grid, { x: 0, y: 2 }, { x: 39, y: 2 }),
+  };
+  const pace = () => {
+    const from = walker.position.x;
+    for (let step = 0; step < 30; step += 1) advanceUnits([walker], FIXED_STEP_SECONDS);
+    return walker.position.x - from;
+  };
+  const fresh = pace();
+  for (let step = 0; step < 30 * 6; step += 1) advanceUnits([walker], FIXED_STEP_SECONDS);
+  assert.ok(walker.stamina < 0.95 && walker.stamina > 0);
+  const tiredPace = pace();
+  assert.ok(tiredPace < fresh, `tired ${tiredPace} should be below fresh ${fresh}`);
+
+  walker.path = [];
+  const tired = walker.stamina;
+  for (let step = 0; step < 30 * 4; step += 1) advanceUnits([walker], FIXED_STEP_SECONDS);
+  assert.ok(walker.stamina > tired && walker.stamina < 1);
+});
+
+test("stronger legs keep their stamina longer over the same walk", () => {
+  const grid = createTileGrid(streetMap);
+  const staminaAfter = (speed) => {
+    const walker = {
+      ...operatorAt(0, 2),
+      levels: { speed, brain: 3 },
+      stamina: 1,
+      path: findPath(grid, { x: 0, y: 2 }, { x: 39, y: 2 }),
+    };
+    for (let step = 0; step < 30 * 8; step += 1) advanceUnits([walker], FIXED_STEP_SECONDS);
+    return walker.stamina;
+  };
+  assert.ok(staminaAfter(5) > staminaAfter(3) && staminaAfter(3) > staminaAfter(1));
+});

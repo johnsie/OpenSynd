@@ -51,6 +51,7 @@ import {
   resolveArrival, syncGates as syncMissionGates,
 } from "./mission.js";
 import { addEffect, advanceEffects, createEffects, effectProgress, walkBob } from "./effects.js";
+import { staminaSpeedFactor } from "./stats.js";
 import {
   BARS,
   BAR_HINTS,
@@ -318,6 +319,8 @@ async function loadGame() {
       initialPosition: { ...placement.position },
       alertedBy: null,
       levels: defaultLevels(),
+      stamina: 1,
+      walkPhase: 0,
       patrol: placement.patrol
         ? { route: buildPatrolRoute(state.grid, placement.position, placement.patrol), index: 0 }
         : null,
@@ -404,6 +407,7 @@ function applySaveSnapshot(snapshot) {
     unit.targetId = saved.targetId;
     unit.disabled = saved.disabled;
     unit.levels = { ...saved.levels };
+    unit.stamina = saved.stamina;
     if (unit.patrol) unit.patrol.index = saved.patrolIndex;
   }
   const objectivesById = new Map(
@@ -666,7 +670,9 @@ function drawSprite(unit, sheet, viewport, size) {
   updateFacing(unit, viewport);
   const moving = (unit.path.length > 0 && !unit.disabled) || isPatrolling(unit);
   const animation = sheet.animations.find((item) => item.name === (moving ? "walk" : "idle"));
-  const clock = reduceMotion ? 0 : (state.elapsed + unit.id.length * 0.13) / animation.seconds;
+  // Tired units walk with a slower cadence: their walk phase advances more slowly.
+  const phase = moving ? unit.walkPhase : state.elapsed;
+  const clock = reduceMotion ? 0 : (phase + unit.id.length * 0.13) / animation.seconds;
   const frame = Math.floor((clock % 1) * animation.frames) % animation.frames;
   const direction = unit.facing ?? 0;
   const image = sprites.images.get(sheet.file);
@@ -924,7 +930,17 @@ function drawEffects(viewport) {
 function simulationStep(deltaSeconds) {
   state.missionSeconds += deltaSeconds;
   let interfaceChanged = false;
-  for (const arrival of advanceUnits(state.units, deltaSeconds)) {
+  const arrivals = advanceUnits(state.units, deltaSeconds);
+  for (const unit of state.units) {
+    if (unit.side !== "team" || unit.disabled) continue;
+    if (unit.stamina < 0.15 && unit.path.length > 0 && !unit.tired) {
+      unit.tired = true;
+      setStatus(`${unit.definition.name} is exhausted and slowing down. Stop to let them recover.`);
+    } else if (unit.stamina > 0.4) {
+      unit.tired = false;
+    }
+  }
+  for (const arrival of arrivals) {
     interfaceChanged = true;
     interfaceChanged = completeObjectivesAt(arrival.position) || interfaceChanged;
   }
@@ -1008,6 +1024,12 @@ function update(deltaSeconds) {
     return;
   }
   state.elapsed += deltaSeconds;
+  state.meterClock = (state.meterClock ?? 0) + deltaSeconds;
+  if (state.meterClock >= 0.2) {
+    state.meterClock = 0;
+    updateStaminaMeters();
+  }
+  for (const unit of state.units) unit.walkPhase += deltaSeconds * staminaSpeedFactor(unit.stamina);
   advanceEffects(state.effects, deltaSeconds);
   consumeFixedSteps(state.clock, deltaSeconds, simulationStep);
   checkOutcome();
@@ -1540,6 +1562,9 @@ if (new URLSearchParams(location.search).has("e2e")) {
         }
       }
     },
+    setStamina(id, value) {
+      state.units.find((item) => item.id === id).stamina = value;
+    },
     placeUnit(id, x, y) {
       const unit = state.units.find((item) => item.id === id);
       unit.position = { x, y };
@@ -1552,6 +1577,24 @@ if (new URLSearchParams(location.search).has("e2e")) {
 }
 document.querySelector("#about-button").addEventListener("click", () => aboutDialog.showModal());
 document.querySelector("#close-about").addEventListener("click", () => aboutDialog.close());
+
+function paintStamina(element, unit) {
+  const percent = Math.round(unit.stamina * 100);
+  element.classList.toggle("low", unit.stamina < 0.5 && unit.stamina >= 0.2);
+  element.classList.toggle("empty", unit.stamina < 0.2);
+  element.setAttribute("aria-label", `Stamina of ${element.dataset.label} ${percent} percent`);
+  element.title = `Stamina ${percent}%: walking tires the legs; standing still recovers slowly.`;
+  element.querySelector("i").style.width = `${percent}%`;
+}
+
+// Stamina changes every step, so update the meters in place instead of rebuilding
+// the roster (which would swallow clicks on its buttons).
+function updateStaminaMeters() {
+  for (const element of rosterElement.querySelectorAll(".stamina")) {
+    const unit = state.units.find((item) => item.id === element.dataset.unit);
+    if (unit) paintStamina(element, unit);
+  }
+}
 
 function levelBar(level, label) {
   const bar = document.createElement("span");
@@ -1715,7 +1758,14 @@ function renderInterface() {
         group.append(BAR_LABELS[bar], levelBar(unit.levels[bar], `${BAR_LABELS[bar]} of ${label}`), lower, raise);
         bars.append(group);
       }
-      item.append(checkbox, button, bars);
+      const stamina = document.createElement("div");
+      stamina.className = "stamina";
+      stamina.dataset.unit = unit.id;
+      stamina.dataset.label = label;
+      stamina.setAttribute("role", "img");
+      stamina.append("Stamina", document.createElement("i"));
+      paintStamina(stamina, unit);
+      item.append(checkbox, button, bars, stamina);
       return item;
     }),
   );

@@ -49,3 +49,36 @@ export function adjustLevel(levels, bar, delta) {
   const next = clampLevel(levels[bar] + delta);
   return next === levels[bar] ? levels : { ...levels, [bar]: next };
 }
+
+// Fatigue: stamina runs from 1 (fresh) to 0 (exhausted). Walking drains it,
+// standing still recovers it slowly, and tired legs walk slower.
+export const STAMINA_FULL = 1;
+export const STAMINA_EMPTY = 0;
+const DRAIN_SECONDS_AT_BASELINE = 60; // walking from fresh to empty at Legs level 3
+const RECOVER_SECONDS = 70; // resting from empty to fresh
+const EXHAUSTED_SPEED = 0.5; // share of normal pace left at zero stamina
+const LEGS_ENDURANCE_STEP = 0.15;
+
+export function staminaDrainPerSecond(levels) {
+  const legs = levels?.speed ?? LEVEL_DEFAULT;
+  return (1 / DRAIN_SECONDS_AT_BASELINE) * (1 - (legs - LEVEL_DEFAULT) * LEGS_ENDURANCE_STEP);
+}
+
+export const STAMINA_RECOVER_PER_SECOND = 1 / RECOVER_SECONDS;
+
+// Pace multiplier from tiredness: 1 when fresh, EXHAUSTED_SPEED when empty.
+export function staminaSpeedFactor(stamina) {
+  const value = Math.min(STAMINA_FULL, Math.max(STAMINA_EMPTY, stamina ?? STAMINA_FULL));
+  return EXHAUSTED_SPEED + (1 - EXHAUSTED_SPEED) * value;
+}
+
+export function nextStamina(stamina, levels, walking, deltaSeconds) {
+  const change = walking
+    ? -staminaDrainPerSecond(levels) * deltaSeconds
+    : STAMINA_RECOVER_PER_SECOND * deltaSeconds;
+  return Math.min(STAMINA_FULL, Math.max(STAMINA_EMPTY, (stamina ?? STAMINA_FULL) + change));
+}
+
+export function isValidStamina(value) {
+  return Number.isFinite(value) && value >= STAMINA_EMPTY && value <= STAMINA_FULL;
+}

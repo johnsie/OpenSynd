@@ -136,6 +136,16 @@ for (const [name, type, executablePath] of targets) {
     await page.waitForTimeout(300);
     const edgeFinal = await page.evaluate(() => window.opensyndTest.camera());
     assert.ok(Math.abs(edgeFinal.x - edgeStopped.x) < 0.01, "moving away stops the scroll");
+    // Stamina meters show for every operator and follow tiredness without rebuilding the roster.
+    assert.equal(await page.locator(".stamina").count(), 4);
+    await page.evaluate(() => window.opensyndTest.setStamina("operator-two", 0.1));
+    await page.waitForFunction(
+      () => document.querySelector('.stamina[data-unit="operator-two"]').classList.contains("empty"),
+    );
+    assert.match(
+      await page.locator('.stamina[data-unit="operator-two"]').getAttribute("aria-label"),
+      /Stamina of Field Operator 2 10 percent/,
+    );
     // Camera controls: zoom with the wheel and keys, jump with the minimap, recentre with C.
     await page.locator("#game-canvas").hover();
     await page.mouse.wheel(0, -200);

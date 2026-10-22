@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 import { findPath } from "./engine.js";
-import { cooldownMultiplier, speedMultiplier } from "./stats.js";
+import { cooldownMultiplier, nextStamina, speedMultiplier, staminaSpeedFactor } from "./stats.js";
 
 export const FIXED_STEP_SECONDS = 1 / 30;
 export const MAX_STEPS_PER_FRAME = 8;
@@ -19,9 +19,18 @@ export function advanceUnits(units, deltaSeconds) {
   const arrivals = [];
 
   for (const unit of units) {
-    if (unit.side !== "team" || unit.path.length === 0) continue;
+    if (unit.side !== "team") continue;
+    // Walking drains stamina; standing still recovers it.
+    const walking = unit.path.length > 0 && !unit.disabled;
+    unit.stamina = nextStamina(unit.stamina, unit.levels, walking, deltaSeconds);
+    if (!walking) continue;
 
-    let remaining = deltaSeconds * unit.definition.stats.speed * speedMultiplier(unit.levels) * 0.7;
+    let remaining =
+      deltaSeconds *
+      unit.definition.stats.speed *
+      speedMultiplier(unit.levels) *
+      staminaSpeedFactor(unit.stamina) *
+      0.7;
     while (remaining > 0 && unit.path.length > 0) {
       const destination = unit.path[0];
       const offsetX = destination.x - unit.position.x;

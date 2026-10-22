@@ -92,6 +92,13 @@ to 1.4x; Brain scales the pulse cooldown from 1.3x to 0.7x (shorter is
 faster). The rules are pure (`web/src/stats.js`), covered by tests, and saved
 in format version 5 with a tested migration from version 4.
 
+Legs also set endurance. Walking drains an operator's stamina (60 seconds from
+fresh to empty at Legs level 3, longer with stronger legs), tired legs slow the
+walk to as little as half pace, and standing still recovers stamina slowly (70
+seconds from empty). A roster meter shows each operator's stamina, tired units
+walk with a slower cadence, and the rules are pure and tested. Save format
+version 6 stores stamina, with a tested migration from version 5.
+
 Operators can be picked individually: each roster entry has a selection checkbox,
 Ctrl/Shift-click adds or removes an operator, and each entry carries its own
 Legs and Brain controls. Orders (moves, pulses, interactions, training from the

@@ -220,3 +220,32 @@ test("training levels round-trip and invalid levels are rejected", () => {
   assert.throws(() => validateSaveSnapshot(withLevels({ speed: 3 }), context), /training levels/);
   assert.throws(() => validateSaveSnapshot(withLevels(null), context), /training levels/);
 });
+
+test("version 5 saves migrate with every unit fully rested", () => {
+  const snapshot = createSaveSnapshot(state, "2026-10-22T12:00:00.000Z");
+  const older = {
+    ...snapshot,
+    formatVersion: 5,
+    units: snapshot.units.map(({ stamina, ...unit }) => unit),
+  };
+  const parsed = parseSaveSnapshot(JSON.stringify(older), context);
+  assert.equal(parsed.formatVersion, SAVE_VERSION);
+  assert.ok(parsed.units.every((unit) => unit.stamina === 1));
+});
+
+test("stamina round-trips and out-of-range values are rejected", () => {
+  const tired = {
+    ...state,
+    units: state.units.map((unit, index) => (index === 0 ? { ...unit, stamina: 0.25 } : unit)),
+  };
+  const snapshot = createSaveSnapshot(tired, "2026-10-22T12:00:00.000Z");
+  assert.equal(parseSaveSnapshot(JSON.stringify(snapshot), context).units[0].stamina, 0.25);
+
+  const withStamina = (stamina) => ({
+    ...snapshot,
+    units: snapshot.units.map((unit, index) => (index === 0 ? { ...unit, stamina } : unit)),
+  });
+  assert.throws(() => validateSaveSnapshot(withStamina(1.5), context), /stamina/);
+  assert.throws(() => validateSaveSnapshot(withStamina(-0.1), context), /stamina/);
+  assert.throws(() => validateSaveSnapshot(withStamina("full"), context), /stamina/);
+});

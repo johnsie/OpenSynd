@@ -419,3 +419,20 @@ details.panel-section > p, details.panel-section > div { margin-top: 0.5rem; }
   .brand-block h1 { font-size: 1.35rem; }
   .brand-block .eyebrow { display: none; }
 }
+.stamina {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 3.6rem 1fr;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.stamina i {
+  display: block;
+  height: 0.3rem;
+  background: #79d59b;
+  transition: width 0.2s linear;
+}
+.stamina.low i { background: var(--amber); }
+.stamina.empty i { background: var(--risk); }
