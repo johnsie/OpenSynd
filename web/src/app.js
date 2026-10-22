@@ -29,11 +29,14 @@ import {
   visibleBounds,
   zoomCamera,
 } from "./camera.js";
+import { iconMarkup } from "./icons.js";
 import {
   CAMPAIGN_KEY,
   SLOTS_PER_OPERATIVE,
   TRACKS,
   canResearchItem,
+  buyIntoSlot,
+  canBuy,
   canResearchTrack,
   captureItems,
   earnAchievement,
@@ -41,19 +44,33 @@ import {
   emptyCampaign,
   isItemAvailable,
   loadoutFor,
+  netCost,
   nextTrackCost,
   parseCampaign,
   researchItem,
   researchTrack,
-  setSlot,
+  sellFromSlot,
+  sellValue,
   sanitizeLoadouts,
   serializeCampaign,
 } from "./campaign.js";
 import { newStats, newlyEarned } from "./achievements.js";
-import { energyItem, findLoot, freeSlots, inLootReach, lootBody, lootableBody, useEnergyItem } from "./inventory.js";
+import {
+  distanceBetween,
+  energyItem,
+  findLoot,
+  inLootReach,
+  lootBody,
+  lootableAt,
+  lootableBody,
+  nearestLootable,
+  useEnergyItem,
+} from "./inventory.js";
 import {
   advanceCombat,
   combatStats,
+  pickWeapon,
+  roundsLeft,
   advanceFocus,
   advancePatrols,
   advanceUnits,
@@ -297,6 +314,7 @@ async function loadSprites() {
 }
 
 const state = {
+  armoury: { operator: 0, slot: 0 },
   campaign: emptyCampaign(),
   catalog: [],
   opStats: newStats(0),
@@ -400,6 +418,7 @@ async function loadGame(index = state.missionIndex) {
       path: [],
       research: definition.role === "operator" ? { heart: state.campaign.heart, brain: state.campaign.brain } : null,
       looted: [],
+      activeSlot: null,
       initialEquipment: [],
       equipment: startingEquipment(placement, definition, equipmentDefinitions, definitionsById).map((item) => ({
         definition: item,
@@ -536,49 +555,123 @@ function renderResearch() {
         control.className = "state";
         control.textContent = researchStatus(item);
       }
-      const note = document.createElement("small");
-      note.textContent = item.description;
-      row.append(name, control, note);
+      row.title = item.description;
+      row.append(name, control);
       return row;
     }),
   );
 
-  document.querySelector("#research-loadouts").replaceChildren(
-    ...state.mission.team.map((placement, index) => {
-      const defaults = startingLoadout(placement);
-      const slots = loadoutFor(campaign, placement.id, defaults);
-      const box = document.createElement("div");
-      box.className = "loadout";
+  renderArmoury();
+}
+
+// The Armoury: each operative's eight slots as pictures, and a shop that buys into the chosen slot.
+function renderArmoury() {
+  const campaign = state.campaign;
+  const team = state.mission.team;
+  state.armoury.operator = Math.min(state.armoury.operator, team.length - 1);
+  const choice = state.armoury;
+  const loadouts = team.map((placement) => loadoutFor(campaign, placement.id, startingLoadout(placement)));
+  const byId = new Map(state.catalog.map((item) => [item.id, item]));
+
+  document.querySelector("#armoury-squad").replaceChildren(
+    ...team.map((placement, index) => {
+      const card = document.createElement("div");
+      card.className = "armoury-card";
       const heading = document.createElement("h4");
-      heading.textContent = `Operator ${index + 1} · ${slots.length} of ${SLOTS_PER_OPERATIVE} slots used`;
-      box.append(heading);
+      heading.textContent = `Operator ${index + 1} · ${loadouts[index].length} of ${SLOTS_PER_OPERATIVE} slots`;
+      const grid = document.createElement("div");
+      grid.className = "armoury-slots";
+      grid.setAttribute("role", "group");
+      grid.setAttribute("aria-label", `Operator ${index + 1} slots`);
       for (let slot = 0; slot < SLOTS_PER_OPERATIVE; slot += 1) {
-        const label = document.createElement("label");
-        label.append(`Slot ${slot + 1}`);
-        const select = document.createElement("select");
-        select.setAttribute("aria-label", `Operator ${index + 1} slot ${slot + 1}`);
-        const empty = document.createElement("option");
-        empty.value = "";
-        empty.textContent = "— empty —";
-        select.append(empty);
-        for (const item of state.catalog.filter((entry) => isItemAvailable(campaign, entry))) {
-          const option = document.createElement("option");
-          option.value = item.id;
-          option.textContent = item.name;
-          select.append(option);
+        const item = byId.get(loadouts[index][slot]);
+        const square = document.createElement("button");
+        square.type = "button";
+        square.className = "slot big";
+        square.classList.toggle("empty", !item);
+        const chosen = choice.operator === index && choice.slot === slot;
+        square.classList.toggle("chosen", chosen);
+        square.setAttribute("aria-pressed", String(chosen));
+        square.setAttribute("aria-label", `Operator ${index + 1} slot ${slot + 1}: ${item ? item.name : "empty"}`);
+        square.title = item ? `${item.name}: ${item.description}` : "Empty slot. Choose it, then buy an item for it.";
+        const number = document.createElement("span");
+        number.className = "label";
+        number.textContent = String(slot + 1);
+        square.append(number);
+        if (item) {
+          square.insertAdjacentHTML("beforeend", iconMarkup(item.icon, 34));
+          if (item.charges) {
+            const badge = document.createElement("span");
+            badge.className = "charges";
+            badge.textContent = String(item.charges);
+            square.append(badge);
+          }
         }
-        select.value = slots[slot] ?? "";
-        select.addEventListener("change", () => {
-          state.campaign = setSlot(state.campaign, placement.id, slot, select.value || null, state.catalog, defaults);
-          persistCampaign();
-          renderResearch();
+        square.addEventListener("click", () => {
+          state.armoury = { operator: index, slot };
+          renderArmoury();
         });
-        label.append(select);
-        box.append(label);
+        grid.append(square);
       }
-      return box;
+      card.append(heading, grid);
+      return card;
     }),
   );
+
+  const placement = team[choice.operator];
+  const defaults = startingLoadout(placement);
+  const current = byId.get(loadouts[choice.operator][choice.slot]);
+  const shop = document.querySelector("#armoury-shop");
+  const heading = document.createElement("h4");
+  heading.textContent = `Operator ${choice.operator + 1} · slot ${choice.slot + 1}: ${current ? current.name : "empty"}`;
+  const sell = document.createElement("button");
+  sell.type = "button";
+  sell.textContent = current ? `Sell ${current.name} · +${sellValue(current)} funds` : "Nothing to sell";
+  sell.disabled = !current;
+  sell.addEventListener("click", () => {
+    state.campaign = sellFromSlot(state.campaign, placement.id, choice.slot, state.catalog, defaults);
+    persistCampaign();
+    updateFundsReadout();
+    renderResearch();
+  });
+  const rows = state.catalog.map((item) => {
+    const row = document.createElement("div");
+    row.className = "shop-row";
+    const available = isItemAvailable(campaign, item);
+    row.classList.toggle("locked", !available);
+    const icon = document.createElement("span");
+    icon.className = "icon";
+    icon.innerHTML = iconMarkup(item.icon, 32);
+    const text = document.createElement("span");
+    const name = document.createElement("strong");
+    name.textContent = item.name;
+    const note = document.createElement("small");
+    const supply = item.charges
+      ? ` ${item.charges} ${item.action === "disable-pulse" ? "rounds" : "doses"} per operation.`
+      : "";
+    note.textContent = available
+      ? `${item.description}${supply}`
+      : `${item.description}${supply} Research it first (${item.researchCost} funds).`;
+    text.append(name, note);
+    const buy = document.createElement("button");
+    buy.type = "button";
+    const net = netCost(campaign, placement.id, choice.slot, item, state.catalog, defaults);
+    buy.textContent = net < 0 ? `Swap · +${-net} funds` : `Buy · ${net} funds`;
+    buy.setAttribute(
+      "aria-label",
+      `Buy ${item.name} for Operator ${choice.operator + 1} slot ${choice.slot + 1}, ${net} funds`,
+    );
+    buy.disabled = !available || current?.id === item.id || !canBuy(campaign, placement.id, choice.slot, item, state.catalog, defaults);
+    buy.addEventListener("click", () => {
+      state.campaign = buyIntoSlot(state.campaign, placement.id, choice.slot, item, state.catalog, defaults);
+      persistCampaign();
+      updateFundsReadout();
+      renderResearch();
+    });
+    row.append(icon, text, buy);
+    return row;
+  });
+  shop.replaceChildren(heading, sell, ...rows);
 }
 
 function openResearch() {
@@ -1011,6 +1104,23 @@ function drawSprite(unit, sheet, viewport, size) {
     drawSize,
     drawSize,
   );
+  // The weapon the unit would fire (the selected one, or the best loaded one) is in its hand: a
+  // transparent layer rendered from the same frames, drawn over the body.
+  const carried = unit.disabled ? null : pickWeapon(unit).item;
+  const weaponSheet = carried && sprites.manifest.sheets[`weapon-${carried.definition.icon}`];
+  if (weaponSheet) {
+    context.drawImage(
+      sprites.images.get(weaponSheet.file),
+      frame * source,
+      (animation.row + direction) * source,
+      source,
+      source,
+      -drawSize / 2,
+      -drawSize * 0.84 + size * 1.0,
+      drawSize,
+      drawSize,
+    );
+  }
   context.restore();
 }
 
@@ -1082,17 +1192,6 @@ function drawUnit(unit, viewport) {
   context.fillRect(-size, size * 1.5, size * 2, 3);
   context.fillStyle = unit.disabled ? "#58646a" : healthRatio > 0.35 ? "#79d59b" : "#ff6b62";
   context.fillRect(-size, size * 1.5, size * 2 * healthRatio, 3);
-  if (lootableBody(unit)) {
-    // A marker over a body that still carries gear an operator can loot.
-    context.fillStyle = "#e1b35a";
-    context.beginPath();
-    context.moveTo(0, -size * 2.3);
-    context.lineTo(size * 0.45, -size * 1.85);
-    context.lineTo(0, -size * 1.4);
-    context.lineTo(-size * 0.45, -size * 1.85);
-    context.closePath();
-    context.fill();
-  }
   if (unit.disabled) {
     context.strokeStyle = "#ff6b62";
     context.lineWidth = 2;
@@ -1120,6 +1219,7 @@ function draw() {
   const units = [...state.units].sort(
     (left, right) => left.position.x + left.position.y - (right.position.x + right.position.y),
   );
+  drawPickups(viewport);
   for (const unit of units) drawUnit(unit, viewport);
   drawEffects(viewport);
   drawMinimap(viewport);
@@ -1215,6 +1315,52 @@ function unitScreenPoint(unit, viewport) {
   return { x: point.x, y: point.y - Math.max(9, viewport.cellSize.height * 0.34) * 0.8 };
 }
 
+// Gear dropped where a watcher fell: a small case on the floor with a pulsing ring.
+function drawPickups(viewport) {
+  const { cellSize, origin } = viewport;
+  for (const body of state.units) {
+    if (!lootableBody(body)) continue;
+    const tile = state.grid[Math.round(body.position.y)]?.[Math.round(body.position.x)];
+    const centre = gridToScreen(body.position, cellSize, origin, tile?.elevation ?? 0);
+    const width = cellSize.width * 0.18;
+    const height = cellSize.height * 0.18;
+    const pulse = reduceMotion ? 0.6 : 0.5 + 0.5 * Math.sin(state.elapsed * 4);
+    context.save();
+    context.translate(centre.x + cellSize.width * 0.14, centre.y + cellSize.height * 0.1);
+    context.strokeStyle = `rgba(225, 179, 90, ${0.35 + 0.5 * pulse})`;
+    context.lineWidth = 2;
+    context.beginPath();
+    context.ellipse(0, 0, width * (1.5 + 0.4 * pulse), height * (1.5 + 0.4 * pulse), 0, 0, Math.PI * 2);
+    context.stroke();
+    // The case: a lid, a front face and a side face in amber tones.
+    context.fillStyle = "#e1b35a";
+    context.beginPath();
+    context.moveTo(0, -height * 1.6);
+    context.lineTo(width, -height * 0.8);
+    context.lineTo(0, 0);
+    context.lineTo(-width, -height * 0.8);
+    context.closePath();
+    context.fill();
+    context.fillStyle = "#a9802f";
+    context.beginPath();
+    context.moveTo(-width, -height * 0.8);
+    context.lineTo(0, 0);
+    context.lineTo(0, height * 1.1);
+    context.lineTo(-width, height * 0.3);
+    context.closePath();
+    context.fill();
+    context.fillStyle = "#7d5d20";
+    context.beginPath();
+    context.moveTo(width, -height * 0.8);
+    context.lineTo(0, 0);
+    context.lineTo(0, height * 1.1);
+    context.lineTo(width, height * 0.3);
+    context.closePath();
+    context.fill();
+    context.restore();
+  }
+}
+
 function drawEffects(viewport) {
   const size = Math.max(9, viewport.cellSize.height * 0.34);
   for (const effect of state.effects) {
@@ -1298,6 +1444,13 @@ function simulationStep(deltaSeconds) {
     for (const event of combatEvents) {
       if (event.type === "damage") {
         addEffect(state.effects, "pulse", { fromId: event.attackerId, toId: event.targetId });
+        if (event.outOfRounds) {
+          const shooter = state.units.find((item) => item.id === event.attackerId);
+          if (shooter.side === "team") {
+            setStatus(`${shooter.definition.name}: ${event.weapon} is out of rounds.`);
+            audio.play("alert");
+          }
+        }
       } else if (event.type === "disabled") {
         const down = state.units.find((item) => item.id === event.unitId);
         if (down.side === "opposition") state.opStats.watchersDisabled += 1;
@@ -1680,8 +1833,9 @@ function issueMove(destination) {
 }
 
 function lockPulse(attacker, target) {
-  const pulse = equipmentWithAction(attacker, "disable-pulse");
-  if (!pulse) return "no-tool";
+  const armed = (attacker.equipment ?? []).some((item) => item.definition.action === "disable-pulse");
+  if (!armed) return "no-tool";
+  if (roundsLeft(attacker) === 0) return "no-rounds";
   const distance = Math.hypot(
     attacker.position.x - target.position.x,
     attacker.position.y - target.position.y,
@@ -1724,6 +1878,10 @@ function issueAttack(targetId) {
     setStatus("This operator has no disabling tool equipped.");
     return;
   }
+  if (result === "no-rounds") {
+    setStatus(`${attacker.definition.name} is out of rounds. Swap to another weapon or loot one.`);
+    return;
+  }
   if (result === "out-of-range") {
     setStatus(`Target is out of range. Move within ${combatStats(attacker).range} tiles, then target again.`);
     return;
@@ -1734,9 +1892,7 @@ function issueAttack(targetId) {
   canvas.focus();
 }
 
-function useRepairKit() {
-  const unit = selectedUnit();
-  const kit = equipmentWithAction(unit, "restore-vitality");
+function useRepairOn(unit, kit) {
   if (!unit || unit.disabled || !kit || kit.charges === 0) {
     setStatus("No field repair kit is available.");
     return;
@@ -1753,6 +1909,11 @@ function useRepairKit() {
   audio.play("repair");
   addEffect(state.effects, "repair", { unitId: unit.id });
   renderInterface();
+}
+
+function useRepairKit() {
+  const unit = selectedUnit();
+  useRepairOn(unit, equipmentWithAction(unit, "restore-vitality"));
 }
 
 // The selected operator who most needs a stimulant and has one to use.
@@ -1781,13 +1942,13 @@ function lootNow(operator, body) {
   const { taken, left } = lootBody(operator, body);
   operator.lootTargetId = null;
   if (taken.length === 0) {
-    setStatus(`${operator.definition.name} has no free slots (${SLOTS_PER_OPERATIVE} items maximum).`);
+    setStatus(`${operator.definition.name} has no free slots (${SLOTS_PER_OPERATIVE} items maximum), so cannot pick anything up.`);
     return;
   }
   state.opStats.itemsLooted += taken.length;
   const names = taken.map((item) => item.definition.name).join(", ");
   setStatus(
-    `${operator.definition.name} looted ${names}.` +
+    `${operator.definition.name} picked up ${names}.` +
       (left > 0 ? ` ${left} item${left > 1 ? "s" : ""} left behind: no free slots.` : ""),
   );
   audio.play("objective");
@@ -1796,18 +1957,24 @@ function lootNow(operator, body) {
   renderInterface();
 }
 
+// F: pick up what is within reach, otherwise send the nearest selected operator to the
+// closest body that still carries gear.
 function lootAction() {
-  const found = findLoot(selectedOperators(), state.units);
+  const squad = selectedOperators();
+  const found = findLoot(squad, state.units);
   if (found) {
     lootNow(found.operator, found.body);
     return;
   }
-  const bodies = state.units.filter(lootableBody);
-  setStatus(
-    bodies.length > 0
-      ? "Walk a selected operator next to a disabled watcher, or click the body, to loot it."
-      : "There is nothing to loot yet. Disable a watcher that carries gear.",
-  );
+  let target = null;
+  for (const unit of squad) {
+    const candidate = nearestLootable(unit, state.units);
+    if (candidate && (!target || distanceBetween(unit, candidate) < distanceBetween(target.unit, target.body))) {
+      target = { unit, body: candidate };
+    }
+  }
+  if (target) goLoot(target.body);
+  else setStatus("There is nothing to pick up. Disable a watcher that carries gear first.");
 }
 
 // Send the nearest selected operator to a body; they loot it on arrival.
@@ -1831,7 +1998,7 @@ function goLoot(body) {
   }
   nearest.lootTargetId = body.id;
   audio.play("move");
-  setStatus(`${nearest.definition.name} is going to loot ${body.definition.name}.`);
+  setStatus(`${nearest.definition.name} is walking over to pick up ${body.definition.name}'s gear.`);
   renderInterface();
 }
 
@@ -1913,6 +2080,29 @@ canvas.addEventListener("pointermove", (event) => {
 });
 canvas.addEventListener("pointerleave", () => {
   state.edge = { x: 0, y: 0 };
+  setPointerCursor(null);
+});
+
+// The pointer shows what a click would do: a crosshair over a watcher still standing, and
+// a pickup cursor over gear an operator could collect.
+function setPointerCursor(kind) {
+  canvas.classList.toggle("cursor-attack", kind === "attack");
+  canvas.classList.toggle("cursor-loot", kind === "loot");
+}
+
+canvas.addEventListener("pointermove", (event) => {
+  if (event.pointerType !== "mouse" || !state.viewport || drag.active) return;
+  const bounds = canvas.getBoundingClientRect();
+  const position = { x: event.clientX - bounds.left, y: event.clientY - bounds.top };
+  if (selectedOperators().length === 0) {
+    setPointerCursor(null);
+    return;
+  }
+  const unit = hitUnit(position);
+  const ground = screenToGrid(position, state.viewport.cellSize, state.viewport.origin);
+  if (unit && unit.side === "opposition" && !unit.disabled) setPointerCursor("attack");
+  else if ((unit && lootableBody(unit)) || lootableAt(state.units, ground, 0.9)) setPointerCursor("loot");
+  else setPointerCursor(null);
 });
 
 canvas.addEventListener("click", (event) => {
@@ -1931,6 +2121,12 @@ canvas.addEventListener("click", (event) => {
     return;
   }
   const destination = screenToGrid(position, state.viewport.cellSize, state.viewport.origin);
+  // Clicking the ground where an enemy fell picks up its gear: an operator walks over.
+  const dropped = lootableAt(state.units, destination, 0.9);
+  if (dropped && selectedOperators().length > 0) {
+    goLoot(dropped);
+    return;
+  }
   if (
     destination.x >= 0 &&
     destination.y >= 0 &&
@@ -2106,6 +2302,10 @@ if (new URLSearchParams(location.search).has("e2e")) {
     setFocus(id, value) {
       state.units.find((item) => item.id === id).focus = value;
     },
+    setFunds(amount) {
+      state.campaign = { ...state.campaign, funds: amount };
+      updateFundsReadout();
+    },
     setStamina(id, value) {
       state.units.find((item) => item.id === id).stamina = value;
     },
@@ -2123,6 +2323,19 @@ if (new URLSearchParams(location.search).has("e2e")) {
       unit.position = { x: other.position.x + dx, y: other.position.y + dy };
       unit.path = [];
       renderInterface();
+    },
+    focusOn(id) {
+      const unit = state.units.find((item) => item.id === id);
+      state.camera.x = unit.position.x;
+      state.camera.y = unit.position.y;
+      state.camera.target = { ...unit.position };
+    },
+    screenPoint(id) {
+      const unit = state.units.find((item) => item.id === id);
+      const tile = state.grid[Math.round(unit.position.y)]?.[Math.round(unit.position.x)];
+      const point = gridToScreen(unit.position, state.viewport.cellSize, state.viewport.origin, tile?.elevation ?? 0);
+      const bounds = canvas.getBoundingClientRect();
+      return { x: bounds.left + point.x, y: bounds.top + point.y };
     },
     placeUnit(id, x, y) {
       const unit = state.units.find((item) => item.id === id);
@@ -2147,6 +2360,93 @@ const METER_TEXT = {
     hint: "turning Brain above 3 strains the mind; at 3 or lower it recovers slowly",
   },
 };
+
+// The eight item squares: a picture per item, and a click selects or uses it.
+function slotRow(unit, label) {
+  const row = document.createElement("div");
+  row.className = "slots";
+  row.setAttribute("role", "group");
+  row.setAttribute("aria-label", `${label} items`);
+  for (let slot = 0; slot < SLOTS_PER_OPERATIVE; slot += 1) {
+    const entry = unit.equipment[slot];
+    const square = document.createElement("button");
+    square.type = "button";
+    square.className = "slot";
+    square.dataset.slot = String(slot);
+    if (!entry) {
+      square.classList.add("empty");
+      square.disabled = unit.disabled;
+      square.setAttribute("aria-label", `${label} slot ${slot + 1}: empty`);
+      square.title = "Empty slot. Buy gear in the Armoury before an operation.";
+      row.append(square);
+      continue;
+    }
+    const definition = entry.definition;
+    const active = definition.action === "disable-pulse" && unit.activeSlot === slot;
+    const spent = entry.charges === 0;
+    square.classList.toggle("active", active);
+    square.classList.toggle("spent", spent);
+    square.innerHTML = iconMarkup(definition.icon, 22);
+    if (entry.charges !== null && entry.charges !== undefined) {
+      const badge = document.createElement("span");
+      badge.className = "charges";
+      badge.textContent = String(entry.charges);
+      square.append(badge);
+    }
+    const detail = active ? "selected weapon" : spent ? "used up" : slotHint(definition);
+    square.setAttribute("aria-label", `${label} slot ${slot + 1}: ${definition.name}, ${detail}`);
+    square.setAttribute("aria-pressed", String(active));
+    square.title = `${definition.name}: ${definition.description}`;
+    square.disabled = unit.disabled;
+    square.addEventListener("click", () => pressSlot(unit, slot));
+    row.append(square);
+  }
+  return row;
+}
+
+function slotHint(definition) {
+  switch (definition.action) {
+    case "disable-pulse":
+      return "weapon, click to select";
+    case "restore-vitality":
+    case "restore-energy":
+      return "click to use";
+    default:
+      return "worn";
+  }
+}
+
+// Weapons are selected (click again for automatic choice); consumables are used; worn gear explains itself.
+function pressSlot(unit, slot) {
+  const entry = unit.equipment[slot];
+  if (!entry || unit.disabled) return;
+  const definition = entry.definition;
+  if (definition.action === "disable-pulse") {
+    unit.activeSlot = unit.activeSlot === slot ? null : slot;
+    setStatus(
+      unit.activeSlot === slot
+        ? `${unit.definition.name}: ${definition.name} selected. It will be the only weapon that fires.`
+        : `${unit.definition.name}: automatic weapon choice.`,
+    );
+    audio.play("select");
+    renderInterface();
+  } else if (definition.action === "restore-vitality") {
+    useRepairOn(unit, entry);
+  } else if (definition.action === "restore-energy") {
+    const used = useEnergyItem(unit);
+    if (!used) {
+      setStatus(entry.charges === 0 ? "That stim is used up." : "Stamina and focus are already full.");
+      return;
+    }
+    setStatus(`${unit.definition.name} used a ${used.definition.name}: stamina and focus restored.`);
+    audio.play("repair");
+    addEffect(state.effects, "repair", { unitId: unit.id });
+    updateMeters();
+    renderInterface();
+  } else {
+    setStatus(`${definition.name} is worn: ${definition.description}`);
+  }
+}
 
 function paintMeter(element, unit) {
   const kind = element.dataset.kind;
@@ -2335,7 +2635,7 @@ function renderInterface() {
       button.className = "roster-select";
       button.disabled = unit.disabled;
       button.setAttribute("aria-pressed", String(picked));
-      button.title = "Click to select only this operator. Ctrl or Shift-click adds to the selection.";
+      button.title = "Click: select only this operator. Ctrl/Shift-click: add to the selection.";
       button.addEventListener("click", (event) => {
         if (event.ctrlKey || event.shiftKey || event.metaKey) toggleSelect(unit.id);
         else selectUnit(unit.id);
@@ -2346,7 +2646,12 @@ function renderInterface() {
       glyph.setAttribute("aria-hidden", "true");
       glyph.textContent = "◇";
       const name = document.createElement("span");
-      name.textContent = `Operator ${index + 1} · ${unit.health}/${unit.definition.stats.vitality}`;
+      name.textContent = `Op ${index + 1}`;
+      name.title = label;
+      const health = document.createElement("small");
+      health.className = "hp";
+      health.textContent = `${unit.health}/${unit.definition.stats.vitality}`;
+      name.append(" ", health);
       const position = document.createElement("span");
       position.className = "operator-position";
       position.textContent = `${pad(unit.position.x)}:${pad(unit.position.y)}`;
@@ -2380,16 +2685,11 @@ function renderInterface() {
       const points = document.createElement("span");
       points.className = "points";
       const left = pointsLeft(unit.levels, state.trainingBudget);
-      points.textContent = `Training points ${left} left`;
-      const carried = document.createElement("span");
-      carried.className = "points";
-      const names = unit.equipment.map((item) => item.definition.name).join(", ") || "none";
-      carried.textContent = `Items ${unit.equipment.length}/${SLOTS_PER_OPERATIVE}: ${names}`;
-      bars.append(carried);
+      points.textContent = `${left} pts`;
       points.title = `Each operator may spend ${state.trainingBudget} points across Legs and Brain.`;
       points.classList.toggle("none", left <= 0);
-      bars.append(points);
-      item.append(checkbox, button, bars, meters);
+      button.insertBefore(points, button.lastChild);
+      item.append(checkbox, button, slotRow(unit, label), bars, meters);
       return item;
     }),
   );
@@ -2438,10 +2738,10 @@ function renderInterface() {
   const bodies = state.units.filter(lootableBody).length;
   lootButton.disabled = !nearBody && bodies === 0;
   document.querySelector("#loot-label").textContent = nearBody
-    ? `Loot ${nearBody.body.equipment.length} item${nearBody.body.equipment.length > 1 ? "s" : ""}`
+    ? `Pick up ${nearBody.body.equipment.length} item${nearBody.body.equipment.length > 1 ? "s" : ""}`
     : bodies > 0
-      ? "Loot (walk closer)"
-      : "Loot body";
+      ? "Pick up (walk there)"
+      : "Pick up gear";
   repairLabel.textContent = repairKit
     ? `Use repair kit (${repairKit.charges ?? "∞"})`
     : "No repair kit";

@@ -6,11 +6,13 @@
   "license": "CC0-1.0",
   "type": "tool",
   "action": "disable-pulse",
-  "charges": null,
+  "charges": 10,
   "researchCost": 60,
   "effect": {
     "attack": 20,
     "range": 4.5,
     "cooldown": 1.4
-  }
+  },
+  "price": 40,
+  "icon": "heavy-pulse"
 }

@@ -187,3 +187,53 @@ export function captureItems(campaign, operatorId, itemIds, catalog, defaults) {
   }
   return next;
 }
+
+// Buying and selling in the Armoury. Items cost their price; a replaced or sold item is
+// bought back at half price, so swapping a weapon costs the difference.
+export const SELL_SHARE = 0.5;
+
+export function sellValue(item) {
+  return Math.floor((item?.price ?? 0) * SELL_SHARE);
+}
+
+function slotItem(campaign, operatorId, slot, catalog, defaults) {
+  const id = loadoutFor(campaign, operatorId, defaults)[slot];
+  return id === undefined ? null : catalog.find((entry) => entry.id === id) ?? null;
+}
+
+// What buying `item` into the slot would cost after the refund for any item it replaces.
+export function netCost(campaign, operatorId, slot, item, catalog, defaults) {
+  return (item.price ?? 0) - sellValue(slotItem(campaign, operatorId, slot, catalog, defaults));
+}
+
+export function canBuy(campaign, operatorId, slot, item, catalog, defaults) {
+  if (!Number.isInteger(slot) || slot < 0 || slot >= SLOTS_PER_OPERATIVE) return false;
+  if (!isItemAvailable(campaign, item)) return false;
+  return campaign.funds >= netCost(campaign, operatorId, slot, item, catalog, defaults);
+}
+
+// Returns the new campaign, or the same object when the purchase is not allowed.
+export function buyIntoSlot(campaign, operatorId, slot, item, catalog, defaults) {
+  if (!canBuy(campaign, operatorId, slot, item, catalog, defaults)) return campaign;
+  const cost = netCost(campaign, operatorId, slot, item, catalog, defaults);
+  const loadout = [...loadoutFor(campaign, operatorId, defaults)];
+  if (slot >= loadout.length) loadout.push(item.id);
+  else loadout[slot] = item.id;
+  return {
+    ...campaign,
+    funds: campaign.funds - cost,
+    loadouts: { ...campaign.loadouts, [operatorId]: loadout },
+  };
+}
+
+export function sellFromSlot(campaign, operatorId, slot, catalog, defaults) {
+  const item = slotItem(campaign, operatorId, slot, catalog, defaults);
+  if (!item) return campaign;
+  const loadout = [...loadoutFor(campaign, operatorId, defaults)];
+  loadout.splice(slot, 1);
+  return {
+    ...campaign,
+    funds: campaign.funds + sellValue(item),
+    loadouts: { ...campaign.loadouts, [operatorId]: loadout },
+  };
+}

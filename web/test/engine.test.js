@@ -23,6 +23,7 @@ import {
   advancePatrols,
   advanceUnits,
   combatStats,
+  roundsLeft,
   stealthFactor,
   consumeFixedSteps,
 } from "../src/simulation.js";
@@ -544,4 +545,123 @@ test("a shadow cloak shortens how far a watcher sees its wearer", () => {
   assert.equal(spottedAt([cloak], 4), true);
   assert.equal(stealthFactor({ equipment: [cloak, { definition: { action: "stealth", effect: { sightFactor: 0.8 } } }] }), 0.6);
   assert.equal(stealthFactor({}), 1);
+});
+
+test("a chosen weapon is the one that fires, even when another would hit harder", () => {
+  const light = weaponItem(12, 3.25, 0.75);
+  const heavy = weaponItem(20, 4.5, 1.4);
+  const carrier = { ...operatorAt(0, 0), equipment: [light, heavy], activeSlot: 0 };
+  assert.deepEqual(combatStats(carrier, 2), light.definition.effect);
+  assert.deepEqual(combatStats(carrier, 4), light.definition.effect, "no fallback: the chosen weapon only");
+
+  carrier.activeSlot = 1;
+  assert.deepEqual(combatStats(carrier, 2), heavy.definition.effect);
+
+  // Back to automatic: the best weapon for the distance.
+  carrier.activeSlot = null;
+  assert.deepEqual(combatStats(carrier, 2), heavy.definition.effect);
+  // A chosen slot that is not a weapon (or is empty) is ignored.
+  const tool = { definition: { action: "stealth", effect: { sightFactor: 0.6 } }, charges: null };
+  const odd = { ...operatorAt(0, 0), equipment: [tool, light], activeSlot: 0 };
+  assert.deepEqual(combatStats(odd, 2), light.definition.effect);
+  assert.deepEqual(combatStats({ ...odd, activeSlot: 5 }, 2), light.definition.effect);
+});
+
+test("a chosen short-range weapon cannot hit a target beyond its reach", () => {
+  const carrier = {
+    ...operatorAt(0, 0),
+    id: "shooter",
+    equipment: [weaponItem(12, 3.25, 0.75), weaponItem(20, 4.5, 1.4)],
+    activeSlot: 0,
+    cooldownRemaining: 0,
+    targetId: "far",
+  };
+  const far = { ...operatorAt(4, 0), id: "far", side: "opposition", health: 100, cooldownRemaining: 99, targetId: null };
+  assert.deepEqual(advanceCombat([carrier, far], FIXED_STEP_SECONDS), [], "4 tiles is past the light weapon");
+  carrier.activeSlot = 1;
+  assert.equal(advanceCombat([carrier, far], FIXED_STEP_SECONDS).length, 1, "the heavy weapon reaches");
+});
+
+function roundsWeapon(rounds, attack = 12, range = 3.25, cooldown = 0.75) {
+  return { definition: { name: "Pulse", action: "disable-pulse", effect: { attack, range, cooldown } }, charges: rounds };
+}
+
+function shooterWith(equipment, overrides = {}) {
+  return {
+    ...operatorAt(0, 0),
+    id: "shooter",
+    equipment,
+    cooldownRemaining: 0,
+    targetId: "dummy",
+    health: 100,
+    ...overrides,
+  };
+}
+
+const dummyTarget = () => ({
+  ...operatorAt(1, 0),
+  id: "dummy",
+  side: "opposition",
+  health: 100000,
+  cooldownRemaining: 99,
+  targetId: null,
+});
+
+function fireFor(units, seconds) {
+  const events = [];
+  for (let step = 0; step < 30 * seconds; step += 1) events.push(...advanceCombat(units, FIXED_STEP_SECONDS));
+  return events.filter((event) => event.type === "damage");
+}
+
+test("every shot spends a round and an empty weapon stops firing", () => {
+  const pulse = roundsWeapon(3);
+  const shots = fireFor([shooterWith([pulse]), dummyTarget()], 20);
+  assert.equal(shots.length, 3, "only three rounds to fire");
+  assert.equal(pulse.charges, 0);
+  assert.deepEqual(shots.map((shot) => shot.outOfRounds), [false, false, true], "the last round says so");
+  assert.equal(shots.at(-1).weapon, "Pulse");
+  assert.equal(fireFor([shooterWith([roundsWeapon(0)]), dummyTarget()], 5).length, 0);
+});
+
+test("a weapon with unlimited rounds never runs dry", () => {
+  const endless = roundsWeapon(null);
+  assert.ok(fireFor([shooterWith([endless]), dummyTarget()], 20).length > 20);
+  assert.equal(endless.charges, null);
+});
+
+test("an operative can carry several of the same weapon, each with its own rounds", () => {
+  const first = roundsWeapon(2);
+  const second = roundsWeapon(2);
+  const third = roundsWeapon(2);
+  const squad = shooterWith([first, second, third]);
+  const shots = fireFor([squad, dummyTarget()], 30);
+  assert.equal(shots.length, 6, "three magazines of two rounds");
+  assert.deepEqual([first.charges, second.charges, third.charges], [0, 0, 0]);
+  assert.equal(roundsLeft(squad), 0);
+  assert.equal(roundsLeft(shooterWith([roundsWeapon(5), roundsWeapon(7)])), 12, "rounds add up across copies");
+  assert.equal(roundsLeft(shooterWith([])), null, "no weapon: natural attack, no rounds to count");
+});
+
+test("a chosen weapon that runs dry hands over to the next loaded one", () => {
+  const chosen = roundsWeapon(1);
+  const spare = roundsWeapon(4);
+  const squad = shooterWith([chosen, spare], { activeSlot: 0 });
+  const shots = fireFor([squad, dummyTarget()], 30);
+  assert.equal(shots.length, 5);
+  assert.equal(chosen.charges, 0);
+  assert.equal(spare.charges, 0);
+  assert.equal(combatStats(squad).range, 0, "once everything is empty the unit is disarmed");
+});
+
+test("an armed unit with no rounds left cannot fire or pick targets; an unarmed one still can", () => {
+  const empty = shooterWith([roundsWeapon(0)]);
+  assert.deepEqual(combatStats(empty), { attack: 0, range: 0, cooldown: 1 });
+  const watcher = { ...patrolUnit([{ x: 0, y: 0 }, { x: 3, y: 0 }]), side: "opposition", equipment: [roundsWeapon(0)] };
+  const target = operatorAt(1, 0, { health: 100 });
+  advanceCombat([watcher, target], FIXED_STEP_SECONDS);
+  assert.equal(watcher.targetId, null, "no weapon, no automatic target");
+
+  const bare = { ...patrolUnit([{ x: 0, y: 0 }, { x: 3, y: 0 }]), side: "opposition", equipment: [] };
+  advanceCombat([bare, operatorAt(1, 0, { health: 100 })], FIXED_STEP_SECONDS);
+  assert.notEqual(bare.targetId, null, "the unarmed watcher fights with its own stats");
 });

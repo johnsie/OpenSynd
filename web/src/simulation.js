@@ -227,25 +227,56 @@ function automaticTarget(attacker, units) {
     )[0] ?? null;
 }
 
-// Pulse weapons carried by a unit; a unit with none fights with its own stats.
-function pulseWeapons(unit) {
-  return (unit.equipment ?? [])
-    .filter((item) => item.definition.action === "disable-pulse")
-    .map((item) => item.definition.effect);
+// Pulse weapons carried by a unit, empty ones included.
+function pulseItems(unit) {
+  return (unit.equipment ?? []).filter((item) => item.definition.action === "disable-pulse");
 }
 
+// A weapon with rounds left (null charges means unlimited).
+function loaded(item) {
+  return item.charges !== 0;
+}
+
+// A unit that cannot fire: it carries pulse weapons but every one is out of rounds.
+const DISARMED = Object.freeze({ attack: 0, range: 0, cooldown: 1 });
+
 /**
- * The weapon stats a unit fights with. Without a distance this is its reach (the
- * longest-ranged weapon); with one, the hardest-hitting weapon that reaches that
- * far, falling back to the longest-ranged one when the target is out of reach.
+ * The weapon a unit fires: its item (null for a unit's own natural attack) and the stats.
+ * Empty weapons never fire. A unit with no pulse weapons at all fights with its own stats,
+ * but one whose weapons have all run dry is disarmed. An operative who picked a weapon
+ * (activeSlot) uses exactly that one while it has rounds. Otherwise, without a distance this
+ * is the unit's reach (its longest-ranged loaded weapon); with one, the hardest-hitting
+ * loaded weapon that reaches that far, falling back to the longest-ranged one when the
+ * target is out of reach.
  */
+export function pickWeapon(unit, distance = null) {
+  const all = pulseItems(unit);
+  if (all.length === 0) return { item: null, stats: unit.definition.stats };
+  const chosen = Number.isInteger(unit.activeSlot) ? unit.equipment?.[unit.activeSlot] : null;
+  if (chosen && chosen.definition.action === "disable-pulse" && loaded(chosen)) {
+    return { item: chosen, stats: chosen.definition.effect };
+  }
+  const ready = all.filter(loaded);
+  if (ready.length === 0) return { item: null, stats: DISARMED };
+  const longest = ready.reduce((best, item) => (item.definition.effect.range > best.definition.effect.range ? item : best));
+  if (distance === null) return { item: longest, stats: longest.definition.effect };
+  const usable = ready.filter((item) => item.definition.effect.range >= distance);
+  const pick =
+    usable.length === 0
+      ? longest
+      : usable.reduce((best, item) => (item.definition.effect.attack > best.definition.effect.attack ? item : best));
+  return { item: pick, stats: pick.definition.effect };
+}
+
 export function combatStats(unit, distance = null) {
-  const weapons = pulseWeapons(unit);
-  if (weapons.length === 0) return unit.definition.stats;
-  const longest = weapons.reduce((best, weapon) => (weapon.range > best.range ? weapon : best));
-  if (distance === null) return longest;
-  const usable = weapons.filter((weapon) => weapon.range >= distance);
-  return usable.length === 0 ? longest : usable.reduce((best, weapon) => (weapon.attack > best.attack ? weapon : best));
+  return pickWeapon(unit, distance).stats;
+}
+
+// Rounds left across a unit's pulse weapons, or null when it has none (natural attack).
+export function roundsLeft(unit) {
+  const all = pulseItems(unit);
+  if (all.length === 0) return null;
+  return all.reduce((sum, item) => sum + (item.charges === null ? Infinity : item.charges), 0);
 }
 
 /** Advance cooldowns and resolve deterministic, non-random combat pulses. */
@@ -270,8 +301,10 @@ export function advanceCombat(units, deltaSeconds) {
       continue;
     }
     const distance = distanceBetween(attacker, target);
-    const stats = combatStats(attacker, distance);
-    if (distance > stats.range || attacker.cooldownRemaining > ARRIVAL_EPSILON) continue;
+    const { item: weapon, stats } = pickWeapon(attacker, distance);
+    if (stats.range <= 0 || distance > stats.range || attacker.cooldownRemaining > ARRIVAL_EPSILON) continue;
+    // Firing spends a round; the weapon that fires is the one that loses it.
+    if (weapon && weapon.charges !== null) weapon.charges -= 1;
 
     const amount = stats.attack;
     target.health = Math.max(0, target.health - amount);
@@ -283,6 +316,8 @@ export function advanceCombat(units, deltaSeconds) {
       targetId: target.id,
       amount,
       remaining: target.health,
+      outOfRounds: weapon !== null && weapon.charges === 0,
+      weapon: weapon ? weapon.definition.name : null,
     });
 
     if (target.health === 0) {

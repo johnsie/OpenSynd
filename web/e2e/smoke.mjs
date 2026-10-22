@@ -103,7 +103,7 @@ for (const [name, type, executablePath] of targets) {
       await page.getByRole("button", { name: "Raise Brain for Field Operator 1" }).isDisabled(),
       true,
     );
-    assert.match(await page.locator(".roster-item").first().innerText(), /Training points 0 left/);
+    assert.match(await page.locator(".roster-item").first().innerText(), /0 pts/);
     await page.getByRole("button", { name: "Lower Legs for Field Operator 1" }).click();
     assert.equal(
       await page.getByRole("button", { name: "Raise Brain for Field Operator 1" }).isDisabled(),
@@ -232,23 +232,60 @@ for (const [name, type, executablePath] of targets) {
       document.querySelector("#status-message").textContent.includes("Local map established"),
     );
     // Loot: a disabled watcher's weapon can be taken by an operator standing next to it.
-    assert.match(await page.locator(".roster-item").first().innerText(), /Items 2\/8/);
+    // Each operative has eight item squares: two are filled to start, with the pulse emitter's rounds shown.
+    const firstSquares = page.locator(".roster-item").first().locator(".slot");
+    assert.equal(await firstSquares.count(), 8);
+    assert.equal(await page.locator(".roster-item").first().locator(".slot:not(.empty)").count(), 2);
+    assert.equal(await firstSquares.first().locator(".charges").innerText(), "24");
+    // Clicking a weapon square selects it (click again for automatic choice); a repair kit at full health explains itself.
+    await firstSquares.first().click();
+    assert.equal(await firstSquares.first().getAttribute("aria-pressed"), "true");
+    assert.match(await page.locator("#status-message").innerText(), /Civic Pulse Emitter selected/);
+    await firstSquares.first().click();
+    assert.equal(await firstSquares.first().getAttribute("aria-pressed"), "false");
+    assert.match(await page.locator("#status-message").innerText(), /automatic weapon choice/);
+    await firstSquares.nth(1).click();
+    assert.match(await page.locator("#status-message").innerText(), /integrity is already full/);
     await page.evaluate(() => {
       window.opensyndTest.disableUnit("watcher-one");
       window.opensyndTest.placeNear("operator-one", "watcher-one");
     });
     await page.waitForFunction(() => !document.querySelector("#loot-button").disabled);
-    assert.match(await page.locator("#loot-label").innerText(), /Loot 1 item/);
+    assert.match(await page.locator("#loot-label").innerText(), /Pick up 1 item/);
     await page.locator("#game-canvas").focus();
     await page.keyboard.press("f");
-    assert.match(await page.locator("#status-message").innerText(), /looted Heavy Pulse Emitter/);
+    assert.match(await page.locator("#status-message").innerText(), /picked up Heavy Pulse Emitter/);
     assert.match(await page.locator("#achievement-toast").innerText(), /Scavenger/);
-    assert.match(await page.locator(".roster-item").first().innerText(), /Items 3\/8/);
-    assert.match(await page.locator(".roster-item").first().innerText(), /Heavy Pulse Emitter/);
+    assert.equal(await page.locator(".roster-item").first().locator(".slot:not(.empty)").count(), 3);
+    assert.equal(await page.getByLabel("Field Operator 1 slot 3: Heavy Pulse Emitter", { exact: false }).count(), 1);
     // The watcher has nothing left to loot, so the button waits for another body.
     await page.waitForFunction(() => document.querySelector("#loot-button").disabled);
-    // A watcher notices an operator who walks into its sight and raises the alert.
-    await page.evaluate(() => window.opensyndTest.placeNear("operator-one", "watcher-two", 0, 7));
+    // Click-to-pickup: the pointer changes over fallen gear and a click sends an operator to collect it.
+    await page.evaluate(() => {
+      window.opensyndTest.disableUnit("watcher-three");
+      window.opensyndTest.placeNear("operator-one", "watcher-three", 0, 6);
+      window.opensyndTest.focusOn("watcher-three");
+    });
+    await page.waitForTimeout(250);
+    const gear = await page.evaluate(() => window.opensyndTest.screenPoint("watcher-three"));
+    await page.mouse.move(gear.x, gear.y);
+    await page.waitForFunction(() => document.querySelector("#game-canvas").classList.contains("cursor-loot"));
+    await page.mouse.click(gear.x, gear.y);
+    assert.match(await page.locator("#status-message").innerText(), /walking over to pick up/);
+    await page.waitForFunction(
+      () => document.querySelector("#status-message").textContent.includes("picked up Shadow Cloak"),
+      null,
+      { timeout: 20000 },
+    );
+    assert.equal(await page.locator(".roster-item").first().locator(".slot:not(.empty)").count(), 4);
+    assert.equal(await page.getByLabel("Field Operator 1 slot 4: Shadow Cloak", { exact: false }).count(), 1);
+    // With the gear gone the pointer goes back to normal over the same spot.
+    await page.mouse.move(gear.x + 60, gear.y + 60);
+    await page.mouse.move(gear.x, gear.y);
+    await page.waitForFunction(() => !document.querySelector("#game-canvas").classList.contains("cursor-loot"));
+    // A watcher notices an operator who walks into its sight (shortened by the cloak just
+    // picked up) and raises the alert.
+    await page.evaluate(() => window.opensyndTest.placeNear("operator-one", "watcher-two", 0, 4));
     await page.waitForFunction(
       () => document.querySelector("#status-message").textContent.includes("spotted"),
     );
@@ -293,28 +330,55 @@ for (const [name, type, executablePath] of targets) {
     assert.match(await missionButtons.nth(0).innerText(), /COMPLETED/);
     assert.equal(await missionButtons.nth(1).isDisabled(), false);
 
-    // The research lab: spend funds on the cyborg heart and a new item, then fill a slot.
+    // The Research & Armoury screen: research, then buy weapons into specific slots.
+    await page.evaluate(() => window.opensyndTest.setFunds(300));
     await page.click("#open-research");
     await page.waitForSelector("#research-dialog[open]");
-    const fundsBefore = Number((await page.locator("#research-funds").innerText()).replace(/\D/g, ""));
-    assert.ok(fundsBefore >= 60, `lab funds were ${fundsBefore}`);
+    const labFunds = async () =>
+      Number((await page.locator("#research-funds").innerText()).replace(/\D/g, ""));
+    assert.equal(await labFunds(), 300);
     await page.locator("#research-tracks button").first().click();
     assert.match(await page.locator("#research-tracks").innerText(), /Cyborg heart \(Stamina\) · level 1 of 5/);
-    assert.equal(
-      Number((await page.locator("#research-funds").innerText()).replace(/\D/g, "")),
-      fundsBefore - 20,
-    );
+    assert.equal(await labFunds(), 280);
     await page.getByRole("button", { name: "Research Stim Injector for 40 funds" }).click();
-    assert.match(await page.locator("#research-items").innerText(), /Stim Injector[\s\S]*RESEARCHED/);
-    // An unresearched item cannot be put in a slot; a researched one can.
-    const slotOptions = await page.getByLabel("Operator 1 slot 3").locator("option").allInnerTexts();
-    assert.ok(slotOptions.includes("Stim Injector"));
-    assert.ok(!slotOptions.includes("Shadow Cloak"));
-    await page.getByLabel("Operator 1 slot 3").selectOption({ label: "Stim Injector" });
-    assert.match(await page.locator(".loadout h4").first().innerText(), /3 of 8 slots used/);
+    assert.equal(await labFunds(), 240);
+
+    // Eight picture slots per operative: four are filled (starting kit plus the loot kept from the earlier win).
+    const squads = page.locator(".armoury-card");
+    assert.equal(await squads.count(), 4);
+    assert.equal(await squads.first().locator(".slot").count(), 8);
+    assert.equal(await squads.first().locator(".slot:not(.empty)").count(), 4);
+    assert.equal(await squads.first().locator(".slot svg").count(), 4, "each filled slot shows a picture");
+
+    // Buy a stim into slot 5, then two pulse emitters: an operative can carry several of the same weapon.
+    await page.getByLabel("Operator 1 slot 5: empty", { exact: true }).click();
+    await page.getByRole("button", { name: "Buy Stim Injector for Operator 1 slot 5, 20 funds" }).click();
+    assert.equal(await labFunds(), 220);
+    await page.getByLabel("Operator 1 slot 6: empty", { exact: true }).click();
+    await page.getByRole("button", { name: "Buy Civic Pulse Emitter for Operator 1 slot 6, 15 funds" }).click();
+    await page.getByLabel("Operator 1 slot 7: empty", { exact: true }).click();
+    await page.getByRole("button", { name: "Buy Civic Pulse Emitter for Operator 1 slot 7, 15 funds" }).click();
+    assert.equal(await labFunds(), 190);
+    assert.equal(await squads.first().locator(".slot:not(.empty)").count(), 7);
+    // Swapping refunds half the price of what it replaces: the spare emitter (7 back) pays toward a repair kit (10).
+    await page.getByLabel("Operator 1 slot 7: Civic Pulse Emitter", { exact: true }).click();
+    await page.getByRole("button", { name: "Buy Field Repair Kit for Operator 1 slot 7, 3 funds" }).click();
+    assert.equal(await labFunds(), 187);
+    // Selling returns half the price again.
+    await page.getByRole("button", { name: /Sell Field Repair Kit · \+5 funds/ }).click();
+    assert.equal(await labFunds(), 192);
+    assert.equal(await squads.first().locator(".slot:not(.empty)").count(), 6);
+
     const campaignRecord = await page.evaluate(() => JSON.parse(localStorage.getItem("opensynd.campaign.v1")));
     assert.equal(campaignRecord.heart, 1);
-    assert.deepEqual(campaignRecord.loadouts["operator-one"].at(-1), "developer.stim-injector");
+    assert.deepEqual(campaignRecord.loadouts["operator-one"], [
+      "developer.civic-pulse-emitter",
+      "developer.field-repair-kit",
+      "developer.heavy-pulse-emitter",
+      "developer.shadow-cloak",
+      "developer.stim-injector",
+      "developer.civic-pulse-emitter",
+    ]);
     await page.click("#close-research");
     await page.waitForFunction(() => !document.querySelector("#research-dialog").open);
 
@@ -326,6 +390,10 @@ for (const [name, type, executablePath] of targets) {
     await page.waitForFunction(() =>
       document.querySelector("#status-message").textContent.includes("Local map established"),
     );
+    // The purchases are in operator 1's squares when the operation starts: six items, two of them pulse emitters.
+    assert.equal(await page.locator(".roster-item").first().locator(".slot:not(.empty)").count(), 6);
+    assert.equal(await page.getByLabel("Field Operator 1 slot 5: Stim Injector", { exact: false }).count(), 1);
+    assert.equal(await page.getByLabel("Field Operator 1 slot 6: Civic Pulse Emitter", { exact: false }).count(), 1);
 
 
     assert.deepEqual(errors, []);

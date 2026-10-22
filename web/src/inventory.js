@@ -70,3 +70,26 @@ export function useEnergyItem(unit) {
   if (item.charges !== null) item.charges -= 1;
   return item;
 }
+
+// A lootable body at (or within `radius` tiles of) a grid position, nearest first.
+// Used to turn a click on the ground where an enemy fell into a pickup order.
+export function lootableAt(units, position, radius = 0.8) {
+  let best = null;
+  for (const body of units) {
+    if (!lootableBody(body)) continue;
+    const distance = Math.hypot(body.position.x - position.x, body.position.y - position.y);
+    if (distance <= radius && (!best || distance < best.distance)) best = { body, distance };
+  }
+  return best?.body ?? null;
+}
+
+// The lootable body closest to a unit, anywhere on the map.
+export function nearestLootable(from, units) {
+  let best = null;
+  for (const body of units) {
+    if (!lootableBody(body)) continue;
+    const distance = distanceBetween(from, body);
+    if (!best || distance < best.distance) best = { body, distance };
+  }
+  return best?.body ?? null;
+}

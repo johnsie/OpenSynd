@@ -8,7 +8,12 @@ import {
   earnAchievement,
   earnTime,
   brainEffect,
+  buyIntoSlot,
+  canBuy,
   captureItems,
+  netCost,
+  sellFromSlot,
+  sellValue,
   canResearchItem,
   canResearchTrack,
   emptyCampaign,
@@ -156,4 +161,56 @@ test("captured gear counts as researched and joins the loadout while there is ro
   assert.deepEqual(campaign.items, ["heavy"]);
   assert.equal(campaign.loadouts.op1.length, 8);
   assert.ok(!campaign.loadouts.op1.includes("heavy"));
+});
+
+const shop = [
+  { id: "pulse", price: 15, researchCost: 0 },
+  { id: "kit", price: 10 },
+  { id: "heavy", price: 40, researchCost: 60 },
+  { id: "stim", price: 20, researchCost: 40 },
+];
+
+test("buying an item costs its price and fills the slot", () => {
+  const defaults = ["pulse", "kit"];
+  const funds = { ...emptyCampaign(), funds: 50, items: ["stim"] };
+  const bought = buyIntoSlot(funds, "op1", 2, shop[3], shop, defaults);
+  assert.equal(bought.funds, 30);
+  assert.deepEqual(loadoutFor(bought, "op1", defaults), ["pulse", "kit", "stim"]);
+
+  // A slot far past the end still packs the item at the end.
+  const packed = buyIntoSlot(funds, "op1", 7, shop[3], shop, defaults);
+  assert.deepEqual(loadoutFor(packed, "op1", defaults), ["pulse", "kit", "stim"]);
+});
+
+test("replacing an item refunds half of its price", () => {
+  const defaults = ["pulse", "kit"];
+  const funds = { ...emptyCampaign(), funds: 20, items: ["stim"] };
+  assert.equal(sellValue(shop[1]), 5);
+  assert.equal(netCost(funds, "op1", 1, shop[3], shop, defaults), 15, "stim 20 minus half of the kit's 10");
+  const swapped = buyIntoSlot(funds, "op1", 1, shop[3], shop, defaults);
+  assert.equal(swapped.funds, 5);
+  assert.deepEqual(loadoutFor(swapped, "op1", defaults), ["pulse", "stim"]);
+});
+
+test("purchases need funds and a researched item", () => {
+  const defaults = ["pulse"];
+  const poor = { ...emptyCampaign(), funds: 10, items: ["stim", "heavy"] };
+  assert.equal(canBuy(poor, "op1", 1, shop[3], shop, defaults), false, "stim costs 20");
+  assert.equal(buyIntoSlot(poor, "op1", 1, shop[3], shop, defaults), poor);
+  assert.equal(canBuy({ ...poor, funds: 20 }, "op1", 1, shop[3], shop, defaults), true);
+
+  const rich = { ...emptyCampaign(), funds: 500 };
+  assert.equal(canBuy(rich, "op1", 1, shop[2], shop, defaults), false, "heavy is not researched yet");
+  assert.equal(canBuy(rich, "op1", 1, shop[1], shop, defaults), true, "starting items need no research");
+  assert.equal(canBuy(rich, "op1", 8, shop[1], shop, defaults), false, "only eight slots");
+  assert.equal(canBuy(rich, "op1", -1, shop[1], shop, defaults), false);
+});
+
+test("selling an item returns half its price and packs the loadout", () => {
+  const defaults = ["pulse", "kit"];
+  const campaign = { ...emptyCampaign(), funds: 0 };
+  const sold = sellFromSlot(campaign, "op1", 0, shop, defaults);
+  assert.equal(sold.funds, 7, "half of the pulse emitter's 15");
+  assert.deepEqual(loadoutFor(sold, "op1", defaults), ["kit"]);
+  assert.equal(sellFromSlot(campaign, "op1", 5, shop, defaults), campaign, "nothing in that slot");
 });

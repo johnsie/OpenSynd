@@ -336,20 +336,6 @@ dialog a { color: var(--public); }
 .outcome-stats dt { color: var(--muted); }
 .outcome-stats dd { margin: 0; }
 dialog .primary { margin-right: 0.5rem; }
-#minimap {
-  position: absolute;
-  right: 0.75rem;
-  bottom: 0.75rem;
-  width: 256px;
-  height: 128px;
-  min-height: 0;
-  border: 1px solid var(--public);
-  background: rgba(3, 8, 10, 0.82);
-  cursor: pointer;
-}
-@media (max-width: 700px) {
-  #minimap { width: 160px; height: 80px; }
-}
 .training-bars { display: grid; gap: 0.65rem; margin-top: 0.75rem; }
 .training-row { display: grid; grid-template-columns: 4.5rem 1fr auto auto; align-items: center; gap: 0.5rem; }
 .training-row button { min-width: 2rem; padding: 0.25rem 0.5rem; }
@@ -486,3 +472,260 @@ details.panel-section > p, details.panel-section > div { margin-top: 0.5rem; }
 .loadout h4 { margin: 0 0 0.4rem; font-size: 0.95rem; }
 .loadout label { display: grid; grid-template-columns: 2.2rem 1fr; align-items: center; gap: 0.4rem; margin: 0.2rem 0; font-size: 0.85rem; }
 .loadout select { width: 100%; }
+#game-canvas.cursor-attack { cursor: crosshair; }
+#game-canvas.cursor-loot {
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='13' fill='rgba(10,18,22,.85)' stroke='%23e1b35a' stroke-width='2'/%3E%3Crect x='9' y='12' width='14' height='10' rx='1.5' fill='%23e1b35a'/%3E%3Crect x='13' y='8' width='6' height='4' fill='none' stroke='%23e1b35a' stroke-width='2'/%3E%3C/svg%3E") 16 16, copy;
+}
+.slots { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 3px; }
+.slot {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  min-width: 0;
+  padding: 0;
+  color: var(--amber);
+  background: rgba(3, 8, 10, 0.7);
+  border: 1px solid rgba(124, 161, 170, 0.45);
+}
+.slot.empty { border-style: dashed; opacity: 0.55; }
+.slot.spent { opacity: 0.35; }
+.slot.active, .slot[aria-pressed="true"] {
+  color: #071012;
+  background: var(--public);
+  border-color: var(--public);
+  box-shadow: 0 0 0 1px var(--public);
+}
+.slot svg { width: 70%; height: 70%; }
+.slot .charges {
+  position: absolute;
+  right: 1px;
+  bottom: 0;
+  font-size: 0.6rem;
+  line-height: 1;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.slot.active .charges { color: #071012; }
+.research { width: min(78rem, 96vw); }
+.lab-grid { display: grid; grid-template-columns: minmax(18rem, 4fr) minmax(24rem, 6fr); gap: 1.25rem; align-items: start; }
+@media (max-width: 900px) { .lab-grid { grid-template-columns: 1fr; } }
+.armoury-squad { display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr)); gap: 0.6rem; }
+.armoury-card { border: 1px solid rgba(124, 161, 170, 0.3); padding: 0.5rem 0.6rem; }
+.armoury-card h4 { margin: 0 0 0.4rem; font-size: 0.95rem; }
+.armoury-slots { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; }
+.slot.big { min-height: 3.4rem; }
+.slot.big .label { position: absolute; left: 2px; top: 1px; font-size: 0.62rem; color: var(--muted); }
+.slot.big.chosen { outline: 2px solid var(--public); outline-offset: 1px; }
+.armoury-shop { margin-top: 0.9rem; border: 1px solid rgba(124, 161, 170, 0.3); padding: 0.6rem 0.8rem; }
+.armoury-shop h4 { margin: 0 0 0.5rem; }
+.shop-row {
+  display: grid;
+  grid-template-columns: 2.6rem 1fr auto;
+  align-items: center;
+  gap: 0.2rem 0.8rem;
+  padding: 0.35rem 0;
+  border-top: 1px solid rgba(124, 161, 170, 0.18);
+}
+.shop-row .icon { color: var(--amber); display: grid; place-items: center; }
+.shop-row small { display: block; color: var(--muted); }
+.shop-row.locked { opacity: 0.55; }
+.slot.big[aria-pressed="true"] {
+  color: var(--amber);
+  background: rgba(3, 8, 10, 0.7);
+  border-color: var(--public);
+  box-shadow: none;
+}
+.slot.big .charges { font-size: 0.7rem; right: 3px; bottom: 2px; }
+
+/*
+ * Layout: the page fills the screen. The map takes the middle with the sidebar to its right,
+ * and a dock along the bottom holds the minimap (bottom left) and the four operators side by
+ * side, so nothing needs scrolling at ordinary desktop sizes.
+ */
+.operation-heading { min-height: 0; padding: 0.4rem 0.8rem; }
+.operation-heading h2 { font-size: 1.15rem; }
+.field-controls { padding: 0.4rem 0.8rem; gap: 0.4rem; }
+.field-controls > button { min-height: 2.1rem; padding: 0.3rem 0.65rem; font-size: 0.9rem; }
+@media (pointer: fine) { .direction-pad { display: none; } }
+.dock {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.75rem;
+  padding: 0.5rem;
+  margin-bottom: 0.4rem;
+  border: 1px solid var(--line);
+  background: rgba(12, 18, 22, 0.82);
+}
+.dock-map { display: grid; align-items: end; }
+#minimap {
+  display: block;
+  width: 256px;
+  height: 128px;
+  min-height: 0;
+  border: 1px solid var(--public);
+  background: rgba(3, 8, 10, 0.82);
+  cursor: pointer;
+}
+.dock-head { display: flex; align-items: baseline; gap: 1rem; margin-bottom: 0.3rem; }
+.dock-head .section-number { margin: 0; }
+.roster { grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 0; gap: 0.5rem; }
+footer { padding: 0.2rem 0 0.4rem; font-size: 0.7rem; }
+@media (min-width: 981px) and (min-height: 560px) {
+  .app-shell { height: 100vh; display: grid; grid-template-rows: auto minmax(0, 1fr) auto auto; overflow: hidden; }
+  main { min-height: 0; padding: 0.5rem 0; }
+  .playfield { display: flex; flex-direction: column; min-height: 0; }
+  .canvas-frame { flex: 1 1 auto; min-height: 0; }
+  #game-canvas { height: 100%; min-height: 0; }
+  .mission-panel { position: static; align-self: stretch; min-height: 0; max-height: none; overflow-y: auto; }
+}
+@media (max-width: 980px) {
+  .dock { grid-template-columns: minmax(0, 1fr); }
+  .roster { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  #minimap { width: 100%; height: auto; aspect-ratio: 2 / 1; }
+}
+@media (max-width: 560px) { .roster { grid-template-columns: minmax(0, 1fr); } }
+
+/* Top bar: brand, the operation and its controls, funds, network state. */
+.topbar { min-height: 52px; gap: 1rem; flex-wrap: nowrap; }
+.topbar .brand-block h1 { font-size: 1.25rem; }
+.topbar .operation-heading {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  padding: 0;
+  border: 0;
+}
+.topbar .operation-heading .eyebrow { margin: 0; }
+.topbar .operation-heading h2 { font-size: 1.1rem; }
+.topbar .operation-tools button { padding: 0.3rem 0.65rem; font-size: 0.88rem; }
+.topbar .funds { margin: 0; }
+@media (max-width: 1250px) { .network-state { display: none; } }
+
+/* Status messages sit on the map instead of taking sidebar space. */
+.status-overlay {
+  position: absolute;
+  left: 0.6rem;
+  top: 0.6rem;
+  max-width: min(36rem, 72%);
+  padding: 0.35rem 0.7rem;
+  background: rgba(3, 8, 10, 0.82);
+  border: 1px solid var(--line);
+  pointer-events: none;
+  font-size: 0.9rem;
+}
+.status-overlay p { margin: 0.1rem 0; }
+.status-overlay p:empty { display: none; }
+
+/* Dock: action buttons beside the squad heading, compact operator cards. */
+.dock-head { flex-wrap: wrap; gap: 0.4rem 0.9rem; }
+.dock-head .field-controls { padding: 0; margin-left: auto; gap: 0.35rem; }
+.dock-head .field-controls > button { min-height: 1.8rem; padding: 0.15rem 0.55rem; font-size: 0.82rem; }
+.roster-item { padding: 0.3rem 0.4rem; gap: 0.25rem 0.4rem; }
+.roster-select { grid-template-columns: auto 1fr auto auto; gap: 0.4rem; font-size: 0.88rem; }
+.roster-select .hp { color: var(--muted); font-size: 0.72rem; }
+.roster-select .points { font-size: 0.72rem; color: var(--muted); }
+.roster-select .points.none { color: var(--amber); }
+.roster-bars { gap: 0.2rem 0.5rem; font-size: 0.72rem; }
+.roster-bars .bar-group { gap: 0.2rem; }
+.roster-bars .bar i { min-width: 0.4rem; }
+.roster-bars button { min-width: 1.15rem; padding: 0 0.2rem; font-size: 0.8rem; line-height: 1.2; }
+.meters { gap: 0.1rem 0.5rem; }
+.meter { grid-template-columns: 2.6rem 1fr; font-size: 0.68rem; }
+
+/* Sidebar: tighter rows so the brief, objectives and threats fit without scrolling. */
+.mission-panel .panel-section { padding: 0.4rem 0.7rem; }
+.objective-list { margin-top: 0.3rem; gap: 0.2rem; }
+.objective-list li { padding: 0.2rem 0.4rem 0.2rem 1.6rem; font-size: 0.82rem; }
+.threats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.25rem; margin-top: 0.25rem; }
+.threats button { padding: 0.2rem 0.4rem; font-size: 0.78rem; }
+.selected-readout { font-size: 0.8rem; }
+main { grid-template-columns: minmax(0, 1fr) minmax(250px, 300px); gap: 0.6rem; }
+
+/*
+ * Heads-up layout: the map fills the page and the squad, minimap and action bar float over it.
+ * Squad: a small 2 x 2 block of cards at the top left. Minimap: bottom left. Actions: bottom centre.
+ */
+.canvas-frame { position: relative; }
+.hud {
+  position: absolute;
+  z-index: 2;
+  background: rgba(8, 14, 18, 0.82);
+  border: 1px solid var(--line);
+  backdrop-filter: blur(2px);
+}
+.squad-hud { left: 0.6rem; top: 0.6rem; padding: 0.3rem 0.4rem; }
+.squad-hud .dock-head { margin-bottom: 0.2rem; gap: 0.6rem; }
+.squad-hud .roster { grid-template-columns: repeat(2, 12.4rem); gap: 0.3rem; }
+.minimap-hud { left: 0.6rem; bottom: 0.6rem; padding: 0.2rem; }
+.minimap-hud #minimap { width: 224px; height: 112px; }
+.action-hud { left: 50%; bottom: 0.6rem; transform: translateX(-50%); padding: 0.25rem 0.35rem; }
+.action-hud .field-controls { padding: 0; margin: 0; gap: 0.3rem; flex-wrap: nowrap; }
+.action-hud .field-controls > button { min-height: 1.8rem; padding: 0.15rem 0.5rem; font-size: 0.82rem; white-space: nowrap; }
+.map-key { left: auto; right: 0.6rem; bottom: 0.6rem; }
+.status-overlay { left: 27.6rem; top: 0.6rem; z-index: 2; max-width: calc(100% - 28.6rem); }
+
+/* Compact operator cards for the squad block. */
+.squad-hud .roster-item { padding: 0.2rem 0.3rem; gap: 0.15rem 0.3rem; }
+.squad-hud .roster-item input[type="checkbox"] { width: 0.95rem; height: 0.95rem; }
+.squad-hud .roster-select { gap: 0.3rem; font-size: 0.82rem; grid-template-columns: auto 1fr auto auto; }
+.squad-hud .roster-select .operator-glyph { font-size: 0.9rem; }
+.squad-hud .roster-select .operator-position { font-size: 0.66rem; }
+.squad-hud .slots { gap: 2px; }
+.squad-hud .slot svg { width: 72%; height: 72%; }
+.squad-hud .slot .charges { font-size: 0.5rem; }
+.squad-hud .roster-bars { justify-content: space-between; flex-wrap: nowrap; gap: 0.15rem; font-size: 0.64rem; }
+.squad-hud .roster-bars .bar-group { gap: 0.15rem; }
+.squad-hud .roster-bars .bar { gap: 1px; }
+.squad-hud .roster-bars .bar i { min-width: 0.3rem; height: 0.4rem; }
+.squad-hud .roster-bars button { min-width: 0.95rem; padding: 0; font-size: 0.72rem; line-height: 1.1; }
+.squad-hud .meters { gap: 0 0.4rem; }
+.squad-hud .meter { grid-template-columns: 2.1rem 1fr; gap: 0.2rem; font-size: 0.58rem; }
+.squad-hud .meter i { height: 0.22rem; }
+
+@media (min-width: 981px) and (min-height: 560px) {
+  .app-shell { grid-template-rows: auto minmax(0, 1fr) auto; }
+}
+@media (max-width: 980px) {
+  .canvas-frame { overflow: visible; min-height: 0; }
+  #game-canvas { height: 55vh; min-height: 300px; }
+  .hud, .status-overlay { position: static; transform: none; max-width: none; margin: 0.4rem; pointer-events: auto; }
+  .squad-hud .roster { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .minimap-hud #minimap { width: 100%; height: auto; aspect-ratio: 2 / 1; }
+  .map-key { position: static; margin: 0.4rem; }
+}
+
+/* Squad cards: positions are on the map and minimap, so the name row keeps room for health and points. */
+.squad-hud .operator-position { display: none; }
+.squad-hud .roster-select { grid-template-columns: auto auto 1fr auto; }
+.squad-hud .roster-select .hp { margin-left: 0.2rem; }
+/* The legend moves out of the way of the action bar. */
+.map-key { left: auto; right: 0.6rem; top: 0.6rem; bottom: auto; }
+.app-shell { width: 100%; max-width: none; padding: 0 0.75rem; }
+
+/* Research & Armoury: three columns (research, squads, shop) so nothing needs scrolling on a laptop. */
+.research { width: min(96rem, 98vw); max-height: 96vh; padding: 0.6rem 1rem 0.8rem; }
+.research .dialog-header h2 { font-size: 1.2rem; }
+.research .hint { margin: 0.2rem 0 0.4rem; }
+.funds-large { font-size: 1.15rem; margin: 0; }
+.lab-grid { grid-template-columns: minmax(15rem, 1fr) minmax(24rem, 1.7fr) minmax(16rem, 1.1fr); gap: 0.9rem; }
+.research h3 { margin: 0.5rem 0 0.3rem; font-size: 0.9rem; }
+.research-row { padding: 0.3rem 0.5rem; font-size: 0.85rem; }
+.research-row small { font-size: 0.75rem; }
+.research-row button, .research-row .state { font-size: 0.8rem; }
+.armoury-squad { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.4rem; }
+.armoury-card { padding: 0.35rem 0.45rem; }
+.armoury-card h4 { margin: 0 0 0.25rem; font-size: 0.85rem; }
+.slot.big { min-height: 2.9rem; }
+.armoury-shop { margin-top: 0; padding: 0.4rem 0.6rem; }
+.armoury-shop h4 { margin: 0 0 0.3rem; font-size: 0.9rem; }
+.shop-row { grid-template-columns: 2rem 1fr auto; padding: 0.25rem 0; gap: 0.1rem 0.5rem; font-size: 0.82rem; }
+.shop-row small { font-size: 0.7rem; line-height: 1.25; }
+.shop-row button, .armoury-shop > button { font-size: 0.78rem; padding: 0.25rem 0.5rem; }
+@media (max-width: 1150px) { .lab-grid { grid-template-columns: 1fr 1fr; } .lab-shop { grid-column: 1 / -1; } }
+@media (max-width: 760px) { .lab-grid { grid-template-columns: 1fr; } }
+/* The legend stacks at the bottom right, clear of the status banner and the action bar. */
+.map-key { top: auto; bottom: 0.6rem; right: 0.6rem; flex-direction: column; gap: 0.2rem; padding: 0.35rem 0.5rem; }

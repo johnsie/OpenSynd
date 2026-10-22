@@ -60,6 +60,10 @@ marks. Regenerate with:
 CHROMIUM_PATH=/usr/bin/google-chrome node tools/render-sprites.mjs
 ```
 
+Held weapons are separate transparent layers (`weapon-pulse.png`, `weapon-heavy-pulse.png`) rendered
+from the same frames with the body acting only as a depth occluder, so a weapon is hidden when the body
+is in front of it. The game draws the layer for the weapon a unit would fire.
+
 Every file is listed in `provenance/assets.json` and stays `quarantined` until a
 named reviewer approves it. If the sheets fail to load, units fall back to
 vector shapes.

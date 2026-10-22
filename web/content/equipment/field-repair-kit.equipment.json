@@ -7,5 +7,9 @@
   "type": "consumable",
   "action": "restore-vitality",
   "charges": 1,
-  "effect": { "restoreVitality": 30 }
+  "effect": {
+    "restoreVitality": 30
+  },
+  "price": 10,
+  "icon": "medkit"
 }

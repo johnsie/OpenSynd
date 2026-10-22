@@ -123,6 +123,22 @@ it (F, or clicking the body), up to the eight-slot limit, and gear kept after a
 successful operation counts as researched. Still to do: funding allocation across
 tracks over time, more items and enemy types, and a campaign map.
 
+The interface now fills the screen like a heads-up display: the map takes the whole
+page with the squad as a compact 2 x 2 block of cards at the top left, the
+minimap at the bottom left, the action buttons in a bar at the bottom centre, and
+a slim sidebar for the brief, objectives and threats, so nothing needs scrolling
+at ordinary laptop sizes. Each operative shows eight picture slots; clicking a
+weapon square selects it as the only weapon that fires (click again for
+automatic choice), consumables are used by clicking, and worn gear explains
+itself. Weapons have limited rounds (24 for the pulse emitter, 10 for the heavy
+emitter, restocked each operation), every shot spends one from the weapon that
+fires, a weapon with no rounds cannot fire, and an operative can carry several
+of the same weapon, each with its own magazine. The Research & Armoury screen
+lays research, each operative's eight slots and a shop side by side: items have
+prices, a swapped item is bought back at half price, and the shop only sells
+researched items. The weapon a unit would fire is drawn in its hand, using
+transparent weapon layers rendered from the same animation frames.
+
 Save format version 8 stores each unit's items (with consumable charges) and what
 it has looted, with a tested migration from version 7, so looted gear and spent
 stims survive a save and load.

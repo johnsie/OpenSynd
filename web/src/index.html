@@ -25,6 +25,19 @@
             <h1>OpenSynd</h1>
           </div>
         </div>
+        <div class="operation-heading">
+          <div>
+            <p id="operation-eyebrow" class="eyebrow">OPERATION</p>
+            <h2 id="operation-title">Loading…</h2>
+          </div>
+          <div class="operation-tools">
+            <button id="pause-button" type="button" aria-pressed="false">
+              <span id="pause-label">Pause</span> <kbd>Space</kbd>
+            </button>
+            <button id="operations-button" type="button">Operations</button>
+            <button id="reset-button" type="button">Reset</button>
+          </div>
+        </div>
         <p id="funds-readout" class="funds" title="Funds for research: earned while you play and from achievements.">Funds 0</p>
         <div class="network-state" aria-label="Network status">
           <span class="pulse-dot"></span>
@@ -34,20 +47,6 @@
 
       <main>
         <section class="playfield" aria-labelledby="operation-title">
-          <div class="operation-heading">
-            <div>
-              <p id="operation-eyebrow" class="eyebrow">OPERATION</p>
-              <h2 id="operation-title">Loading…</h2>
-            </div>
-            <div class="operation-tools">
-              <button id="pause-button" type="button" aria-pressed="false">
-                <span id="pause-label">Pause</span> <kbd>Space</kbd>
-              </button>
-              <button id="operations-button" type="button">Operations</button>
-              <button id="reset-button" type="button">Reset operation</button>
-            </div>
-          </div>
-
           <div class="canvas-frame" id="canvas-frame">
             <canvas
               id="game-canvas"
@@ -56,36 +55,49 @@
               tabindex="0"
               aria-label="Isometric view of the map. Select an operator and choose a destination."
             ></canvas>
-            <canvas
-              id="minimap"
-              width="256"
-              height="128"
-              aria-label="Minimap. Click to move the view."
-            ></canvas>
             <div class="scanlines" aria-hidden="true"></div>
-            <div class="map-key" aria-hidden="true">
-              <span><i class="key-public"></i> Public network</span>
-              <span><i class="key-risk"></i> Active watcher</span>
-              <span><i class="key-relay"></i> Relay objective</span>
+            <div class="status-overlay">
+              <p id="status-message" role="status" aria-live="polite">
+                Establishing local map…
+              </p>
+              <p id="sound-caption" class="hint" aria-live="off"></p>
+              <p id="achievement-toast" class="awards" aria-live="polite"></p>
             </div>
-          </div>
-          <p class="instructions">
-            Select an operator, then click a reachable tile. Arrow keys pan the
-            view; <kbd>I</kbd> <kbd>J</kbd> <kbd>K</kbd> <kbd>L</kbd> move the grid cursor and <kbd>Enter</kbd> issues a move. Click a
-            watcher—or use its Threats button—to target it within pulse range.
-          </p>
-          <div class="field-controls" aria-label="Touch and pointer field controls">
-            <div class="direction-pad">
-              <button type="button" data-cursor-x="0" data-cursor-y="-1" aria-label="Move cursor up">↑</button>
-              <button type="button" data-cursor-x="-1" data-cursor-y="0" aria-label="Move cursor left">←</button>
-              <button type="button" data-cursor-x="0" data-cursor-y="1" aria-label="Move cursor down">↓</button>
-              <button type="button" data-cursor-x="1" data-cursor-y="0" aria-label="Move cursor right">→</button>
+            <div class="hud squad-hud" aria-label="Squad">
+              <div class="dock-head">
+                <p class="section-number">FIELD TEAM</p>
+                <button id="select-all-button" type="button" class="text-button">Select all</button>
+              </div>
+              <div id="roster" class="roster"></div>
             </div>
+            <div class="hud minimap-hud">
+              <canvas
+            id="minimap"
+            width="256"
+            height="128"
+            aria-label="Minimap. Click to move the view."
+          ></canvas>
+            </div>
+            <div class="hud action-hud">
+              <div class="field-controls" aria-label="Touch and pointer field controls">
+              <div class="direction-pad">
+                <button type="button" data-cursor-x="0" data-cursor-y="-1" aria-label="Move cursor up">↑</button>
+                <button type="button" data-cursor-x="-1" data-cursor-y="0" aria-label="Move cursor left">←</button>
+                <button type="button" data-cursor-x="0" data-cursor-y="1" aria-label="Move cursor down">↓</button>
+                <button type="button" data-cursor-x="1" data-cursor-y="0" aria-label="Move cursor right">→</button>
+              </div>
             <button id="move-button" type="button">Move to cursor</button>
             <button id="action-button" type="button" disabled><span id="action-label">Restore relay</span> <kbd>E</kbd></button>
             <button id="repair-button" type="button" disabled><span id="repair-label">Use repair kit</span> <kbd>R</kbd></button>
             <button id="stim-button" type="button" disabled><span id="stim-label">Use stim</span> <kbd>T</kbd></button>
             <button id="loot-button" type="button" disabled><span id="loot-label">Loot body</span> <kbd>F</kbd></button>
+          </div>
+            </div>
+            <div class="map-key" aria-hidden="true">
+              <span><i class="key-public"></i> Public network</span>
+              <span><i class="key-risk"></i> Active watcher</span>
+              <span><i class="key-relay"></i> Relay objective</span>
+            </div>
           </div>
         </section>
 
@@ -106,12 +118,6 @@
             <ol id="objective-list" class="objective-list"></ol>
           </section>
 
-          <section class="panel-section">
-            <p class="section-number">03 / FIELD TEAM</p>
-            <h2>Operators</h2>
-            <button id="select-all-button" type="button" class="text-button">Select all</button>
-            <div id="roster" class="roster"></div>
-          </section>
 
           <details class="panel-section" id="training-panel">
             <summary>
@@ -150,16 +156,9 @@
             </div>
           </details>
 
-          <section class="panel-section system-log">
-            <p class="section-number">SYSTEM</p>
-            <p id="status-message" role="status" aria-live="polite">
-              Establishing local map…
-            </p>
-            <p id="sound-caption" class="hint" aria-live="off"></p>
-            <p id="achievement-toast" class="awards" aria-live="polite"></p>
-          </section>
         </aside>
       </main>
+
 
       <footer>
         <p>
@@ -195,7 +194,7 @@
         <li>Space pauses. Keys can be changed in Settings.</li>
       </ul>
       <div id="mission-list" class="mission-list" role="group" aria-label="Operations"></div>
-      <button id="open-research" type="button">Research lab</button>
+      <button id="open-research" type="button">Research &amp; Armoury</button>
       <button id="begin-button" type="button" class="primary">Begin operation</button>
     </dialog>
 
@@ -203,18 +202,31 @@
       <div class="dialog-header">
         <div>
           <p class="eyebrow">BETWEEN OPERATIONS</p>
-          <h2 id="research-heading">Research lab</h2>
+          <h2 id="research-heading">Research &amp; Armoury</h2>
         </div>
         <button id="close-research" type="button" aria-label="Close">×</button>
       </div>
       <p id="research-funds" class="funds-large" role="status"></p>
-      <p class="hint">Funds come from time spent on operations and from achievements. Changes apply when an operation starts.</p>
-      <h3>Cyborg research</h3>
-      <div id="research-tracks" class="research-tracks"></div>
-      <h3>New weapons and items</h3>
-      <div id="research-items" class="research-items"></div>
-      <h3>Loadouts <span class="hint">(eight slots per operative)</span></h3>
-      <div id="research-loadouts" class="research-loadouts"></div>
+      <p class="hint">
+        Funds come from time on operations and from achievements. Buy weapons and items for each
+        operative before an operation; changes apply when it starts.
+      </p>
+      <div class="lab-grid">
+        <section class="lab-research" aria-label="Research">
+          <h3>Cyborg research</h3>
+          <div id="research-tracks" class="research-tracks"></div>
+          <h3>New weapons and items</h3>
+          <div id="research-items" class="research-items"></div>
+        </section>
+        <section class="lab-armoury" aria-label="Armoury">
+          <h3>Armoury <span class="hint">(eight slots per operative)</span></h3>
+          <div id="armoury-squad" class="armoury-squad"></div>
+        </section>
+        <section class="lab-shop" aria-label="Shop">
+          <h3>Shop</h3>
+          <div id="armoury-shop" class="armoury-shop"></div>
+        </section>
+      </div>
     </dialog>
 
     <dialog id="confirm-dialog" aria-labelledby="confirm-heading">
@@ -232,7 +244,7 @@
       <dl id="outcome-stats" class="outcome-stats"></dl>
       <button id="next-button" type="button" class="primary" hidden>Next operation</button>
       <button id="replay-button" type="button" class="primary">Replay operation</button>
-      <button id="outcome-research" type="button">Research lab</button>
+      <button id="outcome-research" type="button">Research &amp; Armoury</button>
       <button id="outcome-close" type="button">Review the map</button>
     </dialog>
 

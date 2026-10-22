@@ -3,7 +3,17 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { LOOT_RANGE, findLoot, freeSlots, inLootReach, lootBody, lootableBody, useEnergyItem } from "../src/inventory.js";
+import {
+  LOOT_RANGE,
+  findLoot,
+  freeSlots,
+  inLootReach,
+  lootBody,
+  lootableAt,
+  lootableBody,
+  nearestLootable,
+  useEnergyItem,
+} from "../src/inventory.js";
 
 const item = (id, action = "disable-pulse", charges = null, effect = {}) => ({
   definition: { id, action, effect },
@@ -83,4 +93,25 @@ test("a stim restores stamina and focus, spends a charge, and refuses to waste i
   assert.equal(useEnergyItem(rested), null, "nothing to restore");
   assert.equal(rested.equipment[0].charges, 1);
   assert.equal(useEnergyItem({ ...hero, disabled: true, equipment: [item("s", "restore-energy", 1, { restoreStamina: 1 })] }), null);
+});
+
+test("a click on the ground where an enemy fell finds its gear", () => {
+  const fallen = body(10, 5, [item("heavy")], { id: "fallen" });
+  const empty = body(20, 5, [], { id: "empty" });
+  const alive = body(30, 5, [item("x")], { id: "alive", disabled: false });
+  const units = [fallen, empty, alive];
+  assert.equal(lootableAt(units, { x: 10, y: 5 }), fallen);
+  assert.equal(lootableAt(units, { x: 10.5, y: 5.4 }), fallen, "close enough counts");
+  assert.equal(lootableAt(units, { x: 12, y: 5 }), null, "too far");
+  assert.equal(lootableAt(units, { x: 20, y: 5 }), null, "nothing left to take");
+  assert.equal(lootableAt(units, { x: 30, y: 5 }), null, "the watcher is still up");
+});
+
+test("the nearest lootable body is found across the map", () => {
+  const near = body(10, 0, [item("a")], { id: "near" });
+  const far = body(50, 0, [item("b")], { id: "far" });
+  const picked = body(5, 0, [], { id: "picked" });
+  assert.equal(nearestLootable(operator(0, 0), [far, picked, near]), near);
+  assert.equal(nearestLootable(operator(0, 0), [picked]), null);
+  assert.equal(nearestLootable(operator(100, 0), [far, near]), far);
 });

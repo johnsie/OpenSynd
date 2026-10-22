@@ -153,7 +153,49 @@
     place(box(headHeight * 0.95, headHeight * 0.14, headHeight * 0.2, glow(kit.glow)), offset(eyeLevel, 0, 0, headHeight * 0.4), "Head");
   }
 
-  window.renderSheet = async ({ model, animations, palette, kit }) => {
+  // A held weapon, built in the idle pose and attached to the right hand so it follows every
+  // animation. Barrel along the body's forward axis, slightly below the hand.
+  function addWeapon(root, scene, type, mixer, idleClip) {
+    mixer.clipAction(idleClip).play();
+    mixer.setTime(0);
+    root.updateMatrixWorld(true);
+    const bone = (name) => root.getObjectByName(name);
+    const at = (name) => bone(name).getWorldPosition(new THREE.Vector3());
+    const hand = at("RightHand");
+    const unit = at("LeftUpLeg").distanceTo(at("RightUpLeg"));
+    const right = at("LeftUpLeg").clone().sub(at("RightUpLeg")).setY(0).normalize();
+    const up = new THREE.Vector3(0, 1, 0);
+    const forward = new THREE.Vector3().crossVectors(right, up);
+    const orientation = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(right, up, forward));
+    const offset = (base, x, y, z) =>
+      base.clone().addScaledVector(right, x).addScaledVector(up, y).addScaledVector(forward, z);
+    const metal = new THREE.MeshStandardMaterial({ color: rgb([112, 124, 140]), roughness: 0.4, metalness: 0.6 });
+    const trim = new THREE.MeshStandardMaterial({ color: rgb([240, 190, 90]), roughness: 0.4, metalness: 0.3 });
+    const glow = new THREE.MeshBasicMaterial({ color: rgb([110, 240, 235]) });
+    const part = (w, h, d, material, position) => {
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), material);
+      mesh.position.copy(position);
+      mesh.quaternion.copy(orientation);
+      scene.add(mesh);
+      mesh.updateMatrixWorld(true);
+      bone("RightHand").attach(mesh);
+    };
+    // Sizes are in hip-widths; the grip sits in the hand and the barrel points forward.
+    if (type === "heavy-pulse") {
+      part(unit * 0.34, unit * 0.3, unit * 1.9, metal, offset(hand, 0, unit * 0.08, unit * 0.9));
+      part(unit * 0.2, unit * 0.14, unit * 1.2, trim, offset(hand, 0, unit * 0.3, unit * 0.8));
+      part(unit * 0.22, unit * 0.5, unit * 0.28, metal, offset(hand, 0, -unit * 0.2, unit * 0.1));
+      part(unit * 0.4, unit * 0.4, unit * 0.2, glow, offset(hand, 0, unit * 0.08, unit * 1.9));
+      part(unit * 0.4, unit * 0.4, unit * 0.5, metal, offset(hand, 0, unit * 0.08, unit * -0.2));
+    } else {
+      part(unit * 0.26, unit * 0.24, unit * 1.0, metal, offset(hand, 0, unit * 0.06, unit * 0.5));
+      part(unit * 0.22, unit * 0.46, unit * 0.26, metal, offset(hand, 0, -unit * 0.17, unit * 0.06));
+      part(unit * 0.16, unit * 0.08, unit * 0.7, trim, offset(hand, 0, unit * 0.22, unit * 0.5));
+      part(unit * 0.3, unit * 0.3, unit * 0.16, glow, offset(hand, 0, unit * 0.06, unit * 1.04));
+    }
+  }
+
+  window.renderSheet = async ({ model, animations, palette, kit, weapon }) => {
     const size = FRAME * SUPERSAMPLE;
     const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, preserveDrawingBuffer: true });
     renderer.setSize(size, size);
@@ -199,7 +241,16 @@
       if (!clips[name]) throw new Error(`No animation matching ${wanted}`);
     }
     const mixer = new THREE.AnimationMixer(root);
-    if (kit) addUniformKit(root, scene, kit, mixer, clips.idle);
+    if (weapon) {
+      // Weapon layer: the body only blocks the view (depth) and is not drawn, so the weapon is hidden
+      // wherever the character's body is in front of it.
+      addWeapon(root, scene, weapon, mixer, clips.idle);
+      root.traverse((node) => {
+        if (node.isMesh && node.material.map) node.material.colorWrite = false;
+      });
+    } else if (kit) {
+      addUniformKit(root, scene, kit, mixer, clips.idle);
+    }
     // The idle pose (arms down, head level) is the reference for a stiffer, more serious gait.
     const restPose = {};
     root.traverse((node) => {

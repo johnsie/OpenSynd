@@ -6,6 +6,12 @@
   "license": "CC0-1.0",
   "type": "tool",
   "action": "disable-pulse",
-  "charges": null,
-  "effect": { "attack": 12, "range": 3.25, "cooldown": 0.75 }
+  "charges": 24,
+  "effect": {
+    "attack": 12,
+    "range": 3.25,
+    "cooldown": 0.75
+  },
+  "price": 15,
+  "icon": "pulse"
 }

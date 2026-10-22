@@ -77,6 +77,44 @@
         }
       ]
     },
+    "weapon-pulse": {
+      "file": "weapon-pulse.png",
+      "frameSize": 128,
+      "directions": 8,
+      "animations": [
+        {
+          "name": "idle",
+          "row": 0,
+          "frames": 4,
+          "seconds": 2
+        },
+        {
+          "name": "walk",
+          "row": 8,
+          "frames": 8,
+          "seconds": 0.66
+        }
+      ]
+    },
+    "weapon-heavy-pulse": {
+      "file": "weapon-heavy-pulse.png",
+      "frameSize": 128,
+      "directions": 8,
+      "animations": [
+        {
+          "name": "idle",
+          "row": 0,
+          "frames": 4,
+          "seconds": 2
+        },
+        {
+          "name": "walk",
+          "row": 8,
+          "frames": 8,
+          "seconds": 0.66
+        }
+      ]
+    },
     "watcher-one": {
       "file": "watcher-one.png",
       "frameSize": 128,

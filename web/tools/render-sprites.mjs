@@ -94,6 +94,16 @@ const humanJob = (name, skin, kit) => ({
 });
 const jobs = [
   ...Object.entries(skins).map(([name, skin]) => humanJob(name, skin, uniform.kit)),
+  // Held weapons: one transparent layer per weapon, drawn over the body with the same frames.
+  ...["pulse", "heavy-pulse"].map((weapon) => ({
+    name: `weapon-${weapon}`,
+    options: {
+      model: human,
+      animations: humanAnimations,
+      palette: uniform.palette.map((color, index) => (index === 0 ? skins["operative-one"] : color)),
+      weapon,
+    },
+  })),
   ...Object.entries(watcherSkins).map(([name, skin]) =>
     humanJob(name, skin, { ...uniform.kit, beret: [150, 28, 40] }),
   ),
