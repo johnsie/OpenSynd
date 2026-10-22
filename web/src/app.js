@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 import {
-  applyGates,
   createTileGrid,
   isTerrainWalkable,
   findPath,
@@ -27,6 +26,7 @@ import {
   normalizeBindings,
   resolveAction,
 } from "./input.js";
+import { missionComplete as isMissionComplete, resolveArrival, syncGates as syncMissionGates } from "./mission.js";
 import { addEffect, advanceEffects, createEffects, effectProgress, walkBob } from "./effects.js";
 import { createAudio } from "./audio.js";
 import { SETTINGS_KEY, parseSettings, prefersReducedMotion, serializeSettings } from "./settings.js";
@@ -277,12 +277,8 @@ async function loadGame() {
   renderInterface();
 }
 
-function gateOpen(gate) {
-  return state.objectives.some((item) => item.targetZone === gate.control && item.complete);
-}
-
 function syncGates() {
-  applyGates(state.grid, state.map.objects ?? [], gateOpen);
+  syncMissionGates(state.grid, state.map, state.objectives);
 }
 
 function equipmentWithAction(unit, action) {
@@ -808,31 +804,22 @@ function update(deltaSeconds) {
 
 function completeObjectivesAt(position) {
   let changed = false;
-  for (const objective of state.objectives) {
-    if (objective.complete) continue;
-    if (objective.type === "interact") continue;
-    const zone = state.map.zones.find((item) => item.id === objective.targetZone);
-    if (!zone || !zoneContains(zone, position)) continue;
-    if (objective.type === "extract") {
-      const pending = state.objectives.some(
-        (item) => item.required && item.type !== "extract" && !item.complete,
-      );
-      if (pending) {
-        setStatus("Extraction is available after both relays are restored.");
-        continue;
-      }
+  for (const event of resolveArrival(state.objectives, state.map.zones, position)) {
+    if (event.type === "blocked") {
+      setStatus("Extraction is available after all other commitments are fulfilled.");
+      continue;
     }
-    objective.complete = true;
+    const { objective } = event;
     syncGates();
     changed = true;
     audio.play("objective");
-    const zoneRect = state.map.zones.find((item) => item.id === objective.targetZone);
+    const zone = state.map.zones.find((item) => item.id === objective.targetZone);
     const restoredBy = state.units.find(
-      (unit) => unit.side === "team" && zoneContains(zoneRect, unit.position),
+      (unit) => unit.side === "team" && zoneContains(zone, unit.position),
     );
     if (restoredBy) addEffect(state.effects, "restore", { unitId: restoredBy.id });
     setStatus(
-      objective.type === "extract"
+      objective.type === "extract" && isMissionComplete(state.objectives)
         ? "Operation complete. Signal Yard has rejoined the district mesh."
         : `${objective.description} Commitment fulfilled.`,
     );

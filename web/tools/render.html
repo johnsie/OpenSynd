@@ -136,12 +136,12 @@
       const knee = at(`${side}Leg`);
       const ankle = at(`${side}Foot`);
       const toes = at(`${side}ToeBase`);
-      const shin = knee.distanceTo(ankle) * 0.6;
+      const shin = knee.distanceTo(ankle) * 0.75;
       const cylinder = new THREE.Mesh(new THREE.CylinderGeometry(unit * 0.34, unit * 0.4, shin, 12), boots);
-      place(cylinder, ankle.clone().add(new THREE.Vector3(0, shin * 0.5, 0)), `${side}Leg`);
+      place(cylinder, ankle.clone().add(new THREE.Vector3(0, shin * 0.5 - unit * 0.12, 0)), `${side}Leg`);
       const toeLength = ankle.distanceTo(toes) + unit * 0.5;
-      const foot = box(unit * 0.72, unit * 0.5, toeLength * 1.25, boots);
-      place(foot, offset(ankle, 0, -unit * 0.1, toeLength * 0.38), `${side}Foot`);
+      const foot = box(unit * 0.8, unit * 0.62, toeLength * 1.5, boots);
+      place(foot, offset(ankle, 0, -unit * 0.3, toeLength * 0.34), `${side}Foot`);
     }
     // Beret and a glowing visor band across the eyes.
     const dome = new THREE.Mesh(new THREE.SphereGeometry(headHeight * 0.62, 20, 12), beret);

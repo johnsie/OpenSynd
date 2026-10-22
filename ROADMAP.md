@@ -65,6 +65,13 @@ Chromium and Firefox. npm packages are tracked in
 `provenance/dependencies.json` and checked in CI; the only one so far is the
 dev-only `playwright-core` (Apache-2.0).
 
+Phase 3 work now includes a service gate that blocks the exit until its control
+panel is used, a pure `mission.js` rules module (arrival and interaction
+objectives, extraction gating, gate state), and a golden full-playthrough test
+that pins fixed-step counts for every leg. Units are drawn from 8-direction
+sprite sheets rendered from CC0 Quaternius models, all registered as
+`quarantined` until a named reviewer approves them.
+
 ## Non-negotiable principles
 
 1. **No original game data.** Development, tests, demos, releases, screenshots,
