@@ -28,6 +28,9 @@ check:
     - python3 tools/check_web_sync.py
     - python3 tools/check_style.py
     - python3 tools/check_provenance.py
+    - python3 tools/check_source_licenses.py
+    - python3 tools/check_dependencies.py
+    - python3 -m unittest discover -s tools -p "test_*.py"
     - cd web && npm test
 
 # Hot updates: pages are pinned to their release once deploy/setup-apache.sh has been run again on the server (it adds the
@@ -59,3 +62,19 @@ deploy:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
     - when: manual
       allow_failure: true
+
+# The files of a release: a reproducible archive, checksums and the bills of materials (docs/RELEASING.md). Run it by hand from a
+# tagged commit; it does not deploy anything.
+release:
+  stage: deploy
+  needs: [check, build]
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: manual
+      allow_failure: true
+  script:
+    - python3 tools/make_release.py --out release --allow-quarantined
+  artifacts:
+    paths:
+      - release
+    expire_in: never

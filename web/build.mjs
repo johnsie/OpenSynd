@@ -52,7 +52,8 @@ try {
 const metadata = {
   name: "OpenSynd browser prototype",
   revision,
-  builtAt: new Date().toISOString(),
+  // SOURCE_DATE_EPOCH (seconds) makes the build reproducible: the same sources give the same bytes.
+  builtAt: new Date(process.env.SOURCE_DATE_EPOCH ? Number(process.env.SOURCE_DATE_EPOCH) * 1000 : Date.now()).toISOString(),
   licenses: ["GPL-2.0-or-later", "CC0-1.0"],
 };
 await writeFile(

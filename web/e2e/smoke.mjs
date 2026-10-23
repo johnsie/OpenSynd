@@ -663,6 +663,71 @@ for (const [name, type, executablePath] of targets) {
     assert.equal((await spentPage.evaluate(() => window.opensyndTest.drops())).length, 1);
     await spentPage.close();
 
+    // Privacy and security: the game talks only to the site it came from, and the content security policy is never violated.
+    const private_ = await browser.newPage();
+    const strangers = [];
+    const violations = [];
+    private_.on("request", (request) => {
+      const address = new URL(request.url());
+      if (address.protocol.startsWith("http") && address.origin !== new URL(url).origin) strangers.push(request.url());
+    });
+    private_.on("console", (message) => /content security policy/i.test(message.text()) && violations.push(message.text()));
+    await private_.goto(`${url}?e2e`);
+    await private_.waitForSelector(".roster-select");
+    await private_.click("#begin-button");
+    await private_.waitForFunction(() => document.querySelector("#status-message").textContent.includes("Local map established"));
+    await private_.waitForTimeout(1500);
+    assert.deepEqual(strangers, [], "no request leaves the site");
+    assert.deepEqual(violations, [], "no content security policy violation");
+    assert.match(await private_.locator('meta[http-equiv="Content-Security-Policy"]').getAttribute("content"), /default-src 'self'/);
+    await private_.close();
+
+    // Accessibility basics on every screen the game has: names, labels, landmarks and a language, checked by the browser's own
+    // accessibility tree rather than by eye.
+    const audit = await browser.newPage();
+    await audit.goto(`${url}?e2e`);
+    await audit.waitForSelector(".roster-select");
+    const problems = async () =>
+      audit.evaluate(() => {
+        const found = [];
+        const labelledBy = (element) => {
+          const ids = (element.getAttribute("aria-labelledby") ?? "").split(" ").filter(Boolean);
+          return ids.map((id) => document.getElementById(id)?.textContent ?? "").join("").trim();
+        };
+        const nameOf = (element) =>
+          (element.getAttribute("aria-label") ?? "").trim() ||
+          (element.labels?.[0]?.textContent ?? "").trim() ||
+          labelledBy(element) ||
+          (element.getAttribute("title") ?? "").trim() ||
+          element.textContent.trim();
+        const reachable = (element) => !element.closest("[hidden]") && getComputedStyle(element).display !== "none";
+        for (const element of document.querySelectorAll("button, a[href], input, select, textarea, canvas[tabindex]")) {
+          if (!reachable(element)) continue;
+          if (element.closest("dialog:not([open])")) continue;
+          const label = `${element.tagName.toLowerCase()}#${element.id || "?"}.${element.className}`;
+          if (!nameOf(element)) found.push(`${label} has no accessible name`);
+        }
+        for (const dialog of document.querySelectorAll("dialog[open]")) {
+          if (!dialog.getAttribute("aria-labelledby") && !dialog.getAttribute("aria-label")) found.push(`dialog#${dialog.id} has no name`);
+        }
+        for (const image of document.querySelectorAll("img")) if (!image.hasAttribute("alt")) found.push("an image has no alt text");
+        if (!document.documentElement.lang) found.push("the page has no language");
+        if (!document.title) found.push("the page has no title");
+        if (document.querySelectorAll("h1").length !== 1) found.push(`there are ${document.querySelectorAll("h1").length} h1 headings`);
+        return found;
+      });
+    assert.deepEqual(await problems(), [], "the title screen");
+    await audit.click("#begin-button");
+    await audit.waitForFunction(() => document.querySelector("#status-message").textContent.includes("Local map established"));
+    assert.deepEqual(await problems(), [], "the operation screen");
+    await audit.click("#settings-button");
+    assert.deepEqual(await problems(), [], "the settings dialog");
+    await audit.keyboard.press("Escape");
+    // The keyboard can reach and operate the main controls (a tab order that includes the game and its buttons).
+    await audit.locator("#game-canvas").focus();
+    assert.equal(await audit.evaluate(() => document.activeElement.id), "game-canvas", "the game area takes keyboard focus");
+    await audit.close();
+
     // A left click on a civilian follows them (FreeSynd): the operative walks after them and does not shoot.
     const tail = await browser.newPage();
     await tail.goto(`${url}?e2e`);
