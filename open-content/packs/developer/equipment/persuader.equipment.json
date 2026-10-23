@@ -6,7 +6,7 @@
   "license": "CC0-1.0",
   "type": "tool",
   "action": "persuade",
-  "charges": 30,
+  "charges": null,
   "effect": {
     "range": 3.5,
     "cooldown": 1.2
