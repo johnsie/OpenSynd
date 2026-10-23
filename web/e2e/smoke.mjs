@@ -680,6 +680,32 @@ for (const [name, type, executablePath] of targets) {
     assert.match(await tail.locator("#selected-readout").innerText(), /following/);
     await tail.close();
 
+    // Clicking gear that lies beside a tall figure picks it up rather than selecting the figure.
+    const beside = await browser.newPage({ viewport: { width: 1400, height: 900 } });
+    await beside.goto(`${url}?e2e`);
+    await beside.waitForSelector(".roster-select");
+    await beside.click("#begin-button");
+    await beside.waitForFunction(() => document.querySelector("#status-message").textContent.includes("Local map established"));
+    await beside.evaluate(() => {
+      const test = window.opensyndTest;
+      test.giveItem("operator-four", "developer.scanner");
+      test.placeNear("operator-four", "operator-one", 3, 0);
+      test.placeNear("operator-two", "operator-four", 2, 0);
+      test.focusOn("operator-four");
+    });
+    await beside.waitForTimeout(600);
+    await beside.locator(".roster-item").nth(3).getByLabel(/Scanner/).click({ button: "right" });
+    await beside.locator("#game-canvas").focus();
+    await beside.keyboard.press("2");
+    await beside.waitForTimeout(1500); // the camera follows the new selection
+    const lying = await beside.evaluate(() => {
+      const drop = window.opensyndTest.drops()[0];
+      return window.opensyndTest.screenPointAt(drop.x, drop.y);
+    });
+    await beside.mouse.click(lying.x, lying.y);
+    await beside.getByLabel(/Field Operator 2 slot 3: Scanner/).waitFor({ timeout: 10000 });
+    await beside.close();
+
     // Gear bought before the operation begins is on the operative when it does (the operation is set up again on closing).
     const buyer = await browser.newPage();
     await buyer.goto(`${url}?e2e`);

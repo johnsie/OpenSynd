@@ -4109,7 +4109,14 @@ function isAttackable(unit) {
 function pointerKindAt(position) {
   const squad = selectedOperators();
   if (squad.length === 0 || !state.viewport) return null;
-  const unit = hitUnit(position);
+  let unit = hitUnit(position);
+  const underPointer = screenToGridExact(position, state.viewport.cellSize, state.viewport.origin);
+  const gearHere = lootableAt(state.drops, underPointer, 1);
+  if (unit && gearHere && !unit.disabled && !isVehicle(unit)) {
+    const toGear = Math.hypot(gearHere.position.x - underPointer.x, gearHere.position.y - underPointer.y);
+    const toUnit = Math.hypot(unit.position.x - underPointer.x, unit.position.y - underPointer.y);
+    if (toGear < toUnit) unit = null;
+  }
   if (unit && isFollowable(unit)) return "follow";
   if (unit && isAttackable(unit) && !unit.disabled && !isVehicle(unit)) {
     const reachable = squad.some((operator) => {
@@ -4224,7 +4231,16 @@ canvas.addEventListener("click", (event) => {
     throwArmedBomb(screenToGrid(position, state.viewport.cellSize, state.viewport.origin));
     return;
   }
-  const unit = hitUnit(position);
+  let unit = hitUnit(position);
+  // Gear lying on the ground wins over a tall figure standing beside it: the click is for whichever is nearer the pointer.
+  const ground = screenToGrid(position, state.viewport.cellSize, state.viewport.origin);
+  const exactGround = screenToGridExact(position, state.viewport.cellSize, state.viewport.origin);
+  const lying = lootableAt(state.drops, exactGround, 1);
+  if (unit && lying && !unit.disabled && !isVehicle(unit) && selectedOperators().length > 0) {
+    const toGear = Math.hypot(lying.position.x - exactGround.x, lying.position.y - exactGround.y);
+    const toUnit = Math.hypot(unit.position.x - exactGround.x, unit.position.y - exactGround.y);
+    if (toGear < toUnit) unit = null;
+  }
   if (unit) {
     if (isVehicle(unit) && !unit.disabled && !isSquadVehicle(unit)) goEnterVehicle(unit, event.shiftKey);
     else if (unit.side !== "team") {
@@ -4236,9 +4252,9 @@ canvas.addEventListener("click", (event) => {
     else selectUnit(unit.id);
     return;
   }
-  const destination = screenToGrid(position, state.viewport.cellSize, state.viewport.origin);
+  const destination = ground;
   // Clicking the ground where an enemy fell picks up its gear: an operator walks over.
-  const dropped = lootableAt(state.drops, destination, 0.9);
+  const dropped = lying;
   if (dropped && selectedOperators().length > 0) {
     goLoot(dropped, event.shiftKey);
     return;
