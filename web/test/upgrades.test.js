@@ -13,7 +13,7 @@ import {
   chestVitality,
   emptyUpgrades,
   eyesRange,
-  heartLevel,
+  aimBonus,
   legsPace,
   sanitizeUpgrades,
   upgradePrice,
@@ -36,9 +36,6 @@ const operator = (upgrades, over = {}) => ({
   disabled: false,
   targetId: null,
   cooldownRemaining: 0,
-  stamina: 1,
-  focus: 1,
-  levels: { speed: 3, brain: 3 },
   equipment: [gun()],
   activeSlot: 0,
   upgrades,
@@ -62,11 +59,12 @@ test("six parts, each with a tier 0 to 3 effect, priced 1x, 5x and 10x", () => {
 
 test("each part's effect rises with its tier and nothing fitted changes nothing", () => {
   const bare = emptyUpgrades();
-  const effects = (up) => [legsPace(up), armsCooldown(up), armsCapacity(up), chestVitality(up), eyesRange(up), heartLevel(up)];
+  const effects = (up) => [legsPace(up), armsCooldown(up), armsCapacity(up), chestVitality(up), eyesRange(up), aimBonus(up)];
   assert.deepEqual(effects(bare), [1, 1, 0, 0, 1, 0]);
   assert.deepEqual([legsPace(undefined), chestVitality(null)], [1, 0], "a unit with no upgrades is fine");
   const full = { legs: 3, arms: 3, chest: 3, heart: 3, eyes: 3, brain: 3 };
-  assert.deepEqual(effects(full), [1.5, 0.7, 12, 70, 1.3, 5]);
+  assert.deepEqual(effects(full).slice(0, 5), [1.5, 0.7, 12, 70, 1.3]);
+  assert.ok(Math.abs(aimBonus(full) - 5 * 3 * 0.006) < 1e-9, "five parts add the aim bonus, three tiers each");
 });
 
 test("Legs make an operative walk faster", () => {
@@ -105,9 +103,7 @@ test("Eyes lengthen the reach of whatever is fired", () => {
 
 import { followPace } from "../src/simulation.js";
 
-test("followers move at their owner's pace: quicker legs drag a faster flock, tired legs a slower one", () => {
+test("followers move at their owner's pace: quicker legs drag a faster flock, a heavy load a slower one", () => {
   assert.equal(followPace(operator({ legs: 0 })), 1);
   assert.equal(followPace(operator({ legs: 2 })), 1.5);
-  assert.equal(followPace(operator({ legs: 0 }, { stamina: 0, levels: { speed: 1, brain: 3 } })), 0.6);
-  assert.equal(followPace(operator({ legs: 0 }, { levels: { speed: 5, brain: 3 } })), 1.5);
 });

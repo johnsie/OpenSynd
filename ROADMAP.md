@@ -104,8 +104,8 @@ operation is remembered in this browser (`web/src/progress.js`, a tolerant,
 tested record), unlocks the next, and an Operations button in the header reopens
 the list at any time; a Settings button clears completed operations.
 
-The free Legs and Brain training bars were removed (principle 8): an operative's pace, stamina and reload now
-come from the bought upgrades and the drugs, and fatigue still lowers them.
+The free Legs and Brain training bars were removed (principle 8): an operative's pace and reload now
+come from the bought upgrades and the drugs.
 Leaving an operation in progress (switching operations or resetting) asks for
 confirmation first.
 
@@ -249,21 +249,17 @@ Save format version 8 stores each unit's items (with consumable charges) and wha
 it has looted, with a tested migration from version 7, so looted gear and spent
 stims survive a save and load.
 
-Fatigue takes levels off the bars. Each operator has two meters: Stamina, which
-walking drains (60 seconds from fresh to empty at Legs level 3, longer with
-stronger legs) and standing still recovers slowly (70 seconds from empty), and
-Focus, which only drains while Brain is turned above 3 (90 seconds at Brain 4,
-45 at Brain 5) and recovers while it is 3 or lower. An empty meter takes two
-levels off its bar, never below level 1, so a spent Legs 5 walks like a rested 3
-and a spent Brain 5 fires like a rested 3. The roster shows both meters, and
-levels lost to fatigue are drawn as hollow segments on the bars. The rules are
-pure and tested, and save format version 7 stores both meters, with tested
-migrations from versions 5 and 6.
+The Stamina and Focus fatigue meters, and the stim injector that refilled them, were removed (principle 8:
+FreeSynd has no such mechanic). Heart and Brain now do what FreeSynd's parts do: a small accuracy bonus, and for
+Brain the persuasion points. Older saves load and drop the stored levels and meters.
+
+The game screen is split into tabs: the side panel shows Mission (brief, objectives, active order), Enemies (the
+threat list with a live count) or Save, and the squad block shows Gear (eight big item squares) or Drugs (three
+coloured sliders: Adrenaline orange, Perception cyan, Intelligence violet) for every operator.
 
 Operators can be picked individually: each roster entry has a selection checkbox,
 Ctrl/Shift-click adds or removes an operator, and each entry carries its own
-Legs and Brain controls. Orders (moves, pulses, interactions, training from the
-Training panel) apply to everyone selected.
+drug sliders. Orders (moves, pulses, interactions) apply to everyone selected.
 
 Watchers also notice operators within sight (awareness x 0.1 tiles), chase them
 over real streets at 85% of an operator's speed so a fleeing squad keeps its
@@ -331,7 +327,7 @@ browser e2e run).
 | F6 | Energy shield | have: blocks fire for its duration |
 | F7 | Time bomb | partly: clear line only, chain reactions; planting at a clicked point is open |
 | F8 | Damage types | done: bullet, burn, beam and explosion; scenery reacts to each |
-| F9 | Accuracy, spread, fire rate | partly: spread through pellets, hold-to-fire; no accuracy roll |
+| F9 | Accuracy, spread, fire rate | done: seeded accuracy roll (base by kind, upgrade and drug terms, weapon accuracy, 6 degree cone), spread through pellets, hold-to-fire; no reaction delay |
 | F10 | Weight and capacity | done: slowdown beyond capacity, Arms raise it |
 | F11 | Ammo and reload cost | done: refills are billed after each operation |
 | F12 | Discovery boosts research | partly: looted and captured gear counts as researched |
@@ -340,7 +336,7 @@ browser e2e run).
 | F15 | Everything is lethal | have |
 | F16 | Medikit | have |
 | F17 | Six body upgrades, three tiers | done: per operative, 1x/5x/10x prices; enemy upgrades open |
-| F18 | The three IPA drugs | done: three sliders with the dose, effect and tolerance drift; Legs and Brain stay as training bars |
+| F18 | The three IPA drugs | done: three sliders with the dose, effect and tolerance drift; the training bars and fatigue meters are gone |
 | F19 | Followers move at their owner's pace | done |
 | F20 | Funded, time-based research with chains | done: ten funding levels, one item at a time, chains |
 | F21 | Objective types and sequences | done: seven new types, sequence mode, failure rules |
@@ -612,7 +608,7 @@ brain) must be **researched** (version 3 only after version 2). Purchase prices 
   and when killed by fire or a blast they die normally and **keep their weapons** (they drop them) rather than
   burning. This is the survivability part.
 - **Heart.** Only the same small accuracy bonus is coded. A stamina or recovery role is not implemented in the
-  source.
+  source. (OpenSynd now follows this: Heart is a small aim bonus.)
 - **Eyes.** The same small accuracy bonus. Sight range is a fixed seven tiles for everyone; Eyes do not extend it
   in the source (the TODO suggests they might).
 - **Brain.** The accuracy bonus, a **big cut in the persuasion points needed** (F29: with no brain upgrade a guard

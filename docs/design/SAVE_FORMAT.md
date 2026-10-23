@@ -16,10 +16,11 @@ Every document contains:
 - `missionId`: the active open-content mission identifier;
 - `selectedId` and `cursor`: current input state;
 - `units`: every mission unit's identifier, position, remaining route, health,
-  cooldown, target, disabled state, training levels, fatigue, carried items,
+  cooldown, target, disabled state, carried items,
   looted items and persuasion state. Optional fields read as defaults when
   missing: `drugs` (the three dose records, neutral), `escaped` (false),
-  `scriptIndex` and `scriptDone` (the start of a scripted person's steps); and
+  `scriptIndex` and `scriptDone` (the start of a scripted person's steps). The `levels`, `stamina` and `focus`
+  fields of earlier versions are no longer written; they are ignored when read; and
 - `objectives`: every mission objective's identifier and completion state.
 
 Imports must match the active mission exactly. Unknown, duplicate, or missing

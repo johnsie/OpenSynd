@@ -80,9 +80,11 @@ test("a shot's line and a blast's circle pick out the props they touch", () => {
 });
 
 import { createTileGrid } from "../src/engine.js";
-import { fireManual } from "../src/simulation.js";
+import { fireManual, seedSimulation, setRandomSource } from "../src/simulation.js";
 
-test("a shot fired by hand damages the scenery it passes, by the weapon's damage type", () => {
+test("a shot fired by hand damages the scenery it passes, by the weapon's damage type", (t) => {
+  setRandomSource(() => 0.5); // aim exactly
+  t.after(() => seedSimulation(1));
   const grid = createTileGrid({
     dimensions: { width: 30, height: 9 },
     regions: [{ id: "r", x: 0, y: 0, width: 30, height: 9, surface: "street", walkable: true, elevation: 0 }],
@@ -90,7 +92,7 @@ test("a shot fired by hand damages the scenery it passes, by the weapon's damage
   const weapon = (effect) => ({ definition: { id: "w", name: "W", action: "disable-pulse", effect }, charges: null });
   const shooter = (gun) => ({
     id: "op", side: "team", position: { x: 2, y: 4 }, path: [], health: 100, disabled: false, targetId: null,
-    cooldownRemaining: 0, equipment: [gun], activeSlot: 0, levels: { speed: 3, brain: 3 }, stamina: 1, focus: 1,
+    cooldownRemaining: 0, equipment: [gun], activeSlot: 0,
     definition: { role: "operator", stats: { vitality: 100 } },
   });
   const make = () => [prop("tree", 8, 4, "t"), prop("streetlight", 10, 4, "l"), prop("tree", 8, 8, "off")];

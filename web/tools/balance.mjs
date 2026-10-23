@@ -11,19 +11,18 @@ import { fileURLToPath } from "node:url";
 
 import { ACHIEVEMENTS, newStats, newlyEarned } from "../src/achievements.js";
 import { buildPatrolRoute, createTileGrid, findPath, formationTiles, zoneContains } from "../src/engine.js";
-import { energyItem, findLoot, lootBody, lootableBody, nearestLootable, useEnergyItem } from "../src/inventory.js";
+import { findLoot, lootBody, lootableBody, nearestLootable } from "../src/inventory.js";
 import { advanceHold, missionOutcome, resolveArrival, resolveDisabled, resolveInteraction, syncGates } from "../src/mission.js";
 import {
   FIXED_STEP_SECONDS,
   advanceCombat,
-  advanceFocus,
   advancePatrols,
   advanceUnits,
   combatStats,
   hasLineOfSight,
   roundsLeft,
+  seedSimulation,
 } from "../src/simulation.js";
-import { defaultLevels } from "../src/stats.js";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..", "content");
 const read = async (path) => JSON.parse(await readFile(`${root}/${path}`, "utf8"));
@@ -61,10 +60,6 @@ function makeUnits(world, tactics) {
       definition,
       position: { ...placement.position },
       path: [],
-      levels: { ...defaultLevels(), ...(team ? tactics.levels : {}) },
-      stamina: 1,
-      focus: 1,
-      research: team ? { heart: tactics.heart, brain: tactics.brain } : null,
       equipment: placement.equipment.map((path) => ({ definition: items[path], charges: items[path].charges })),
       looted: [],
       activeSlot: null,
@@ -95,7 +90,6 @@ function playOnce(world, tactics) {
   const earned = [];
   let seconds = 0;
   let nextThink = 0;
-  let resting = false;
   const team = units.filter((unit) => unit.side === "team");
   const watchers = units.filter((unit) => unit.side === "opposition");
   const zoneOf = (objective) => map.zones.find((zone) => zone.id === objective.targetZone);
@@ -127,7 +121,7 @@ function playOnce(world, tactics) {
     const close = live.filter((w) => active.some((o) => dist(o, w) <= tactics.engageRange));
 
     // Upkeep: the bot keeps its best loaded weapon selected (a player has to choose one to fire), then
-    // stims and repairs.
+    // repairs.
     for (const unit of active) {
       let best = -1;
       unit.equipment.forEach((item, slot) => {
@@ -135,7 +129,6 @@ function playOnce(world, tactics) {
         if (best === -1 || item.definition.effect.range > unit.equipment[best].definition.effect.range) best = slot;
       });
       unit.activeSlot = best === -1 ? null : best;
-      if ((unit.stamina < 0.2 || unit.focus < 0.2) && energyItem(unit)) useEnergyItem(unit);
       const kit = unit.equipment.find((item) => item.definition.action === "restore-vitality" && item.charges !== 0);
       if (kit && unit.health < 50) {
         unit.health = Math.min(unit.definition.stats.vitality, unit.health + kit.definition.effect.restoreVitality);
@@ -144,7 +137,6 @@ function playOnce(world, tactics) {
     }
 
     if (close.length > 0) {
-      resting = false;
       for (const unit of active) {
         const target = close.reduce((best, w) => (dist(unit, w) < dist(unit, best) ? w : best));
         if (roundsLeft(unit) === 0) continue;
@@ -166,14 +158,6 @@ function playOnce(world, tactics) {
         const body = active.length ? nearestLootable(active[0], units) : null;
         if (body && dist(active[0], body) < 10 && active[0].path.length === 0) send(active[0], tileOf(body.position));
       }
-    }
-
-    const meanStamina = active.reduce((sum, unit) => sum + unit.stamina, 0) / Math.max(1, active.length);
-    if (meanStamina < tactics.restBelow) resting = true;
-    if (meanStamina > 0.75) resting = false;
-    if (resting) {
-      for (const unit of active) unit.path = [];
-      return;
     }
 
     const next = objectives.find((objective) => !objective.complete);
@@ -234,7 +218,6 @@ function playOnce(world, tactics) {
       }
       syncGates(grid, map, objectives);
     }
-    advanceFocus(units, FIXED_STEP_SECONDS);
     for (const event of [...resolveDisabled(objectives, units), ...advanceHold(objectives, map.zones, units, FIXED_STEP_SECONDS)]) {
       if (event.type === "complete") stats.objectivesCompleted += 1;
       syncGates(grid, map, objectives);
@@ -262,13 +245,11 @@ function playOnce(world, tactics) {
           at: tileOf(u.position),
           path: u.path.length,
           hp: u.health,
-          st: +u.stamina.toFixed(2),
           off: u.disabled,
           rounds: roundsLeft(u),
           tgt: u.targetId,
         })),
         watchers: watchers.filter((w) => !w.disabled).map((w) => ({ at: tileOf(w.position), rounds: roundsLeft(w), alert: w.alertedBy })),
-        resting,
         tactics,
       }));
     }
@@ -296,9 +277,9 @@ function summarise(results) {
 const runs = Number(process.argv[2] ?? 60);
 const pack = await read("pack.json");
 const policies = {
-  rush: (r) => ({ engageRange: 2.5 + r() * 2, restBelow: 0.05, loot: false }),
-  steady: (r) => ({ engageRange: 5 + r() * 4, restBelow: 0.2 + r() * 0.2, loot: r() < 0.5 }),
-  careful: (r) => ({ engageRange: 8 + r() * 3, restBelow: 0.35 + r() * 0.2, loot: true }),
+  rush: (r) => ({ engageRange: 2.5 + r() * 2, loot: false }),
+  steady: (r) => ({ engageRange: 5 + r() * 4, loot: r() < 0.5 }),
+  careful: (r) => ({ engageRange: 8 + r() * 3, loot: true }),
 };
 // The bot only knows the original objective types; operations built on the newer ones are balanced by hand.
 const SUPPORTED = new Set(["reach-zone", "interact", "disable", "hold", "extract"]);
@@ -314,8 +295,8 @@ for (const file of pack.missions) {
     const random = generator(name.length * 1009 + file.length);
     const results = [];
     for (let run = 0; run < runs; run += 1) {
-      const tactics = { ...make(random), levels: { speed: 3, brain: 3 }, heart: 0, brain: 0 };
-      results.push(playOnce(world, tactics));
+      seedSimulation(run + 1);
+      results.push(playOnce(world, make(random)));
     }
     const s = summarise(results);
     const cells = [

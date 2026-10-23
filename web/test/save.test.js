@@ -191,91 +191,17 @@ test("save validation rejects patrol positions outside the route", () => {
   assert.throws(() => validateSaveSnapshot(withIndex(-1), patrolling), /patrol position/);
 });
 
-test("version 4 saves migrate with every unit at the default training levels", () => {
+test("saves from before the training bars and fatigue meters still load, ignoring those fields", () => {
   const snapshot = createSaveSnapshot(state, "2026-10-22T12:00:00.000Z");
+  assert.ok(snapshot.units.every((unit) => !("levels" in unit) && !("stamina" in unit) && !("focus" in unit)));
   const older = {
     ...snapshot,
-    formatVersion: 4,
-    units: snapshot.units.map(({ levels, ...unit }) => unit),
+    formatVersion: 7,
+    units: snapshot.units.map((unit) => ({ ...unit, levels: { speed: 5, brain: 2 }, stamina: 0.2, focus: 0.4 })),
   };
   const parsed = parseSaveSnapshot(JSON.stringify(older), context);
   assert.equal(parsed.formatVersion, SAVE_VERSION);
-  assert.ok(parsed.units.every((unit) => unit.levels.speed === 3 && unit.levels.brain === 3));
-});
-
-test("training levels round-trip and invalid levels are rejected", () => {
-  const trained = {
-    ...state,
-    units: state.units.map((unit, index) => (index === 0 ? { ...unit, levels: { speed: 5, brain: 2 } } : unit)),
-  };
-  const snapshot = createSaveSnapshot(trained, "2026-10-22T12:00:00.000Z");
-  const parsed = parseSaveSnapshot(JSON.stringify(snapshot), context);
-  assert.deepEqual(parsed.units[0].levels, { speed: 5, brain: 2 });
-
-  const withLevels = (levels) => ({
-    ...snapshot,
-    units: snapshot.units.map((unit, index) => (index === 0 ? { ...unit, levels } : unit)),
-  });
-  assert.throws(() => validateSaveSnapshot(withLevels({ speed: 6, brain: 3 }), context), /training levels/);
-  assert.throws(() => validateSaveSnapshot(withLevels({ speed: 3 }), context), /training levels/);
-  assert.throws(() => validateSaveSnapshot(withLevels(null), context), /training levels/);
-});
-
-test("version 5 saves migrate with every unit fully rested", () => {
-  const snapshot = createSaveSnapshot(state, "2026-10-22T12:00:00.000Z");
-  const older = {
-    ...snapshot,
-    formatVersion: 5,
-    units: snapshot.units.map(({ stamina, ...unit }) => unit),
-  };
-  const parsed = parseSaveSnapshot(JSON.stringify(older), context);
-  assert.equal(parsed.formatVersion, SAVE_VERSION);
-  assert.ok(parsed.units.every((unit) => unit.stamina === 1));
-});
-
-test("stamina round-trips and out-of-range values are rejected", () => {
-  const tired = {
-    ...state,
-    units: state.units.map((unit, index) => (index === 0 ? { ...unit, stamina: 0.25 } : unit)),
-  };
-  const snapshot = createSaveSnapshot(tired, "2026-10-22T12:00:00.000Z");
-  assert.equal(parseSaveSnapshot(JSON.stringify(snapshot), context).units[0].stamina, 0.25);
-
-  const withStamina = (stamina) => ({
-    ...snapshot,
-    units: snapshot.units.map((unit, index) => (index === 0 ? { ...unit, stamina } : unit)),
-  });
-  assert.throws(() => validateSaveSnapshot(withStamina(1.5), context), /stamina/);
-  assert.throws(() => validateSaveSnapshot(withStamina(-0.1), context), /stamina/);
-  assert.throws(() => validateSaveSnapshot(withStamina("full"), context), /stamina/);
-});
-
-test("version 6 saves migrate with every unit mentally fresh", () => {
-  const snapshot = createSaveSnapshot(state, "2026-10-22T12:00:00.000Z");
-  const older = {
-    ...snapshot,
-    formatVersion: 6,
-    units: snapshot.units.map(({ focus, ...unit }) => unit),
-  };
-  const parsed = parseSaveSnapshot(JSON.stringify(older), context);
-  assert.equal(parsed.formatVersion, SAVE_VERSION);
-  assert.ok(parsed.units.every((unit) => unit.focus === 1));
-});
-
-test("focus round-trips and out-of-range values are rejected", () => {
-  const strained = {
-    ...state,
-    units: state.units.map((unit, index) => (index === 0 ? { ...unit, focus: 0.4 } : unit)),
-  };
-  const snapshot = createSaveSnapshot(strained, "2026-10-22T12:00:00.000Z");
-  assert.equal(parseSaveSnapshot(JSON.stringify(snapshot), context).units[0].focus, 0.4);
-
-  const withFocus = (focus) => ({
-    ...snapshot,
-    units: snapshot.units.map((unit, index) => (index === 0 ? { ...unit, focus } : unit)),
-  });
-  assert.throws(() => validateSaveSnapshot(withFocus(2), context), /focus/);
-  assert.throws(() => validateSaveSnapshot(withFocus(null), context), /focus/);
+  assert.ok(parsed.units.every((unit) => !("levels" in unit) && !("stamina" in unit) && !("focus" in unit)));
 });
 
 test("version 7 saves migrate with each unit's starting items", () => {

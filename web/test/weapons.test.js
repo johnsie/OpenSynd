@@ -16,6 +16,8 @@ import {
   scannedUnits,
   useScanner,
   weightPace,
+  seedSimulation,
+  setRandomSource,
 } from "../src/simulation.js";
 
 const street = createTileGrid({
@@ -37,9 +39,6 @@ const person = (id, side, x, y, over = {}) => ({
   targetId: null,
   cooldownRemaining: 0,
   equipment: [],
-  levels: { speed: 3, brain: 3 },
-  stamina: 1,
-  focus: 1,
   definition: { role: side, stats: { speed: 3, vitality: 100, awareness: 80, range: 1, attack: 1, cooldown: 1 } },
   ...over,
 });
@@ -110,7 +109,9 @@ test("a shield stops the flame's first hit from setting the target alight", () =
   assert.equal(victim.burning ?? null, null);
 });
 
-test("a beam pierces everyone on its line", () => {
+test("a beam pierces everyone on its line", (t) => {
+  setRandomSource(() => 0.5); // aim exactly
+  t.after(() => seedSimulation(1));
   const gun = weapon({ attack: 34, range: 11, cooldown: 1.4, pierce: true, damageType: "beam" });
   const shooter = person("op", "team", 5, 4, { equipment: [gun], activeSlot: 0 });
   const a = person("a", "opposition", 8, 4);

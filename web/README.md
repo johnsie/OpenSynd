@@ -25,9 +25,9 @@ not work reliably because browsers restrict local `fetch()` calls.
   (**V** also takes or leaves one) and click a road to drive. Click an enemy to close in and fight.
 - Nobody fires without a weapon selected: click one in the operator's inventory. **Right-click** fires; hold the
   button to keep firing. Weapons: pulse, machine pistol, scatter, flame, beam, rotary, coil, long rifle; items:
-  repair kit, stim, cloak, Persuader, scanner, shield, delay charge.
+  repair kit, cloak, Persuader, scanner, shield, delay charge.
 - Sliders under each operator set Adrenaline, Perception and Intelligence doses; Legs and Brain are training bars.
-- **E** interacts, **F** loots, **R** repairs, **T** uses a stim, **Space** pauses; every key can be rebound in Settings.
+- **E** interacts, **F** loots, **R** repairs, **Space** pauses; every key can be rebound in Settings.
 - Between operations (Operations, then Research & Armoury): fit body parts, buy and sell gear, choose the squad
   from the roster, fund research, set tax and buy a survey for each territory. Fallen operatives are lost for good
   unless you switch that off; persuade enemy agents and get them out alive to recruit them.

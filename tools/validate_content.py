@@ -262,7 +262,7 @@ class Validation:
         self.validate_identity(path, value)
         if value["type"] not in {"tool", "consumable"}:
             self.error(path, f"unsupported equipment type: {value['type']!r}")
-        actions = {"disable-pulse", "restore-vitality", "restore-energy", "stealth", "persuade", "time-bomb", "shield", "scan", "key"}
+        actions = {"disable-pulse", "restore-vitality", "stealth", "persuade", "time-bomb", "shield", "scan", "key"}
         if value["action"] not in actions:
             self.error(path, f"unsupported equipment action: {value['action']!r}")
         charges = value["charges"]
@@ -282,11 +282,6 @@ class Validation:
             or effect["restoreVitality"] <= 0
         ):
             self.error(path, "restore-vitality effect requires positive restoreVitality")
-        elif value["action"] == "restore-energy" and not (
-            isinstance(effect.get("restoreStamina"), (int, float))
-            or isinstance(effect.get("restoreFocus"), (int, float))
-        ):
-            self.error(path, "restore-energy effect requires restoreStamina or restoreFocus")
         elif value["action"] == "time-bomb" and not {"attack", "radius", "fuse"} <= effect.keys():
             self.error(path, "time-bomb effect requires attack, radius, and fuse")
         elif value["action"] == "key" and not isinstance(effect.get("range"), (int, float)):

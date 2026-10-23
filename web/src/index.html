@@ -70,6 +70,18 @@
               <div class="dock-head">
                 <p class="section-number">FIELD TEAM</p>
                 <button id="select-all-button" type="button" class="text-button">Select all</button>
+                <div class="tabs squad-tabs" role="tablist" aria-label="Squad view">
+                  <button id="squad-tab-gear" class="tab" type="button" role="tab" aria-selected="true" data-view="gear">Gear</button>
+                  <button
+                    id="squad-tab-drugs"
+                    class="tab"
+                    type="button"
+                    role="tab"
+                    aria-selected="false"
+                    data-view="drugs"
+                    tabindex="-1"
+                  >Drugs</button>
+                </div>
               </div>
               <div id="roster" class="roster"></div>
             </div>
@@ -92,7 +104,6 @@
             <button id="move-button" type="button">Move to cursor</button>
             <button id="action-button" type="button" disabled><span id="action-label">Restore relay</span> <kbd>E</kbd></button>
             <button id="repair-button" type="button" disabled><span id="repair-label">Use repair kit</span> <kbd>R</kbd></button>
-            <button id="stim-button" type="button" disabled><span id="stim-label">Use stim</span> <kbd>T</kbd></button>
             <button id="loot-button" type="button" disabled><span id="loot-label">Loot body</span> <kbd>F</kbd></button>
             <button id="vehicle-button" type="button" disabled><span id="vehicle-label">Enter vehicle</span> <kbd>V</kbd></button>
           </div>
@@ -106,51 +117,75 @@
         </section>
 
         <aside class="mission-panel" id="mission-panel" aria-label="Mission controls">
-          <details class="panel-section briefing">
-            <summary><span class="section-number">01 / BRIEF</span> <span id="brief-title">Briefing</span></summary>
-            <p id="briefing-text">Loading open mission data…</p>
-          </details>
+          <div class="tabs" role="tablist" aria-label="Mission panel">
+            <button
+              id="tab-mission"
+              class="tab"
+              type="button"
+              role="tab"
+              aria-selected="true"
+              aria-controls="panel-mission"
+            >Mission</button>
+            <button
+              id="tab-enemies"
+              class="tab"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              aria-controls="panel-enemies"
+              tabindex="-1"
+            >Enemies <span id="enemy-count" class="count-badge">0</span></button>
+            <button
+              id="tab-archive"
+              class="tab"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              aria-controls="panel-archive"
+              tabindex="-1"
+            >Save</button>
+          </div>
 
-          <section class="panel-section">
-            <div class="section-heading">
-              <div>
-                <p class="section-number">02 / COMMITMENTS</p>
+          <div id="panel-mission" class="tab-panel" role="tabpanel" aria-labelledby="tab-mission">
+            <details class="panel-section briefing">
+              <summary><span id="brief-title">Briefing</span></summary>
+              <p id="briefing-text">Loading open mission data…</p>
+            </details>
+
+            <section class="panel-section">
+              <div class="section-heading">
                 <h2>Objectives</h2>
+                <span id="objective-count" class="count-badge" aria-live="polite">0 / 0</span>
               </div>
-              <span id="objective-count" class="count-badge" aria-live="polite">0 / 0</span>
-            </div>
-            <ol id="objective-list" class="objective-list"></ol>
-          </section>
+              <ol id="objective-list" class="objective-list"></ol>
+            </section>
 
-          <section class="panel-section selected-readout" aria-live="polite">
-            <p class="section-number">04 / ACTIVE ORDER</p>
-            <p id="selected-readout">No operator selected.</p>
-          </section>
+            <section class="panel-section selected-readout" aria-live="polite">
+              <p class="section-number">ACTIVE ORDER</p>
+              <p id="selected-readout">No operator selected.</p>
+            </section>
+          </div>
 
-          <section class="panel-section">
-            <p class="section-number">05 / ENEMY AGENTS</p>
-            <h2>Threats</h2>
-            <div id="threats" class="threats"></div>
-          </section>
+          <div id="panel-enemies" class="tab-panel" role="tabpanel" aria-labelledby="tab-enemies" hidden>
+            <section class="panel-section">
+              <h2>Threats</h2>
+              <div id="threats" class="threats"></div>
+            </section>
+          </div>
 
-          <details class="panel-section">
-            <summary><span class="section-number">06 / LOCAL ARCHIVE</span> Save data</summary>
-            <p class="save-note">Stored only in this browser unless you export it.</p>
-            <div class="save-tools">
-              <button id="save-button" type="button">Save</button>
-              <button id="load-button" type="button">Load</button>
-              <button id="export-button" type="button">Export JSON</button>
-              <button id="import-button" type="button">Import JSON</button>
-              <input
-                id="import-file"
-                class="sr-only"
-                type="file"
-                accept="application/json,.json"
-                tabindex="-1"
-              />
-            </div>
-          </details>
-
+          <div id="panel-archive" class="tab-panel" role="tabpanel" aria-labelledby="tab-archive" hidden>
+            <section class="panel-section">
+              <h2>Save data</h2>
+              <p class="save-note">Stored only in this browser unless you export it.</p>
+              <div class="save-tools">
+                <button id="save-button" type="button">Save</button>
+                <button id="load-button" type="button">Load</button>
+                <button id="export-button" type="button">Export JSON</button>
+                <button id="import-button" type="button">Import JSON</button>
+                <input id="import-file" class="sr-only" type="file" accept="application/json,.json" tabindex="-1" />
+              </div>
+            </section>
+          </div>
         </aside>
       </main>
 
@@ -196,13 +231,13 @@
               <li>Stand on a relay, panel or server and press E to use it.</li>
               <li>Some operations ask you to disable a marked target or hold a position for a set time.</li>
               <li>Press A, or use Select all, to order the whole team at once.</li>
-              <li>Use the Legs and Brain bars to train an operator: faster walking, quicker pulse.</li>
+              <li>Open the Drugs tab on the squad to set Adrenaline, Perception and Intelligence for each operator.</li>
               <li>
                 Drag, use the arrow keys or push the mouse to the map edge to pan; scroll or +/- to zoom,
                 C to centre, or click the minimap.
               </li>
               <li>Funds build up while you play and from achievements. Spend them in Research &amp; Armoury.</li>
-              <li>F loots a disabled enemy's gear, T uses a stim. Each operator holds up to eight items.</li>
+              <li>F loots a disabled enemy's gear. Each operator holds up to eight items.</li>
               <li>Space pauses. Keys can be changed in Settings.</li>
             </ul>
           </details>

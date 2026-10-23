@@ -14,7 +14,6 @@ import {
   lootableAt,
   lootableBody,
   nearestLootable,
-  useEnergyItem,
 } from "../src/inventory.js";
 
 const item = (id, action = "disable-pulse", charges = null, effect = {}) => ({
@@ -79,22 +78,6 @@ test("the nearest reachable body is chosen, and disabled operators cannot loot",
   assert.equal(found.body.id, "near");
   assert.equal(findLoot([operator(0, 0)], [out]), null);
   assert.equal(findLoot([{ ...operator(0, 0), disabled: true }], [near]), null);
-});
-
-test("a stim restores stamina and focus, spends a charge, and refuses to waste itself", () => {
-  const stim = item("stim", "restore-energy", 2, { restoreStamina: 0.5, restoreFocus: 0.25 });
-  const hero = { ...operator(0, 0, [stim]), stamina: 0.2, focus: 0.5 };
-  assert.equal(useEnergyItem(hero), stim);
-  assert.ok(Math.abs(hero.stamina - 0.7) < 1e-9 && Math.abs(hero.focus - 0.75) < 1e-9);
-  assert.equal(stim.charges, 1);
-  assert.equal(useEnergyItem(hero), stim);
-  assert.equal(stim.charges, 0);
-  assert.equal(useEnergyItem(hero), null, "out of doses");
-
-  const rested = { ...operator(0, 0, [item("s", "restore-energy", 1, { restoreStamina: 0.5 })]), stamina: 1, focus: 1 };
-  assert.equal(useEnergyItem(rested), null, "nothing to restore");
-  assert.equal(rested.equipment[0].charges, 1);
-  assert.equal(useEnergyItem({ ...hero, disabled: true, equipment: [item("s", "restore-energy", 1, { restoreStamina: 1 })] }), null);
 });
 
 test("a click on the ground where an enemy fell finds its gear", () => {

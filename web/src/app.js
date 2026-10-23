@@ -17,7 +17,7 @@ import {
 } from "./vehicles.js";
 import { createOverlay, createTileSprites } from "./textures.js";
 import { renderWorldMap } from "./worldmap.js";
-import { DRUG_HINTS, DRUG_LABELS, DRUG_NAMES, advanceDrugs, drugMultiplier, newDrugs, setDrug } from "./drugs.js";
+import { DRUG_HINTS, DRUG_LABELS, DRUG_NAMES, adrenalineSpeed, advanceDrugs, drugMultiplier, newDrugs, setDrug } from "./drugs.js";
 import { advanceProps, damageProp, newProp, propsNear } from "./props.js";
 import {
   FENCE_SURFACE,
@@ -132,15 +132,13 @@ import {
   MAX_TIER,
   PARTS,
   PART_NAMES,
-  brainLevel,
   chestVitality,
-  heartLevel,
+  legsPace,
   upgradePrice,
 } from "./upgrades.js";
 import { newStats, newlyEarned } from "./achievements.js";
 import {
   distanceBetween,
-  energyItem,
   clearWeaponForAll,
   findLoot,
   inLootReach,
@@ -149,7 +147,6 @@ import {
   lootableBody,
   nearestLootable,
   selectWeaponForAll,
-  useEnergyItem,
 } from "./inventory.js";
 import {
   advanceCombat,
@@ -158,7 +155,7 @@ import {
   fireManual,
   heldWeapon,
   roundsLeft,
-  advanceFocus,
+  seedSimulation,
   advancePatrols,
   advancePersuasion,
   advanceShields,
@@ -208,7 +205,6 @@ import {
   recoilOffset,
   walkBob,
 } from "./effects.js";
-import { defaultLevels, effectiveLevels, speedMultiplier } from "./stats.js";
 import { isSelected, prune, selectMany, selectOnly, toggle } from "./selection.js";
 import {
   PROGRESS_KEY,
@@ -230,6 +226,7 @@ const pauseButton = document.querySelector("#pause-button");
 const resetButton = document.querySelector("#reset-button");
 const rosterElement = document.querySelector("#roster");
 const threatsElement = document.querySelector("#threats");
+const enemyCount = document.querySelector("#enemy-count");
 const objectiveList = document.querySelector("#objective-list");
 const objectiveCount = document.querySelector("#objective-count");
 const pauseLabel = document.querySelector("#pause-label");
@@ -569,9 +566,6 @@ async function loadGame(index = state.missionIndex) {
     position: { ...placement.position },
     initialPosition: { ...placement.position },
     alertedBy: null,
-    levels: defaultLevels(),
-    stamina: 1,
-    focus: 1,
     walkPhase: 0,
     script: placement.script
       ? { steps: placement.script, index: 0, waitLeft: null, loop: Boolean(placement.scriptLoop), done: false }
@@ -582,13 +576,6 @@ async function loadGame(index = state.missionIndex) {
     path: [],
     upgrades: definition.role === "operator" ? upgradesOf(state.campaign, placement.id) : null,
     drugs: definition.role === "operator" ? newDrugs() : null,
-    research:
-      definition.role === "operator"
-        ? {
-            heart: heartLevel(upgradesOf(state.campaign, placement.id)),
-            brain: brainLevel(upgradesOf(state.campaign, placement.id)),
-          }
-        : null,
     looted: [],
     activeSlot: null,
     initialEquipment: [],
@@ -606,6 +593,7 @@ async function loadGame(index = state.missionIndex) {
     state.campaign,
     state.catalog,
   );
+  seedSimulation(1);
   state.units = [...mission.team, ...mission.opponents, ...(mission.bystanders ?? [])].map((placement) =>
     buildUnit(placement, unitDefinitions.get(placement.unit)),
   );
@@ -1278,9 +1266,6 @@ function applySaveSnapshot(snapshot) {
     unit.cooldownRemaining = saved.cooldownRemaining;
     unit.targetId = saved.targetId;
     unit.disabled = saved.disabled;
-    unit.levels = { ...saved.levels };
-    unit.stamina = saved.stamina;
-    unit.focus = saved.focus;
     unit.equipment = saved.equipment.map((item) => ({
       definition: state.catalog.find((entry) => entry.id === item.id),
       charges: item.charges,
@@ -2718,16 +2703,6 @@ function simulationStep(deltaSeconds) {
     }
   }
   const arrivals = advanceUnits(state.units, deltaSeconds);
-  advanceFocus(state.units, deltaSeconds);
-  for (const unit of state.units) {
-    if (unit.side !== "team" || unit.disabled) continue;
-    if (unit.stamina < 0.15 && unit.path.length > 0 && !unit.tired) {
-      unit.tired = true;
-      setStatus(`${unit.definition.name} is exhausted and slowing down. Stop to let them recover.`);
-    } else if (unit.stamina > 0.4) {
-      unit.tired = false;
-    }
-  }
   for (const unit of state.units) {
     if (!unit.lootTargetId || unit.path.length > 0) continue;
     const body = state.units.find((item) => item.id === unit.lootTargetId);
@@ -3076,8 +3051,7 @@ function update(deltaSeconds) {
     }
   }
   for (const unit of state.units) {
-    const effective = effectiveLevels(unit.levels, unit.stamina, unit.focus);
-    unit.walkPhase += deltaSeconds * speedMultiplier(effective);
+    unit.walkPhase += deltaSeconds * legsPace(unit.upgrades) * adrenalineSpeed(unit.drugs);
   }
   advanceEffects(state.effects, deltaSeconds);
   consumeFixedSteps(state.clock, deltaSeconds, simulationStep);
@@ -3407,27 +3381,6 @@ function useRepairOn(unit, kit) {
 function useRepairKit() {
   const unit = selectedUnit();
   useRepairOn(unit, equipmentWithAction(unit, "restore-vitality"));
-}
-
-// The selected operator who most needs a stimulant and has one to use.
-function useStim() {
-  const candidates = selectedOperators().filter((unit) => energyItem(unit));
-  if (candidates.length === 0) {
-    setStatus("No stim injector is available.");
-    return;
-  }
-  candidates.sort((left, right) => Math.min(left.stamina, left.focus) - Math.min(right.stamina, right.focus));
-  for (const unit of candidates) {
-    const item = useEnergyItem(unit);
-    if (!item) continue;
-    setStatus(`${unit.definition.name} used a ${item.definition.name}: stamina and focus restored.`);
-    audio.play("repair");
-    addEffect(state.effects, "repair", { unitId: unit.id });
-    updateMeters();
-    renderInterface();
-    return;
-  }
-  setStatus("Stamina and focus are already full.");
 }
 
 // Take a disabled watcher's gear with one of the selected operators.
@@ -3783,9 +3736,6 @@ canvas.addEventListener("keydown", (event) => {
   } else if (action === "repair") {
     event.preventDefault();
     useRepairKit();
-  } else if (action === "useStim") {
-    event.preventDefault();
-    useStim();
   } else if (action === "loot") {
     event.preventDefault();
     lootAction();
@@ -3841,9 +3791,38 @@ for (const button of document.querySelectorAll("[data-cursor-x]")) {
 }
 moveButton.addEventListener("click", () => issueMove(state.cursor));
 document.querySelector("#select-all-button").addEventListener("click", selectAll);
+
+// Tabs: a tablist whose buttons show one panel (`aria-controls`) or set a view on the squad HUD (`data-view`).
+function wireTabs(tablist, onSelect) {
+  const tabs = [...tablist.querySelectorAll('[role="tab"]')];
+  const select = (chosen, focus = false) => {
+    for (const tab of tabs) {
+      const on = tab === chosen;
+      tab.setAttribute("aria-selected", String(on));
+      tab.tabIndex = on ? 0 : -1;
+      const panel = tab.getAttribute("aria-controls") && document.getElementById(tab.getAttribute("aria-controls"));
+      if (panel) panel.hidden = !on;
+    }
+    if (focus) chosen.focus();
+    onSelect?.(chosen);
+  };
+  for (const tab of tabs) {
+    tab.addEventListener("click", () => select(tab));
+    tab.addEventListener("keydown", (event) => {
+      const step = { ArrowRight: 1, ArrowLeft: -1 }[event.key];
+      if (!step) return;
+      event.preventDefault();
+      select(tabs[(tabs.indexOf(tab) + step + tabs.length) % tabs.length], true);
+    });
+  }
+}
+wireTabs(document.querySelector("#mission-panel > .tabs"));
+wireTabs(document.querySelector(".squad-tabs"), (tab) => {
+  document.querySelector(".squad-hud").dataset.view = tab.dataset.view;
+});
+document.querySelector(".squad-hud").dataset.view = "gear";
 actionButton.addEventListener("click", performInteraction);
 repairButton.addEventListener("click", useRepairKit);
-document.querySelector("#stim-button").addEventListener("click", useStim);
 document.querySelector("#loot-button").addEventListener("click", lootAction);
 document.querySelector("#vehicle-button").addEventListener("click", toggleVehicle);
 saveButton.addEventListener("click", saveLocally);
@@ -3927,15 +3906,9 @@ if (new URLSearchParams(location.search).has("e2e")) {
         }
       }
     },
-    setFocus(id, value) {
-      state.units.find((item) => item.id === id).focus = value;
-    },
     setFunds(amount) {
       state.campaign = { ...state.campaign, funds: amount };
       updateFundsReadout();
-    },
-    setStamina(id, value) {
-      state.units.find((item) => item.id === id).stamina = value;
     },
     disableUnit(id) {
       const unit = state.units.find((item) => item.id === id);
@@ -4033,14 +4006,6 @@ if (new URLSearchParams(location.search).has("e2e")) {
 document.querySelector("#about-button").addEventListener("click", () => aboutDialog.showModal());
 document.querySelector("#close-about").addEventListener("click", () => aboutDialog.close());
 
-const METER_TEXT = {
-  stamina: { word: "Stamina", hint: "walking tires the legs; standing still recovers slowly" },
-  focus: {
-    word: "Focus",
-    hint: "turning Brain above 3 strains the mind; at 3 or lower it recovers slowly",
-  },
-};
-
 // The eight item squares: a picture per item, and a click selects or uses it.
 function slotRow(unit, label) {
   const row = document.createElement("div");
@@ -4102,7 +4067,6 @@ function slotHint(definition) {
     case "key":
       return "carried: opens locked gates";
     case "restore-vitality":
-    case "restore-energy":
       return "click to use";
     default:
       return "worn";
@@ -4189,31 +4153,9 @@ function pressSlot(unit, slot) {
     renderInterface();
   } else if (definition.action === "restore-vitality") {
     useRepairOn(unit, entry);
-  } else if (definition.action === "restore-energy") {
-    const used = useEnergyItem(unit);
-    if (!used) {
-      setStatus(entry.charges === 0 ? "That stim is used up." : "Stamina and focus are already full.");
-      return;
-    }
-    setStatus(`${unit.definition.name} used a ${used.definition.name}: stamina and focus restored.`);
-    audio.play("repair");
-    addEffect(state.effects, "repair", { unitId: unit.id });
-    updateMeters();
-    renderInterface();
   } else {
     setStatus(`${definition.name} is worn: ${definition.description}`);
   }
-}
-
-function paintMeter(element, unit) {
-  const kind = element.dataset.kind;
-  const value = unit[kind];
-  const percent = Math.round(value * 100);
-  element.classList.toggle("low", value < 0.5 && value >= 0.2);
-  element.classList.toggle("empty", value < 0.2);
-  element.setAttribute("aria-label", `${METER_TEXT[kind].word} of ${element.dataset.label} ${percent} percent`);
-  element.title = `${METER_TEXT[kind].word} ${percent}%: ${METER_TEXT[kind].hint}.`;
-  element.querySelector("i").style.width = `${percent}%`;
 }
 
 // A drug slider shows the dose set; its tooltip explains what is actually in force and what the body has adapted to.
@@ -4246,28 +4188,12 @@ function setDrugForGroup(unit, name, value) {
   }
 }
 
-function makeMeter(unit, kind, label) {
-  const meter = document.createElement("div");
-  meter.className = `meter ${kind}`;
-  meter.dataset.unit = unit.id;
-  meter.dataset.kind = kind;
-  meter.dataset.label = label;
-  meter.setAttribute("role", "img");
-  meter.append(METER_TEXT[kind].word, document.createElement("i"));
-  paintMeter(meter, unit);
-  return meter;
-}
-
-// Fatigue changes every step, so update the meters and bars in place instead of
+// The drugs change every step, so update the sliders in place instead of
 // rebuilding the roster (which would swallow clicks on its buttons).
 function updateMeters() {
   for (const slider of document.querySelectorAll(".drug input")) {
     const owner = state.units.find((candidate) => candidate.id === slider.dataset.unit);
     if (owner) paintDrug(slider, owner);
-  }
-  for (const element of document.querySelectorAll(".meter")) {
-    const unit = state.units.find((item) => item.id === element.dataset.unit);
-    if (unit) paintMeter(element, unit);
   }
 }
 
@@ -4455,9 +4381,9 @@ function renderInterface() {
       chemistry.className = "drugs";
       for (const name of DRUG_NAMES) {
         const row = document.createElement("label");
-        row.className = "drug";
+        row.className = `drug drug-${name}`;
         const text = document.createElement("span");
-        text.textContent = DRUG_LABELS[name].slice(0, 3);
+        text.textContent = DRUG_LABELS[name];
         const slider = document.createElement("input");
         slider.type = "range";
         slider.min = "0";
@@ -4472,15 +4398,13 @@ function renderInterface() {
         chemistry.append(row);
         paintDrug(slider, unit);
       }
-      const meters = document.createElement("div");
-      meters.className = "meters";
-      meters.append(makeMeter(unit, "stamina", label), makeMeter(unit, "focus", label));
-      item.append(checkbox, button, slotRow(unit, label), chemistry, meters);
+      item.append(checkbox, button, slotRow(unit, label), chemistry);
       return item;
     }),
   );
 
   const threats = state.units.filter((unit) => unit.side === "opposition" && !unit.persuaded);
+  enemyCount.textContent = String(threats.filter((unit) => !unit.disabled).length);
   threatsElement.replaceChildren(
     ...threats.map((unit) => {
       const button = document.createElement("button");
@@ -4515,11 +4439,6 @@ function renderInterface() {
     repairKit.charges !== 0,
   );
   repairButton.disabled = !canRepair;
-  const stimButton = document.querySelector("#stim-button");
-  const stimmers = selectedOperators().filter((candidate) => energyItem(candidate));
-  stimButton.disabled = stimmers.length === 0;
-  const doses = stimmers.reduce((sum, candidate) => sum + (energyItem(candidate).charges ?? 1), 0);
-  document.querySelector("#stim-label").textContent = stimmers.length ? `Use stim (${doses})` : "No stim";
   const lootButton = document.querySelector("#loot-button");
   const nearBody = findLoot(selectedOperators(), state.units);
   const bodies = state.units.filter(lootableBody).length;

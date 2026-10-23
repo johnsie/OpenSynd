@@ -4,9 +4,19 @@ import { findPath, hasLineOfSight, SIGHT_STEP } from "./engine.js";
 import { LOOT_RANGE, lootBody, lootableBody } from "./inventory.js";
 import { VEHICLE_HIT_RADIUS, ejectDriver, isSquadVehicle, isVehicle } from "./vehicles.js";
 import { damageProp, propsAlong } from "./props.js";
-import { adrenalineAim, adrenalineSpeed, intelligenceRecharge, perceptionReach } from "./drugs.js";
-import { armsCapacity, armsCooldown, chestVitality, eyesRange, legsPace } from "./upgrades.js";
-import { cooldownMultiplier, effectiveLevels, nextFocus, nextStamina, speedMultiplier } from "./stats.js";
+import { adrenalineAim, adrenalineSpeed, drugMultiplier, intelligenceRecharge, perceptionReach } from "./drugs.js";
+import { aimBonus, armsCapacity, armsCooldown, chestVitality, eyesRange, legsPace } from "./upgrades.js";
+import { createRandom } from "./random.js";
+
+// The simulation's source of chance (shot accuracy). Reseed it at the start of an operation for a repeatable run.
+let random = createRandom(1);
+export function seedSimulation(seed = 1) {
+  random = createRandom(seed);
+}
+/** Replace the source of chance (a function returning 0 to 1); tests use it to aim exactly (always 0.5). */
+export function setRandomSource(source) {
+  random = source;
+}
 
 export const FIXED_STEP_SECONDS = 1 / 30;
 export const MAX_STEPS_PER_FRAME = 8;
@@ -64,14 +74,6 @@ export function advancePursuit(units, grid) {
   return events;
 }
 
-/** Mental fatigue: Brain turned above the baseline drains focus; otherwise it recovers. */
-export function advanceFocus(units, deltaSeconds) {
-  for (const unit of units) {
-    if (unit.side !== "team" || unit.disabled) continue;
-    unit.focus = nextFocus(unit.focus, unit.levels, deltaSeconds, unit.research);
-  }
-}
-
 /**
  * Advance unit movement by one simulation step.
  *
@@ -84,17 +86,9 @@ export function advanceUnits(units, deltaSeconds) {
 
   for (const unit of units) {
     if (unit.side !== "team" || unit.inVehicle) continue;
-    // Walking drains stamina; standing still recovers it.
-    const walking = unit.path.length > 0 && !unit.disabled && !(unit.hitStun > 0);
-    unit.stamina = nextStamina(unit.stamina, unit.levels, walking, deltaSeconds, unit.research);
-    if (!walking) continue;
+    if (unit.path.length === 0 || unit.disabled || unit.hitStun > 0) continue;
 
-    // Tired legs take levels off the Legs bar, so the pace follows the effective level.
-    const pace =
-      speedMultiplier(effectiveLevels(unit.levels, unit.stamina, unit.focus)) *
-      weightPace(unit) *
-      legsPace(unit.upgrades) *
-      adrenalineSpeed(unit.drugs);
+    const pace = weightPace(unit) * legsPace(unit.upgrades) * adrenalineSpeed(unit.drugs);
     let remaining = deltaSeconds * unit.definition.stats.speed * pace * 0.7;
     while (remaining > 0 && unit.path.length > 0) {
       const destination = unit.path[0];
@@ -779,6 +773,19 @@ export function advanceCombat(units, deltaSeconds, grid = null, now = null) {
     if (weapon && weapon.charges !== null) weapon.charges -= 1;
 
     startCooldown(attacker, stats);
+    // A shot that is off by more than the target's width misses and lands beside them.
+    const error = (stats.pellets ?? 1) > 1 ? 0 : aimError(attacker, stats);
+    if (distance * Math.abs(Math.tan(error)) > (isVehicle(target) ? VEHICLE_HIT_RADIUS : HIT_RADIUS)) {
+      events.push({
+        type: "shot",
+        attackerId: attacker.id,
+        end: rotateAbout(attacker.position, target.position, error),
+        outOfRounds: weapon !== null && weapon.charges === 0,
+        weapon: weapon ? weapon.definition.name : null,
+        sound: weapon?.definition.sound ?? "pistol",
+      });
+      continue;
+    }
     strike(attacker, target, weapon, stats, events, context, pelletsLanding(stats, distance));
   }
 
@@ -834,11 +841,10 @@ export function advanceBurning(units, deltaSeconds) {
   return events;
 }
 
-// The recharge before a unit can fire again: the weapon's cooldown, scaled by its effective Brain.
+// The recharge before a unit can fire again: the weapon's cooldown, scaled by the Arms upgrade and Intelligence.
 function startCooldown(unit, stats) {
   unit.cooldownRemaining =
     stats.cooldown *
-    cooldownMultiplier(effectiveLevels(unit.levels, unit.stamina, unit.focus)) *
     armsCooldown(unit.upgrades) *
     intelligenceRecharge(unit.drugs);
 }
@@ -883,6 +889,41 @@ function strike(attacker, target, weapon, stats, events, context = null, hitCoun
 
 export const HIT_RADIUS = 0.65;
 export const RAY_STEP = 0.2;
+
+// Accuracy (FreeSynd's formula). A shooter has an aim value: a base for the kind of person, plus the aim bonus of
+// the upgrades fitted, plus 0.4 for every notch Perception is above (and minus for Adrenaline above) neutral. A
+// weapon has an accuracy too; the shot may miss by up to AIM_CONE degrees times
+// `accuracy x (1 - aim) + (1 - accuracy)`, a random share of it, so a better shooter and a better weapon miss less.
+const BASE_AIM = Object.freeze({ operator: 0.5, "enemy-agent": 0.5, guard: 0.45, police: 0.4, civilian: 0.2, criminal: 0.2 });
+export const AIM_CONE_DEGREES = 6;
+export const WEAPON_ACCURACY_DEFAULT = 0.7;
+
+export function aimValue(unit) {
+  let aim = BASE_AIM[unit.definition?.role] ?? 0.4;
+  aim += aimBonus(unit.upgrades);
+  if (unit.drugs) aim += 0.4 * (drugMultiplier(unit.drugs, "perception") - drugMultiplier(unit.drugs, "adrenaline"));
+  return Math.min(0.95, Math.max(0, aim));
+}
+
+/** The largest share of the cone a shot from this unit with this weapon may miss by (0 to 1). */
+export function missFraction(unit, stats) {
+  const accuracy = stats.accuracy ?? WEAPON_ACCURACY_DEFAULT;
+  return accuracy * (1 - aimValue(unit)) + (1 - accuracy);
+}
+
+// How far off the aim this shot goes, in radians (positive or negative).
+function aimError(unit, stats) {
+  return (random() * 2 - 1) * missFraction(unit, stats) * ((AIM_CONE_DEGREES * Math.PI) / 180);
+}
+
+function rotateAbout(origin, point, angle) {
+  const dx = point.x - origin.x;
+  const dy = point.y - origin.y;
+  return {
+    x: origin.x + dx * Math.cos(angle) - dy * Math.sin(angle),
+    y: origin.y + dx * Math.sin(angle) + dy * Math.cos(angle),
+  };
+}
 
 /**
  * Trace a shot from the shooter toward `aim` (grid coordinates) for up to `range` tiles. It stops
@@ -963,7 +1004,8 @@ export function fireManual(shooter, aim, units, grid, props = null) {
     const reason = pulseItems(shooter).length === 0 ? "no-weapon" : roundsLeft(shooter) === 0 ? "no-rounds" : "none-selected";
     return { fired: false, reason, events: [] };
   }
-  const shot = castPellets(shooter, aim, units, grid, stats);
+  const aimed = rotateAbout(shooter.position, aim, aimError(shooter, stats));
+  const shot = castPellets(shooter, aimed, units, grid, stats);
   if (weapon && weapon.charges !== null) weapon.charges -= 1;
   startCooldown(shooter, stats);
   shooter.aimAt = { ...aim };
@@ -983,9 +1025,9 @@ export function fireManual(shooter, aim, units, grid, props = null) {
   // Scenery along the line of fire takes the damage too (a tree ignores bullets; fire and beams do not).
   if (props && props.length > 0) {
     const reach = Math.hypot(shot.end.x - shooter.position.x, shot.end.y - shooter.position.y);
-    const length = Math.hypot(aim.x - shooter.position.x, aim.y - shooter.position.y);
+    const length = Math.hypot(aimed.x - shooter.position.x, aimed.y - shooter.position.y);
     if (length > 1e-6 && reach > 0) {
-      const direction = { x: (aim.x - shooter.position.x) / length, y: (aim.y - shooter.position.y) / length };
+      const direction = { x: (aimed.x - shooter.position.x) / length, y: (aimed.y - shooter.position.y) / length };
       for (const prop of propsAlong(props, shooter.position, direction, reach)) {
         const change = damageProp(prop, stats.attack, stats.damageType ?? "bullet");
         if (change) events.push(change);
@@ -1198,15 +1240,11 @@ const FOLLOW_DISTANCE = 1.8;
 const FOLLOW_SPEED_FACTOR = 1.5;
 
 // A follower keeps its owner's pace (FreeSynd ties it to the owner's adrenaline): a quick owner drags a faster
-// flock along, a tired one a slower. Within 5 percent of normal they move at their usual follow speed.
+// flock along, a loaded one a slower. Within 5 percent of normal they move at their usual follow speed.
 export const FOLLOW_FAST = 1.5;
 export const FOLLOW_SLOW = 0.6;
 export function followPace(owner) {
-  const pace =
-    speedMultiplier(effectiveLevels(owner.levels, owner.stamina, owner.focus)) *
-    legsPace(owner.upgrades) *
-    weightPace(owner) *
-    adrenalineSpeed(owner.drugs);
+  const pace = legsPace(owner.upgrades) * weightPace(owner) * adrenalineSpeed(owner.drugs);
   if (pace > 1.05) return FOLLOW_FAST;
   if (pace < 0.95) return FOLLOW_SLOW;
   return 1;

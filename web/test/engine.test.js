@@ -22,7 +22,6 @@ import {
   advanceCombat,
   castShot,
   hasLineOfSight,
-  advanceFocus,
   advancePursuit,
   fireManual,
   advancePatrols,
@@ -353,31 +352,28 @@ test("a watcher that loses its target returns to its route over real ground", ()
   assert.equal(guard.alertedBy, null);
 });
 
-test("a higher speed level walks further in the same time", () => {
+test("a higher Legs upgrade walks further in the same time", () => {
   const grid = createTileGrid(streetMap);
-  const walkedBy = (speed) => {
+  const walkedBy = (legs) => {
     const unit = {
       ...operatorAt(0, 2),
-      levels: { speed, brain: 3 },
+      upgrades: { legs },
       path: findPath(grid, { x: 0, y: 2 }, { x: 39, y: 2 }),
     };
     for (let step = 0; step < 90; step += 1) advanceUnits([unit], FIXED_STEP_SECONDS);
     return unit.position.x;
   };
-  const slow = walkedBy(1);
-  const normal = walkedBy(3);
-  const fast = walkedBy(5);
-  assert.ok(slow < normal && normal < fast);
-  assert.ok(Math.abs(fast / normal - 1.4) < 0.01);
-  assert.ok(Math.abs(slow / normal - 0.6) < 0.01);
+  const bare = walkedBy(0);
+  assert.ok(bare < walkedBy(1) && walkedBy(1) < walkedBy(2) && walkedBy(2) < walkedBy(3));
+  assert.ok(Math.abs(walkedBy(3) / bare - 1.5) < 0.01);
 });
 
-test("a higher brain level fires the pulse more often", () => {
-  const firedBy = (brain) => {
+test("a higher Arms upgrade fires the pulse more often", () => {
+  const firedBy = (arms) => {
     const attacker = {
       ...operatorAt(0, 2),
       id: "shooter",
-      levels: { speed: 3, brain },
+      upgrades: { arms },
       activeSlot: 0,
       equipment: [{ definition: { action: "disable-pulse", effect: { attack: 1, range: 5, cooldown: 0.75 } } }],
       cooldownRemaining: 0,
@@ -398,116 +394,9 @@ test("a higher brain level fires the pulse more often", () => {
     }
     return shots;
   };
-  const slow = firedBy(1);
-  const normal = firedBy(3);
-  const quick = firedBy(5);
-  assert.ok(slow < normal && normal < quick);
-  assert.ok(quick / normal > 1.35 && quick / normal < 1.5);
-});
-
-test("walking tires an operator and slows them; resting recovers stamina", () => {
-  const grid = createTileGrid(streetMap);
-  const walker = {
-    ...operatorAt(0, 2),
-    levels: { speed: 3, brain: 3 },
-    stamina: 1,
-    path: findPath(grid, { x: 0, y: 2 }, { x: 39, y: 2 }),
-  };
-  const pace = () => {
-    const from = walker.position.x;
-    for (let step = 0; step < 30; step += 1) advanceUnits([walker], FIXED_STEP_SECONDS);
-    return walker.position.x - from;
-  };
-  const fresh = pace();
-  for (let step = 0; step < 30 * 6; step += 1) advanceUnits([walker], FIXED_STEP_SECONDS);
-  assert.ok(walker.stamina < 0.95 && walker.stamina > 0);
-  const tiredPace = pace();
-  assert.ok(tiredPace < fresh, `tired ${tiredPace} should be below fresh ${fresh}`);
-
-  walker.path = [];
-  const tired = walker.stamina;
-  for (let step = 0; step < 30 * 4; step += 1) advanceUnits([walker], FIXED_STEP_SECONDS);
-  assert.ok(walker.stamina > tired && walker.stamina < 1);
-});
-
-test("stronger legs keep their stamina longer over the same walk", () => {
-  const grid = createTileGrid(streetMap);
-  const staminaAfter = (speed) => {
-    const walker = {
-      ...operatorAt(0, 2),
-      levels: { speed, brain: 3 },
-      stamina: 1,
-      path: findPath(grid, { x: 0, y: 2 }, { x: 39, y: 2 }),
-    };
-    for (let step = 0; step < 30 * 8; step += 1) advanceUnits([walker], FIXED_STEP_SECONDS);
-    return walker.stamina;
-  };
-  assert.ok(staminaAfter(5) > staminaAfter(3) && staminaAfter(3) > staminaAfter(1));
-});
-
-test("turning Brain up speeds the pulse at first, then mental fatigue pulls it back", () => {
-  const shots = (brain, seconds, focus = 1) => {
-    const attacker = {
-      ...operatorAt(0, 2),
-      id: "shooter",
-      levels: { speed: 3, brain },
-      focus,
-      activeSlot: 0,
-      equipment: [{ definition: { action: "disable-pulse", effect: { attack: 1, range: 5, cooldown: 0.75 } } }],
-      cooldownRemaining: 0,
-      targetId: "dummy",
-      health: 100,
-    };
-    const dummy = {
-      ...operatorAt(1, 2),
-      id: "dummy",
-      side: "opposition",
-      health: 100000,
-      cooldownRemaining: 99,
-      targetId: null,
-    };
-    let fired = 0;
-    for (let step = 0; step < 30 * seconds; step += 1) {
-      advanceFocus([attacker], FIXED_STEP_SECONDS);
-      fired += advanceCombat([attacker, dummy], FIXED_STEP_SECONDS).filter((event) => event.type === "damage").length;
-    }
-    return { fired, focus: attacker.focus };
-  };
-
-  const early = shots(5, 10);
-  const baseline = shots(3, 10);
-  assert.ok(early.fired > baseline.fired, "a fresh Brain 5 outshoots the baseline");
-  assert.equal(baseline.focus, 1, "baseline Brain never tires");
-
-  const worn = shots(5, 10, 0);
-  assert.ok(worn.fired < early.fired, "a spent mind fires slower than a fresh one");
-  assert.ok(Math.abs(worn.fired - baseline.fired) <= 1, "spent Brain 5 falls back to the baseline");
-
-  // Running at Brain 5 for a minute leaves the mind spent; turning it down recovers it.
-  const strained = shots(5, 60);
-  assert.ok(strained.focus < 0.05);
-  const calm = shots(2, 30, strained.focus);
-  assert.ok(calm.focus > strained.focus);
-});
-
-test("tired legs fall to a lower effective level, but strong legs resist it", () => {
-  const grid = createTileGrid(streetMap);
-  const paceAfterWalking = (speed) => {
-    const walker = {
-      ...operatorAt(0, 2),
-      levels: { speed, brain: 3 },
-      stamina: 0,
-      path: findPath(grid, { x: 0, y: 2 }, { x: 39, y: 2 }),
-    };
-    for (let step = 0; step < 30; step += 1) advanceUnits([walker], FIXED_STEP_SECONDS);
-    return walker.position.x;
-  };
-  const weak = paceAfterWalking(1);
-  const average = paceAfterWalking(3);
-  const strong = paceAfterWalking(5);
-  assert.ok(weak <= average && average < strong);
-  // Spent Legs 5 walk like a rested level 3.
-  assert.ok(Math.abs(strong - 3.15) < 0.4);
+  const bare = firedBy(0);
+  assert.ok(bare < firedBy(1) && firedBy(1) < firedBy(3));
+  assert.ok(firedBy(3) / bare > 1.35 && firedBy(3) / bare < 1.5, "tier 3 recharges 30 percent faster");
 });
 
 function weaponItem(attack, range, cooldown) {
@@ -746,9 +635,6 @@ function chaser(x, y, equipment, overrides = {}) {
   return {
     ...operatorAt(x, y),
     id: "chaser",
-    levels: { speed: 3, brain: 3 },
-    stamina: 1,
-    focus: 1,
     equipment,
     activeSlot: 0,
     followId: "prey",
@@ -859,9 +745,6 @@ function shooterAt(x, y, equipment, overrides = {}) {
     equipment,
     activeSlot: 0,
     cooldownRemaining: 0,
-    levels: { speed: 3, brain: 3 },
-    stamina: 1,
-    focus: 1,
     health: 100,
     ...overrides,
   };

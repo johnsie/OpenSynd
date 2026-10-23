@@ -47,30 +47,6 @@ export function findLoot(operators, units) {
   return best;
 }
 
-// The first stimulant the unit can still use.
-export function energyItem(unit) {
-  return (
-    (unit.equipment ?? []).find(
-      (item) => item.definition.action === "restore-energy" && item.charges !== 0,
-    ) ?? null
-  );
-}
-
-// Use a stimulant: restores stamina and focus, then spends a charge. Returns the
-// item used, or null when there is none or nothing to restore.
-export function useEnergyItem(unit) {
-  const item = energyItem(unit);
-  if (!item || unit.disabled) return null;
-  const effect = item.definition.effect;
-  const stamina = Math.min(1, (unit.stamina ?? 1) + (effect.restoreStamina ?? 0));
-  const focus = Math.min(1, (unit.focus ?? 1) + (effect.restoreFocus ?? 0));
-  if (stamina === (unit.stamina ?? 1) && focus === (unit.focus ?? 1)) return null;
-  unit.stamina = stamina;
-  unit.focus = focus;
-  if (item.charges !== null) item.charges -= 1;
-  return item;
-}
-
 // A lootable body at (or within `radius` tiles of) a grid position, nearest first.
 // Used to turn a click on the ground where an enemy fell into a pickup order.
 export function lootableAt(units, position, radius = 0.8) {

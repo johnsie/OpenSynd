@@ -28,8 +28,8 @@ export const PARTS = Object.freeze({
   heart: {
     label: "Heart",
     base: 5,
-    tiers: Object.freeze([0, 2, 4, 5]),
-    effect: "Legs tire slower and recover faster.",
+    tiers: Object.freeze([0, 1, 2, 3]),
+    effect: "A steadier aim: shots land closer to where they are pointed.",
   },
   eyes: {
     label: "Eyes",
@@ -40,8 +40,8 @@ export const PARTS = Object.freeze({
   brain: {
     label: "Brain",
     base: 8,
-    tiers: Object.freeze([0, 2, 4, 5]),
-    effect: "Strain builds slower, and persuading guards, police and enemy agents takes fewer points.",
+    tiers: Object.freeze([0, 1, 2, 3]),
+    effect: "Persuading guards, police and enemy agents takes fewer points, and the aim is a little steadier.",
   },
 });
 
@@ -75,6 +75,8 @@ export const armsCooldown = (upgrades) => effectOf(upgrades, "arms");
 export const armsCapacity = (upgrades) => [0, 4, 8, 12][tierOf(upgrades, "arms")];
 export const chestVitality = (upgrades) => effectOf(upgrades, "chest");
 export const eyesRange = (upgrades) => effectOf(upgrades, "eyes");
-// The fatigue research levels (see heartEffect and brainEffect in campaign.js) a tier is worth.
-export const heartLevel = (upgrades) => effectOf(upgrades, "heart");
-export const brainLevel = (upgrades) => effectOf(upgrades, "brain");
+
+// FreeSynd's accuracy: each of the Eyes, Brain, Arms, Heart and Legs parts adds a little for every tier fitted.
+export const AIM_PER_TIER = 0.006;
+export const AIM_PARTS = Object.freeze(["eyes", "brain", "arms", "heart", "legs"]);
+export const aimBonus = (upgrades) => AIM_PARTS.reduce((sum, part) => sum + tierOf(upgrades, part) * AIM_PER_TIER, 0);

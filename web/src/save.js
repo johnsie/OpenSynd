@@ -15,8 +15,7 @@ export const LEGACY_LOCAL_SAVE_KEYS = [
   "opensynd.save.v1",
 ];
 
-import { sanitizeDrugs } from "./drugs.js";
-import { BARS, defaultLevels, isValidLevel, isValidMeter, maxCooldownMultiplier } from "./stats.js";
+import { MAX_DRUG_RECHARGE, sanitizeDrugs } from "./drugs.js";
 
 // Mirrors SLOTS_PER_OPERATIVE in campaign.js: no unit may carry more than eight items.
 const MAX_ITEMS = 8;
@@ -71,9 +70,6 @@ export function createSaveSnapshot(state, createdAt = new Date().toISOString()) 
       targetId: unit.targetId,
       disabled: unit.disabled,
       patrolIndex: unit.patrol?.index ?? 0,
-      levels: { ...(unit.levels ?? defaultLevels()) },
-      stamina: unit.stamina ?? 1,
-      focus: unit.focus ?? 1,
       equipment: (unit.equipment ?? []).map((item) => ({ id: item.definition.id, charges: item.charges })),
       looted: [...(unit.looted ?? [])],
       drugs: unit.drugs ? structuredClone(unit.drugs) : null,
@@ -127,7 +123,7 @@ export function validateSaveSnapshot(value, context) {
     if (
       !Number.isFinite(unit.cooldownRemaining) ||
       unit.cooldownRemaining < 0 ||
-      unit.cooldownRemaining > rule.cooldown * maxCooldownMultiplier()
+      unit.cooldownRemaining > rule.cooldown * MAX_DRUG_RECHARGE
     ) {
       fail(`${unit.id} cooldown is invalid`);
     }
@@ -143,11 +139,6 @@ export function validateSaveSnapshot(value, context) {
     if (unit.disabled && (path.length > 0 || unit.targetId !== null)) {
       fail(`${unit.id} cannot have orders while disabled`);
     }
-    if (!isObject(unit.levels) || !BARS.every((bar) => isValidLevel(unit.levels[bar]))) {
-      fail(`${unit.id} training levels are invalid`);
-    }
-    if (!isValidMeter(unit.stamina)) fail(`${unit.id} stamina is invalid`);
-    if (!isValidMeter(unit.focus)) fail(`${unit.id} focus is invalid`);
     const known = (id) => typeof id === "string" && (!context.itemIds || context.itemIds.includes(id));
     if (!Array.isArray(unit.equipment) || unit.equipment.length > MAX_ITEMS) {
       fail(`${unit.id} carries too many items`);
@@ -184,9 +175,6 @@ export function validateSaveSnapshot(value, context) {
       targetId: unit.targetId,
       disabled: unit.disabled,
       patrolIndex: unit.patrolIndex,
-      levels: { speed: unit.levels.speed, brain: unit.levels.brain },
-      stamina: unit.stamina,
-      focus: unit.focus,
       equipment: unit.equipment.map((item) => ({ id: item.id, charges: item.charges })),
       looted: [...unit.looted],
       drugs: unit.drugs ? sanitizeDrugs(unit.drugs) : null,
@@ -295,27 +283,24 @@ export function migrateSaveSnapshot(value, context) {
     };
   }
   if (migrated.formatVersion === 4) {
-    // Version 5 stores each unit's speed and brain training levels.
+    // Version 5 stored each unit's training levels (since dropped: pace and aim come from upgrades and drugs).
     migrated = {
       ...migrated,
       formatVersion: 5,
-      units: migrated.units.map((unit) => ({ ...unit, levels: defaultLevels() })),
     };
   }
   if (migrated.formatVersion === 5) {
-    // Version 6 stores each unit's stamina; older saves start everyone fresh.
+    // Version 6 stored each unit's stamina (since dropped).
     migrated = {
       ...migrated,
       formatVersion: 6,
-      units: migrated.units.map((unit) => ({ ...unit, stamina: 1 })),
     };
   }
   if (migrated.formatVersion === 6) {
-    // Version 7 stores each unit's focus (mental fatigue); older saves start everyone sharp.
+    // Version 7 stored each unit's focus (since dropped).
     migrated = {
       ...migrated,
       formatVersion: 7,
-      units: migrated.units.map((unit) => ({ ...unit, focus: 1 })),
     };
   }
   if (migrated.formatVersion === 7) {
@@ -369,9 +354,6 @@ export function migrateSaveSnapshot(value, context) {
         targetId: null,
         disabled: false,
         patrolIndex: 0,
-        levels: defaultLevels(),
-        stamina: 1,
-        focus: 1,
         equipment: (context.initialEquipment?.[id] ?? []).map((item) => ({ ...item })),
         looted: [],
         persuadedBy: null,

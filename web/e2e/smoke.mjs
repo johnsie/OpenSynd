@@ -115,12 +115,23 @@ for (const [name, type, executablePath] of targets) {
     await page.click("#select-all-button");
     assert.match(await page.locator("#status-message").innerText(), /All 4 operators selected/);
     // Drug sliders: moving one sets it for everyone selected, and the dose takes effect over the next seconds.
+    await page.click("#squad-tab-drugs");
     await page.getByLabel("Adrenaline of Field Operator 1").fill("100");
     assert.equal((await page.evaluate(() => window.opensyndTest.drugOf("operator-three", "adrenaline"))).amount, 100);
     await page.waitForTimeout(2200);
     const dose = await page.evaluate(() => window.opensyndTest.drugOf("operator-three", "adrenaline"));
     assert.ok(dose.effect > 50, `the effect is building: ${JSON.stringify(dose)}`);
     await page.getByLabel("Adrenaline of Field Operator 1").fill("50");
+    await page.click("#squad-tab-gear");
+    // The side panel has tabs: Mission shows the objectives, Enemies the threats, Save the archive tools.
+    await page.click("#tab-enemies");
+    assert.equal(await page.locator("#objective-list").isVisible(), false);
+    assert.ok((await page.locator("#threats button").count()) > 0);
+    assert.match(await page.locator("#enemy-count").innerText(), /^\d+$/);
+    await page.click("#tab-archive");
+    assert.equal(await page.locator("#save-button").isVisible(), true);
+    await page.click("#tab-mission");
+    assert.equal(await page.locator("#objective-list").isVisible(), true);
     // Number keys pick operators; 0 switches between one and everyone; Shift+number toggles one in or out.
     await page.locator("#game-canvas").focus();
     await page.keyboard.press("2");
@@ -141,9 +152,10 @@ for (const [name, type, executablePath] of targets) {
     await page.keyboard.press("1");
     await page.evaluate(() => window.opensyndTest.placeUnit("operator-one", 3, 62));
     await page.evaluate(() => window.opensyndTest.moveSelected(3, 52));
-    const first = await page.evaluate(() => window.opensyndTest.queue("operator-one"));
     await page.evaluate(() => window.opensyndTest.focusOn("operator-one"));
+    await page.waitForTimeout(700);
     const ahead = await page.evaluate(() => window.opensyndTest.screenPointAt(3, 58));
+    const first = await page.evaluate(() => window.opensyndTest.queue("operator-one"));
     await page.keyboard.down("Shift");
     await page.mouse.click(ahead.x, ahead.y);
     await page.keyboard.up("Shift");
@@ -176,26 +188,15 @@ for (const [name, type, executablePath] of targets) {
     await page.waitForTimeout(300);
     const edgeFinal = await page.evaluate(() => window.opensyndTest.camera());
     assert.ok(Math.abs(edgeFinal.x - edgeStopped.x) < 0.01, "moving away stops the scroll");
-    // Stamina meters show for every operator and follow tiredness without rebuilding the roster.
-    assert.equal(await page.locator(".stamina").count(), 4);
-    await page.evaluate(() => window.opensyndTest.setStamina("operator-two", 0.1));
-    await page.waitForFunction(
-      () => document.querySelector('.stamina[data-unit="operator-two"]').classList.contains("empty"),
-    );
-    assert.match(
-      await page.locator('.stamina[data-unit="operator-two"]').getAttribute("aria-label"),
-      /Stamina of Field Operator 2 10 percent/,
-    );
-    assert.equal(await page.locator(".meter.focus").count(), 4);
-    await page.evaluate(() => window.opensyndTest.setFocus("operator-three", 1));
-    await page.evaluate(() => window.opensyndTest.setStamina("operator-two", 0.1));
+    // Each operator shows three drug sliders and no fatigue meters.
+    assert.equal(await page.locator(".drug input").count(), 12);
+    assert.equal(await page.locator(".meter").count(), 0);
     // Camera controls: zoom with the wheel and keys, jump with the minimap, recentre with C.
     await page.locator("#game-canvas").hover();
     await page.mouse.wheel(0, -200);
     await page.keyboard.press("-");
     await page.locator("#minimap").click({ position: { x: 128, y: 64 } });
     await page.keyboard.press("c");
-    await page.evaluate(() => window.opensyndTest.setStamina("operator-two", 1));
     // A group move sends several operators at once.
     await page.keyboard.press("l");
     await page.keyboard.press("Enter");
@@ -456,13 +457,13 @@ for (const [name, type, executablePath] of targets) {
     assert.equal(await labFunds(), 294);
     // Research runs on game time: pick an item and a funding level, then hours pass and it is paid for by the hour.
     assert.match(await page.locator("#research-dial").innerText(), /Nothing is being researched/);
-    await page.getByRole("button", { name: /^Research Stim Injector/ }).click();
-    assert.match(await page.locator("#research-dial").innerText(), /Funding for Stim Injector/);
+    await page.getByRole("button", { name: /^Research Scanner/ }).click();
+    assert.match(await page.locator("#research-dial").innerText(), /Funding for Scanner/);
     assert.equal(await page.getByRole("button", { name: /^Research Rotary Cannon/ }).count(), 0, "needs the machine pistol first");
     await page.evaluate(() => window.opensyndTest.advanceHours(70));
-    assert.match(await page.locator("#research-items").innerText(), /Stim Injector\s+RESEARCHED/);
+    assert.match(await page.locator("#research-items").innerText(), /Scanner\s+RESEARCHED/);
     const base = await labFunds();
-    assert.ok(base >= 250, `research cost about 40 funds, tax came in: ${base}`);
+    assert.ok(base >= 220, `research cost about 60 funds, tax came in: ${base}`);
 
     // Eight picture slots per operative: four are filled (starting kit plus the loot kept from the earlier win).
     const squads = page.locator(".armoury-card");
@@ -471,23 +472,23 @@ for (const [name, type, executablePath] of targets) {
     assert.equal(await squads.first().locator(".slot:not(.empty)").count(), 4);
     assert.equal(await squads.first().locator(".slot svg").count(), 4, "each filled slot shows a picture");
 
-    // Buy a stim into slot 5, then two pulse emitters: an operative can carry several of the same weapon.
+    // Buy a scanner into slot 5, then two pulse emitters: an operative can carry several of the same weapon.
     await page.getByLabel("Operator 1 slot 5: empty", { exact: true }).click();
-    await page.getByRole("button", { name: "Buy Stim Injector for Operator 1 slot 5, 20 funds" }).click();
-    assert.equal(await labFunds(), base - 20);
+    await page.getByRole("button", { name: "Buy Scanner for Operator 1 slot 5, 40 funds" }).click();
+    assert.equal(await labFunds(), base - 40);
     await page.getByLabel("Operator 1 slot 6: empty", { exact: true }).click();
     await page.getByRole("button", { name: "Buy Civic Pulse Emitter for Operator 1 slot 6, 15 funds" }).click();
     await page.getByLabel("Operator 1 slot 7: empty", { exact: true }).click();
     await page.getByRole("button", { name: "Buy Civic Pulse Emitter for Operator 1 slot 7, 15 funds" }).click();
-    assert.equal(await labFunds(), base - 50);
+    assert.equal(await labFunds(), base - 70);
     assert.equal(await squads.first().locator(".slot:not(.empty)").count(), 7);
     // Swapping refunds half the price of what it replaces: the spare emitter (7 back) pays toward a repair kit (10).
     await page.getByLabel("Operator 1 slot 7: Civic Pulse Emitter", { exact: true }).click();
     await page.getByRole("button", { name: "Buy Field Repair Kit for Operator 1 slot 7, 3 funds" }).click();
-    assert.equal(await labFunds(), base - 53);
+    assert.equal(await labFunds(), base - 73);
     // Selling returns half the price again.
     await page.getByRole("button", { name: /Sell Field Repair Kit · \+5 funds/ }).click();
-    assert.equal(await labFunds(), base - 48);
+    assert.equal(await labFunds(), base - 68);
     assert.equal(await squads.first().locator(".slot:not(.empty)").count(), 6);
 
     // The roster: four operatives deploy; benching one takes them out of the Armoury until they are put back.
@@ -508,7 +509,7 @@ for (const [name, type, executablePath] of targets) {
       "developer.field-repair-kit",
       "developer.heavy-pulse-emitter",
       "developer.shadow-cloak",
-      "developer.stim-injector",
+      "developer.scanner",
       "developer.civic-pulse-emitter",
     ]);
     await page.click("#close-research");
@@ -524,7 +525,7 @@ for (const [name, type, executablePath] of targets) {
     );
     // The purchases are in operator 1's squares when the operation starts: six items, two of them pulse emitters.
     assert.equal(await page.locator(".roster-item").first().locator(".slot:not(.empty)").count(), 6);
-    assert.equal(await page.getByLabel("Field Operator 1 slot 5: Stim Injector", { exact: false }).count(), 1);
+    assert.equal(await page.getByLabel("Field Operator 1 slot 5: Scanner", { exact: false }).count(), 1);
     assert.equal(await page.getByLabel("Field Operator 1 slot 6: Civic Pulse Emitter", { exact: false }).count(), 1);
 
 

@@ -99,9 +99,8 @@ test("a full First Light playthrough completes in order and is repeatable", asyn
   assert.deepEqual(runs[0].log, ["restore-west", "restore-east", "open-gate", "leave-yard"]);
   assert.deepEqual(runs[0], runs[1]);
   // Golden values: fixed-step counts for each leg at 30 Hz. A change here means
-  // routes, movement speed or fatigue changed and replays need regenerating.
-  // Fatigue is included: one operator walking the whole mission with no rest slows each leg.
-  assert.deepEqual(runs[0].steps, [358, 1155, 366, 540]);
+  // routes or movement speed changed and replays need regenerating.
+  assert.deepEqual(runs[0].steps, [343, 915, 229, 324]);
 });
 
 test("extraction stays blocked until every other required objective is complete", () => {
@@ -305,8 +304,8 @@ test("the Audit Yard mission plays through: three relays, the panel, then extrac
 
   assert.deepEqual(runs[0], runs[1]);
   assert.deepEqual(runs[0].log, ["restore-one", "restore-two", "restore-three", "open-gate", "leave-yard"]);
-  // Golden step counts at 30 Hz for one operator walking without rest, fatigue included.
-  assert.deepEqual(runs[0].steps, [462, 775, 640, 350, 477]);
+  // Golden step counts at 30 Hz for one operator walking.
+  assert.deepEqual(runs[0].steps, [439, 629, 420, 210, 286]);
 });
 
 test("every mission in the pack has a story, debrief and valid patrols", async () => {
