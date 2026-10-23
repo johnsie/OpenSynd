@@ -2465,15 +2465,15 @@ function drawMinimap(viewport) {
     const size = isVehicle(unit) ? 5 : 3;
     miniContext.fillRect(Math.round(point.x) - Math.floor(size / 2), Math.round(point.y) - Math.floor(size / 2), size, size);
   }
-  // A beacon where the current objective is: rings spread out over the whole minimap, so it is easy to find from anywhere.
+  // A beacon where the current objective is: slow rings spread out over the whole minimap, so it is easy to find from anywhere.
   const goal = currentObjective(state.objectives);
   if (goal) {
     const reach = Math.hypot(minimap.width, minimap.height);
     for (const place of objectiveFocus(goal, state.map.zones, state.units)) {
       const point = miniProject(place, state.map);
       miniContext.lineWidth = 1.5;
-      for (let ring = 0; ring < 4; ring += 1) {
-        const phase = reduceMotion ? (ring + 0.5) / 4 : (state.elapsed * 0.3 + ring / 4) % 1;
+      for (let ring = 0; ring < 2; ring += 1) {
+        const phase = reduceMotion ? (ring + 0.5) / 2 : (state.elapsed * 0.12 + ring / 2) % 1;
         miniContext.strokeStyle = `rgba(232, 107, 214, ${(1 - phase) * 0.7})`;
         miniContext.beginPath();
         miniContext.arc(point.x, point.y, 4 + phase * reach, 0, Math.PI * 2);
@@ -3013,7 +3013,8 @@ function showOutcome(outcome) {
     ? `Achievements: ${earned.map((item) => `${item.name} +${item.reward}`).join(", ")}.`
     : "";
   document.querySelector("#outcome-text").textContent = finale
-    ? `${debrief?.success ?? ""} That was the last of the ${state.missionList.length} territories: no syndicate holds a district any more.`.trim()
+    ? `${debrief?.success ?? ""} That was the last of the ${state.missionList.length} territories: ` +
+      "no syndicate holds a district any more."
     : won
     ? debrief?.success ?? "The operation is complete."
     : reason ?? debrief?.failure ?? "Every operator has been disabled. Regroup and try a different approach.";
@@ -4077,6 +4078,7 @@ for (const button of document.querySelectorAll("[data-cursor-x]")) {
 }
 moveButton.addEventListener("click", () => issueMove(state.cursor));
 document.querySelector("#select-all-button").addEventListener("click", selectAll);
+document.querySelector("#select-all-hub").addEventListener("click", selectAll);
 
 // Tabs: a tablist whose buttons show one panel (`aria-controls`).
 function wireTabs(tablist, onSelect) {
@@ -4639,6 +4641,8 @@ function renderInterface() {
   objectiveCount.textContent = `${completed} / ${state.objectives.length}`;
 
   const selectAllButton = document.querySelector("#select-all-button");
+  const everyoneSelected = activeOperators().length > 1 && selectedOperators().length === activeOperators().length;
+  document.querySelector("#select-all-hub").setAttribute("aria-pressed", String(everyoneSelected));
   selectAllButton.textContent = `Select all (${bindingLabel(bindings.selectAll)})`;
   selectAllButton.setAttribute(
     "aria-pressed",

@@ -859,3 +859,26 @@ main { grid-template-columns: minmax(0, 1fr) minmax(250px, 300px); gap: 0.6rem; 
 /* The operations list: a scrolling list under filter tabs, since the campaign has 50. */
 .list-filter { margin-top: 0.2rem; }
 .title-side .mission-list { max-height: 24rem; overflow-y: auto; scrollbar-width: thin; padding-right: 0.3rem; }
+
+/* A button where the four operator cards meet: one click selects the whole squad. */
+.roster-wrap { position: relative; }
+.select-all-hub {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  z-index: 3;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  transform: translate(-50%, -50%);
+  font-size: 1.1rem;
+  line-height: 1;
+  color: var(--public);
+  background: rgba(8, 14, 18, 0.95);
+  border: 1px solid var(--public);
+  border-radius: 50%;
+  cursor: pointer;
+}
+.select-all-hub:hover, .select-all-hub[aria-pressed="true"] { color: #071012; background: var(--public); }

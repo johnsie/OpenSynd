@@ -90,6 +90,15 @@ for (const [name, type, executablePath] of targets) {
     await page.waitForTimeout(300);
     assert.match(await page.locator("#status-message").innerText(), /Route/);
 
+    // The hub button where the four cards meet selects the whole squad.
+    await page.locator("#game-canvas").focus();
+    await page.keyboard.press("0");
+    await page.click("#select-all-hub");
+    assert.equal((await page.evaluate(() => window.opensyndTest.selection())).length, 4);
+    assert.equal(await page.locator("#select-all-hub").getAttribute("aria-pressed"), "true");
+    await page.locator("#game-canvas").focus();
+    await page.keyboard.press("0");
+    assert.equal((await page.evaluate(() => window.opensyndTest.selection())).length, 1);
     // Pick two operators with the roster checkboxes.
     await page.getByLabel("Include Field Operator 2 in the selection").check();
     await page.getByLabel("Include Field Operator 3 in the selection").check();
