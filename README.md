@@ -94,6 +94,7 @@ makers or owners of that game.
 - [web/TECHNICAL.md](web/TECHNICAL.md): how to build, test and change the game, and how the pieces fit together.
 - [deploy/README.md](deploy/README.md): how the game is published to my web server by a GitLab pipeline.
 - [ROADMAP.md](ROADMAP.md): the long plan, feature by feature, and how far each one has got.
+- [docs/design/CAMPAIGN.md](docs/design/CAMPAIGN.md): all 50 territories and missions at a glance, with their difficulty.
 - [docs/design/GAME_VISION.md](docs/design/GAME_VISION.md): what the game is trying to be.
 - [PROVENANCE.md](PROVENANCE.md): where every picture, sound and model came from, with its licence, in plain words; the exact
   machine-checked record is [provenance/assets.json](provenance/assets.json).
