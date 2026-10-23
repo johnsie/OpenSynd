@@ -661,6 +661,20 @@ for (const [name, type, executablePath] of targets) {
     assert.equal((await spentPage.evaluate(() => window.opensyndTest.drops())).length, 1);
     await spentPage.close();
 
+    // Gear bought before the operation begins is on the operative when it does (the operation is set up again on closing).
+    const buyer = await browser.newPage();
+    await buyer.goto(`${url}?e2e`);
+    await buyer.waitForSelector(".roster-select");
+    await buyer.click("#open-research");
+    await buyer.waitForSelector("#research-dialog[open]");
+    await buyer.getByLabel("Operator 1 slot 3: empty", { exact: true }).click();
+    await buyer.getByRole("button", { name: /^Buy Persuader for Operator 1 slot 3/ }).click();
+    await buyer.click("#close-research");
+    await buyer.click("#begin-button");
+    await buyer.waitForFunction(() => document.querySelector("#status-message").textContent.includes("Local map established"));
+    assert.equal(await buyer.getByLabel(/Field Operator 1 slot 3: Persuader/).count(), 1, "the purchase is in the inventory");
+    await buyer.close();
+
     // Shift+right-click a slot while walking queues the drop for the end of the route.
     const later = await browser.newPage();
     await later.goto(`${url}?e2e`);

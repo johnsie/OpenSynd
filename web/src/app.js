@@ -1230,6 +1230,11 @@ function openResearch() {
 document.querySelector("#open-research").addEventListener("click", openResearch);
 document.querySelector("#outcome-research").addEventListener("click", openResearch);
 document.querySelector("#close-research").addEventListener("click", () => researchDialog.close());
+// Before an operation starts, what was bought, fitted or changed in the squad has to be on the operatives when it begins:
+// the operation is set up again from the saved loadouts.
+researchDialog.addEventListener("close", () => {
+  if (titleDialog.open && state.missionList?.length) loadGame(state.missionIndex).catch(showFatalError);
+});
 
 const confirmDialog = document.querySelector("#confirm-dialog");
 
