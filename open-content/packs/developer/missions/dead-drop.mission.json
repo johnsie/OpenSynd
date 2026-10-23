@@ -997,6 +997,25 @@
         "x": 14,
         "y": 47
       }
+    },
+    {
+      "id": "fire-engine-7",
+      "vehicle": "vehicles/fire-engine.vehicle.json",
+      "position": {
+        "x": 22,
+        "y": 91
+      },
+      "driver": "units/civilian-man.unit.json",
+      "patrol": [
+        {
+          "x": 22,
+          "y": 91
+        },
+        {
+          "x": 57,
+          "y": 91
+        }
+      ]
     }
   ],
   "unlocks": [

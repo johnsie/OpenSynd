@@ -1,0 +1,18 @@
+{
+  "formatVersion": 1,
+  "id": "developer.scout-armored",
+  "name": "Scout Armored Car",
+  "license": "CC0-1.0",
+  "kind": "small-armored",
+  "stats": {
+    "health": 170,
+    "speed": 6.0,
+    "seats": 3,
+    "blastRadius": 2.6,
+    "blastDamage": 45
+  },
+  "appearance": {
+    "primaryColor": "#4a5446",
+    "accentColor": "#e1b35a"
+  }
+}

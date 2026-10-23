@@ -37,9 +37,11 @@
         "city-car",
         "patrol-car",
         "armored-car",
-        "ambulance"
+        "ambulance",
+        "fire-engine",
+        "small-armored"
       ],
-      "description": "Which kind of vehicle it is: a regular car, a police car, a large armored car or a medical van."
+      "description": "Which kind of vehicle it is: a regular car, a police car, a large or a small armored car, a medical van or a fire engine."
     },
     "stats": {
       "type": "object",

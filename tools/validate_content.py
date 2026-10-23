@@ -235,7 +235,7 @@ class Validation:
         if not self.require(path, value, required):
             return
         self.validate_identity(path, value)
-        if value["kind"] not in {"city-car", "patrol-car", "armored-car", "ambulance"}:
+        if value["kind"] not in {"city-car", "patrol-car", "armored-car", "ambulance", "fire-engine", "small-armored"}:
             self.error(path, f"unsupported vehicle kind: {value['kind']!r}")
         stats = value["stats"]
         names = {"health", "speed", "seats", "blastRadius", "blastDamage"}

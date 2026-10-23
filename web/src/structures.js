@@ -378,6 +378,8 @@ const VEHICLE_SHAPES = Object.freeze({
   "patrol-car": { length: 2.2, width: 1.0, body: 0.5, cabin: 0.42, cabinInset: 0.5 },
   "armored-car": { length: 2.5, width: 1.15, body: 0.78, cabin: 0.5, cabinInset: 0.35 },
   ambulance: { length: 2.4, width: 1.05, body: 0.62, cabin: 0.55, cabinInset: 0.3 },
+  "fire-engine": { length: 3.0, width: 1.1, body: 0.7, cabin: 0.5, cabinInset: 0.6 },
+  "small-armored": { length: 2.2, width: 1.05, body: 0.68, cabin: 0.45, cabinInset: 0.4 },
 });
 
 function shadeHex(hex, amount) {
@@ -492,7 +494,23 @@ export function drawVehicle(context, p, vehicle, cellHeight, time, { controlled 
       const on = Math.floor(time / 300) % 2 === 0;
       context.fillStyle = on ? "#ff4d5e" : "#7a2530";
       context.fillRect(roof.x - 6, roof.y - 3, 12, 4);
-    } else if (vehicle.definition.kind === "armored-car") {
+    } else if (vehicle.definition.kind === "fire-engine") {
+      // A ladder along the roof and a flashing light.
+      context.strokeStyle = accentColor;
+      context.lineWidth = 2;
+      const [ladderA, ladderB] = alongX
+        ? [p(x - halfX * 0.55, y - 0.12, bodyTop + 3), p(x + halfX * 0.3, y - 0.12, bodyTop + 3)]
+        : [p(x - 0.12, y - halfY * 0.55, bodyTop + 3), p(x - 0.12, y + halfY * 0.3, bodyTop + 3)];
+      context.beginPath();
+      context.moveTo(ladderA.x, ladderA.y);
+      context.lineTo(ladderB.x, ladderB.y);
+      context.moveTo(ladderA.x + 4, ladderA.y + 2);
+      context.lineTo(ladderB.x + 4, ladderB.y + 2);
+      context.stroke();
+      const on = Math.floor(time / 260) % 2 === 0;
+      context.fillStyle = on ? "#ffd24d" : "#7a6a24";
+      context.fillRect(roof.x - 6, roof.y - 3, 12, 4);
+    } else if (vehicle.definition.kind === "armored-car" || vehicle.definition.kind === "small-armored") {
       context.strokeStyle = accentColor;
       context.lineWidth = 1.5;
       context.beginPath();

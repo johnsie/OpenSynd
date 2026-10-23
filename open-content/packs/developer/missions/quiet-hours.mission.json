@@ -900,6 +900,25 @@
         "x": 14,
         "y": 47
       }
+    },
+    {
+      "id": "scout-armored-7",
+      "vehicle": "vehicles/scout-armored.vehicle.json",
+      "position": {
+        "x": 22,
+        "y": 91
+      },
+      "driver": "units/guard.unit.json",
+      "patrol": [
+        {
+          "x": 22,
+          "y": 91
+        },
+        {
+          "x": 57,
+          "y": 91
+        }
+      ]
     }
   ],
   "unlocks": [

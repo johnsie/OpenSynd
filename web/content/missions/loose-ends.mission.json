@@ -932,6 +932,25 @@
         "x": 14,
         "y": 47
       }
+    },
+    {
+      "id": "fire-engine-7",
+      "vehicle": "vehicles/fire-engine.vehicle.json",
+      "position": {
+        "x": 22,
+        "y": 25
+      },
+      "driver": "units/civilian-woman.unit.json",
+      "patrol": [
+        {
+          "x": 22,
+          "y": 25
+        },
+        {
+          "x": 43,
+          "y": 25
+        }
+      ]
     }
   ],
   "sequence": true,

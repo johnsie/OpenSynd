@@ -372,7 +372,7 @@ browser e2e run).
 | F40 | Windows | open |
 | F41 | Flammable scenery | done: trees and billboards burn ten seconds and spread; fire ignites people beside it |
 | F42 | Street lights, traffic lights | done: lights and bins break; signals at every crossing, cars stop on red |
-| F43 | Vehicles: lanes, collisions, kinds, trains | partly: run-over damage and queuing behind vehicles; lanes, trains, wreck scenery are open |
+| F43 | Vehicles: lanes, collisions, kinds, trains | partly: six kinds (fire engine, scout armored car added), run-over damage, queuing, signals; lanes and trains are open |
 | F44 | Mission editor | partly: `editor.html` moves, adds and deletes placements, edits objectives, checks the draft and downloads JSON; scripts and patrols are edited in JSON |
 
 ---
