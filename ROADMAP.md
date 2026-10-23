@@ -363,7 +363,7 @@ browser e2e run).
 | F31 | Buying mission intelligence | partly: survey levels; briefing text levels are open |
 | F32 | Equipment screen | done: stats panel, roster, upgrades, buy and sell |
 | F33 | Queued orders | partly: Shift+click queues walking routes only |
-| F34 | What a click means | partly: hold-to-fire done; click a vehicle or a dropped weapon is open |
+| F34 | What a click means | done: click a vehicle to get in, a drop to collect it, hold to fire |
 | F35 | Squad formation | have |
 | F36 | Selection and hotkeys | done: 1-4, 0, Shift+number, Alt+1-8 |
 | F37 | The HUD | partly: objective highlight and ammo badges; drug sliders wait on F18 |

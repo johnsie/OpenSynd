@@ -3,6 +3,7 @@
 import { advanceBombs, plantBomb } from "./bombs.js";
 import {
   advanceVehicles,
+  ENTER_RANGE,
   canEnter,
   createRoadGrid,
   driveTo,
@@ -3043,6 +3044,7 @@ function update(deltaSeconds) {
     state.meterClock = 0;
     updateMeters();
     if (state.mission) updateVehicleButton();
+    boardWaitingOperators();
     if (state.map?.objects?.some((gate) => gate.key)) syncGates();
     if (state.objectives.some((objective) => objective.type === "hold" && !objective.complete && objective.progress > 0)) {
       renderInterface();
@@ -3593,7 +3595,7 @@ function pointerKindAt(position) {
   const squad = selectedOperators();
   if (squad.length === 0 || !state.viewport) return null;
   const unit = hitUnit(position);
-  if (unit && isAttackable(unit) && !unit.disabled) {
+  if (unit && isAttackable(unit) && !unit.disabled && !isVehicle(unit)) {
     const reachable = squad.some((operator) => {
       const gap = distanceBetween(operator, unit);
       return gap <= combatStats(operator, gap).range;
@@ -3658,7 +3660,8 @@ canvas.addEventListener("click", (event) => {
   const position = { x: event.clientX - bounds.left, y: event.clientY - bounds.top };
   const unit = hitUnit(position);
   if (unit) {
-    if (unit.side !== "team") {
+    if (isVehicle(unit) && !unit.disabled && !isSquadVehicle(unit)) goEnterVehicle(unit);
+    else if (unit.side !== "team") {
       if (isAttackable(unit)) issueAttack(unit.id);
     }
     else if (event.ctrlKey || event.shiftKey || event.metaKey) toggleSelect(unit.id);
@@ -4288,6 +4291,62 @@ function vehicleCandidate() {
     }
   }
   return best;
+}
+
+// Left-click a vehicle: the nearest selected operator walks to it and gets in (FreeSynd: a click on a car boards it).
+function goEnterVehicle(vehicle) {
+  const squad = selectedOperators().filter((unit) => !unit.inVehicle);
+  if (squad.length === 0) {
+    setStatus("Select an operator first, then click the vehicle to get in.");
+    return;
+  }
+  const nearest = squad.reduce((best, unit) =>
+    Math.hypot(unit.position.x - vehicle.position.x, unit.position.y - vehicle.position.y) <
+    Math.hypot(best.position.x - vehicle.position.x, best.position.y - vehicle.position.y)
+      ? unit
+      : best,
+  );
+  const gap = Math.hypot(nearest.position.x - vehicle.position.x, nearest.position.y - vehicle.position.y);
+  if (gap <= ENTER_RANGE && !canEnter(nearest, vehicle)) {
+    setStatus(`No room in the ${vehicle.definition.name}.`);
+    return;
+  }
+  const steps = orderMove(nearest, { x: Math.round(vehicle.position.x), y: Math.round(vehicle.position.y) });
+  nearest.enterTargetId = vehicle.id;
+  if (steps === 0 && !canEnter(nearest, vehicle)) {
+    nearest.enterTargetId = null;
+    setStatus("No safe route to that vehicle.");
+    return;
+  }
+  audio.play("move");
+  setStatus(`${nearest.definition.name} is heading for the ${vehicle.definition.name}.`);
+  renderInterface();
+}
+
+// Operators who were sent to a vehicle get in once they are close enough.
+function boardWaitingOperators() {
+  for (const operator of state.units) {
+    if (!operator.enterTargetId || operator.inVehicle || operator.disabled) continue;
+    const vehicle = state.units.find((unit) => unit.id === operator.enterTargetId);
+    if (!vehicle || vehicle.disabled) {
+      operator.enterTargetId = null;
+      continue;
+    }
+    if (!canEnter(operator, vehicle)) {
+      if (operator.path.length === 0) operator.enterTargetId = null;
+      continue;
+    }
+    operator.enterTargetId = null;
+    const { entered, thrownOut } = enterVehicle(vehicle, [operator], state.units, state.grid);
+    if (entered.length > 0) {
+      setStatus(
+        `${operator.definition.name} got into the ${vehicle.definition.name}` +
+          (thrownOut ? `; ${thrownOut.definition.name} was thrown out.` : ". Click a road to drive, V to get out."),
+      );
+      audio.play("move");
+      renderInterface();
+    }
+  }
 }
 
 function toggleVehicle() {

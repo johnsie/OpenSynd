@@ -625,6 +625,18 @@ for (const [name, type, executablePath] of targets) {
     await garage.locator("#game-canvas").focus();
     await garage.waitForFunction(() => !document.querySelector("#vehicle-button").disabled);
     assert.match(await garage.locator("#vehicle-label").innerText(), /Take vehicle/);
+    // Clicking a car sends the selected operator to it, and they get in on arrival.
+    await garage.evaluate(() => window.opensyndTest.placeNear("operator-one", "parked-city-car-1", 4, 0));
+    const carPoint = await garage.evaluate(() => window.opensyndTest.screenPoint("parked-city-car-1"));
+    await garage.mouse.click(carPoint.x, carPoint.y - 12);
+    await garage.waitForFunction(
+      () => document.querySelector("#status-message").textContent.includes("got into the City Car"),
+      null,
+      { timeout: 8000 },
+    );
+    await garage.keyboard.press("v");
+    assert.match(await garage.locator("#status-message").innerText(), /left the City Car/);
+    await garage.evaluate(() => window.opensyndTest.placeNear("operator-one", "parked-city-car-1", 1, 1));
     await garage.keyboard.press("v");
     assert.match(await garage.locator("#status-message").innerText(), /got into the City Car/);
     assert.match(await garage.locator("#vehicle-label").innerText(), /Leave vehicle/);
