@@ -65,7 +65,7 @@ A deploy never changes the game underneath someone who is playing it:
 - **The open game notices the new release** (it checks `build-meta.json` once a minute) and shows a small "A new version is
   ready" note in the corner. It switches over by itself only when that costs the player nothing: between operations (the title
   or outcome screen) and with the tab out of sight or left alone for twenty seconds. In the middle of an operation it only
-  waits, and the note's **Update now** button asks first. The campaign, funds, research, settings and saves live in the
+  waits; the note's **Update now** button saves the operation, loads the new release and puts everyone back where they were. The campaign, funds, research, settings and saves live in the
   browser, so they carry over untouched.
 
 **To switch pinning on:** run `sudo sh deploy/setup-apache.sh` again on the web server (it adds the `/r/` alias to the virtual

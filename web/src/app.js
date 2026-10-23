@@ -3508,6 +3508,7 @@ function showOutcome(outcome) {
     detail.textContent = value;
     stats.append(term, detail);
   }
+  clearAutosave();
   state.modal = true;
   outcomeDialog.showModal();
 }
@@ -3666,6 +3667,11 @@ function update(deltaSeconds) {
     state.opStats.seconds = state.missionSeconds;
     state.campaignTimer += deltaSeconds;
     if (state.campaignTimer >= 5) persistCampaign();
+    state.autosaveClock = (state.autosaveClock ?? 0) + deltaSeconds;
+    if (state.autosaveClock >= AUTOSAVE_SECONDS) {
+      state.autosaveClock = 0;
+      writeAutosave();
+    }
     if (state.campaign.funds !== state.shownFunds) updateFundsReadout();
   }
   state.meterClock = (state.meterClock ?? 0) + deltaSeconds;
@@ -4635,6 +4641,7 @@ window.addEventListener("keydown", (event) => {
 });
 resetButton.addEventListener("click", async () => {
   if (operationInProgress() && !(await confirmLeave("Resetting restarts this operation from the beginning."))) return;
+  clearAutosave();
   loadGame(state.missionIndex).catch(showFatalError);
 });
 for (const button of document.querySelectorAll("[data-cursor-x]")) {
@@ -4725,8 +4732,18 @@ document.querySelector("#reset-progress").addEventListener("click", () => {
 });
 document.querySelector("#confirm-accept").addEventListener("click", () => confirmDialog.close("accept"));
 document.querySelector("#confirm-cancel").addEventListener("click", () => confirmDialog.close("cancel"));
-document.querySelector("#begin-button").addEventListener("click", () => titleDialog.close());
+document.querySelector("#begin-button").addEventListener("click", () => {
+  clearAutosave(); // starting afresh: what was saved is no longer wanted
+  document.querySelector("#resume-box").hidden = true;
+  titleDialog.close();
+});
+document.querySelector("#resume-button").addEventListener("click", () => resumeAutosave().catch(showFatalError));
+document.querySelector("#resume-discard").addEventListener("click", () => {
+  clearAutosave();
+  document.querySelector("#resume-box").hidden = true;
+});
 document.querySelector("#replay-button").addEventListener("click", () => {
+  clearAutosave();
   outcomeDialog.close();
   loadGame(state.missionIndex).catch(showFatalError);
 });
@@ -4739,6 +4756,7 @@ function nextOperation() {
 }
 
 document.querySelector("#next-button").addEventListener("click", () => {
+  clearAutosave();
   outcomeDialog.close();
   loadGame(nextOperation())
     .then(() => {
@@ -4862,6 +4880,9 @@ if (new URLSearchParams(location.search).has("e2e")) {
     },
     trains() {
       return state.units.filter(isTrain).map((unit) => ({ id: unit.id, cars: trainCars(unit), waiting: unit.vehicle.train.waiting }));
+    },
+    autosaveNow() {
+      writeAutosave();
     },
     brokenWindows() {
       return state.windowsBroken.size;
@@ -5453,8 +5474,87 @@ function operationActive() {
   return !titleDialog.open && !outcomeDialog.open && state.outcome === "active" && Boolean(state.mission);
 }
 
+// The operation in progress is kept in the browser as it is played (every few seconds, and when the page is hidden or left), so
+// a reload, a crash or a game update puts the player back where they were: the title screen offers to resume it, and an update
+// resumes it by itself.
+const AUTOSAVE_KEY = "opensynd.autosave.v1";
+const RESUME_FLAG = "opensynd.resume";
+const AUTOSAVE_SECONDS = 10;
+
+function writeAutosave() {
+  if (!operationActive()) return;
+  try {
+    const saved = { missionId: state.mission.id, savedAt: Date.now(), snapshot: createSaveSnapshot(state) };
+    localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(saved));
+  } catch {
+    // Storage may be full or blocked: the game goes on without it.
+  }
+}
+
+function readAutosave() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(AUTOSAVE_KEY) ?? "null");
+    return saved && typeof saved.missionId === "string" && saved.snapshot ? saved : null;
+  } catch {
+    return null;
+  }
+}
+
+function clearAutosave() {
+  try {
+    localStorage.removeItem(AUTOSAVE_KEY);
+  } catch {
+    // Nothing to do.
+  }
+}
+
+// Set the operation up again and put everyone back as they were saved. Returns whether it worked.
+async function resumeAutosave() {
+  const saved = readAutosave();
+  const index = saved ? state.missionList.findIndex((entry) => entry.id === saved.missionId) : -1;
+  if (!saved || index < 0) return false;
+  await loadGame(index);
+  try {
+    applySaveSnapshot(parseSaveSnapshot(JSON.stringify(saved.snapshot), saveContext()));
+  } catch (error) {
+    clearAutosave();
+    setStatus(`The saved operation could not be restored: ${error.message}`);
+    return false;
+  }
+  titleDialog.close();
+  setStatus("Operation resumed where you left it.");
+  return true;
+}
+
+// On the title screen: offer to resume (or, after an update, just do it).
+async function offerResume() {
+  let automatic = false;
+  try {
+    automatic = sessionStorage.getItem(RESUME_FLAG) === "1";
+    sessionStorage.removeItem(RESUME_FLAG);
+  } catch {
+    // No session storage: just offer.
+  }
+  const saved = readAutosave();
+  const entry = saved ? state.missionList.find((item) => item.id === saved.missionId) : null;
+  if (!saved || !entry) return;
+  if (automatic && (await resumeAutosave())) return;
+  const minutes = Math.max(0, Math.round((Date.now() - saved.savedAt) / 60000));
+  const ago = minutes === 0 ? "a moment" : `${minutes} minute${minutes === 1 ? "" : "s"}`;
+  document.querySelector("#resume-text").textContent = `Your operation "${entry.name ?? saved.missionId}" was saved ${ago} ago.`;
+  document.querySelector("#resume-box").hidden = false;
+}
+
 function applyUpdate() {
   persistCampaign();
+  if (operationActive()) {
+    writeAutosave();
+    try {
+      sessionStorage.setItem(RESUME_FLAG, "1");
+    } catch {
+      // The title screen will still offer to resume.
+    }
+  }
   location.reload();
 }
 
@@ -5481,6 +5581,9 @@ fetch(assetUrl("build-meta.json"))
     document.querySelector("#revision").textContent = "source: unavailable";
   });
 
+window.addEventListener("pagehide", writeAutosave);
+document.addEventListener("visibilitychange", () => document.hidden && writeAutosave());
+
 // Between operations, out of sight or left alone: switch to the waiting release without anyone noticing.
 setInterval(() => {
   const idleSeconds = (performance.now() - lastInput) / 1000;
@@ -5490,17 +5593,7 @@ setInterval(() => {
 document.querySelector("#update-later").addEventListener("click", () => {
   updateBanner.hidden = true;
 });
-document.querySelector("#update-now").addEventListener("click", async () => {
-  if (operationActive()) {
-    const ok = await confirmLeave("Updating restarts the current operation. Your campaign, funds and settings are kept.", {
-      heading: "Update the game?",
-      accept: "Update now",
-      cancel: "Keep playing",
-    });
-    if (!ok) return;
-  }
-  applyUpdate();
-});
+document.querySelector("#update-now").addEventListener("click", () => applyUpdate()); // an operation in progress is saved and resumes
 
-loadGame().catch(showFatalError);
+loadGame().then(offerResume).catch(showFatalError);
 requestAnimationFrame(frame);

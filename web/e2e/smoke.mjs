@@ -798,13 +798,20 @@ for (const [name, type, executablePath] of targets) {
     await updating.evaluate(() => Object.defineProperty(document, "hidden", { get: () => true, configurable: true }));
     await updating.waitForTimeout(3500);
     assert.equal(await updating.evaluate(() => window.updateMarker), "mid-operation", "never switched in the middle of an operation");
-    // Asking for it mid-operation asks first; saying no keeps playing.
-    await updating.click("#update-now");
-    assert.match(await updating.locator("#confirm-heading").innerText(), /Update the game/);
-    await updating.click("#confirm-cancel");
-    assert.equal(await updating.evaluate(() => window.updateMarker), "mid-operation");
-    await updating.click("#update-later");
-    assert.equal(await updating.locator("#update-banner").isVisible(), false);
+    // Asking for it mid-operation saves the operation first, and the new release picks it up where it was left.
+    const spot = await updating.evaluate(() => {
+      window.opensyndTest.placeUnit("operator-one", 4, 52);
+      return window.opensyndTest.positionOf("operator-one");
+    });
+    await Promise.all([updating.waitForEvent("load"), updating.click("#update-now")]);
+    await updating.waitForFunction(
+      () => document.querySelector("#status-message").textContent.includes("resumed"),
+      null,
+      { timeout: 30000 },
+    );
+    assert.equal(await updating.evaluate(() => window.updateMarker), undefined, "a fresh page");
+    assert.deepEqual(await updating.evaluate(() => window.opensyndTest.positionOf("operator-one")), spot, "back where they were");
+    assert.equal(await updating.evaluate(() => document.querySelector("#title-dialog").open), false, "straight back into the operation");
     await updating.close();
 
     // Several operatives selected: they all move up to gear on the ground, and the one with fewest items picks it up.
@@ -831,6 +838,32 @@ for (const [name, type, executablePath] of targets) {
     );
     assert.ok(routes.every((steps) => steps > 0), `all three selected operatives are on their way to the gear (${routes})`);
     await crowd.close();
+
+    // A saved operation is offered again on the title screen after a reload, and can be put back where it was or discarded.
+    const returning = await browser.newPage();
+    await returning.goto(`${url}?e2e`);
+    await returning.waitForSelector(".roster-select");
+    assert.equal(await returning.locator("#resume-box").isVisible(), false, "nothing saved yet");
+    await returning.click("#begin-button");
+    await returning.waitForFunction(() => document.querySelector("#status-message").textContent.includes("Local map established"));
+    const there = await returning.evaluate(() => {
+      window.opensyndTest.placeUnit("operator-one", 5, 52);
+      window.opensyndTest.autosaveNow();
+      return window.opensyndTest.positionOf("operator-one");
+    });
+    await returning.reload();
+    await returning.waitForSelector("#resume-box:not([hidden])");
+    assert.match(await returning.locator("#resume-text").innerText(), /was saved/);
+    await returning.click("#resume-button");
+    await returning.waitForFunction(() => document.querySelector("#status-message").textContent.includes("resumed"));
+    assert.deepEqual(await returning.evaluate(() => window.opensyndTest.positionOf("operator-one")), there);
+    await returning.reload();
+    await returning.waitForSelector("#resume-box:not([hidden])");
+    await returning.click("#resume-discard");
+    await returning.reload();
+    await returning.waitForSelector(".roster-select");
+    assert.equal(await returning.locator("#resume-box").isVisible(), false, "discarded");
+    await returning.close();
 
     // Gear bought before the operation begins is on the operative when it does (the operation is set up again on closing).
     const buyer = await browser.newPage();

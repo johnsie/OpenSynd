@@ -1436,9 +1436,7 @@ shows that it satisfies maintainability, accessibility, and licensing goals.
   Civilians walk the streets and run from gunfire within ten tiles for six seconds. Police
   patrol, ignore an operator whose weapon is away, and chase and shoot one who has a weapon
   out (selected or just fired) in line of sight, stopping when it is put away. A police hit does 6 damage, half a watcher's 12. Killing a
-  civilian costs 40 funds and a police officer 80 (never below zero), is shown in the debrief,
-  and rules out the Clean hands achievement. Not yet built: police calling for backup and
-  civilians reacting to each other.
+  civilian or a police officer costs no funds (as in FreeSynd) and is shown in the debrief.
 
 Every weapon sounds like itself (`web/src/audio.js`, all synthesized from filtered noise and sweeps, so
 no sound assets): a sharp pistol crack, a light snappy machine-pistol burst, a buzzing rotary-cannon

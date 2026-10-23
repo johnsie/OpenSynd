@@ -925,3 +925,13 @@ main { grid-template-columns: minmax(0, 1fr) minmax(250px, 300px); gap: 0.6rem; 
   font-size: 0.85rem;
 }
 .update-banner[hidden] { display: none; }
+
+/* The offer to pick a saved operation up again, on the title screen. */
+.resume-box {
+  margin: 0.8rem 0;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid rgba(66, 214, 208, 0.6);
+  background: rgba(66, 214, 208, 0.08);
+}
+.resume-box[hidden] { display: none; }
+.resume-box p { margin: 0 0 0.5rem; }
