@@ -70,6 +70,7 @@ import {
   captureItems,
   earnAchievement,
   INTEL_LABELS,
+  enemyArmament,
   describeStats,
   INTEL_LEVELS,
   buyIntel,
@@ -487,6 +488,8 @@ function squadTeam(slots) {
 
 function startingEquipment(placement, definition, byPath, byId) {
   const defaults = placement.equipment.map((path) => byPath.get(path));
+  const issued = state.enemyArms?.get(placement.id);
+  if (issued && definition.role === "enemy-agent") defaults.push(issued);
   if (definition.role !== "operator") return defaults;
   const ids = loadoutFor(state.campaign, placement.id, defaults.map((item) => item.id));
   return ids
@@ -605,6 +608,11 @@ async function loadGame(index = state.missionIndex) {
     targetId: null,
     disabled: false,
   });
+  state.enemyArms = enemyArmament(
+    mission.opponents.filter((placement) => unitDefinitions.get(placement.unit)?.role === "enemy-agent").map((placement) => placement.id),
+    state.campaign,
+    state.catalog,
+  );
   state.units = [...mission.team, ...mission.opponents, ...(mission.bystanders ?? [])].map((placement) =>
     buildUnit(placement, unitDefinitions.get(placement.unit)),
   );

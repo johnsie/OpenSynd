@@ -37,6 +37,7 @@ import {
   loseOperatives,
   recruit,
   INTEL_LEVELS,
+  enemyArmament,
   describeStats,
   buyIntel,
   intelLevel,
@@ -453,4 +454,23 @@ test("the shop lists an item's figures", () => {
   assert.deepEqual(describeStats(bomb).slice(0, 3), ["Blast 55", "Radius 3", "Fuse 6 s"]);
   assert.deepEqual(describeStats({ action: "shield", effect: { duration: 8 } }), ["Lasts 8 s"]);
   assert.deepEqual(describeStats({ action: "stealth", effect: {} }), []);
+});
+
+test("enemy agents carry the weapons you have researched: every other one, dearest first, the same every time", () => {
+  const weapons = [
+    { id: "pistol", action: "disable-pulse", researchCost: 0 },
+    { id: "mid", action: "disable-pulse", researchCost: 70 },
+    { id: "big", action: "disable-pulse", researchCost: 160 },
+    { id: "kit", action: "restore-vitality", researchCost: 20 },
+    { id: "key", action: "key", researchCost: 0, missionItem: true },
+  ];
+  const ids = ["e1", "e2", "e3", "e4", "e5"];
+  assert.equal(enemyArmament(ids, emptyCampaign(), weapons).size, 0, "nothing researched, nothing issued");
+  const some = { ...emptyCampaign(), items: ["mid", "kit", "key"] };
+  const arms = enemyArmament(ids, some, weapons);
+  assert.deepEqual([...arms.keys()], ["e2", "e4"]);
+  assert.deepEqual([...arms.values()].map((item) => item.id), ["mid", "mid"], "only weapons count");
+  const more = enemyArmament(ids, { ...emptyCampaign(), items: ["mid", "big"] }, weapons);
+  assert.deepEqual([...more.values()].map((item) => item.id), ["big", "mid"]);
+  assert.deepEqual([...enemyArmament(ids, some, weapons)], [...arms], "repeatable");
 });

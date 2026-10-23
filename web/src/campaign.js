@@ -572,3 +572,21 @@ export function describeStats(item) {
   if (item.weight) parts.push(`Weight ${item.weight}`);
   return parts;
 }
+
+/**
+ * Enemies are armed from your progress (FreeSynd gives the opposition the weapons you have researched): every other enemy
+ * agent in the operation carries one of the researched weapons, in turn, the dearest first. Returns a Map from the
+ * placement id to the equipment item, so the same campaign always meets the same armament.
+ */
+export function enemyArmament(enemyIds, campaign, catalog) {
+  const researched = campaign.items
+    .map((id) => catalog.find((entry) => entry.id === id))
+    .filter((item) => item && item.action === "disable-pulse" && !item.missionItem)
+    .sort((left, right) => (right.researchCost ?? 0) - (left.researchCost ?? 0) || (left.id < right.id ? -1 : 1));
+  const arms = new Map();
+  if (researched.length === 0) return arms;
+  enemyIds.forEach((id, index) => {
+    if (index % 2 === 1) arms.set(id, researched[Math.floor(index / 2) % researched.length]);
+  });
+  return arms;
+}
