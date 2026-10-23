@@ -735,6 +735,7 @@ for (const [name, type, executablePath] of targets) {
     await roster.waitForSelector("#outcome-dialog[open]");
     const debrief = await roster.locator("#outcome-stats").innerText();
     assert.match(debrief, /Operatives lost/);
+    assert.match(debrief, /Shooting\s+no shots/);
     assert.match(debrief, /Recruited/);
     const record = await roster.evaluate(() => JSON.parse(localStorage.getItem("opensynd.campaign.v1")));
     assert.equal(record.roster.find((member) => member.id === "operator-four").alive, false);

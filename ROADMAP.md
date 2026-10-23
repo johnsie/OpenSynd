@@ -345,7 +345,7 @@ browser e2e run).
 | F22 | Scripted people | done: walk, wait, trigger, say, escape; drive and enter vehicle are open |
 | F23 | Carried key items | done: Clearance Key, take-item objective |
 | F24 | Minimap signal at the current objective | done |
-| F25 | Fuller debrief | partly: objectives, losses, recruits, followers, resupply bill |
+| F25 | Fuller debrief | done: shots and hits (accuracy) overall and per operator, kills by kind, objectives, losses, recruits, discoveries, followers, resupply bill; money earned and lost this mission is open |
 | F26 | Roster with permanent death | done: eight places, four deploy, switch to turn it off |
 | F27 | Captured enemy agents become recruits | done |
 | F28 | The campaign clock | done: four seconds a game hour, runs during operations |

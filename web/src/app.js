@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+import { accuracyText, killsText, newDebriefCounts, recordKill, recordShot, totals } from "./debrief.js";
 import { THROW_RANGE, advanceBombs, plantBomb, shootBombs } from "./bombs.js";
 import {
   advanceVehicles,
@@ -652,6 +653,7 @@ async function loadGame(index = state.missionIndex) {
   state.outcome = "active";
   state.missionSeconds = 0;
   state.opStats = newStats(mission.opponents.length);
+  state.debrief = newDebriefCounts();
   state.earnedThisRun = [];
   state.camera = createCamera(mission.team[0].position);
   buildMiniTerrain();
@@ -2695,6 +2697,11 @@ function handleCombatEvents(combatEvents) {
     if (event.type === "damage" || event.type === "shot") {
       const shooter = state.units.find((item) => item.id === event.attackerId);
       addEffect(state.effects, "muzzle", { unitId: event.attackerId });
+      if (shooter?.side === "team") {
+        recordShot(state.debrief, shooter.id, event.type === "damage");
+        const victim = event.type === "damage" ? state.units.find((item) => item.id === event.targetId) : null;
+        if (victim && event.remaining === 0 && victim.side !== "team") recordKill(state.debrief, shooter.id, victim.definition.role);
+      }
       // A bomb on the ground goes off when a shot passes it.
       if (shooter && state.bombs.length > 0) {
         const struck = event.type === "damage" ? state.units.find((item) => item.id === event.targetId) : null;
@@ -2965,6 +2972,15 @@ function showOutcome(outcome) {
     ...(state.units.some((unit) => unit.persuaded && !unit.disabled)
       ? [["Following the squad", String(state.units.filter((unit) => unit.persuaded && !unit.disabled).length)]]
       : []),
+    ["Shooting", accuracyText(totals(state.debrief).shots, totals(state.debrief).hits)],
+    ...(killsText(state.debrief) ? [["Put down", killsText(state.debrief)]] : []),
+    ...state.units
+      .filter((unit) => unit.side === "team" && state.debrief.shooters[unit.id])
+      .map((unit) => {
+        const record = state.debrief.shooters[unit.id];
+        const name = state.campaign.roster.find((member) => member.id === unit.id)?.name ?? unit.id;
+        return [name, `${accuracyText(record.shots, record.hits)}${record.kills ? `, ${record.kills} down` : ""}`];
+      }),
     ...(state.opStats.lost?.length > 0 ? [["Operatives lost", state.opStats.lost.join(", ")]] : []),
     ...(state.opStats.recruited?.length > 0 ? [["Recruited", state.opStats.recruited.join(", ")]] : []),
     ...(state.opStats.discovered?.length > 0 ? [["Discovered", state.opStats.discovered.join(", ")]] : []),
