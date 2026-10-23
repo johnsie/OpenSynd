@@ -15,6 +15,11 @@ import {
   regionShape,
   regionStates,
   territoryCard,
+  zoomView,
+  panView,
+  clampView,
+  fullView,
+  MIN_VIEW_WIDTH,
 } from "../src/worldmap.js";
 
 const entries = [
@@ -116,4 +121,27 @@ test("a territory with no operation yet says so on hover", () => {
   const card = territoryCard({ name: "Iberia", population: 3_400_000, owner: "Vesper Holdings" });
   assert.equal(card.label, "NO OPERATION YET");
   assert.match(card.detail, /3\.4 million people · held by Vesper Holdings/);
+});
+
+test("the world map zooms around a point, stays inside the atlas, and pans", () => {
+  const whole = fullView();
+  assert.deepEqual(zoomView(whole, 0.5), whole, "cannot zoom out past the whole map");
+  const closer = zoomView(whole, 2, { x: 500, y: 200 });
+  assert.equal(closer.width, MAP_WIDTH / 2);
+  assert.ok(Math.abs(closer.height - MAP_HEIGHT / 2) < 1e-9);
+  // The point under the pointer stays under it.
+  const focus = { x: 300, y: 100 };
+  const aimed = zoomView(whole, 4, focus);
+  assert.ok(Math.abs((focus.x - aimed.x) / aimed.width - (focus.x - whole.x) / whole.width) < 1e-9 || aimed.x === 0);
+  // Never closer than eight times, and corners are clamped.
+  assert.equal(zoomView(whole, 100).width, MIN_VIEW_WIDTH);
+  const corner = zoomView(whole, 8, { x: 0, y: 0 });
+  assert.deepEqual([corner.x, corner.y], [0, 0]);
+  const far = zoomView(whole, 8, { x: MAP_WIDTH, y: MAP_HEIGHT });
+  assert.ok(Math.abs(far.x + far.width - MAP_WIDTH) < 1e-9 && Math.abs(far.y + far.height - MAP_HEIGHT) < 1e-9);
+  // Panning moves it and cannot leave the atlas.
+  const panned = panView(closer, 50, 20);
+  assert.ok(panned.x > closer.x || closer.x + closer.width >= MAP_WIDTH);
+  assert.deepEqual(panView(closer, -9999, -9999).x, 0);
+  assert.equal(clampView({ x: -5, y: -5, width: 5000, height: 10 }).width, MAP_WIDTH);
 });

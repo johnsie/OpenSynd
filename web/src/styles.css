@@ -409,7 +409,15 @@ dialog.title-screen[open] {
 .title-help summary { cursor: pointer; color: var(--public); }
 .title-help[open] { flex: 1; min-height: 0; overflow-y: auto; }
 .title-help ul { margin: 0.4rem 0 0; padding-left: 1.1rem; font-size: 0.88rem; }
-.world-map { flex: 1; min-height: 0; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; background: #06141a; }
+.world-map {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+  background: #06141a;
+}
 .world-map-svg { display: block; width: 100%; height: 100%; }
 .world-map-card { flex: none; min-height: 2.4em; margin: 0.4rem 0 0; font-size: 0.92rem; color: var(--muted); }
 .map-sea { fill: #06141a; }
@@ -882,3 +890,7 @@ main { grid-template-columns: minmax(0, 1fr) minmax(250px, 300px); gap: 0.6rem; 
   cursor: pointer;
 }
 .select-all-hub:hover, .select-all-hub[aria-pressed="true"] { color: #071012; background: var(--public); }
+
+.world-map-svg.zoomed { cursor: grab; }
+.map-zoom { position: absolute; right: 0.5rem; top: 0.5rem; display: flex; flex-direction: column; gap: 0.25rem; }
+.map-zoom button { width: 2rem; height: 2rem; padding: 0; font-size: 1.1rem; background: rgba(8, 14, 18, 0.85); }

@@ -86,6 +86,45 @@ export function territoryCard(territory) {
   };
 }
 
+// The view onto the atlas (a viewBox): the whole map by default, zoomable up to eight times and draggable. It stays when
+// the map is redrawn (choosing an operation redraws it).
+export const MIN_VIEW_WIDTH = MAP_WIDTH / 8;
+export function fullView() {
+  return { x: 0, y: 0, width: MAP_WIDTH, height: MAP_HEIGHT };
+}
+
+// Keep a view inside the atlas.
+export function clampView(view) {
+  const width = Math.min(MAP_WIDTH, Math.max(MIN_VIEW_WIDTH, view.width));
+  const height = (width * MAP_HEIGHT) / MAP_WIDTH;
+  return {
+    x: Math.min(MAP_WIDTH - width, Math.max(0, view.x)),
+    y: Math.min(MAP_HEIGHT - height, Math.max(0, view.y)),
+    width,
+    height,
+  };
+}
+
+/** Zoom by `factor` (above 1 closer in) keeping the map point under `focus` (map units) where it is. */
+export function zoomView(view, factor, focus = { x: view.x + view.width / 2, y: view.y + view.height / 2 }) {
+  const width = Math.min(MAP_WIDTH, Math.max(MIN_VIEW_WIDTH, view.width / factor));
+  const scale = width / view.width;
+  const next = {
+    x: focus.x - (focus.x - view.x) * scale,
+    y: focus.y - (focus.y - view.y) * scale,
+    width,
+    height: view.height * scale,
+  };
+  return clampView(next);
+}
+
+/** Slide the view by a distance in map units. */
+export function panView(view, dx, dy) {
+  return clampView({ ...view, x: view.x + dx, y: view.y + dy });
+}
+
+let currentView = fullView();
+
 const SVG = "http://www.w3.org/2000/svg";
 function svg(tag, attributes = {}, children = []) {
   const element = document.createElementNS(SVG, tag);
@@ -138,7 +177,7 @@ function drawAtlas(root) {
 export function renderWorldMap({ container, entries, progress, selectedIndex, onSelect, onCard, territories = [] }) {
   const states = regionStates(entries, progress, selectedIndex);
   const root = svg("svg", {
-    viewBox: `0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`,
+    viewBox: viewBoxOf(currentView),
     class: "world-map-svg",
     preserveAspectRatio: "xMidYMid meet",
     role: "group",
@@ -250,5 +289,83 @@ export function renderWorldMap({ container, entries, progress, selectedIndex, on
     group.addEventListener("blur", () => onCard?.(null));
     root.append(group);
   });
-  container.replaceChildren(root);
+  container.replaceChildren(root, mapControls(root));
+  attachNavigation(root);
+}
+
+const viewBoxOf = (view) => `${view.x.toFixed(1)} ${view.y.toFixed(1)} ${view.width.toFixed(1)} ${view.height.toFixed(1)}`;
+
+function setView(root, view) {
+  currentView = clampView(view);
+  root.setAttribute("viewBox", viewBoxOf(currentView));
+  root.classList.toggle("zoomed", currentView.width < MAP_WIDTH - 1);
+}
+
+// Wheel zooms around the pointer, dragging pans, double-click goes back to the whole map.
+function attachNavigation(root) {
+  // Where on the atlas (map units) a pointer is, and how many screen pixels one map unit is. The map is centred in its box
+  // (preserveAspectRatio "meet"), so there may be margins.
+  const toMap = (event) => {
+    const box = root.getBoundingClientRect();
+    const unit = Math.min(box.width / currentView.width, box.height / currentView.height);
+    const offsetX = (box.width - currentView.width * unit) / 2;
+    const offsetY = (box.height - currentView.height * unit) / 2;
+    return {
+      x: currentView.x + (event.clientX - box.left - offsetX) / unit,
+      y: currentView.y + (event.clientY - box.top - offsetY) / unit,
+      unit,
+    };
+  };
+  root.addEventListener("wheel", (event) => {
+    event.preventDefault();
+    const at = toMap(event);
+    setView(root, zoomView(currentView, event.deltaY < 0 ? 1.25 : 0.8, at));
+  }, { passive: false });
+  let drag = null;
+  root.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0 || currentView.width >= MAP_WIDTH - 1) return;
+    drag = { startX: event.clientX, startY: event.clientY, view: currentView, moved: false, unit: toMap(event).unit };
+  });
+  root.addEventListener("pointermove", (event) => {
+    if (!drag) return;
+    const dx = event.clientX - drag.startX;
+    const dy = event.clientY - drag.startY;
+    if (!drag.moved && Math.hypot(dx, dy) < 4) return;
+    drag.moved = true;
+    setView(root, panView(drag.view, -dx / drag.unit, -dy / drag.unit));
+  });
+  const stop = () => {
+    if (drag?.moved) root.dataset.justDragged = "true";
+    drag = null;
+    setTimeout(() => delete root.dataset.justDragged, 0);
+  };
+  root.addEventListener("pointerup", stop);
+  root.addEventListener("pointerleave", stop);
+  // A drag that ends over a marker must not choose it.
+  root.addEventListener("click", (event) => {
+    if (root.dataset.justDragged === "true") event.stopPropagation();
+  }, true);
+  root.addEventListener("dblclick", () => setView(root, fullView()));
+}
+
+// Zoom buttons for those without a wheel.
+function mapControls(root) {
+  const bar = document.createElement("div");
+  bar.className = "map-zoom";
+  bar.setAttribute("role", "group");
+  bar.setAttribute("aria-label", "Zoom the map");
+  for (const [label, text, change] of [
+    ["Zoom in", "+", () => zoomView(currentView, 1.5)],
+    ["Zoom out", "−", () => zoomView(currentView, 1 / 1.5)],
+    ["Show the whole map", "⌂", () => fullView()],
+  ]) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = text;
+    button.setAttribute("aria-label", label);
+    button.title = label;
+    button.addEventListener("click", () => setView(root, change()));
+    bar.append(button);
+  }
+  return bar;
 }

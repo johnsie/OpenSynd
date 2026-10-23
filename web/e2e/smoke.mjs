@@ -70,6 +70,13 @@ for (const [name, type, executablePath] of targets) {
     await page.click("#filter-all");
     assert.equal(await missionButtons.count(), 50);
     assert.equal(await page.locator(".map-region").count(), 50, "every territory is on the world map");
+    // The world map zooms with its buttons and goes back to the whole map.
+    const viewWidth = async () => Number((await page.locator(".world-map-svg").getAttribute("viewBox")).split(" ")[2]);
+    const wholeWidth = await viewWidth();
+    await page.getByRole("button", { name: "Zoom in" }).click();
+    assert.ok((await viewWidth()) < wholeWidth);
+    await page.getByRole("button", { name: "Show the whole map" }).click();
+    assert.equal(await viewWidth(), wholeWidth);
     assert.equal(await missionButtons.nth(0).isDisabled(), false);
     assert.equal(await missionButtons.nth(1).isDisabled(), true);
     assert.match(await missionButtons.nth(1).innerText(), /LOCKED/);
