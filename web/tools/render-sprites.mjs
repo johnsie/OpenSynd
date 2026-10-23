@@ -173,7 +173,9 @@ try {
   if (onlyStreet) manifest = JSON.parse(await readFile(join(output, "sprites.json"), "utf8"));
   for (const { name, options } of jobs) {
     if (onlyStreet) {
-      const groups = { guards: ["guard-"], police: ["police-"], hostile: ["guard-", "criminal-"], women: ["civilian-woman"], civilians: ["civilian-"] };
+      const groups = {
+        guards: ["guard-"], police: ["police-"], hostile: ["guard-", "criminal-"], women: ["civilian-woman"], civilians: ["civilian-"],
+      };
       const wanted = groups[process.env.ONLY];
       if (wanted ? !wanted.some((prefix) => name.startsWith(prefix)) : !isOnlyNew(name)) continue;
     }
