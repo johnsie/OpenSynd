@@ -337,12 +337,12 @@ browser e2e run).
 | F5 | Clearance Key and locked gates | done: the key opens a gate while its carrier is near |
 | F6 | Energy shield | have: blocks fire for its duration |
 | F7 | Time bomb | partly: clear line only, chain reactions; planting at a clicked point is open |
-| F8 | Damage types | partly: bullet, burn, beam and explosion are recorded; scenery does not react yet |
+| F8 | Damage types | done: bullet, burn, beam and explosion; scenery reacts to each |
 | F9 | Accuracy, spread, fire rate | partly: spread through pellets, hold-to-fire; no accuracy roll |
 | F10 | Weight and capacity | done: slowdown beyond capacity, Arms raise it |
 | F11 | Ammo and reload cost | done: refills are billed after each operation |
 | F12 | Discovery boosts research | partly: looted and captured gear counts as researched |
-| F13 | Enemies armed from your progress | open |
+| F13 | Enemies armed from your progress | done: every other enemy agent carries a researched weapon, dearest first |
 | F14 | Hit reactions | done: a flinch that stops action and persuasion |
 | F15 | Everything is lethal | have |
 | F16 | Medikit | have |
@@ -359,7 +359,7 @@ browser e2e run).
 | F27 | Captured enemy agents become recruits | done |
 | F28 | The campaign clock | done: four seconds a game hour, runs during operations |
 | F29 | Persuasion points | done: points by toughness, Brain tiers lower the cost |
-| F30 | Territories, tax and mood | done: daily tax, mood ladder, revolt; the unlock graph is still a chain |
+| F30 | Territories, tax and mood | done: daily tax, mood ladder, revolt, and an unlock graph (`unlocks` on a mission) |
 | F31 | Buying mission intelligence | partly: survey levels; briefing text levels are open |
 | F32 | Equipment screen | done: stats panel, roster, upgrades, buy and sell |
 | F33 | Queued orders | partly: Shift+click queues walking routes only |
@@ -369,8 +369,10 @@ browser e2e run).
 | F37 | The HUD | partly: objective highlight and ammo badges; drug sliders wait on F18 |
 | F38 | Voice and sound cues | partly: police warning, scanner, outcome stingers; doors and glass open |
 | F39 | Doors | partly: key gates; doors that open on approach are open |
-| F40-F42 | Windows, flammable scenery, street lights | open |
-| F43 | Vehicles: lanes, collisions, kinds, trains | partly: run-over damage; lanes, trains, wreck scenery are open |
+| F40 | Windows | open |
+| F41 | Flammable scenery | done: trees and billboards burn ten seconds and spread; fire ignites people beside it |
+| F42 | Street lights, traffic lights | partly: street lights and bins break; traffic lights are open |
+| F43 | Vehicles: lanes, collisions, kinds, trains | partly: run-over damage and queuing behind vehicles; lanes, trains, wreck scenery are open |
 | F44 | Mission editor | open |
 
 ---
