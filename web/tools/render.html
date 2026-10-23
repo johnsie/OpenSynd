@@ -219,8 +219,7 @@
     };
 
     if (kit.style === "woman") {
-      // Dark glamour: a short skirt, glossy thigh-high heeled boots with a neon garter line, a laced
-      // corset, a choker and long hair.
+      // Dark glamour: a short skirt, sheer stockings, glossy heeled ankle boots, a fitted crop top, a choker and long hair.
       const kneeY = at("LeftLeg").y;
       const length = (hips.y - kneeY) * 0.3;
       const skirt = new THREE.MeshStandardMaterial({ color: rgb(kit.skirt), roughness: 0.9, side: THREE.DoubleSide });
@@ -230,15 +229,16 @@
         new THREE.Vector3(hips.x, hips.y - length * 0.4 - length / 2, hips.z), "Hips");
       const gloss = new THREE.MeshStandardMaterial({ color: rgb(kit.boots), roughness: 0.22, metalness: 0.15 });
       for (const side of ["Left", "Right"]) {
-        // Over-the-knee boots: a shaped thigh, a slim calf, a neon band at the top, a stiletto heel.
-        limb(`${side}UpLeg`, `${side}Leg`, unit * 0.46, unit * 0.36, gloss, `${side}UpLeg`, 0.3, 1.02);
-        limb(`${side}Leg`, `${side}Foot`, unit * 0.36, unit * 0.27, gloss, `${side}Leg`, -0.02, 1.0);
-        limb(`${side}UpLeg`, `${side}Leg`, unit * 0.48, unit * 0.48, accent, `${side}UpLeg`, 0.28, 0.33);
+        // Bare, sheer-stockinged legs (the trousers colour in the palette) down to glossy high-heeled ankle boots.
         const ankle = at(`${side}Foot`);
         const toes = at(`${side}ToeBase`);
+        const cuff = new THREE.Mesh(new THREE.CylinderGeometry(unit * 0.3, unit * 0.34, unit * 0.9, 12), gloss);
+        place(cuff, ankle.clone().add(new THREE.Vector3(0, unit * 0.2, 0)), `${side}Leg`);
+        place(new THREE.Mesh(new THREE.CylinderGeometry(unit * 0.34, unit * 0.34, unit * 0.05, 12), accent),
+          ankle.clone().add(new THREE.Vector3(0, unit * 0.66, 0)), `${side}Leg`);
         const toeLength = ankle.distanceTo(toes) + unit * 0.5;
-        place(box(unit * 0.7, unit * 0.55, toeLength * 1.8, gloss), offset(ankle, 0, -unit * 0.32, toeLength * 0.45), `${side}Foot`);
-        place(box(unit * 0.14, unit * 0.62, unit * 0.14, gloss), offset(ankle, 0, -unit * 0.52, -unit * 0.22), `${side}Foot`);
+        place(box(unit * 0.62, unit * 0.5, toeLength * 1.7, gloss), offset(ankle, 0, -unit * 0.32, toeLength * 0.42), `${side}Foot`);
+        place(box(unit * 0.12, unit * 0.62, unit * 0.12, gloss), offset(ankle, 0, -unit * 0.52, -unit * 0.22), `${side}Foot`);
       }
       // A fitted cropped top over a slim waist: a tapered body from the shoulders to the waist, a narrow cincher belt with a
       // neon lacing line, and a flared hip line under the skirt.
