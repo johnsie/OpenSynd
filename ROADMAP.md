@@ -345,7 +345,7 @@ browser e2e run).
 | F22 | Scripted people | done: walk, wait, trigger, say, escape; drive and enter vehicle are open |
 | F23 | Carried key items | done: Clearance Key, take-item objective |
 | F24 | Minimap signal at the current objective | done |
-| F25 | Fuller debrief | done: shots and hits (accuracy) overall and per operator, kills by kind, objectives, losses, recruits, discoveries, followers, resupply bill; money earned and lost this mission is open |
+| F25 | Fuller debrief | done: shots and hits (accuracy) overall and per operator, kills by kind, objectives, losses, recruits, discoveries, followers, resupply bill and the change in funds |
 | F26 | Roster with permanent death | done: eight places, four deploy, switch to turn it off |
 | F27 | Captured enemy agents become recruits | done |
 | F28 | The campaign clock | done: four seconds a game hour, runs during operations |
@@ -1130,6 +1130,8 @@ Ordered by what each adds per unit of work given what exists. Items in the same 
   chest, loses it all. Operatives drop theirs too; police, guards and criminals carry a weapon (`carries` in their unit
   file: a machine pistol, a heavy emitter, a civic emitter) that drops with them, and each item shows its own icon on the
   ground.
+- **Extraction needs everyone:** the operation ends only when every operative still standing is in the extraction zone (a
+  vehicle driven into it brings its riders); those who have fallen no longer have to be there.
 - **Dropping items:** right-click a weapon or item slot (or Alt+Shift+1-8) and it lies on the ground beside the operative,
   freeing the slot, to be picked up again by anyone.
 - **Chest regeneration:** tier 2 and 3 chests heal a sixteenth of the operative's health every four seconds after a hit.

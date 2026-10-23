@@ -87,7 +87,15 @@ const ZONE_NEVER_ARRIVES = new Set([
 // Zone-entry objectives (everything except "interact", "disable" and "hold") resolve when a unit
 // arrives. Extraction waits until every other required objective is complete.
 // Returns events in order; completed objectives are marked in place.
-export function resolveArrival(objectives, zones, position) {
+// FreeSynd's extraction rule: the operation ends only once every operative still standing is in the extraction zone
+// (one riding in a vehicle counts where the vehicle is). `units`, when given, is checked; without it any arrival counts.
+export function operativesOutside(zone, units) {
+  return units.filter(
+    (unit) => unit.side === "team" && !unit.disabled && !unit.escaped && !zoneContains(zone, unit.position),
+  );
+}
+
+export function resolveArrival(objectives, zones, position, units = null) {
   const events = [];
   for (const objective of objectives) {
     if (objective.complete || ZONE_NEVER_ARRIVES.has(objective.type) || !canProgress(objectives, objective)) continue;
@@ -101,7 +109,30 @@ export function resolveArrival(objectives, zones, position) {
         events.push({ type: "blocked", objective });
         continue;
       }
+      if (units) {
+        const outside = operativesOutside(zone, units);
+        if (outside.length > 0) {
+          events.push({ type: "waiting", objective, outside: outside.length });
+          continue;
+        }
+      }
     }
+    objective.complete = true;
+    events.push({ type: "complete", objective });
+  }
+  return events;
+}
+
+// Checked every step: extraction completes when everyone still standing is in the zone, however they got there (a
+// vehicle driving into the zone brings its riders with it).
+export function resolveExtraction(objectives, zones, units) {
+  const events = [];
+  for (const objective of objectives) {
+    if (objective.type !== "extract" || objective.complete || !canProgress(objectives, objective)) continue;
+    if (objectives.some((item) => item.required && item.type !== "extract" && !item.complete)) continue;
+    const zone = zones.find((item) => item.id === objective.targetZone);
+    const living = units.filter((unit) => unit.side === "team" && !unit.disabled && !unit.escaped);
+    if (!zone || living.length === 0 || operativesOutside(zone, units).length > 0) continue;
     objective.complete = true;
     events.push({ type: "complete", objective });
   }

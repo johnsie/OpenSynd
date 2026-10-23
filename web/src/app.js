@@ -204,7 +204,7 @@ import {
   failureReason,
   objectiveFocus,
   resolveUnitObjectives,
-  advanceHold, isOpenTarget, resolveArrival, resolveDisabled, syncGates as syncMissionGates,
+  advanceHold, isOpenTarget, resolveArrival, resolveDisabled, resolveExtraction, syncGates as syncMissionGates,
 } from "./mission.js";
 import {
   addEffect,
@@ -680,6 +680,7 @@ async function loadGame(index = state.missionIndex) {
   state.outcome = "active";
   state.missionSeconds = 0;
   state.opStats = newStats(mission.opponents.length);
+  state.fundsAtStart = state.campaign.funds;
   state.debrief = newDebriefCounts();
   state.earnedThisRun = [];
   state.camera = createCamera(mission.team[0].position);
@@ -2988,6 +2989,7 @@ function simulationStep(deltaSeconds) {
     ...resolveDisabled(state.objectives, state.units),
     ...resolveUnitObjectives(state.objectives, state.map.zones, state.units),
     ...advanceHold(state.objectives, state.map.zones, state.units, deltaSeconds),
+    ...resolveExtraction(state.objectives, state.map.zones, state.units),
   ]) {
     state.opStats.objectivesCompleted += 1;
     syncGates();
@@ -3001,6 +3003,12 @@ function simulationStep(deltaSeconds) {
 function formatDuration(seconds) {
   const whole = Math.round(seconds);
   return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
+}
+
+// "120 → 168 (+48)" for the debrief: what the operation did to the funds (tax, awards, fines and the resupply bill).
+function fundsChange(before, after) {
+  const change = Math.round((after - before) * 100) / 100;
+  return `${Math.floor(before)} → ${Math.floor(after)} (${change >= 0 ? "+" : "−"}${Math.abs(change)})`;
 }
 
 function showOutcome(outcome) {
@@ -3069,6 +3077,7 @@ function showOutcome(outcome) {
       : []),
     ...(state.opStats.discovered?.length > 0 ? [["Discovered", state.opStats.discovered.join(", ")]] : []),
     ...(state.opStats.resupply > 0 ? [["Resupply bill", `${state.opStats.resupply} funds`]] : []),
+    ["Funds", fundsChange(state.fundsAtStart ?? state.campaign.funds, state.campaign.funds)],
     ...(state.opStats.civiliansHarmed + state.opStats.policeHarmed > 0
       ? [["Bystanders killed", String(state.opStats.civiliansHarmed + state.opStats.policeHarmed)]]
       : []),
@@ -3263,7 +3272,11 @@ function update(deltaSeconds) {
 
 function completeObjectivesAt(position) {
   let changed = false;
-  for (const event of resolveArrival(state.objectives, state.map.zones, position)) {
+  for (const event of resolveArrival(state.objectives, state.map.zones, position, state.units)) {
+    if (event.type === "waiting") {
+      setStatus(`Extraction needs everyone: ${event.outside} operative${event.outside > 1 ? "s" : ""} still to reach the zone.`);
+      continue;
+    }
     if (event.type === "blocked") {
       setStatus("Extraction is available after all other commitments are fulfilled.");
       continue;

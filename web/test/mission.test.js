@@ -395,3 +395,32 @@ test("at the start only the pistol is available; every other weapon, the bomb an
     assert.ok(names.includes(wanted), wanted);
   }
 });
+
+import { operativesOutside, resolveExtraction } from "../src/mission.js";
+
+test("extraction needs every operative still standing in the zone, wherever they got there from", () => {
+  const zones = [{ id: "exit", kind: "exit", position: { x: 10, y: 10 }, width: 3, height: 3 }];
+  const objective = () => ({ id: "leave", type: "extract", targetZone: "exit", required: true, complete: false });
+  const operator = (id, x, y, over = {}) => ({ id, side: "team", disabled: false, position: { x, y }, ...over });
+
+  // The first operative to arrive waits for the rest.
+  const first = [objective()];
+  const squad = [operator("a", 11, 11), operator("b", 3, 3), operator("c", 12, 10)];
+  const events = resolveArrival(first, zones, { x: 11, y: 11 }, squad);
+  assert.deepEqual(events.map((event) => [event.type, event.outside]), [["waiting", 1]]);
+  assert.equal(first[0].complete, false);
+  assert.deepEqual(operativesOutside(zones[0], squad).map((unit) => unit.id), ["b"]);
+
+  // The last one in completes it; someone who has fallen no longer has to be there.
+  squad[1].position = { x: 10, y: 12 };
+  assert.deepEqual(resolveExtraction(first, zones, squad).map((event) => event.type), ["complete"]);
+  const fallen = [objective()];
+  assert.equal(resolveExtraction(fallen, zones, [operator("a", 11, 11), operator("b", 3, 3, { disabled: true })]).length, 1);
+
+  // Nobody left standing completes nothing; other commitments still come first.
+  assert.deepEqual(resolveExtraction([objective()], zones, [operator("a", 3, 3, { disabled: true })]), []);
+  const pending = [{ id: "relay", type: "interact", targetZone: "x", required: true, complete: false }, objective()];
+  assert.deepEqual(resolveExtraction(pending, zones, [operator("a", 11, 11)]), []);
+  // Without a list of units the old rule holds: anyone arriving counts.
+  assert.equal(resolveArrival([objective()], zones, { x: 11, y: 11 }).length, 1);
+});

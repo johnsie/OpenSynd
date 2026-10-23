@@ -12,7 +12,15 @@ import { fileURLToPath } from "node:url";
 import { ACHIEVEMENTS, newStats, newlyEarned } from "../src/achievements.js";
 import { buildPatrolRoute, createTileGrid, findPath, formationTiles, zoneContains } from "../src/engine.js";
 import { collectFallen, findLoot, lootBody, nearestLootable } from "../src/inventory.js";
-import { advanceHold, missionOutcome, resolveArrival, resolveDisabled, resolveInteraction, syncGates } from "../src/mission.js";
+import {
+  advanceHold,
+  missionOutcome,
+  resolveArrival,
+  resolveDisabled,
+  resolveExtraction,
+  resolveInteraction,
+  syncGates,
+} from "../src/mission.js";
 import {
   FIXED_STEP_SECONDS,
   advanceCombat,
@@ -208,8 +216,9 @@ function playOnce(world, tactics) {
       }
       return;
     }
-    // Extraction: everyone heads for the exit zone.
-    if (active.every((unit) => unit.path.length === 0) && !active.some(inZone)) moveSquad(centre);
+    // Extraction: everyone still standing has to be in the exit zone, so anyone idle outside it is sent there.
+    const middle = { x: Math.round(zone.position.x + zone.width / 2 - 0.5), y: Math.round(zone.position.y + zone.height / 2 - 0.5) };
+    if (active.some((unit) => unit.path.length === 0 && !inZone(unit))) moveSquad(middle);
   };
 
   const limit = 20 * 60;
@@ -220,12 +229,17 @@ function playOnce(world, tactics) {
       nextThink = seconds + 0.25;
     }
     for (const arrival of advanceUnits(units, FIXED_STEP_SECONDS)) {
-      for (const event of resolveArrival(objectives, map.zones, arrival.position)) {
+      for (const event of resolveArrival(objectives, map.zones, arrival.position, units)) {
         if (event.type === "complete") stats.objectivesCompleted += 1;
       }
       syncGates(grid, map, objectives);
     }
-    for (const event of [...resolveDisabled(objectives, units), ...advanceHold(objectives, map.zones, units, FIXED_STEP_SECONDS)]) {
+    const completed = [
+      ...resolveDisabled(objectives, units),
+      ...advanceHold(objectives, map.zones, units, FIXED_STEP_SECONDS),
+      ...resolveExtraction(objectives, map.zones, units),
+    ];
+    for (const event of completed) {
       if (event.type === "complete") stats.objectivesCompleted += 1;
       syncGates(grid, map, objectives);
     }
