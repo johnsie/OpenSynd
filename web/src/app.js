@@ -83,6 +83,16 @@ import {
   serializeCampaign,
   canFit,
   resupplyCost,
+  ROSTER_MAX,
+  SQUAD_MAX,
+  HIRE_PRICE,
+  aliveMembers,
+  bench,
+  deploy,
+  deployedMembers,
+  hire,
+  loseOperatives,
+  recruit,
   fitUpgrade,
   removeUpgrade,
   upgradesOf,
@@ -442,6 +452,12 @@ async function readJson(path) {
 
 // Operators start with their campaign loadout (their mission defaults until one is chosen);
 // everyone else carries what the mission gives them.
+function squadTeam(slots) {
+  return deployedMembers(state.campaign)
+    .slice(0, slots.length)
+    .map((member, index) => ({ ...slots[index], id: member.id, callsign: member.name }));
+}
+
 function startingEquipment(placement, definition, byPath, byId) {
   const defaults = placement.equipment.map((path) => byPath.get(path));
   if (definition.role !== "operator") return defaults;
@@ -456,7 +472,10 @@ async function loadGame(index = state.missionIndex) {
   await loadSprites();
   const pack = await readJson("content/pack.json");
   const missionPath = pack.missions[index];
-  const mission = await readJson(`content/${missionPath}`);
+  const rawMission = await readJson(`content/${missionPath}`);
+  // The squad is chosen from the roster: its members take the mission's starting places in order.
+  state.rawTeam = rawMission.team;
+  const mission = { ...rawMission, team: squadTeam(rawMission.team) };
   const map = await readJson(`content/${mission.map}`);
   const unitEntries = await Promise.all(
     pack.units.map(async (path) => [path, await readJson(`content/${path}`)]),
@@ -651,7 +670,8 @@ function renderResearch() {
   document.querySelector("#research-funds").textContent = `Funds ${campaign.funds}`;
 
   // Body upgrades for the operative chosen in the Armoury: six parts, three tiers each.
-  const fitted = state.mission.team[Math.min(state.armoury.operator, state.mission.team.length - 1)];
+  const squad = squadTeam(state.rawTeam ?? state.mission.team);
+  const fitted = squad[Math.min(state.armoury.operator, squad.length - 1)];
   const owned = upgradesOf(campaign, fitted.id);
   document.querySelector("#research-tracks").replaceChildren(
     ...PART_NAMES.map((part) => {
@@ -723,13 +743,79 @@ function renderResearch() {
     }),
   );
 
+  renderRoster();
   renderArmoury();
+}
+
+// The roster: who is alive, who deploys (up to four), and hiring a replacement. Fallen operatives are listed as lost.
+function renderRoster() {
+  const campaign = state.campaign;
+  const list = document.querySelector("#roster-list");
+  const cards = campaign.roster.map((member) => {
+    const card = document.createElement("div");
+    card.className = "roster-card";
+    card.classList.toggle("fallen", !member.alive);
+    const name = document.createElement("strong");
+    name.textContent = member.name;
+    card.append(name);
+    if (!member.alive) {
+      const lost = document.createElement("span");
+      lost.textContent = "Lost";
+      card.append(lost);
+      return card;
+    }
+    const label = document.createElement("label");
+    const box = document.createElement("input");
+    box.type = "checkbox";
+    box.checked = campaign.squad.includes(member.id);
+    box.setAttribute("aria-label", `Deploy ${member.name}`);
+    box.disabled = box.checked ? campaign.squad.length <= 1 : campaign.squad.length >= SQUAD_MAX;
+    box.addEventListener("change", () => {
+      state.campaign = box.checked ? deploy(state.campaign, member.id) : bench(state.campaign, member.id);
+      state.squadChanged = true;
+      persistCampaign();
+      renderResearch();
+    });
+    label.append(box, document.createTextNode("Deploy"));
+    card.append(label);
+    return card;
+  });
+  const hireButton = document.createElement("button");
+  hireButton.type = "button";
+  const wiped = aliveMembers(campaign).length === 0;
+  hireButton.textContent = wiped ? "Take on a volunteer · free" : `Hire a replacement · ${HIRE_PRICE} funds`;
+  hireButton.disabled = aliveMembers(campaign).length >= ROSTER_MAX || (!wiped && campaign.funds < HIRE_PRICE);
+  hireButton.addEventListener("click", () => {
+    const hired = hire(state.campaign);
+    if (!hired.member) return;
+    state.campaign = hired.campaign;
+    state.squadChanged = true;
+    persistCampaign();
+    updateFundsReadout();
+    renderResearch();
+  });
+  const insurance = document.createElement("label");
+  const toggle = document.createElement("input");
+  toggle.type = "checkbox";
+  toggle.checked = campaign.permadeath;
+  toggle.setAttribute("aria-label", "Fallen operatives are lost for good");
+  toggle.addEventListener("change", () => {
+    state.campaign = { ...state.campaign, permadeath: toggle.checked };
+    persistCampaign();
+    renderResearch();
+  });
+  insurance.append(toggle, document.createTextNode("Fallen operatives are lost for good"));
+  list.replaceChildren(...cards, hireButton, insurance);
+  document.querySelector("#roster-note").textContent =
+    `${aliveMembers(campaign).length} of ${ROSTER_MAX} places filled, ${campaign.squad.length} of ${SQUAD_MAX} deploying. ` +
+    "Persuade enemy agents and get them out alive to recruit them." +
+    (state.squadChanged ? " Squad changes apply when the operation is restarted." : "");
 }
 
 // The Armoury: each operative's eight slots as pictures, and a shop that buys into the chosen slot.
 function renderArmoury() {
   const campaign = state.campaign;
-  const team = state.mission.team;
+  const team = squadTeam(state.rawTeam ?? state.mission.team);
   state.armoury.operator = Math.min(state.armoury.operator, team.length - 1);
   const choice = state.armoury;
   const loadouts = team.map((placement) => loadoutFor(campaign, placement.id, startingLoadout(placement)));
@@ -740,7 +826,9 @@ function renderArmoury() {
       const card = document.createElement("div");
       card.className = "armoury-card";
       const heading = document.createElement("h4");
-      heading.textContent = `Operator ${index + 1} · ${loadouts[index].length} of ${SLOTS_PER_OPERATIVE} slots`;
+      heading.textContent =
+        `Operator ${index + 1} · ${placement.callsign ?? placement.id} · ` +
+        `${loadouts[index].length} of ${SLOTS_PER_OPERATIVE} slots`;
       const grid = document.createElement("div");
       grid.className = "armoury-slots";
       grid.setAttribute("role", "group");
@@ -2529,6 +2617,8 @@ function showOutcome(outcome) {
     ["Time", formatDuration(state.missionSeconds)],
     ["Operators disabled", String(teamDown)],
     ["Enemies disabled", String(watchersDown)],
+    ...(state.opStats.lost?.length > 0 ? [["Operatives lost", state.opStats.lost.join(", ")]] : []),
+    ...(state.opStats.recruited?.length > 0 ? [["Recruited", state.opStats.recruited.join(", ")]] : []),
     ...(state.opStats.resupply > 0 ? [["Resupply bill", `${state.opStats.resupply} funds`]] : []),
     ...(state.opStats.civiliansHarmed + state.opStats.policeHarmed > 0
       ? [["Bystanders killed", String(state.opStats.civiliansHarmed + state.opStats.policeHarmed)]]
@@ -2589,6 +2679,34 @@ function keepLoot() {
   persistCampaign();
 }
 
+// After a won operation the roster is settled: operatives who fell are lost for good (with permadeath on), and any
+// enemy agent still following the squad is taken on with the gear they carry. A lost operation costs nobody their life;
+// the squad pulls back and can try again. If the whole roster is gone a volunteer steps in.
+function settleRoster() {
+  const nameOf = (id) => state.campaign.roster.find((member) => member.id === id)?.name ?? id;
+  const fallen = state.units.filter((unit) => unit.side === "team" && unit.disabled).map((unit) => unit.id);
+  state.opStats.lost = state.campaign.permadeath ? fallen.map(nameOf) : [];
+  state.campaign = loseOperatives(state.campaign, fallen);
+  state.opStats.recruited = [];
+  const captives = state.units.filter(
+    (unit) => unit.persuaded && !unit.disabled && unit.side === "opposition" && unit.definition.role === "enemy-agent",
+  );
+  for (const captive of captives) {
+    const gear = captive.equipment.map((item) => item.definition.id);
+    const joined = recruit(state.campaign);
+    if (!joined.member) break;
+    state.campaign = captureItems(joined.campaign, joined.member.id, gear, state.catalog, []);
+    state.opStats.recruited.push(joined.member.name);
+  }
+  if (aliveMembers(state.campaign).length === 0) {
+    const volunteer = hire(state.campaign);
+    if (volunteer.member) {
+      state.campaign = volunteer.campaign;
+      state.opStats.recruited.push(volunteer.member.name);
+    }
+  }
+}
+
 function checkOutcome() {
   if (state.outcome !== "active") return;
   const outcome = missionOutcome(state.objectives, state.units);
@@ -2606,6 +2724,7 @@ function checkOutcome() {
     saveProgress();
     renderMissionList();
     keepLoot();
+    settleRoster();
   }
   checkAchievements();
   persistCampaign();
@@ -3556,6 +3675,11 @@ if (new URLSearchParams(location.search).has("e2e")) {
       const definition = state.catalog.find((item) => item.id === itemId);
       unit.equipment.push({ definition, charges: definition.charges });
       renderInterface();
+    },
+    persuade(id, ownerId) {
+      const unit = state.units.find((item) => item.id === id);
+      unit.persuaded = true;
+      unit.persuadedBy = ownerId;
     },
     persuadedBy(id) {
       return state.units.find((item) => item.id === id)?.persuadedBy ?? null;

@@ -390,7 +390,9 @@ for (const [name, type, executablePath] of targets) {
     // picked up) and raises the alert.
     await page.evaluate(() => window.opensyndTest.placeNear("operator-one", "enemy-agent-two", 0, 4));
     await page.waitForFunction(
-      () => document.querySelector("#status-message").textContent.includes("spotted"),
+      () =>
+        document.querySelector("#status-message").textContent.includes("spotted") ||
+        window.opensyndTest.musicStatus().intense,
     );
     // Being seen brings in the intense score, which takes over from the calm one.
     await page.waitForFunction(() => window.opensyndTest.musicStatus().intense, null, { timeout: 5000 });
@@ -508,6 +510,17 @@ for (const [name, type, executablePath] of targets) {
     assert.equal(await labFunds(), 206);
     assert.equal(await squads.first().locator(".slot:not(.empty)").count(), 6);
 
+    // The roster: four operatives deploy; benching one takes them out of the Armoury until they are put back.
+    assert.equal(await page.locator("#roster-list .roster-card").count(), 4);
+    const deployBoxes = page.getByLabel(/^Deploy /);
+    assert.equal(await deployBoxes.count(), 4);
+    await deployBoxes.nth(3).uncheck();
+    assert.equal(await squads.count(), 3);
+    assert.match(await page.locator("#roster-note").innerText(), /3 of 4 deploying/);
+    await deployBoxes.nth(3).check();
+    assert.equal(await squads.count(), 4);
+    assert.equal(await page.getByLabel("Fallen operatives are lost for good").isChecked(), true);
+
     const campaignRecord = await page.evaluate(() => JSON.parse(localStorage.getItem("opensynd.campaign.v1")));
     assert.equal(campaignRecord.upgrades["operator-one"].legs, 1);
     assert.deepEqual(campaignRecord.loadouts["operator-one"], [
@@ -623,6 +636,34 @@ for (const [name, type, executablePath] of targets) {
     await garage.mouse.click(target.x, target.y - 10, { button: "right" });
     assert.match(await garage.locator("#status-message").innerText(), /thrown out of the City Car|integrity/);
     await garage.close();
+
+    // Permadeath and recruiting: a fallen operative is lost after a win, and a persuaded enemy agent joins.
+    const roster = await browser.newPage();
+    await roster.goto(`${url}?e2e`);
+    await roster.waitForSelector(".roster-select");
+    await roster.click("#begin-button");
+    await roster.waitForFunction(() =>
+      document.querySelector("#status-message").textContent.includes("Local map established"),
+    );
+    await roster.evaluate(() => {
+      window.opensyndTest.disableUnit("operator-four");
+      window.opensyndTest.persuade("enemy-agent-one", "operator-one");
+      window.opensyndTest.completeObjectives();
+    });
+    await roster.waitForSelector("#outcome-dialog[open]");
+    const debrief = await roster.locator("#outcome-stats").innerText();
+    assert.match(debrief, /Operatives lost/);
+    assert.match(debrief, /Recruited/);
+    const record = await roster.evaluate(() => JSON.parse(localStorage.getItem("opensynd.campaign.v1")));
+    assert.equal(record.roster.find((member) => member.id === "operator-four").alive, false);
+    assert.equal(record.roster.length, 5);
+    assert.equal(record.squad.length, 4, "three survivors and the recruit deploy next");
+    assert.ok(record.squad.includes("agent-5"));
+    await roster.click("#next-button");
+    await roster.waitForSelector("#title-dialog[open]");
+    await roster.click("#begin-button");
+    assert.equal(await roster.locator(".roster-select").count(), 4);
+    await roster.close();
 
     // Legs and Brain work like weapons: with everyone selected, one operative's controls set them all.
     const group = await browser.newPage();

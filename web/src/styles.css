@@ -823,3 +823,18 @@ main { grid-template-columns: minmax(0, 1fr) minmax(250px, 300px); gap: 0.6rem; 
 /* Sequential operations: the objective to do now stands out and the later ones wait. */
 .objective-list li.current { border-color: var(--amber); color: var(--ink); font-weight: 600; }
 .objective-list li.waiting { opacity: 0.6; }
+
+/* The roster panel in the Research & Armoury screen. */
+.roster-panel { margin: 0.4rem 0 0.8rem; }
+.roster-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.roster-card {
+  border: 1px solid var(--line, #35424b);
+  border-radius: 6px;
+  padding: 0.4rem 0.6rem;
+  display: grid;
+  gap: 0.25rem;
+  min-width: 9rem;
+}
+.roster-card.fallen { opacity: 0.5; }
+.roster-card strong { letter-spacing: 0.04em; }
+.roster-card label { display: flex; gap: 0.4rem; align-items: center; }

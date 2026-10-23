@@ -15,8 +15,49 @@ export const FUNDS_PER_SECOND = 0.1;
 const OLD_TRACK_COSTS = [20, 30, 40, 50, 60];
 const refundOldTrack = (level) => OLD_TRACK_COSTS.slice(0, Math.min(5, wholeNumber(level))).reduce((sum, cost) => sum + cost, 0);
 
+// The roster (FreeSynd's cryo chamber): up to eight operatives, four of whom deploy on any operation. A fallen
+// operative is lost for good unless permadeath is switched off, and the only way to get new ones is capturing
+// enemy agents or paying to hire a replacement. The first four use the ids of the operation's starting slots.
+export const ROSTER_MAX = 8;
+export const SQUAD_MAX = 4;
+export const HIRE_PRICE = 60;
+export const STARTING_IDS = Object.freeze(["operator-one", "operator-two", "operator-three", "operator-four"]);
+export const SURNAMES = Object.freeze([
+  "Alder", "Brandt", "Calloway", "Dray", "Esquivel", "Farrow", "Galt", "Hale", "Iyer", "Jarrow",
+  "Kestrel", "Lindqvist", "Marlow", "Nakamura", "Okafor", "Pryce", "Quill", "Rourke", "Sato", "Thorne",
+  "Ulloa", "Vance", "Whitlock", "Xu", "Yarrow", "Zeller", "Ashby", "Bishop", "Crane", "Dunmore",
+  "Ellery", "Fenwick", "Garza", "Holloway", "Ibarra", "Jessup", "Kowal", "Lacroix", "Moreau", "Novak",
+]);
+
+function surnameFor(roster, index) {
+  const used = new Set(roster.map((member) => member.name));
+  for (let step = 0; step < SURNAMES.length; step += 1) {
+    const name = SURNAMES[(index + step) % SURNAMES.length];
+    if (!used.has(name)) return name;
+  }
+  return `${SURNAMES[index % SURNAMES.length]} ${roster.length + 1}`;
+}
+
+export function initialRoster() {
+  const roster = [];
+  for (const [index, id] of STARTING_IDS.entries()) {
+    roster.push({ id, name: surnameFor(roster, index * 7), alive: true, missions: 0 });
+  }
+  return roster;
+}
+
 export function emptyCampaign() {
-  return { funds: 0, carry: 0, upgrades: {}, items: [], loadouts: {}, achievements: [] };
+  return {
+    funds: 0,
+    carry: 0,
+    upgrades: {},
+    items: [],
+    loadouts: {},
+    achievements: [],
+    roster: initialRoster(),
+    squad: [...STARTING_IDS],
+    permadeath: true,
+  };
 }
 
 function wholeNumber(value, fallback = 0) {
@@ -52,6 +93,11 @@ export function parseCampaign(text) {
       if (operator.length < 120) upgrades[operator] = sanitizeUpgrades(parts);
     }
   }
+  const roster = parseRoster(value.roster);
+  const aliveIds = roster.filter((member) => member.alive).map((member) => member.id);
+  const squad = Array.isArray(value.squad)
+    ? [...new Set(value.squad.filter((id) => aliveIds.includes(id)))].slice(0, SQUAD_MAX)
+    : aliveIds.slice(0, SQUAD_MAX);
   const carry = typeof value.carry === "number" && value.carry >= 0 && value.carry < 1 ? value.carry : 0;
   return {
     funds: wholeNumber(value.funds) + refundOldTrack(value.heart) + refundOldTrack(value.brain),
@@ -60,7 +106,93 @@ export function parseCampaign(text) {
     items: ids(value.items),
     loadouts,
     achievements: ids(value.achievements),
+    roster,
+    squad,
+    permadeath: value.permadeath !== false,
   };
+}
+
+// Anything damaged falls back to the starting roster; ids and names are kept short and unique.
+function parseRoster(value) {
+  if (!Array.isArray(value)) return initialRoster();
+  const seen = new Set();
+  const roster = [];
+  for (const entry of value.slice(0, ROSTER_MAX * 2)) {
+    if (entry === null || typeof entry !== "object") continue;
+    const id = typeof entry.id === "string" && entry.id.length > 0 && entry.id.length < 40 ? entry.id : null;
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    const name = typeof entry.name === "string" && entry.name.length > 0 && entry.name.length < 40 ? entry.name : id;
+    roster.push({ id, name, alive: entry.alive !== false, missions: wholeNumber(entry.missions) });
+  }
+  return roster.length > 0 ? roster : initialRoster();
+}
+
+export const aliveMembers = (campaign) => campaign.roster.filter((member) => member.alive);
+
+// Who deploys, in order: the squad members who are alive.
+export function deployedMembers(campaign) {
+  return campaign.squad.map((id) => campaign.roster.find((member) => member.id === id)).filter((member) => member?.alive);
+}
+
+// Put a living operative in the squad (if there is room) or take one out. At least one must stay.
+export function deploy(campaign, id) {
+  const member = campaign.roster.find((entry) => entry.id === id);
+  if (!member?.alive || campaign.squad.includes(id) || campaign.squad.length >= SQUAD_MAX) return campaign;
+  return { ...campaign, squad: [...campaign.squad, id] };
+}
+
+export function bench(campaign, id) {
+  if (!campaign.squad.includes(id) || campaign.squad.length <= 1) return campaign;
+  return { ...campaign, squad: campaign.squad.filter((entry) => entry !== id) };
+}
+
+// Operatives who fell are lost for good (unless permadeath is off): their kit and body parts go with them.
+export function loseOperatives(campaign, ids) {
+  const fallen = ids.filter((id) => campaign.roster.some((member) => member.id === id && member.alive));
+  if (!campaign.permadeath || fallen.length === 0) return campaign;
+  const loadouts = { ...campaign.loadouts };
+  const upgrades = { ...campaign.upgrades };
+  for (const id of fallen) {
+    delete loadouts[id];
+    delete upgrades[id];
+  }
+  const roster = campaign.roster.map((member) => (fallen.includes(member.id) ? { ...member, alive: false } : member));
+  let squad = campaign.squad.filter((id) => !fallen.includes(id));
+  if (squad.length === 0) squad = roster.filter((member) => member.alive).map((member) => member.id).slice(0, SQUAD_MAX);
+  return { ...campaign, roster, squad, loadouts, upgrades };
+}
+
+// A new operative joins: a captured enemy agent with their gear, or a hired replacement. Returns the campaign and
+// the new member, or the same campaign and null when the roster is full.
+export function recruit(campaign, { items = [], upgrades = null } = {}) {
+  if (aliveMembers(campaign).length >= ROSTER_MAX) return { campaign, member: null };
+  const numbers = campaign.roster.map((member) => Number(/^agent-(\d+)$/.exec(member.id)?.[1] ?? 0));
+  const id = `agent-${Math.max(4, ...numbers) + 1}`;
+  const member = { id, name: surnameFor(campaign.roster, campaign.roster.length * 7 + 3), alive: true, missions: 0 };
+  const roster = [...campaign.roster, member];
+  // The fallen stay on the list as a memorial, oldest dropped first once it gets long.
+  while (roster.length > ROSTER_MAX * 2) {
+    const oldest = roster.findIndex((entry) => !entry.alive);
+    if (oldest < 0) break;
+    roster.splice(oldest, 1);
+  }
+  const next = {
+    ...campaign,
+    roster,
+    squad: campaign.squad.length < SQUAD_MAX ? [...campaign.squad, id] : campaign.squad,
+    loadouts: items.length > 0 ? { ...campaign.loadouts, [id]: items.slice(0, SLOTS_PER_OPERATIVE) } : campaign.loadouts,
+    upgrades: upgrades ? { ...campaign.upgrades, [id]: sanitizeUpgrades(upgrades) } : campaign.upgrades,
+  };
+  return { campaign: next, member };
+}
+
+// Hiring a replacement costs funds; with the whole roster lost a volunteer joins for nothing.
+export function hire(campaign) {
+  const free = aliveMembers(campaign).length === 0;
+  if (!free && campaign.funds < HIRE_PRICE) return { campaign, member: null };
+  const result = recruit(free ? campaign : { ...campaign, funds: campaign.funds - HIRE_PRICE });
+  return result.member ? result : { campaign, member: null };
 }
 
 export function serializeCampaign(campaign) {

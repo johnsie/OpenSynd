@@ -18,6 +18,16 @@ import {
   sellFromSlot,
   sellValue,
   canResearchItem,
+  ROSTER_MAX,
+  SQUAD_MAX,
+  HIRE_PRICE,
+  aliveMembers,
+  bench,
+  deploy,
+  deployedMembers,
+  hire,
+  loseOperatives,
+  recruit,
   canFit,
   resupplyCost,
   roundPrice,
@@ -173,6 +183,7 @@ test("the campaign round-trips and damaged data is repaired or ignored", () => {
       bad: { legs: 0, arms: 0, chest: 0, heart: 0, eyes: 0, brain: 0 },
     },
     items: ["a"], loadouts: { op: ["x", "y"] }, achievements: [],
+    roster: emptyCampaign().roster, squad: emptyCampaign().squad, permadeath: true,
   });
   assert.equal(parseCampaign(JSON.stringify({ loadouts: { o: Array(20).fill("kit") } })).loadouts.o.length, 8);
 });
@@ -264,4 +275,78 @@ test("refilling spent rounds costs a quarter of the item's price spread over its
   ];
   assert.equal(resupplyCost(entries), Math.round(8 * 2.5 + 0 + 0 + 2.5));
   assert.equal(resupplyCost([]), 0);
+});
+
+test("a campaign starts with four operatives named and deployed, and death is permanent", () => {
+  const campaign = emptyCampaign();
+  assert.deepEqual(campaign.roster.map((member) => member.id), ["operator-one", "operator-two", "operator-three", "operator-four"]);
+  assert.equal(new Set(campaign.roster.map((member) => member.name)).size, 4, "each has a different surname");
+  assert.deepEqual(campaign.squad, campaign.roster.map((member) => member.id));
+  assert.equal(campaign.permadeath, true);
+});
+
+test("a fallen operative is lost with their kit and parts, and leaves the squad", () => {
+  let campaign = { ...emptyCampaign(), funds: 50 };
+  campaign = fitUpgrade(campaign, "operator-two", "legs");
+  campaign = setSlot(campaign, "operator-two", 0, "kit", catalog, ["pulse"]);
+  const after = loseOperatives(campaign, ["operator-two", "nobody"]);
+  assert.equal(after.roster.find((member) => member.id === "operator-two").alive, false);
+  assert.deepEqual(after.squad, ["operator-one", "operator-three", "operator-four"]);
+  assert.equal(after.loadouts["operator-two"], undefined);
+  assert.equal(after.upgrades["operator-two"], undefined);
+  assert.equal(aliveMembers(after).length, 3);
+  assert.deepEqual(deployedMembers(after).map((member) => member.id), after.squad);
+  // With permadeath off nothing is lost.
+  assert.equal(loseOperatives({ ...campaign, permadeath: false }, ["operator-two"]).roster, campaign.roster);
+  // Already-fallen operatives are not lost twice.
+  assert.equal(loseOperatives(after, ["operator-two"]), after);
+});
+
+test("the squad holds at most four living operatives and always at least one", () => {
+  let campaign = emptyCampaign();
+  ({ campaign } = recruit(campaign));
+  assert.equal(campaign.roster.length, 5);
+  assert.equal(campaign.squad.length, SQUAD_MAX, "the new recruit waits on the bench: the squad is full");
+  assert.equal(deploy(campaign, "agent-5"), campaign, "no room");
+  campaign = bench(campaign, "operator-four");
+  campaign = deploy(campaign, "agent-5");
+  assert.deepEqual(campaign.squad, ["operator-one", "operator-two", "operator-three", "agent-5"]);
+  let lone = emptyCampaign();
+  for (const id of ["operator-two", "operator-three", "operator-four"]) lone = bench(lone, id);
+  assert.equal(bench(lone, "operator-one"), lone, "the last one cannot be benched");
+  assert.equal(deploy(lone, "ghost"), lone);
+});
+
+test("recruits bring their gear and parts, and the roster is capped at eight", () => {
+  let campaign = emptyCampaign();
+  const result = recruit(campaign, { items: ["heavy", "stim"], upgrades: { legs: 2 } });
+  assert.deepEqual(result.campaign.loadouts[result.member.id], ["heavy", "stim"]);
+  assert.equal(result.campaign.upgrades[result.member.id].legs, 2);
+  campaign = result.campaign;
+  while (aliveMembers(campaign).length < ROSTER_MAX) ({ campaign } = recruit(campaign));
+  const full = recruit(campaign);
+  assert.equal(full.member, null);
+  assert.equal(full.campaign, campaign);
+  assert.equal(new Set(campaign.roster.map((member) => member.name)).size, campaign.roster.length, "names stay unique");
+});
+
+test("hiring costs funds, except when the whole roster has been lost", () => {
+  const poor = { ...emptyCampaign(), funds: HIRE_PRICE - 1 };
+  assert.equal(hire(poor).member, null);
+  const paid = hire({ ...emptyCampaign(), funds: HIRE_PRICE + 5 });
+  assert.equal(paid.campaign.funds, 5);
+  assert.ok(paid.member);
+  const wiped = loseOperatives(emptyCampaign(), ["operator-one", "operator-two", "operator-three", "operator-four"]);
+  assert.equal(aliveMembers(wiped).length, 0);
+  const volunteer = hire(wiped);
+  assert.equal(volunteer.campaign.funds, 0, "a volunteer is free");
+  assert.deepEqual(volunteer.campaign.squad, [volunteer.member.id]);
+});
+
+test("a damaged roster is repaired", () => {
+  const damaged = { roster: [{ id: "a" }, { id: "a" }, 5, { id: "b", alive: false }], squad: ["a", "b", "zzz"] };
+  const repaired = parseCampaign(JSON.stringify(damaged));
+  assert.deepEqual(repaired.roster.map((member) => [member.id, member.alive]), [["a", true], ["b", false]]);
+  assert.deepEqual(repaired.squad, ["a"], "the dead and the unknown are not deployed");
+  assert.equal(parseCampaign(JSON.stringify({ roster: [] })).roster.length, 4);
 });
