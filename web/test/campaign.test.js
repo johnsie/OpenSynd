@@ -9,7 +9,15 @@ import {
   penalise,
   SLOTS_PER_OPERATIVE,
   earnAchievement,
-  earnTime,
+  advanceCampaign,
+  dayOf,
+  ensureTerritories,
+  setTerritoryTax,
+  winTerritory,
+  startResearch,
+  setResearchLevel,
+  suspendResearch,
+  researchBlockers,
   brainEffect,
   buyIntoSlot,
   canBuy,
@@ -39,7 +47,6 @@ import {
   isItemAvailable,
   loadoutFor,
   parseCampaign,
-  researchItem,
   sanitizeLoadouts,
   serializeCampaign,
   setSlot,
@@ -51,18 +58,6 @@ const catalog = [
   { id: "heavy", researchCost: 12 },
   { id: "stim", researchCost: 8 },
 ];
-
-test("funds trickle in during game time and the remainder carries over", () => {
-  let campaign = emptyCampaign();
-  campaign = earnTime(campaign, 5);
-  assert.deepEqual([campaign.funds, campaign.carry.toFixed(2)], [0, "0.50"]);
-  campaign = earnTime(campaign, 5);
-  assert.deepEqual([campaign.funds, campaign.carry.toFixed(2)], [1, "0.00"]);
-  campaign = earnTime(campaign, 60);
-  assert.equal(campaign.funds, 7, "six per minute of play");
-  assert.equal(earnTime(campaign, 0), campaign);
-  assert.equal(earnTime(campaign, -50), campaign);
-});
 
 test("an achievement pays its reward once", () => {
   const achievement = { id: "first", reward: 15 };
@@ -103,17 +98,90 @@ test("old heart and brain research is refunded when a saved campaign is read", (
   assert.equal("heart" in old, false);
 });
 
-test("new items must be researched before they can be used", () => {
-  let campaign = { ...emptyCampaign(), funds: 9 };
+test("new items must be researched before they can be used, and research runs on game hours", () => {
+  let campaign = { ...emptyCampaign(), funds: 100 };
   const [pulse, kit, heavy, stim] = catalog;
   assert.equal(isItemAvailable(campaign, pulse), true);
   assert.equal(isItemAvailable(campaign, kit), true);
   assert.equal(isItemAvailable(campaign, heavy), false);
-  assert.equal(canResearchItem(campaign, heavy), false, "12 points needed");
-  campaign = researchItem(campaign, stim);
-  assert.deepEqual([campaign.funds, campaign.items], [1, ["stim"]]);
-  assert.equal(isItemAvailable(campaign, stim), true);
-  assert.equal(researchItem(campaign, stim), campaign, "already researched");
+  assert.equal(canResearchItem(campaign, pulse, catalog), false, "a starting item needs no research");
+  assert.equal(canResearchItem(campaign, stim, catalog), true);
+  campaign = startResearch(campaign, stim, catalog, 10);
+  assert.deepEqual([campaign.research.active, campaign.research.level], ["stim", 10]);
+  assert.equal(campaign.funds, 100, "nothing is paid until time passes");
+  const result = advanceCampaign(campaign, 6, catalog);
+  assert.equal(result.campaign.hours, 6);
+  assert.ok(result.campaign.funds < 100, "paid by the hour");
+  assert.equal(result.campaign.research.progress.stim, 100, "eighteen percent an hour at the top level finishes in six hours");
+  assert.deepEqual(result.events.filter((event) => event.type === "researched"), [{ type: "researched", itemId: "stim" }]);
+  assert.deepEqual(result.campaign.items, ["stim"]);
+  assert.equal(result.campaign.research.active, null);
+  assert.equal(isItemAvailable(result.campaign, stim), true);
+  assert.equal(startResearch(result.campaign, stim, catalog), result.campaign, "already researched");
+});
+
+test("only one item is researched at a time; switching keeps the progress made", () => {
+  let campaign = { ...emptyCampaign(), funds: 500 };
+  const [, , heavy, stim] = catalog;
+  campaign = startResearch(campaign, heavy, catalog, 5);
+  campaign = advanceCampaign(campaign, 4, catalog).campaign;
+  const progress = campaign.research.progress.heavy;
+  assert.ok(progress > 0 && progress < 100);
+  campaign = startResearch(campaign, stim, catalog, 5);
+  assert.equal(campaign.research.active, "stim");
+  campaign = advanceCampaign(campaign, 2, catalog).campaign;
+  assert.equal(campaign.research.progress.heavy, progress, "the suspended research is untouched");
+  campaign = startResearch(campaign, heavy, catalog, 5);
+  campaign = advanceCampaign(campaign, 1, catalog).campaign;
+  assert.ok(campaign.research.progress.heavy > progress, "and picks up where it stopped");
+  assert.equal(suspendResearch(campaign).research.active, null);
+  assert.equal(setResearchLevel(campaign, 99).research.level, 10);
+  assert.equal(setResearchLevel(campaign, 0).research.level, 1);
+});
+
+test("research follows its chain: an item waits for the ones it builds on", () => {
+  const chain = [{ id: "base", researchCost: 40 }, { id: "next", researchCost: 80, requires: ["base"] }];
+  let campaign = { ...emptyCampaign(), funds: 300 };
+  assert.deepEqual(researchBlockers(campaign, chain[1], chain), ["base"]);
+  assert.equal(startResearch(campaign, chain[1], chain), campaign);
+  campaign = { ...campaign, items: ["base"] };
+  assert.deepEqual(researchBlockers(campaign, chain[1], chain), []);
+  assert.equal(startResearch(campaign, chain[1], chain).research.active, "next");
+});
+
+test("capturing the item being researched finishes that research", () => {
+  let campaign = startResearch({ ...emptyCampaign(), funds: 50 }, catalog[3], catalog);
+  campaign = captureItems(campaign, "op1", ["stim"], catalog, []);
+  assert.deepEqual(campaign.items, ["stim"]);
+  assert.equal(campaign.research.active, null);
+});
+
+test("every 24 hours a day passes: tax is collected from held territories and moods move", () => {
+  let campaign = ensureTerritories(emptyCampaign(), [{ id: "m1", population: 3_000_000 }, { id: "m2", population: 4_000_000 }]);
+  assert.deepEqual(Object.keys(campaign.territories), ["m1", "m2"]);
+  assert.equal(ensureTerritories(campaign, [{ id: "m1" }]), campaign, "existing territories are kept");
+  let result = advanceCampaign(campaign, 24, catalog);
+  assert.equal(result.campaign.funds, 0, "nothing held, no tax");
+  assert.equal(dayOf(result.campaign), 1);
+  campaign = winTerritory(campaign, "m1");
+  campaign = setTerritoryTax(campaign, "m1", 60);
+  result = advanceCampaign(campaign, 24, catalog);
+  const day = result.events.find((event) => event.type === "day");
+  assert.equal(day.day, 1);
+  assert.ok(day.income > 9.9 && result.campaign.funds === day.income, "60 percent pays more than the 30 percent base of 9.9");
+  assert.equal(advanceCampaign(campaign, 23, catalog).campaign.funds, 0, "no tax before the day is out");
+});
+
+test("a territory taxed too hard rebels, and winning it back ends the revolt", () => {
+  let campaign = ensureTerritories(emptyCampaign(), [{ id: "m1" }]);
+  campaign = setTerritoryTax(winTerritory(campaign, "m1"), "m1", 95);
+  const result = advanceCampaign(campaign, 24 * 4, catalog);
+  assert.equal(result.campaign.territories.m1.status, "rebel");
+  assert.equal(result.events.filter((event) => event.type === "revolt").length, 1);
+  const calmer = winTerritory(result.campaign, "m1");
+  assert.equal(calmer.territories.m1.status, "finished");
+  assert.equal(calmer.territories.m1.mood, 2);
+  assert.equal(setTerritoryTax(campaign, "ghost", 40), campaign);
 });
 
 test("each operative holds at most eight items and only available ones", () => {
@@ -172,18 +240,19 @@ test("the campaign round-trips and damaged data is repaired or ignored", () => {
   assert.deepEqual(parseCampaign("garbage"), emptyCampaign());
   assert.deepEqual(parseCampaign("[1,2]"), emptyCampaign());
   const repaired = parseCampaign(JSON.stringify({
-    funds: -3, carry: 7, heart: 99, brain: "x", upgrades: { op: { legs: 9, arms: -2, tail: 1 }, bad: 3 },
+    funds: -3, heart: 99, brain: "x", upgrades: { op: { legs: 9, arms: -2, tail: 1 }, bad: 3 },
     items: ["a", 4, "a", ""], loadouts: { op: ["x", 5, "y"], bad: "no" },
     achievements: "none",
   }));
   assert.deepEqual(repaired, {
-    funds: 200, carry: 0,
+    funds: 200,
     upgrades: {
       op: { legs: 3, arms: 0, chest: 0, heart: 0, eyes: 0, brain: 0 },
       bad: { legs: 0, arms: 0, chest: 0, heart: 0, eyes: 0, brain: 0 },
     },
     items: ["a"], loadouts: { op: ["x", "y"] }, achievements: [],
     roster: emptyCampaign().roster, squad: emptyCampaign().squad, permadeath: true,
+    hours: 0, territories: {}, research: { active: null, level: 4, progress: {} },
   });
   assert.equal(parseCampaign(JSON.stringify({ loadouts: { o: Array(20).fill("kit") } })).loadouts.o.length, 8);
 });

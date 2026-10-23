@@ -31,6 +31,7 @@
       "description": "Where this operation sits on the world map used to choose it: a place name and a real-world longitude and latitude.",
       "properties": {
         "name": { "type": "string", "minLength": 1, "maxLength": 60 },
+        "population": { "type": "integer", "minimum": 100000, "maximum": 50000000, "description": "People living here; the base for tax income." },
         "lon": { "type": "number", "minimum": -180, "maximum": 180 },
         "lat": { "type": "number", "minimum": -58, "maximum": 84, "description": "The atlas shows 84 degrees north to 58 degrees south." }
       }

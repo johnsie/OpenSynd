@@ -3,12 +3,21 @@
 // Between-mission progression, kept in this browser: funds (money) earned while
 // playing and from achievements, spent on body upgrades and on new items, plus each
 // operative's loadout of up to eight items.
+import {
+  HOURS_PER_DAY,
+  RESEARCH_LEVELS,
+  advanceTerritoryDay,
+  holdTerritory,
+  missingRequirements,
+  newTerritory,
+  researchHour,
+  sanitizeTerritory,
+  withTax,
+} from "./strategy.js";
 import { MAX_TIER, PARTS, emptyUpgrades, sanitizeUpgrades, upgradePrice } from "./upgrades.js";
 
 export const CAMPAIGN_KEY = "opensynd.campaign.v1";
 export const SLOTS_PER_OPERATIVE = 8;
-// Funds trickle in during game time: six per minute of play.
-export const FUNDS_PER_SECOND = 0.1;
 
 // Cyborg heart and brain used to be squad-wide research tracks; they are now body parts (see upgrades.js). Old
 // records are refunded what was spent on them.
@@ -49,7 +58,6 @@ export function initialRoster() {
 export function emptyCampaign() {
   return {
     funds: 0,
-    carry: 0,
     upgrades: {},
     items: [],
     loadouts: {},
@@ -57,7 +65,15 @@ export function emptyCampaign() {
     roster: initialRoster(),
     squad: [...STARTING_IDS],
     permadeath: true,
+    hours: 0,
+    territories: {},
+    research: { active: null, level: 4, progress: {} },
   };
+}
+
+// Funds can carry a fraction (tax and hourly research costs are not whole numbers); two places are kept.
+function money(value) {
+  return Number.isFinite(value) && value >= 0 ? Math.round(value * 100) / 100 : 0;
 }
 
 function wholeNumber(value, fallback = 0) {
@@ -93,15 +109,19 @@ export function parseCampaign(text) {
       if (operator.length < 120) upgrades[operator] = sanitizeUpgrades(parts);
     }
   }
+  const territories = {};
+  if (value.territories !== null && typeof value.territories === "object" && !Array.isArray(value.territories)) {
+    for (const [id, record] of Object.entries(value.territories)) {
+      if (id.length < 120) territories[id] = sanitizeTerritory(id, record);
+    }
+  }
   const roster = parseRoster(value.roster);
   const aliveIds = roster.filter((member) => member.alive).map((member) => member.id);
   const squad = Array.isArray(value.squad)
     ? [...new Set(value.squad.filter((id) => aliveIds.includes(id)))].slice(0, SQUAD_MAX)
     : aliveIds.slice(0, SQUAD_MAX);
-  const carry = typeof value.carry === "number" && value.carry >= 0 && value.carry < 1 ? value.carry : 0;
   return {
-    funds: wholeNumber(value.funds) + refundOldTrack(value.heart) + refundOldTrack(value.brain),
-    carry,
+    funds: money(value.funds) + refundOldTrack(value.heart) + refundOldTrack(value.brain),
     upgrades,
     items: ids(value.items),
     loadouts,
@@ -109,7 +129,22 @@ export function parseCampaign(text) {
     roster,
     squad,
     permadeath: value.permadeath !== false,
+    hours: wholeNumber(value.hours),
+    territories,
+    research: parseResearch(value.research),
   };
+}
+
+function parseResearch(value) {
+  const progress = {};
+  if (value?.progress !== null && typeof value?.progress === "object" && !Array.isArray(value.progress)) {
+    for (const [id, percent] of Object.entries(value.progress)) {
+      if (id.length < 120 && Number.isFinite(percent) && percent >= 0) progress[id] = Math.min(100, percent);
+    }
+  }
+  const level = Number.isInteger(value?.level) ? Math.min(RESEARCH_LEVELS, Math.max(1, value.level)) : 4;
+  const active = typeof value?.active === "string" && value.active.length < 120 ? value.active : null;
+  return { active, level, progress };
 }
 
 // Anything damaged falls back to the starting roster; ids and names are kept short and unique.
@@ -199,14 +234,6 @@ export function serializeCampaign(campaign) {
   return JSON.stringify(campaign, null, 2);
 }
 
-// Game-time income: whole funds are paid out and the remainder carries over.
-export function earnTime(campaign, seconds) {
-  const total = campaign.carry + Math.max(0, seconds) * FUNDS_PER_SECOND;
-  const whole = Math.floor(total);
-  if (whole === 0 && total === campaign.carry) return campaign;
-  return { ...campaign, funds: campaign.funds + whole, carry: total - whole };
-}
-
 // What harming bystanders costs. Funds never go below zero.
 export const CIVILIAN_PENALTY = 40;
 export const POLICE_PENALTY = 80;
@@ -263,13 +290,93 @@ export function isItemAvailable(campaign, item) {
   return (item.researchCost ?? 0) === 0 || campaign.items.includes(item.id);
 }
 
-export function canResearchItem(campaign, item) {
-  return !isItemAvailable(campaign, item) && campaign.funds >= item.researchCost;
+// Research is not a purchase: pick an item and a funding level, and it runs on game time (see strategy.js), paid for
+// by the hour. Only one item is researched at a time; choosing another suspends the first with its progress kept.
+export function researchBlockers(campaign, item, catalog) {
+  return missingRequirements(item, campaign.items, catalog);
 }
 
-export function researchItem(campaign, item) {
-  if (!canResearchItem(campaign, item)) return campaign;
-  return { ...campaign, funds: campaign.funds - item.researchCost, items: [...campaign.items, item.id] };
+export function canResearchItem(campaign, item, catalog = []) {
+  return (item.researchCost ?? 0) > 0 && !isItemAvailable(campaign, item) && researchBlockers(campaign, item, catalog).length === 0;
+}
+
+export function startResearch(campaign, item, catalog = [], level = campaign.research.level) {
+  if (!canResearchItem(campaign, item, catalog)) return campaign;
+  const chosen = Math.min(RESEARCH_LEVELS, Math.max(1, level));
+  return { ...campaign, research: { ...campaign.research, active: item.id, level: chosen } };
+}
+
+export function setResearchLevel(campaign, level) {
+  const chosen = Math.min(RESEARCH_LEVELS, Math.max(1, Math.round(level)));
+  return chosen === campaign.research.level ? campaign : { ...campaign, research: { ...campaign.research, level: chosen } };
+}
+
+export function suspendResearch(campaign) {
+  return campaign.research.active === null ? campaign : { ...campaign, research: { ...campaign.research, active: null } };
+}
+
+// Territories: one per operation, created when the operations are known.
+export function ensureTerritories(campaign, entries) {
+  let territories = campaign.territories;
+  for (const entry of entries) {
+    if (territories[entry.id]) continue;
+    territories = { ...territories, [entry.id]: newTerritory(entry.id, entry.population) };
+  }
+  return territories === campaign.territories ? campaign : { ...campaign, territories };
+}
+
+export function setTerritoryTax(campaign, id, tax) {
+  const territory = campaign.territories[id];
+  if (!territory) return campaign;
+  const next = withTax(territory, tax);
+  return next === territory ? campaign : { ...campaign, territories: { ...campaign.territories, [id]: next } };
+}
+
+// Winning an operation holds its territory (a territory in revolt is won back).
+export function winTerritory(campaign, id) {
+  const territory = campaign.territories[id];
+  if (!territory) return campaign;
+  const next = holdTerritory(territory);
+  return next === territory ? campaign : { ...campaign, territories: { ...campaign.territories, [id]: next } };
+}
+
+export const dayOf = (campaign) => Math.floor(campaign.hours / HOURS_PER_DAY);
+
+/**
+ * Game hours pass. Each hour moves research along (paid from funds); each day collects tax and moves population and
+ * mood. Returns the new campaign and what happened: { type: "researched" | "day" | "revolt", ... }.
+ */
+export function advanceCampaign(campaign, hours, catalog) {
+  let next = campaign;
+  const events = [];
+  for (let step = 0; step < hours; step += 1) {
+    const hour = next.hours + 1;
+    let { research, funds } = next;
+    const done = researchHour(research, funds, catalog);
+    research = done.research;
+    funds = done.funds;
+    let items = next.items;
+    if (done.finished) {
+      items = [...items, done.finished];
+      events.push({ type: "researched", itemId: done.finished });
+    }
+    let territories = next.territories;
+    if (hour % HOURS_PER_DAY === 0) {
+      const day = hour / HOURS_PER_DAY;
+      let income = 0;
+      territories = { ...territories };
+      for (const [id, territory] of Object.entries(territories)) {
+        const result = advanceTerritoryDay(territory, day);
+        territories[id] = result.territory;
+        income += result.income;
+        if (territory.status !== "rebel" && result.territory.status === "rebel") events.push({ type: "revolt", id });
+      }
+      funds = Math.round((funds + income) * 100) / 100;
+      events.push({ type: "day", day, income: Math.round(income * 100) / 100 });
+    }
+    next = { ...next, hours: hour, research, funds, items, territories };
+  }
+  return { campaign: next, events };
 }
 
 // The operative's loadout, or the mission defaults before one has been chosen.
@@ -327,7 +434,10 @@ export function captureItems(campaign, operatorId, itemIds, catalog, defaults) {
   for (const id of itemIds) {
     const item = catalog.find((entry) => entry.id === id);
     if (!item) continue;
-    if (!isItemAvailable(next, item)) next = { ...next, items: [...next.items, id] };
+    if (!isItemAvailable(next, item)) {
+      next = { ...next, items: [...next.items, id] };
+      if (next.research.active === id) next = suspendResearch(next);
+    }
     const loadout = loadoutFor(next, operatorId, defaults);
     if (loadout.length < SLOTS_PER_OPERATIVE) {
       next = { ...next, loadouts: { ...next.loadouts, [operatorId]: [...loadout, id] } };

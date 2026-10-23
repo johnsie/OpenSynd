@@ -17,5 +17,8 @@
   "icon": "rotary",
   "carry": "rifle",
   "sound": "rotary",
-  "weight": 9
+  "weight": 9,
+  "requires": [
+    "developer.machine-pistol"
+  ]
 }

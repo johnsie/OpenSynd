@@ -67,7 +67,15 @@ import {
   canBuy,
   captureItems,
   earnAchievement,
-  earnTime,
+  advanceCampaign,
+  dayOf,
+  ensureTerritories,
+  researchBlockers,
+  setResearchLevel,
+  setTerritoryTax,
+  startResearch,
+  suspendResearch,
+  winTerritory,
   CIVILIAN_PENALTY,
   POLICE_PENALTY,
   emptyCampaign,
@@ -76,7 +84,6 @@ import {
   loadoutFor,
   netCost,
   parseCampaign,
-  researchItem,
   sellFromSlot,
   sellValue,
   sanitizeLoadouts,
@@ -97,6 +104,17 @@ import {
   removeUpgrade,
   upgradesOf,
 } from "./campaign.js";
+import {
+  MOODS,
+  RESEARCH_LEVELS,
+  RESEARCH_RATES,
+  SECONDS_PER_HOUR,
+  TAX_STEP,
+  dailyTax,
+  moodRule,
+  researchHourlyCost,
+  researchHoursLeft,
+} from "./strategy.js";
 import {
   MAX_TIER,
   PARTS,
@@ -623,11 +641,13 @@ async function loadGame(index = state.missionIndex) {
           objectives: entry.objectives.length,
           enemies: entry.opponents.length,
           region: entry.region ?? null,
+          population: entry.region?.population,
         };
       }),
     );
   }
   state.progress = parseProgress(readStored(PROGRESS_KEY));
+  state.campaign = ensureTerritories(state.campaign, state.missionList);
   describeMission(mission, map, index);
   renderMissionList();
   setStatus("Local map established. Select a relay route.");
@@ -667,7 +687,7 @@ function researchStatus(item) {
 // The between-missions screen: spend funds on research and set each operative's slots.
 function renderResearch() {
   const campaign = state.campaign;
-  document.querySelector("#research-funds").textContent = `Funds ${campaign.funds}`;
+  document.querySelector("#research-funds").textContent = `Funds ${Math.floor(campaign.funds)}`;
 
   // Body upgrades for the operative chosen in the Armoury: six parts, three tiers each.
   const squad = squadTeam(state.rawTeam ?? state.mission.team);
@@ -713,6 +733,7 @@ function renderResearch() {
     }),
   );
 
+  renderResearchDial();
   document.querySelector("#research-items").replaceChildren(
     ...state.catalog.filter((item) => !item.missionItem).map((item) => {
       const row = document.createElement("div");
@@ -720,18 +741,41 @@ function renderResearch() {
       const name = document.createElement("span");
       name.textContent = item.name;
       const control = document.createElement("span");
-      if ((item.researchCost ?? 0) > 0 && !isItemAvailable(campaign, item)) {
+      const researching = (item.researchCost ?? 0) > 0 && !isItemAvailable(campaign, item);
+      if (researching) {
+        const blockers = researchBlockers(campaign, item, state.catalog);
+        const percent = Math.round(campaign.research.progress[item.id] ?? 0);
+        const active = campaign.research.active === item.id;
+        if (percent > 0) {
+          const bar = document.createElement("progress");
+          bar.max = 100;
+          bar.value = percent;
+          bar.setAttribute("aria-label", `${item.name} research ${percent} percent`);
+          control.append(bar, document.createTextNode(` ${percent}% `));
+        }
         const button = document.createElement("button");
         button.type = "button";
-        button.textContent = `Research · ${item.researchCost} funds`;
-        button.setAttribute("aria-label", `Research ${item.name} for ${item.researchCost} funds`);
-        button.disabled = !canResearchItem(campaign, item);
-        button.addEventListener("click", () => {
-          state.campaign = researchItem(state.campaign, item);
-          persistCampaign();
-          updateFundsReadout();
-          renderResearch();
-        });
+        if (blockers.length > 0) {
+          const needed = blockers.map((id) => state.catalog.find((entry) => entry.id === id)?.name ?? id);
+          button.textContent = `Needs ${needed.join(", ")}`;
+          button.disabled = true;
+        } else if (active) {
+          button.textContent = "Researching · pause";
+          button.setAttribute("aria-label", `Pause research on ${item.name}`);
+          button.addEventListener("click", () => {
+            state.campaign = suspendResearch(state.campaign);
+            persistCampaign();
+            renderResearch();
+          });
+        } else {
+          button.textContent = percent > 0 ? "Resume" : `Research · ${item.researchCost} funds`;
+          button.setAttribute("aria-label", `Research ${item.name}, ${item.researchCost} funds at the lowest funding level`);
+          button.addEventListener("click", () => {
+            state.campaign = startResearch(state.campaign, item, state.catalog);
+            persistCampaign();
+            renderResearch();
+          });
+        }
         control.append(button);
       } else {
         control.className = "state";
@@ -745,6 +789,44 @@ function renderResearch() {
 
   renderRoster();
   renderArmoury();
+}
+
+// The funding dial for the research under way: ten levels, each faster and dearer, with the projected finish.
+function renderResearchDial() {
+  const dial = document.querySelector("#research-dial");
+  const { active, level, progress } = state.campaign.research;
+  const item = state.catalog.find((entry) => entry.id === active);
+  if (!item) {
+    dial.textContent = "Nothing is being researched. Choose an item below; it runs while operations are under way.";
+    return;
+  }
+  const row = document.createElement("div");
+  row.className = "dial-row";
+  const label = document.createElement("label");
+  label.textContent = `Funding for ${item.name}: level `;
+  const range = document.createElement("input");
+  range.type = "range";
+  range.min = "1";
+  range.max = String(RESEARCH_LEVELS);
+  range.value = String(level);
+  range.setAttribute("aria-label", `Research funding level, 1 to ${RESEARCH_LEVELS}`);
+  const summary = document.createElement("span");
+  const describe = (chosen) => {
+    const hours = researchHoursLeft(progress[item.id] ?? 0, chosen);
+    summary.textContent =
+      ` ${chosen} · ${RESEARCH_RATES[chosen - 1]}% an hour · ${researchHourlyCost(item, chosen).toFixed(1)} funds an hour · ` +
+      `about ${hours} game hours (${(hours / 24).toFixed(1)} days) to go`;
+  };
+  describe(level);
+  range.addEventListener("input", () => describe(Number(range.value)));
+  range.addEventListener("change", () => {
+    state.campaign = setResearchLevel(state.campaign, Number(range.value));
+    persistCampaign();
+    renderResearch();
+  });
+  label.append(range);
+  row.append(label, summary);
+  dial.replaceChildren(row);
 }
 
 // The roster: who is alive, who deploys (up to four), and hiring a replacement. Fallen operatives are listed as lost.
@@ -970,7 +1052,60 @@ async function chooseMission(index) {
   loadGame(index).catch(showFatalError);
 }
 
+// The chosen operation's territory: who lives there, the tax rate you set, what it pays and how its people feel.
+function renderTerritoryPanel() {
+  const panel = document.querySelector("#territory-panel");
+  const entry = state.missionList[state.missionIndex];
+  const territory = entry ? state.campaign.territories[entry.id] : null;
+  if (!territory) {
+    panel.replaceChildren();
+    return;
+  }
+  const people = `${(territory.population / 1_000_000).toFixed(2)} million people`;
+  const held = territory.status === "finished";
+  const revolt = territory.status === "rebel";
+  const title = document.createElement("p");
+  title.textContent =
+    `${entry.name}: ${people} · ` + (revolt ? "IN REVOLT, take it back" : held ? "held" : "not yet taken");
+  const taxRow = document.createElement("div");
+  taxRow.className = "tax-row";
+  const lower = document.createElement("button");
+  lower.type = "button";
+  lower.textContent = "−";
+  lower.setAttribute("aria-label", `Lower tax on ${entry.name}`);
+  lower.disabled = territory.tax <= 0;
+  lower.addEventListener("click", () => changeTax(entry.id, territory.tax - TAX_STEP));
+  const raise = document.createElement("button");
+  raise.type = "button";
+  raise.textContent = "+";
+  raise.setAttribute("aria-label", `Raise tax on ${entry.name}`);
+  raise.disabled = territory.tax >= 100;
+  raise.addEventListener("click", () => changeTax(entry.id, territory.tax + TAX_STEP));
+  const rate = document.createElement("span");
+  rate.textContent = `Tax ${territory.tax}% · pays ${dailyTax({ ...territory, status: "finished" }).toFixed(1)} funds a day` +
+    (held ? "" : " once held");
+  taxRow.append(lower, rate, raise);
+  const mood = document.createElement("p");
+  mood.className = "mood";
+  mood.classList.toggle("bad", territory.mood >= 3);
+  const rule = moodRule(territory.tax);
+  const daysLeft = Math.max(0, rule.days - territory.moodDays);
+  mood.textContent =
+    held || revolt
+      ? `Mood: ${MOODS[territory.mood]} · ${rule.direction === "better" ? "improving" : "worsening"} in ${daysLeft} days`
+      : "Mood: unknown until you hold it";
+  panel.replaceChildren(title, taxRow, mood);
+}
+
+function changeTax(id, tax) {
+  state.campaign = setTerritoryTax(state.campaign, id, tax);
+  persistCampaign();
+  updateFundsReadout();
+  renderTerritoryPanel();
+}
+
 function renderMissionList() {
+  renderTerritoryPanel();
   const ids = state.missionList.map((entry) => entry.id);
   renderWorldMap({
     container: document.querySelector("#world-map"),
@@ -996,7 +1131,8 @@ function renderMissionList() {
       name.textContent = `Operation ${String(index + 1).padStart(2, "0")} · ${entry.name}`;
       const status = document.createElement("span");
       status.className = "state";
-      status.textContent = done ? "COMPLETED" : unlocked ? "AVAILABLE" : "LOCKED";
+      const revolt = state.campaign.territories[entry.id]?.status === "rebel";
+      status.textContent = revolt ? "REVOLT" : done ? "COMPLETED" : unlocked ? "AVAILABLE" : "LOCKED";
       const note = document.createElement("small");
       note.textContent = unlocked
         ? `${entry.objectives} objectives · ${entry.enemies} enemy agents`
@@ -2645,7 +2781,28 @@ function persistCampaign() {
 
 function updateFundsReadout() {
   state.shownFunds = state.campaign.funds;
-  document.querySelector("#funds-readout").textContent = `Funds ${state.campaign.funds}`;
+  document.querySelector("#funds-readout").textContent = `Funds ${Math.floor(state.campaign.funds)}`;
+  const income = Object.values(state.campaign.territories).reduce((sum, territory) => sum + dailyTax(territory), 0);
+  document.querySelector("#clock-readout").textContent =
+    `Day ${dayOf(state.campaign) + 1}` + (income > 0 ? ` · tax +${income.toFixed(1)}/day` : "");
+}
+
+// Game hours pass: research is paid for, days collect tax. News goes to the status line.
+function passHours(hours) {
+  const result = advanceCampaign(state.campaign, hours, state.catalog);
+  state.campaign = result.campaign;
+  for (const event of result.events) {
+    if (event.type === "researched") {
+      const item = state.catalog.find((entry) => entry.id === event.itemId);
+      setStatus(`Research complete: ${item.name}. It is ready in the Armoury.`);
+      audio.play("objective");
+    } else if (event.type === "revolt") {
+      const territory = state.missionList.find((entry) => entry.id === event.id);
+      setStatus(`${territory?.name ?? "A territory"} is in revolt. It pays no tax until you take it back.`);
+      audio.play("alert");
+    }
+  }
+  updateFundsReadout();
 }
 
 // Pay out any achievements the operation's record now satisfies.
@@ -2725,6 +2882,7 @@ function checkOutcome() {
     renderMissionList();
     keepLoot();
     settleRoster();
+    state.campaign = winTerritory(state.campaign, state.mission.id);
   }
   checkAchievements();
   persistCampaign();
@@ -2738,8 +2896,14 @@ function update(deltaSeconds) {
   }
   state.elapsed += deltaSeconds;
   if (state.outcome === "active") {
-    // Funds accrue with game time; the record is saved every few seconds.
-    state.campaign = earnTime(state.campaign, deltaSeconds);
+    // The campaign clock runs with the operation: four seconds make a game hour, which pays for research, and a day
+    // collects tax. The record is saved every few seconds.
+    state.clockCarry = (state.clockCarry ?? 0) + deltaSeconds;
+    if (state.clockCarry >= SECONDS_PER_HOUR) {
+      const hours = Math.floor(state.clockCarry / SECONDS_PER_HOUR);
+      state.clockCarry -= hours * SECONDS_PER_HOUR;
+      passHours(hours);
+    }
     state.opStats.seconds = state.missionSeconds;
     state.campaignTimer += deltaSeconds;
     state.achievementTimer += deltaSeconds;
@@ -3666,6 +3830,10 @@ if (new URLSearchParams(location.search).has("e2e")) {
     },
     moveSelected(x, y) {
       issueMove({ x, y });
+    },
+    advanceHours(hours) {
+      passHours(hours);
+      renderResearch();
     },
     advanceMusic(seconds) {
       music.advance(seconds);

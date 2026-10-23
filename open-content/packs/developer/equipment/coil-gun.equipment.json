@@ -18,5 +18,8 @@
   "icon": "coil",
   "carry": "rifle",
   "sound": "coil",
-  "weight": 7
+  "weight": 7,
+  "requires": [
+    "developer.longshot-rifle"
+  ]
 }

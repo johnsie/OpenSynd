@@ -470,6 +470,15 @@ for (const [name, type, executablePath] of targets) {
     await page.waitForSelector("#title-dialog[open]");
     assert.match(await missionButtons.nth(0).innerText(), /COMPLETED/);
     assert.equal(await missionButtons.nth(1).isDisabled(), false);
+    // Territories pay tax at a rate you set; their mood follows it.
+    await missionButtons.nth(0).click();
+    await page.waitForFunction(() => document.querySelector("#territory-panel").textContent.includes("First Light"));
+    assert.match(await page.locator("#territory-panel").innerText(), /First Light: 4\.\d+ million people · held/);
+    assert.match(await page.locator("#territory-panel").innerText(), /Tax 30% · pays \d+\.\d funds a day/);
+    await page.getByRole("button", { name: "Raise tax on First Light" }).click();
+    assert.match(await page.locator("#territory-panel").innerText(), /Tax 40%/);
+    assert.match(await page.locator("#territory-panel").innerText(), /worsening in \d+ days/);
+    await page.getByRole("button", { name: "Lower tax on First Light" }).click();
 
     // The Research & Armoury screen: research, then buy weapons into specific slots.
     await page.evaluate(() => window.opensyndTest.setFunds(300));
@@ -481,8 +490,15 @@ for (const [name, type, executablePath] of targets) {
     await page.locator("#research-tracks button").first().click();
     assert.match(await page.locator("#research-tracks").innerText(), /Legs · tier 1 of 3/);
     assert.equal(await labFunds(), 294);
-    await page.getByRole("button", { name: "Research Stim Injector for 40 funds" }).click();
-    assert.equal(await labFunds(), 254);
+    // Research runs on game time: pick an item and a funding level, then hours pass and it is paid for by the hour.
+    assert.match(await page.locator("#research-dial").innerText(), /Nothing is being researched/);
+    await page.getByRole("button", { name: /^Research Stim Injector/ }).click();
+    assert.match(await page.locator("#research-dial").innerText(), /Funding for Stim Injector/);
+    assert.equal(await page.getByRole("button", { name: /^Research Rotary Cannon/ }).count(), 0, "needs the machine pistol first");
+    await page.evaluate(() => window.opensyndTest.advanceHours(70));
+    assert.match(await page.locator("#research-items").innerText(), /Stim Injector\s+RESEARCHED/);
+    const base = await labFunds();
+    assert.ok(base >= 250, `research cost about 40 funds, tax came in: ${base}`);
 
     // Eight picture slots per operative: four are filled (starting kit plus the loot kept from the earlier win).
     const squads = page.locator(".armoury-card");
@@ -494,20 +510,20 @@ for (const [name, type, executablePath] of targets) {
     // Buy a stim into slot 5, then two pulse emitters: an operative can carry several of the same weapon.
     await page.getByLabel("Operator 1 slot 5: empty", { exact: true }).click();
     await page.getByRole("button", { name: "Buy Stim Injector for Operator 1 slot 5, 20 funds" }).click();
-    assert.equal(await labFunds(), 234);
+    assert.equal(await labFunds(), base - 20);
     await page.getByLabel("Operator 1 slot 6: empty", { exact: true }).click();
     await page.getByRole("button", { name: "Buy Civic Pulse Emitter for Operator 1 slot 6, 15 funds" }).click();
     await page.getByLabel("Operator 1 slot 7: empty", { exact: true }).click();
     await page.getByRole("button", { name: "Buy Civic Pulse Emitter for Operator 1 slot 7, 15 funds" }).click();
-    assert.equal(await labFunds(), 204);
+    assert.equal(await labFunds(), base - 50);
     assert.equal(await squads.first().locator(".slot:not(.empty)").count(), 7);
     // Swapping refunds half the price of what it replaces: the spare emitter (7 back) pays toward a repair kit (10).
     await page.getByLabel("Operator 1 slot 7: Civic Pulse Emitter", { exact: true }).click();
     await page.getByRole("button", { name: "Buy Field Repair Kit for Operator 1 slot 7, 3 funds" }).click();
-    assert.equal(await labFunds(), 201);
+    assert.equal(await labFunds(), base - 53);
     // Selling returns half the price again.
     await page.getByRole("button", { name: /Sell Field Repair Kit · \+5 funds/ }).click();
-    assert.equal(await labFunds(), 206);
+    assert.equal(await labFunds(), base - 48);
     assert.equal(await squads.first().locator(".slot:not(.empty)").count(), 6);
 
     // The roster: four operatives deploy; benching one takes them out of the Armoury until they are put back.

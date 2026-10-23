@@ -306,6 +306,9 @@ class Validation:
             self.error(path, "sound must be pistol, smg, rotary, rifle, coil, longshot, scatter, flame or beam")
         if value.get("carry") not in {None, "pistol", "rifle"}:
             self.error(path, "carry must be pistol or rifle")
+        requires = value.get("requires", [])
+        if not isinstance(requires, list) or not all(isinstance(entry, str) for entry in requires):
+            self.error(path, "requires must be a list of equipment ids")
         cost = value.get("researchCost", 0)
         if not isinstance(cost, int) or isinstance(cost, bool) or not 0 <= cost <= 500:
             self.error(path, "researchCost must be an integer from 0 to 500")
@@ -539,6 +542,19 @@ class Validation:
                     self.validate_vehicle(content_path, content)
                 else:
                     missions.append((content_path, content))
+
+        equipment_items: dict[str, tuple[Path, dict[str, Any]]] = {}
+        for equipment_path in equipment:
+            try:
+                item = json.loads(equipment_path.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                continue
+            if isinstance(item, dict) and isinstance(item.get("id"), str):
+                equipment_items[item["id"]] = (equipment_path, item)
+        for equipment_id, (equipment_path, item) in equipment_items.items():
+            for needed in item.get("requires", []):
+                if needed not in equipment_items or needed == equipment_id:
+                    self.error(equipment_path, f"requires unknown equipment: {needed}")
 
         for mission_path, mission in missions:
             self.validate_mission(

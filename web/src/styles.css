@@ -838,3 +838,12 @@ main { grid-template-columns: minmax(0, 1fr) minmax(250px, 300px); gap: 0.6rem; 
 .roster-card.fallen { opacity: 0.5; }
 .roster-card strong { letter-spacing: 0.04em; }
 .roster-card label { display: flex; gap: 0.4rem; align-items: center; }
+
+/* Territory tax panel and the research funding dial. */
+.territory-panel { display: grid; gap: 0.3rem; margin: 0.4rem 0; font-size: 0.9rem; }
+.territory-panel .tax-row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+.territory-panel .mood { font-weight: 600; }
+.territory-panel .mood.bad { color: var(--danger, #ff6b62); }
+.research-dial { display: grid; gap: 0.3rem; margin-bottom: 0.5rem; font-size: 0.9rem; }
+.research-dial .dial-row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+.research-row progress { width: 6rem; }

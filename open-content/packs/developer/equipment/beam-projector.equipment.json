@@ -19,5 +19,8 @@
   "weight": 7,
   "icon": "beam",
   "carry": "rifle",
-  "sound": "beam"
+  "sound": "beam",
+  "requires": [
+    "developer.coil-gun"
+  ]
 }

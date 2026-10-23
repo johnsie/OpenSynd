@@ -23,5 +23,8 @@
   "weight": 8,
   "icon": "flame",
   "carry": "rifle",
-  "sound": "flame"
+  "sound": "flame",
+  "requires": [
+    "developer.scatter-emitter"
+  ]
 }

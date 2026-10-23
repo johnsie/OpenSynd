@@ -20,5 +20,8 @@
   "weight": 6,
   "icon": "scatter",
   "carry": "rifle",
-  "sound": "scatter"
+  "sound": "scatter",
+  "requires": [
+    "developer.machine-pistol"
+  ]
 }

@@ -17,5 +17,8 @@
   "icon": "longshot",
   "carry": "rifle",
   "sound": "longshot",
-  "weight": 5
+  "weight": 5,
+  "requires": [
+    "developer.heavy-pulse-emitter"
+  ]
 }

@@ -20,6 +20,10 @@
     "carry": { "enum": ["pistol", "rifle"], "description": "How a weapon is held in the character art: one-handed pistol grip or two-handed rifle grip." },
     "missionItem": { "type": "boolean", "description": "Found on the mission rather than sold: kept out of the Armoury and the research list." },
     "weight": { "type": "integer", "minimum": 0, "maximum": 30, "description": "Carried weight; gear beyond an operative's capacity slows them." },
+    "requires": {
+      "type": "array", "uniqueItems": true, "maxItems": 4, "items": { "$ref": "#/$defs/id" },
+      "description": "Equipment that must be researched first (a research chain)."
+    },
     "researchCost": { "type": "integer", "minimum": 0, "maximum": 500, "description": "Funds needed to research this item; 0 or absent means it is available from the start." },
     "charges": { "type": ["integer", "null"], "minimum": 1, "maximum": 99, "description": "Uses per operation: rounds for a weapon, doses for a consumable; null means unlimited." },
     "effect": {

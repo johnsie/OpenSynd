@@ -38,7 +38,10 @@
             <button id="reset-button" type="button">Reset</button>
           </div>
         </div>
-        <p id="funds-readout" class="funds" title="Funds for research: earned while you play and from achievements.">Funds 0</p>
+        <p id="funds-readout" class="funds"
+           title="Funds for research and the Armoury: tax from the territories you hold, and achievements.">Funds 0</p>
+        <p id="clock-readout" class="funds"
+           title="The campaign clock runs while an operation is on: four seconds make a game hour.">Day 1</p>
         <div class="network-state" aria-label="Network status">
           <span class="pulse-dot"></span>
           <span>LOCAL MESH / DEGRADED</span>
@@ -184,6 +187,7 @@
         <section class="title-map" aria-label="World map of operations">
           <div id="world-map" class="world-map"></div>
           <p id="world-map-card" class="world-map-card" role="status">Choose an operation on the map, or from the list.</p>
+          <div id="territory-panel" class="territory-panel" aria-label="Territory"></div>
         </section>
         <aside class="title-side">
           <p id="title-story">Loading the operation…</p>
@@ -240,6 +244,7 @@
           <h3>Body upgrades</h3>
           <div id="research-tracks" class="research-tracks"></div>
           <h3>New weapons and items</h3>
+          <div id="research-dial" class="research-dial"></div>
           <div id="research-items" class="research-items"></div>
         </section>
         <section class="lab-armoury" aria-label="Armoury">
