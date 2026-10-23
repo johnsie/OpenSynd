@@ -29,6 +29,7 @@ check:
     - python3 tools/check_style.py
     - python3 tools/check_provenance.py
     - python3 tools/check_source_licenses.py
+    - python3 tools/generate_review_packet.py --check
     - python3 tools/check_dependencies.py
     - python3 -m unittest discover -s tools -p "test_*.py"
     - cd web && npm test

@@ -156,3 +156,45 @@ test("a typed script is checked and explained, and sets or removes a unit's scri
   assert.equal(setScript(scripted, "bystanders", person.id, []).bystanders[0].script, undefined);
   assert.equal(setScript(mission, "vehicles", mission.vehicles[0]?.id ?? "x", parseScript(good).steps), mission, "vehicles take no script");
 });
+
+test("painting a map: rectangles are laid over the ground, clamped to the map, and can be taken off again", async () => {
+  const { PAINTS, newMap, paintRegion, paintedAt, removeRegion, validateMap, exportMap } = await import("../src/editor-core.js");
+  const map = newMap("developer.test-yard", "Test Yard", 40);
+  assert.deepEqual(map.dimensions, { width: 40, height: 40 });
+  assert.deepEqual(validateMap(map), [], "a new map is valid");
+  const painted = paintRegion(map, { x: 10, y: 10 }, { x: 5, y: 12 }, "building");
+  assert.equal(painted.regions.at(-1).id, "painted-1");
+  const rect = painted.regions.at(-1);
+  assert.deepEqual([rect.x, rect.y, rect.width, rect.height], [5, 10, 6, 3]);
+  assert.equal(painted.regions.at(-1).walkable, false);
+  assert.equal(map.regions.length, 1, "the map it was given is not changed");
+  assert.equal(paintRegion(painted, { x: 100, y: 100 }, { x: 120, y: 120 }, "street"), painted, "off the map: nothing happens");
+  assert.equal(paintRegion(painted, { x: 1, y: 1 }, { x: 2, y: 2 }, "lava"), painted, "unknown kind: nothing happens");
+  const clipped = paintRegion(painted, { x: 35, y: 35 }, { x: 60, y: 60 }, "street");
+  assert.deepEqual([clipped.regions.at(-1).width, clipped.regions.at(-1).height], [5, 5], "clamped to the map");
+  assert.equal(paintedAt(clipped, { x: 6, y: 11 }).id, "painted-1");
+  assert.equal(paintedAt(clipped, { x: 0, y: 0 }), null, "the base ground is not a painted region");
+  const gone = removeRegion(clipped, "painted-1");
+  assert.equal(gone.regions.some((region) => region.id === "painted-1"), false);
+  assert.ok(Object.keys(PAINTS).length >= 6);
+  assert.match(exportMap(painted), /"painted-1"/);
+});
+
+test("a map check catches regions off the map, zones on blocked ground and zones the squad cannot reach", async () => {
+  const { newMap, paintRegion, validateMap } = await import("../src/editor-core.js");
+  const map = newMap("developer.test-yard", "Test Yard", 40);
+  // A wall of buildings from top to bottom cuts the entry off from the exit.
+  const cut = paintRegion(map, { x: 20, y: 0 }, { x: 21, y: 39 }, "building");
+  assert.deepEqual(validateMap(cut), ["The squad cannot walk from the entry to zone safe-exit."]);
+  // A bridge across it opens the way again.
+  assert.deepEqual(validateMap(paintRegion(cut, { x: 20, y: 18 }, { x: 21, y: 20 }, "bridge")), []);
+  // The exit on a building.
+  const blocked = paintRegion(map, { x: 34, y: 18 }, { x: 36, y: 22 }, "building");
+  assert.match(validateMap(blocked)[0], /safe-exit starts on ground nobody can stand on/);
+  const broken = { ...map, regions: [...map.regions, { ...map.regions[0], id: "off", x: 30, width: 30 }, { ...map.regions[0] }] };
+  const text = validateMap(broken).join(" ");
+  assert.match(text, /reaches off the map/);
+  assert.match(text, /share the id ground/);
+  assert.match(validateMap({ ...map, dimensions: { width: 2, height: 2 } })[0], /between 8 and 256/);
+  assert.match(validateMap({ ...map, zones: [] })[0], /needs an entry zone/);
+});

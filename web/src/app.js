@@ -3791,8 +3791,12 @@ function frame(time) {
     state.cursorClock = 0;
     setPointerCursor(pointerKindAt(state.pointer));
   }
+  const began = performance.now();
   update(delta);
   draw();
+  // How long the game's own work took this frame (kept for the last few seconds: the performance check reads it).
+  (state.frameWork ??= []).push(performance.now() - began);
+  if (state.frameWork.length > 240) state.frameWork.shift();
   requestAnimationFrame(frame);
 }
 
@@ -4892,6 +4896,11 @@ if (new URLSearchParams(location.search).has("e2e")) {
     },
     trains() {
       return state.units.filter(isTrain).map((unit) => ({ id: unit.id, cars: trainCars(unit), waiting: unit.vehicle.train.waiting }));
+    },
+    frameWork() {
+      const sorted = [...(state.frameWork ?? [])].sort((a, b) => a - b);
+      const at = (share) => sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * share))] ?? 0;
+      return { frames: sorted.length, median: at(0.5), p95: at(0.95), worst: sorted.at(-1) ?? 0 };
     },
     autosaveNow() {
       writeAutosave();

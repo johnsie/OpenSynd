@@ -1196,6 +1196,22 @@ for (const [name, type, executablePath] of targets) {
     assert.match(await editorPage.locator("#script-message").innerText(), /Script of 1 steps saved/);
     await editorPage.click("#route-clear");
     assert.match(await editorPage.locator("#route-title").innerText(), /0 route points/);
+    // The map can be painted too: a wall of buildings across the map cuts the entry off from the exit, which the checks say.
+    await editorPage.getByLabel("Paint: Building (blocked, three floors)").check();
+    const left = editorBox.x + editorBox.width * 0.5;
+    await editorPage.mouse.click(left, editorBox.y + 3);
+    assert.match(await editorPage.locator("#editor-hint").innerText(), /^Corner at/);
+    await editorPage.mouse.click(left + 6, editorBox.y + editorBox.height - 3);
+    assert.match(await editorPage.locator("#editor-hint").innerText(), /^Painted from/);
+    await editorPage.waitForFunction(() =>
+      /cannot walk from the entry|nobody can stand/.test(document.querySelector("#problem-list").innerText),
+    );
+    await editorPage.getByLabel("Take off painted area").check();
+    await editorPage.mouse.click(left + 3, editorBox.y + editorBox.height * 0.5);
+    assert.match(await editorPage.locator("#editor-hint").innerText(), /^Took off painted-1/);
+    await editorPage.waitForFunction(() => !/cannot walk from the entry/.test(document.querySelector("#problem-list").innerText));
+    const [download] = await Promise.all([editorPage.waitForEvent("download"), editorPage.click("#export-map-button")]);
+    assert.match(download.suggestedFilename(), /\.map\.json$/);
     await editorPage.close();
 
     // Permadeath and recruiting: a fallen operative is lost after a win, and a persuaded enemy agent joins.

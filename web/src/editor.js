@@ -6,7 +6,13 @@ import {
   addPatrolPoint,
   clearPatrol,
   editObjective,
+  exportMap,
   exportMission,
+  PAINTS,
+  paintRegion,
+  paintedAt,
+  removeRegion,
+  validateMap,
   moveItem,
   parseScript,
   pickPlacement,
@@ -26,6 +32,9 @@ const TOOLS = [
   { id: "move", label: "Move or select" },
   { id: "delete", label: "Delete" },
   { id: "route", label: "Edit route and script" },
+  // Map painting: click one corner, then the opposite corner, and the rectangle is laid over the map.
+  ...Object.entries(PAINTS).map(([kind, paint]) => ({ id: `paint-${kind}`, label: `Paint: ${paint.label}`, paint: kind })),
+  { id: "erase-paint", label: "Take off painted area" },
   { id: "enemy", label: "Add enemy agent", group: "opponents", kind: "units/enemy-agent.unit.json", stem: "enemy-agent" },
   { id: "guard", label: "Add guard", group: "opponents", kind: "units/guard.unit.json", stem: "guard" },
   { id: "criminal", label: "Add criminal", group: "bystanders", kind: "units/criminal.unit.json", stem: "criminal" },
@@ -43,7 +52,7 @@ const TOOLS = [
 ];
 const COLOURS = { team: "#42d6d0", opponents: "#ff6b62", bystanders: "#8d9aa3", vehicles: "#e1b35a" };
 
-const editor = { pack: null, mission: null, map: null, grid: null, tool: "move", holding: null, scale: 1, chosen: null };
+const editor = { pack: null, mission: null, map: null, grid: null, tool: "move", holding: null, scale: 1, chosen: null, corner: null };
 
 async function readJson(path) {
   const response = await fetch(path);
@@ -60,6 +69,13 @@ async function openMission(path) {
   refresh();
 }
 
+function changeMap(next) {
+  if (next === editor.map) return;
+  editor.map = next;
+  editor.grid = createTileGrid(next);
+  refresh();
+}
+
 function change(next) {
   if (next === editor.mission) return;
   editor.mission = next;
@@ -70,7 +86,7 @@ function refresh() {
   draw();
   renderObjectives();
   renderRoute();
-  const problems = validateDraft(editor.mission, editor.map);
+  const problems = [...new Set([...validateDraft(editor.mission, editor.map), ...validateMap(editor.map)])];
   const list = document.querySelector("#problem-list");
   list.replaceChildren(
     ...(problems.length === 0
@@ -106,6 +122,11 @@ function draw() {
   for (const prop of map.props ?? []) {
     context.fillStyle = prop.kind === "tree" ? "#318a6c" : "#55636d";
     context.fillRect(prop.position.x * scale - 1, prop.position.y * scale - 1, 3, 3);
+  }
+  if (editor.corner) {
+    context.strokeStyle = "#fff";
+    context.lineWidth = 2;
+    context.strokeRect(editor.corner.x * scale, editor.corner.y * scale, scale, scale);
   }
   for (const entry of placements(mission)) {
     context.fillStyle = COLOURS[entry.group];
@@ -219,6 +240,24 @@ canvas.addEventListener("click", (event) => {
     } else {
       hint.textContent = "Click someone first.";
     }
+  } else if (tool.paint) {
+    if (!editor.corner) {
+      editor.corner = point;
+      hint.textContent = `Corner at ${point.x}, ${point.y}. Click the opposite corner to paint ${PAINTS[tool.paint].label.toLowerCase()}.`;
+    } else {
+      changeMap(paintRegion(editor.map, editor.corner, point, tool.paint));
+      hint.textContent = `Painted from ${editor.corner.x}, ${editor.corner.y} to ${point.x}, ${point.y}.`;
+      editor.corner = null;
+    }
+    draw();
+  } else if (tool.id === "erase-paint") {
+    const found = paintedAt(editor.map, point);
+    if (found) {
+      changeMap(removeRegion(editor.map, found.id));
+      hint.textContent = `Took off ${found.id}.`;
+    } else {
+      hint.textContent = "Nothing painted there (the map's own ground cannot be taken off).";
+    }
   } else if (tool.id === "delete") {
     const found = pickPlacement(editor.mission, point);
     if (found) change(removeItem(editor.mission, found.group, found.id));
@@ -244,6 +283,15 @@ document.querySelector("#script-apply").addEventListener("click", () => {
   renderRoute();
 });
 
+document.querySelector("#export-map-button").addEventListener("click", () => {
+  const blob = new Blob([exportMap(editor.map)], { type: "application/json" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `${editor.map.id.replace(/^developer\./, "")}.map.json`;
+  link.click();
+  URL.revokeObjectURL(link.href);
+});
+
 document.querySelector("#export-button").addEventListener("click", () => {
   const blob = new Blob([exportMission(editor.mission)], { type: "application/json" });
   const link = document.createElement("a");
@@ -265,6 +313,7 @@ for (const tool of TOOLS) {
   radio.addEventListener("change", () => {
     editor.tool = tool.id;
     editor.holding = null;
+    editor.corner = null;
     if (tool.id !== "route") editor.chosen = null;
     hint.textContent = tool.id === "move" ? "Click someone to pick them up, then click where they should go." : tool.label;
   });

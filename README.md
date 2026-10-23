@@ -26,7 +26,7 @@ pick that up, get in that car.
 - **Command four operatives at once.** Select one, a few or everybody and give them orders together. Queue up a route,
   a pick-up and a ride in a van in one go.
 - **Use a big toolbox.** Pistols, machine pistols, scatter guns, flamethrowers, beam weapons, scanners, shields,
-  time bombs, a stealth cloak, and a device that persuades bystanders and even enemy agents to follow you.
+  time bombs, and a device that persuades bystanders and even enemy agents to follow you.
 - **Build your operatives up.** Fit cybernetic body parts (legs, arms, chest, heart, eyes, brain) and dose them with three
   drugs that make them faster, steadier or quicker to reload.
 - **Run a little empire between missions.** Held territories pay tax, but squeeze them too hard and they revolt. Spend
@@ -37,7 +37,17 @@ pick that up, get in that car.
   pick up. Take a weapon from the police and use it yourself.
 - **Drive.** Take a car, drive it across the city, run people over (the city's own cars never do), or shoot a driver out
   of theirs.
-- **Make your own missions.** There is a simple mission editor in the browser.
+- **Make your own missions and maps.** There is a mission editor in the browser: place people, set objectives and routes, and
+  paint your own map from ground, streets, buildings and bridges.
+- **Pick up where you left off.** The operation you are playing is saved as you go and offered again when you come back, even
+  after a game update. The interface comes in English, Spanish and French.
+- **Ride the train.** Cities have an elevated railway with a train you can board at a platform.
+
+## For people who want to host or release it
+
+See [docs/SELF_HOSTING.md](docs/SELF_HOSTING.md) and [docs/RELEASING.md](docs/RELEASING.md); how it is run is in
+[GOVERNANCE.md](GOVERNANCE.md), security reports in [SECURITY.md](SECURITY.md) and what it does with your data in
+[PRIVACY.md](PRIVACY.md).
 
 ## How to try it
 

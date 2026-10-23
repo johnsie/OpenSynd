@@ -228,3 +228,144 @@ export function validateDraft(mission, map) {
 export function exportMission(mission) {
   return `${JSON.stringify(mission, null, 2)}\n`;
 }
+
+// ---- Map editing: painting the ground, streets, buildings and so on, one rectangle at a time.
+
+/** What can be painted. A painted rectangle is a new region laid over the ones before it (the last one on a tile wins). */
+export const PAINTS = Object.freeze({
+  ground: { label: "Ground (open pavement)", surface: "service-concrete", walkable: true, elevation: 0, color: "#293138" },
+  street: { label: "Street", surface: "street", walkable: true, elevation: 0, color: "#2d363d" },
+  building: { label: "Building (blocked, three floors)", surface: "utility-building", walkable: false, elevation: 2, color: "#3d4a54" },
+  tower: { label: "Tall building (blocked, five floors)", surface: "utility-building", walkable: false, elevation: 4, color: "#4a4d5c" },
+  fence: { label: "Fence (blocked, see-through)", surface: "service-fence", walkable: false, elevation: 0, color: "#6b7a84" },
+  wall: { label: "Low wall (blocked)", surface: "service-wall", walkable: false, elevation: 0, color: "#55636d" },
+  water: { label: "Water channel (blocked)", surface: "runoff-channel", walkable: false, elevation: 0, color: "#12313d" },
+  bridge: { label: "Bridge (walkable, raised)", surface: "signal-grate", walkable: true, elevation: 1, color: "#59717a" },
+});
+
+export const MAX_MAP_SIZE = 256;
+
+/** A new, empty map: open ground, a team entry on the west side and an exit on the east. Size is clamped to 24..256. */
+export function newMap(id, name, size = 64) {
+  const side = Math.max(24, Math.min(MAX_MAP_SIZE, Math.round(size)));
+  return {
+    formatVersion: 1,
+    id,
+    name,
+    license: "CC0-1.0",
+    projection: "isometric",
+    dimensions: { width: side, height: side },
+    cellSize: { width: 64, height: 32 },
+    regions: [{ id: "ground", x: 0, y: 0, width: side, height: side, ...pick(PAINTS.ground) }],
+    zones: [
+      { id: "team-entry", kind: "entry", position: { x: 2, y: Math.floor(side / 2) }, width: 2, height: 2 },
+      { id: "safe-exit", kind: "exit", position: { x: side - 4, y: Math.floor(side / 2) }, width: 2, height: 2 },
+    ],
+    objects: [],
+    props: [],
+  };
+}
+
+function pick({ surface, walkable, elevation, color }) {
+  return { surface, walkable, elevation, color };
+}
+
+const clampRect = (map, a, b) => {
+  const { width, height } = map.dimensions;
+  const x0 = Math.max(0, Math.min(Math.round(a.x), Math.round(b.x)));
+  const y0 = Math.max(0, Math.min(Math.round(a.y), Math.round(b.y)));
+  const x1 = Math.min(width - 1, Math.max(Math.round(a.x), Math.round(b.x)));
+  const y1 = Math.min(height - 1, Math.max(Math.round(a.y), Math.round(b.y)));
+  return x1 < x0 || y1 < y0 ? null : { x: x0, y: y0, width: x1 - x0 + 1, height: y1 - y0 + 1 };
+};
+
+/** Paint a rectangle between two corner tiles (both included). Returns the same map if the rectangle is off it or the kind is unknown. */
+export function paintRegion(map, from, to, kind) {
+  const paint = PAINTS[kind];
+  const rect = clampRect(map, from, to);
+  if (!paint || !rect) return map;
+  const next = clone(map);
+  let number = 1;
+  while (next.regions.some((region) => region.id === `painted-${number}`)) number += 1;
+  next.regions.push({ id: `painted-${number}`, ...rect, ...pick(paint) });
+  return next;
+}
+
+/** The top-most painted region at a tile (the base ground and generated regions are not erased, only what was painted). */
+export function paintedAt(map, point) {
+  for (let index = map.regions.length - 1; index >= 0; index -= 1) {
+    const region = map.regions[index];
+    if (!region.id.startsWith("painted-")) continue;
+    const insideX = point.x >= region.x && point.x < region.x + region.width;
+    const insideY = point.y >= region.y && point.y < region.y + region.height;
+    if (insideX && insideY) return region;
+  }
+  return null;
+}
+
+export function removeRegion(map, id) {
+  if (!map.regions.some((region) => region.id === id)) return map;
+  const next = clone(map);
+  next.regions = next.regions.filter((region) => region.id !== id);
+  return next;
+}
+
+/**
+ * What is wrong with a map, as sentences: regions off the map, repeated ids, zones off it or on blocked ground, and zones the
+ * entry cannot reach.
+ */
+export function validateMap(map) {
+  const problems = [];
+  const { width, height } = map.dimensions ?? {};
+  if (!Number.isInteger(width) || !Number.isInteger(height) || width < 8 || height < 8 || width > MAX_MAP_SIZE || height > MAX_MAP_SIZE) {
+    return [`The map must be between 8 and ${MAX_MAP_SIZE} tiles each way.`];
+  }
+  const ids = new Set();
+  for (const region of map.regions ?? []) {
+    if (ids.has(region.id)) problems.push(`Two regions share the id ${region.id}.`);
+    ids.add(region.id);
+    if (region.x < 0 || region.y < 0 || region.x + region.width > width || region.y + region.height > height) {
+      problems.push(`Region ${region.id} reaches off the map.`);
+    }
+  }
+  const grid = createTileGrid(map);
+  const zones = map.zones ?? [];
+  for (const zone of zones) {
+    const { x, y } = zone.position;
+    if (x < 0 || y < 0 || x + zone.width > width || y + zone.height > height) {
+      problems.push(`Zone ${zone.id} reaches off the map.`);
+    } else if (zone.kind !== "hold" && !grid[y]?.[x]?.walkable) {
+      problems.push(`Zone ${zone.id} starts on ground nobody can stand on (${x}, ${y}).`);
+    }
+  }
+  const entry = zones.find((zone) => zone.kind === "entry");
+  if (!entry) {
+    problems.push("The map needs an entry zone for the squad.");
+    return problems;
+  }
+  // Which tiles the entry can walk to (four ways, over walkable tiles).
+  const seen = new Set([`${entry.position.x},${entry.position.y}`]);
+  const queue = [{ x: entry.position.x, y: entry.position.y }];
+  while (queue.length > 0) {
+    const { x, y } = queue.pop();
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const key = `${x + dx},${y + dy}`;
+      if (!seen.has(key) && grid[y + dy]?.[x + dx]?.walkable) {
+        seen.add(key);
+        queue.push({ x: x + dx, y: y + dy });
+      }
+    }
+  }
+  for (const zone of zones) {
+    if (zone === entry || zone.kind === "hold") continue;
+    if (grid[zone.position.y]?.[zone.position.x]?.walkable && !seen.has(`${zone.position.x},${zone.position.y}`)) {
+      problems.push(`The squad cannot walk from the entry to zone ${zone.id}.`);
+    }
+  }
+  return problems;
+}
+
+/** The map as JSON text, ready to save into a content pack. */
+export function exportMap(map) {
+  return `${JSON.stringify(map, null, 2)}\n`;
+}

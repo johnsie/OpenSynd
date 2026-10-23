@@ -12,7 +12,7 @@ who can follow this page can make one; a second maintainer should do it once to 
    python3 tools/validate_content.py && python3 tools/check_web_sync.py && python3 tools/check_style.py \
      && python3 tools/check_provenance.py && python3 tools/check_source_licenses.py && python3 tools/check_dependencies.py
    python3 -m unittest discover -s tools -p "test_*.py"
-   (cd web && npm test && npm run e2e)
+   (cd web && npm test && npm run e2e && npm run perf)
    ```
 2. **The legal gate** (`docs/legal/IP_AUDIT.md`, "Release blockers"): no shipped asset may be quarantined or unregistered, the
    source audit has no unresolved file that ships, the licence expression is settled and the name is cleared. The release

@@ -57,7 +57,7 @@ directly will not work reliably because browsers restrict local `fetch()` calls.
   (**V** also takes or leaves one) and click a road to drive. Click an enemy to close in and fight.
 - Nobody fires without a weapon selected: click one in the operator's inventory. **Right-click** fires; hold the
   button to keep firing. Weapons: pulse, machine pistol, scatter, flame, beam, rotary, coil, long rifle; items:
-  repair kit, cloak, Persuader, scanner, shield, delay charge.
+  repair kit, Persuader, scanner, shield, delay charge.
 - Three coloured sliders under each operator set Adrenaline (orange), Perception (cyan) and Intelligence (violet) doses.
   The round button where the four squad cards meet (or **A**) selects everyone.
 - Shift+click queues orders after the current route: walk on, pick up dropped gear, get into a vehicle. Esc clears the queue.
