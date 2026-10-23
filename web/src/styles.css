@@ -116,24 +116,6 @@ kbd {
 
 .brand-block { display: flex; align-items: center; gap: 0.9rem; }
 .brand-block h1 { margin: 0; font-size: clamp(1.45rem, 3vw, 2rem); letter-spacing: 0.08em; }
-.outiva-home {
-  color: #f5f7fa;
-  font-size: 1.2rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  text-decoration: none;
-}
-.outiva-home:hover, .outiva-home:focus-visible, .outiva-return:hover, .outiva-return:focus-visible {
-  color: var(--public);
-  outline: none;
-}
-.brand-divider { width: 1px; height: 2rem; background: var(--line); }
-.outiva-return {
-  color: var(--muted);
-  font-size: 0.85rem;
-  white-space: nowrap;
-  text-decoration: none;
-}
 .brand-mark { width: 2.5rem; display: grid; gap: 0.25rem; transform: skewY(-18deg); }
 .brand-mark span { display: block; height: 0.32rem; background: var(--public); }
 .brand-mark span:nth-child(2) { width: 70%; background: var(--amber); }
@@ -425,8 +407,6 @@ dialog.title-screen[open] {
 .title-head { flex: none; display: flex; align-items: baseline; gap: 1.2rem; }
 .title-head .eyebrow { margin: 0; }
 .title-head h2 { margin: 0; font-size: 1.5rem; }
-.title-head .brand-divider { align-self: center; }
-.title-head .title-return { margin-left: auto; }
 .title-grid {
   flex: 1;
   min-height: 0;
@@ -680,12 +660,7 @@ footer { padding: 0.2rem 0 0.4rem; font-size: 0.7rem; }
 .topbar .operation-heading h2 { font-size: 1.1rem; }
 .topbar .operation-tools button { padding: 0.3rem 0.65rem; font-size: 0.88rem; }
 .topbar .funds { margin: 0; }
-@media (max-width: 1250px) { .network-state, .outiva-return { display: none; } }
-@media (max-width: 800px) {
-  .brand-block { gap: 0.45rem; }
-  .brand-block .brand-mark, .brand-block .brand-divider, .brand-block .eyebrow { display: none; }
-  .outiva-home { font-size: 1rem; }
-}
+@media (max-width: 1250px) { .network-state { display: none; } }
 
 /* Status messages sit on the map instead of taking sidebar space. */
 .status-overlay {
