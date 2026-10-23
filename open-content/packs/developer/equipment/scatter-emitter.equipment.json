@@ -20,8 +20,5 @@
   "icon": "scatter",
   "carry": "rifle",
   "sound": "scatter",
-  "requires": [
-    "developer.machine-pistol"
-  ],
   "ammoPrice": 2
 }

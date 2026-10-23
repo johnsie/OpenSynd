@@ -77,7 +77,7 @@ test("an achievement pays its reward once", () => {
 });
 
 test("body parts are fitted per operative in three tiers priced 1x, 5x and 10x", () => {
-  let campaign = { ...emptyCampaign(), funds: 100000 };
+  let campaign = { ...emptyCampaign(), funds: 100000, items: ["part.legs.2", "part.legs.3"] };
   assert.deepEqual(upgradesOf(campaign, "op1"), { legs: 0, arms: 0, chest: 0, heart: 0, eyes: 0, brain: 0 });
   campaign = fitUpgrade(campaign, "op1", "legs");
   assert.deepEqual([campaign.funds, upgradesOf(campaign, "op1").legs], [94000, 1], "tier 1 costs FreeSynd's 6000 for legs");
@@ -94,7 +94,7 @@ test("body parts are fitted per operative in three tiers priced 1x, 5x and 10x",
 });
 
 test("taking a part off returns what its top tier cost", () => {
-  let campaign = { ...emptyCampaign(), funds: 100000 };
+  let campaign = { ...emptyCampaign(), funds: 100000, items: ["part.chest.2"] };
   campaign = fitUpgrade(fitUpgrade(campaign, "op1", "chest"), "op1", "chest");
   assert.equal(campaign.funds, 100000 - 8000 - 40000);
   campaign = removeUpgrade(campaign, "op1", "chest");
@@ -560,4 +560,29 @@ test("a new campaign starts with funds, enough for a few weapons from the Armour
   const { STARTING_FUNDS } = await import("../src/campaign.js");
   assert.equal(emptyCampaign().funds, STARTING_FUNDS);
   assert.ok(STARTING_FUNDS >= 300);
+});
+
+test("tier 2 and 3 of a part must be researched, the second before the third, at FreeSynd's fundings", async () => {
+  const { partResearchItems, tierUnlocked, PART_RESEARCH_COSTS } = await import("../src/upgrades.js");
+  const { researchCatalog, researchBlockers, startResearch, canResearchItem } = await import("../src/campaign.js");
+  const items = partResearchItems();
+  assert.equal(items.length, 12);
+  assert.deepEqual(PART_RESEARCH_COSTS.chest, [6000, 12000]);
+  assert.equal(items.find((item) => item.id === "part.eyes.2").researchCost, 3480);
+  assert.equal(researchCatalog(catalog).length, catalog.length + 12);
+  let campaign = { ...emptyCampaign(), funds: 10_000_000 };
+  assert.equal(tierUnlocked(campaign.items, "legs", 1), true);
+  assert.equal(canFit(campaign, "op1", "legs"), true, "tier 1 is on sale from the start");
+  campaign = fitUpgrade(campaign, "op1", "legs");
+  assert.equal(canFit(campaign, "op1", "legs"), false, "tier 2 is locked until it is researched");
+  const second = items.find((item) => item.id === "part.legs.2");
+  const third = items.find((item) => item.id === "part.legs.3");
+  assert.deepEqual(researchBlockers(campaign, third, catalog), ["part.legs.2"]);
+  assert.equal(canResearchItem(campaign, third, catalog), false, "the third needs the second");
+  campaign = startResearch(campaign, second, catalog, 10);
+  assert.deepEqual(campaign.research.active, [{ id: "part.legs.2", level: 10 }]);
+  const done = advanceCampaign(campaign, 24, catalog);
+  assert.deepEqual(done.campaign.items, ["part.legs.2"]);
+  assert.equal(canFit(done.campaign, "op1", "legs"), true);
+  assert.equal(canResearchItem(done.campaign, third, catalog), true);
 });

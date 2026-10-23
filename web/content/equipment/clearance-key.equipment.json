@@ -2,16 +2,17 @@
   "formatVersion": 1,
   "id": "developer.clearance-key",
   "name": "Clearance Key",
-  "description": "A coded key card that opens locked service gates when its carrier stands close. Taken from whoever holds it; it cannot be bought.",
+  "description": "A coded key card that opens locked service gates when its carrier stands close. Can be taken from whoever holds one, or researched and bought.",
   "license": "CC0-1.0",
   "type": "tool",
   "action": "key",
   "charges": null,
-  "missionItem": true,
+  "missionItem": false,
   "effect": {
     "range": 2.5
   },
-  "price": 0,
+  "price": 1000,
   "icon": "key",
-  "weight": 1
+  "weight": 1,
+  "researchCost": 1992
 }

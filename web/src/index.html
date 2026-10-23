@@ -257,7 +257,7 @@
                 Drag, use the arrow keys or push the mouse to the map edge to pan; scroll or +/- to zoom,
                 C to centre, or click the minimap.
               </li>
-              <li>Funds build up while you play and from achievements. Spend them in Research &amp; Armoury.</li>
+              <li>Funds build up while you play. Spend them in Research &amp; Armoury.</li>
               <li>F loots a disabled enemy's gear. Each operator holds up to eight items.</li>
               <li>Space pauses. Keys can be changed in Settings.</li>
             </ul>
@@ -291,6 +291,15 @@
           aria-controls="lab-research"
           tabindex="-1"
         >Research</button>
+        <button
+          id="tab-lab-parts"
+          class="tab"
+          type="button"
+          role="tab"
+          aria-selected="false"
+          aria-controls="lab-parts"
+          tabindex="-1"
+        >Body parts research</button>
       </div>
 
       <section id="lab-squad" class="tab-panel" role="tabpanel" aria-labelledby="tab-lab-squad" aria-label="Squad">
@@ -326,9 +335,16 @@
 
       <section id="lab-research" class="tab-panel" role="tabpanel" aria-labelledby="tab-lab-research" aria-label="Research" hidden>
         <h3>New weapons and items</h3>
-        <p class="hint">Funds come from tax on the territories you hold and from achievements. Research is paid by the hour.</p>
+        <p class="hint">Funds come from tax on the territories you hold. Research is paid by the hour.</p>
         <div id="research-dial" class="research-dial"></div>
         <div id="research-items" class="research-items"></div>
+      </section>
+
+      <section id="lab-parts" class="tab-panel" role="tabpanel" aria-labelledby="tab-lab-parts" aria-label="Body parts research" hidden>
+        <h3>Legs, arms, chest, heart, eyes and brain</h3>
+        <p class="hint">Tier 1 of every part is on sale from the start. Research opens tier 2, and then tier 3, for the whole squad.</p>
+        <div id="parts-dial" class="research-dial"></div>
+        <div id="parts-items" class="research-items"></div>
       </section>
     </dialog>
 

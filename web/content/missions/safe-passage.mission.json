@@ -64,7 +64,7 @@
         "y": 34
       },
       "equipment": [
-        "equipment/heavy-pulse-emitter.equipment.json"
+        "equipment/scatter-emitter.equipment.json"
       ],
       "patrol": [
         {
@@ -95,9 +95,7 @@
         "x": 70,
         "y": 56
       },
-      "equipment": [
-        "equipment/shadow-cloak.equipment.json"
-      ],
+      "equipment": [],
       "patrol": [
         {
           "x": 70,
@@ -169,7 +167,7 @@
         "y": 100
       },
       "equipment": [
-        "equipment/heavy-pulse-emitter.equipment.json"
+        "equipment/scatter-emitter.equipment.json"
       ]
     },
     {

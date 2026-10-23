@@ -90,6 +90,7 @@ import {
   dayOf,
   ensureTerritories,
   researchBlockers,
+  researchCatalog,
   setResearchLevel,
   setTerritoryTax,
   startResearch,
@@ -143,6 +144,8 @@ import {
   chestVitality,
   legsPace,
   upgradePrice,
+  partResearchItems,
+  tierUnlocked,
 } from "./upgrades.js";
 import { newStats, newlyEarned } from "./achievements.js";
 import {
@@ -817,7 +820,10 @@ function renderResearch() {
       const controls = document.createElement("span");
       const fit = document.createElement("button");
       fit.type = "button";
-      fit.textContent = tier >= MAX_TIER ? "Fully upgraded" : `Fit tier ${tier + 1} · ${upgradePrice(part, tier + 1)} funds`;
+      const locked = tier < MAX_TIER && !tierUnlocked(campaign.items, part, tier + 1);
+      fit.textContent = tier >= MAX_TIER
+        ? "Fully upgraded"
+        : locked ? `Tier ${tier + 1} needs research` : `Fit tier ${tier + 1} · ${upgradePrice(part, tier + 1)} funds`;
       fit.setAttribute("aria-label", `${info.label} for Operator ${state.armoury.operator + 1}: ${fit.textContent}`);
       fit.disabled = !canFit(campaign, fitted.id, part);
       fit.addEventListener("click", () => {
@@ -846,72 +852,80 @@ function renderResearch() {
     }),
   );
 
-  renderResearchDial();
+  renderResearchDial("#research-dial", false);
+  renderResearchDial("#parts-dial", true);
   document.querySelector("#research-items").replaceChildren(
-    ...state.catalog.filter((item) => !item.missionItem).map((item) => {
-      const row = document.createElement("div");
-      row.className = "research-row";
-      const name = document.createElement("span");
-      name.textContent = item.name;
-      const control = document.createElement("span");
-      const researching = (item.researchCost ?? 0) > 0 && !isItemAvailable(campaign, item);
-      if (researching) {
-        const blockers = researchBlockers(campaign, item, state.catalog);
-        const percent = Math.round(campaign.research.progress[item.id] ?? 0);
-        const active = campaign.research.active.some((entry) => entry.id === item.id);
-        if (percent > 0) {
-          const bar = document.createElement("progress");
-          bar.max = 100;
-          bar.value = percent;
-          bar.setAttribute("aria-label", `${item.name} research ${percent} percent`);
-          control.append(bar, document.createTextNode(` ${percent}% `));
-        }
-        const button = document.createElement("button");
-        button.type = "button";
-        if (blockers.length > 0) {
-          const needed = blockers.map((id) => state.catalog.find((entry) => entry.id === id)?.name ?? id);
-          button.textContent = `Needs ${needed.join(", ")}`;
-          button.disabled = true;
-        } else if (active) {
-          button.textContent = "Researching · pause";
-          button.setAttribute("aria-label", `Pause research on ${item.name}`);
-          button.addEventListener("click", () => {
-            state.campaign = suspendResearch(state.campaign, item.id);
-            persistCampaign();
-            renderResearch();
-          });
-        } else {
-          button.textContent = percent > 0 ? "Resume" : `Research · ${item.researchCost} funds`;
-          button.setAttribute("aria-label", `Research ${item.name}, ${item.researchCost} funds at the lowest funding level`);
-          button.addEventListener("click", () => {
-            state.campaign = startResearch(state.campaign, item, state.catalog);
-            persistCampaign();
-            renderResearch();
-          });
-        }
-        control.append(button);
-      } else {
-        control.className = "state";
-        control.textContent = researchStatus(item);
-      }
-      row.title = item.description;
-      row.append(name, control);
-      return row;
-    }),
+    ...state.catalog.filter((item) => !item.missionItem).map((item) => researchRow(item)),
   );
+  document.querySelector("#parts-items").replaceChildren(...partResearchItems().map((item) => researchRow(item)));
 
   renderRoster();
   renderArmoury();
 }
 
+// One line of the research lists: the item's name, its progress and what can be done with it (start, pause, resume).
+function researchRow(item) {
+  const campaign = state.campaign;
+  const row = document.createElement("div");
+  row.className = "research-row";
+  const name = document.createElement("span");
+  name.textContent = item.name;
+  const control = document.createElement("span");
+  const researching = (item.researchCost ?? 0) > 0 && !isItemAvailable(campaign, item);
+  if (researching) {
+    const catalog = researchCatalog(state.catalog);
+    const blockers = researchBlockers(campaign, item, state.catalog);
+    const percent = Math.round(campaign.research.progress[item.id] ?? 0);
+    const active = campaign.research.active.some((entry) => entry.id === item.id);
+    if (percent > 0) {
+      const bar = document.createElement("progress");
+      bar.max = 100;
+      bar.value = percent;
+      bar.setAttribute("aria-label", `${item.name} research ${percent} percent`);
+      control.append(bar, document.createTextNode(` ${percent}% `));
+    }
+    const button = document.createElement("button");
+    button.type = "button";
+    if (blockers.length > 0) {
+      const needed = blockers.map((id) => catalog.find((entry) => entry.id === id)?.name ?? id);
+      button.textContent = `Needs ${needed.join(", ")}`;
+      button.disabled = true;
+    } else if (active) {
+      button.textContent = "Researching · pause";
+      button.setAttribute("aria-label", `Pause research on ${item.name}`);
+      button.addEventListener("click", () => {
+        state.campaign = suspendResearch(state.campaign, item.id);
+        persistCampaign();
+        renderResearch();
+      });
+    } else {
+      button.textContent = percent > 0 ? "Resume" : `Research · ${item.researchCost} funds a day`;
+      button.setAttribute("aria-label", `Research ${item.name}, ${item.researchCost} funds a day at the lowest funding level`);
+      button.addEventListener("click", () => {
+        state.campaign = startResearch(state.campaign, item, state.catalog);
+        persistCampaign();
+        renderResearch();
+      });
+    }
+    control.append(button);
+  } else {
+    control.className = "state";
+    control.textContent = item.kind === "part" ? "RESEARCHED" : researchStatus(item);
+  }
+  row.title = item.description;
+  row.append(name, control);
+  return row;
+}
+
 // The funding dials for the research under way: several can run at once, each with ten levels (faster and dearer) and its
 // own projected finish.
-function renderResearchDial() {
-  const dial = document.querySelector("#research-dial");
+function renderResearchDial(selector, parts) {
+  const dial = document.querySelector(selector);
   const { active, progress } = state.campaign.research;
+  const catalog = researchCatalog(state.catalog);
   const rows = active
-    .map((entry) => ({ entry, item: state.catalog.find((candidate) => candidate.id === entry.id) }))
-    .filter(({ item }) => item);
+    .map((entry) => ({ entry, item: catalog.find((candidate) => candidate.id === entry.id) }))
+    .filter(({ item }) => item && (item.kind === "part") === parts);
   if (rows.length === 0) {
     dial.textContent =
       "Nothing is being researched. Choose items below (several at once if you like); it runs while operations are under way.";

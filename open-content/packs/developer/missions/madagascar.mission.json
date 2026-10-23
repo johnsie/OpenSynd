@@ -70,7 +70,7 @@
         "y": 80
       },
       "equipment": [
-        "equipment/heavy-pulse-emitter.equipment.json",
+        "equipment/scatter-emitter.equipment.json",
         "equipment/field-repair-kit.equipment.json"
       ],
       "patrol": [
@@ -111,7 +111,7 @@
         "y": 25
       },
       "equipment": [
-        "equipment/heavy-pulse-emitter.equipment.json"
+        "equipment/scatter-emitter.equipment.json"
       ],
       "patrol": [
         {
@@ -172,7 +172,7 @@
         "y": 50
       },
       "equipment": [
-        "equipment/heavy-pulse-emitter.equipment.json"
+        "equipment/scatter-emitter.equipment.json"
       ],
       "patrol": [
         {
@@ -212,7 +212,7 @@
         "y": 87
       },
       "equipment": [
-        "equipment/heavy-pulse-emitter.equipment.json",
+        "equipment/scatter-emitter.equipment.json",
         "equipment/delay-charge.equipment.json"
       ],
       "patrol": [
@@ -329,7 +329,7 @@
         "y": 111
       },
       "equipment": [
-        "equipment/heavy-pulse-emitter.equipment.json"
+        "equipment/scatter-emitter.equipment.json"
       ],
       "patrol": [
         {

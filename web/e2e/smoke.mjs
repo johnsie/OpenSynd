@@ -285,14 +285,15 @@ for (const [name, type, executablePath] of targets) {
     await page.locator("#game-canvas").focus();
     await page.keyboard.press("f");
     // (Read it from the inventory: a nearby guard may spot the operator and change the status line at once.)
-    assert.equal(await page.getByLabel(/slot \d+: Heavy Pulse Emitter/).count(), 1);
+    assert.equal(await page.getByLabel(/slot \d+: Scatter Emitter/).count(), 1);
     assert.match(await page.locator("#achievement-toast").innerText(), /Scavenger/);
     assert.equal(await page.locator(".roster-item").first().locator(".slot:not(.empty)").count(), 3);
-    assert.equal(await page.getByLabel("Field Operator 1 slot 3: Heavy Pulse Emitter", { exact: false }).count(), 1);
+    assert.equal(await page.getByLabel("Field Operator 1 slot 3: Scatter Emitter", { exact: false }).count(), 1);
     // The watcher has nothing left to loot, so the button waits for another body.
     await page.waitForFunction(() => document.querySelector("#loot-button").disabled);
     // Click-to-pickup: the pointer changes over fallen gear and a click sends an operator to collect it.
     await page.evaluate(() => {
+      window.opensyndTest.giveItem("enemy-agent-three", "developer.scanner");
       window.opensyndTest.disableUnit("enemy-agent-three");
       window.opensyndTest.placeNear("operator-one", "enemy-agent-three", 0, 6);
       window.opensyndTest.focusOn("enemy-agent-three");
@@ -303,9 +304,9 @@ for (const [name, type, executablePath] of targets) {
     await page.waitForFunction(() => document.querySelector("#game-canvas").classList.contains("cursor-loot"));
     await page.mouse.click(gear.x, gear.y);
     assert.match(await page.locator("#status-message").innerText(), /walking over to pick up/);
-    await page.getByLabel(/slot \d+: Shadow Cloak/).first().waitFor({ timeout: 20000 });
+    await page.getByLabel(/slot \d+: Scanner/).first().waitFor({ timeout: 20000 });
     assert.equal(await page.locator(".roster-item").first().locator(".slot:not(.empty)").count(), 4);
-    assert.equal(await page.getByLabel("Field Operator 1 slot 4: Shadow Cloak", { exact: false }).count(), 1);
+    assert.equal(await page.getByLabel("Field Operator 1 slot 4: Scanner", { exact: false }).count(), 1);
     // With the gear gone the pointer goes back to normal over the same spot.
     await page.mouse.move(gear.x + 60, gear.y + 60);
     await page.mouse.move(gear.x, gear.y);
@@ -492,14 +493,22 @@ for (const [name, type, executablePath] of targets) {
     assert.match(await page.locator("#research-dial").innerText(), /Funding for Machine Pistol/);
     assert.equal(await page.getByRole("button", { name: /^Research Rotary Cannon/ }).count(), 0, "needs the machine pistol first");
     // Several researches run at once: a second one joins the first, each with its own funding dial.
-    await page.getByRole("button", { name: /^Research Delay Charge/ }).click();
+    await page.getByRole("button", { name: /^Research Incinerator/ }).click();
     assert.equal(await page.locator("#research-dial .dial-row").count(), 2);
-    await page.getByRole("button", { name: "Pause research on Delay Charge" }).click();
+    await page.getByRole("button", { name: "Pause research on Incinerator" }).click();
     assert.equal(await page.locator("#research-dial .dial-row").count(), 1);
     await page.evaluate(() => window.opensyndTest.advanceHours(70));
     assert.match(await page.locator("#research-items").innerText(), /Machine Pistol\s+RESEARCHED/);
     const base = await labFunds();
     assert.ok(base >= 92000 && base <= 99000, `research cost about 1500 funds, tax came in: ${base}`);
+
+    // Body parts have a research tab of their own: tier 2 and 3 of each part, the third after the second.
+    await page.click("#tab-lab-parts");
+    assert.equal(await page.locator("#parts-items .research-row").count(), 12);
+    assert.equal(await page.getByRole("button", { name: /^Research Legs tier 3/ }).count(), 0, "the third waits for the second");
+    await page.getByRole("button", { name: /^Research Legs tier 2/ }).click();
+    assert.equal(await page.locator("#parts-dial .dial-row").count(), 1);
+    await page.getByRole("button", { name: "Pause research on Legs tier 2" }).click();
 
     // Eight picture slots per operative: two are filled (the starting kit; unresearched loot is not kept).
     await page.click("#tab-lab-squad");
@@ -507,27 +516,27 @@ for (const [name, type, executablePath] of targets) {
     assert.equal(await squads.count(), 1, "the chosen operative's slots");
     assert.equal(await page.locator("#roster-list .roster-pick:not(:disabled)").count(), 4);
     assert.equal(await squads.first().locator(".slot").count(), 8);
-    assert.equal(await squads.first().locator(".slot:not(.empty)").count(), 3);
-    assert.equal(await squads.first().locator(".slot svg").count(), 3, "each filled slot shows a picture");
+    assert.equal(await squads.first().locator(".slot:not(.empty)").count(), 4);
+    assert.equal(await squads.first().locator(".slot svg").count(), 4, "each filled slot shows a picture");
 
-    // Buy a scanner into slot 4, then two pulse emitters: an operative can carry several of the same weapon.
-    await page.getByLabel("Operator 1 slot 4: empty", { exact: true }).click();
-    await page.getByRole("button", { name: "Buy Scanner for Operator 1 slot 4, 500 funds" }).click();
-    assert.equal(await labFunds(), base - 500);
+    // Buy a scanner into slot 5, then two pulse emitters: an operative can carry several of the same weapon.
     await page.getByLabel("Operator 1 slot 5: empty", { exact: true }).click();
-    await page.getByRole("button", { name: "Buy Civic Pulse Emitter for Operator 1 slot 5, 0 funds" }).click();
+    await page.getByRole("button", { name: "Buy Scanner for Operator 1 slot 5, 500 funds" }).click();
+    assert.equal(await labFunds(), base - 500);
     await page.getByLabel("Operator 1 slot 6: empty", { exact: true }).click();
     await page.getByRole("button", { name: "Buy Civic Pulse Emitter for Operator 1 slot 6, 0 funds" }).click();
+    await page.getByLabel("Operator 1 slot 7: empty", { exact: true }).click();
+    await page.getByRole("button", { name: "Buy Civic Pulse Emitter for Operator 1 slot 7, 0 funds" }).click();
     assert.equal(await labFunds(), base - 500);
-    assert.equal(await squads.first().locator(".slot:not(.empty)").count(), 6);
+    assert.equal(await squads.first().locator(".slot:not(.empty)").count(), 7);
     // Swapping refunds the full price of what it replaces (FreeSynd sells at cost).
-    await page.getByLabel("Operator 1 slot 6: Civic Pulse Emitter", { exact: true }).click();
-    await page.getByRole("button", { name: "Buy Field Repair Kit for Operator 1 slot 6, 500 funds" }).click();
+    await page.getByLabel("Operator 1 slot 7: Civic Pulse Emitter", { exact: true }).click();
+    await page.getByRole("button", { name: "Buy Field Repair Kit for Operator 1 slot 7, 500 funds" }).click();
     assert.equal(await labFunds(), base - 1000);
     // Selling returns the whole price again.
     await page.getByRole("button", { name: /Sell Field Repair Kit · \+500 funds/ }).click();
     assert.equal(await labFunds(), base - 500);
-    assert.equal(await squads.first().locator(".slot:not(.empty)").count(), 5);
+    assert.equal(await squads.first().locator(".slot:not(.empty)").count(), 6);
 
     // The roster: four operatives deploy; benching one takes them out of the Armoury until they are put back.
     assert.equal(await page.locator("#roster-list .roster-card").count(), 4);
@@ -560,7 +569,8 @@ for (const [name, type, executablePath] of targets) {
     assert.deepEqual(campaignRecord.loadouts["operator-one"], [
       "developer.civic-pulse-emitter",
       "developer.field-repair-kit",
-      "developer.heavy-pulse-emitter",
+      "developer.scatter-emitter",
+      "developer.scanner",
       "developer.scanner",
       "developer.civic-pulse-emitter",
     ]);
@@ -575,10 +585,10 @@ for (const [name, type, executablePath] of targets) {
     await page.waitForFunction(() =>
       document.querySelector("#status-message").textContent.includes("Local map established"),
     );
-    // The purchases are in operator 1's squares when the operation starts: five items.
-    assert.equal(await page.locator(".roster-item").first().locator(".slot:not(.empty)").count(), 5);
-    assert.equal(await page.getByLabel("Field Operator 1 slot 4: Scanner", { exact: false }).count(), 1);
-    assert.equal(await page.getByLabel("Field Operator 1 slot 5: Civic Pulse Emitter", { exact: false }).count(), 1);
+    // The purchases are in operator 1's squares when the operation starts: six items.
+    assert.equal(await page.locator(".roster-item").first().locator(".slot:not(.empty)").count(), 6);
+    assert.equal(await page.getByLabel("Field Operator 1 slot 5: Scanner", { exact: false }).count(), 1);
+    assert.equal(await page.getByLabel("Field Operator 1 slot 6: Civic Pulse Emitter", { exact: false }).count(), 1);
 
 
     // New game: wipes the campaign and what was won, keeps the settings, and asks first.
@@ -625,6 +635,7 @@ for (const [name, type, executablePath] of targets) {
     await queuePage.click("#begin-button");
     await queuePage.evaluate(() => {
       const test = window.opensyndTest;
+      test.giveItem("enemy-agent-three", "developer.scanner");
       test.disableUnit("enemy-agent-three");
       test.placeNear("operator-one", "enemy-agent-three", 0, 9);
       test.focusOn("operator-one");
@@ -652,8 +663,8 @@ for (const [name, type, executablePath] of targets) {
     await spentPage.goto(`${url}?e2e`);
     await spentPage.waitForSelector(".roster-select");
     await spentPage.click("#begin-button");
-    await spentPage.evaluate(() => window.opensyndTest.giveItem("operator-one", "developer.heavy-pulse-emitter", 0));
-    await spentPage.getByLabel(/Field Operator 1 slot 3: Heavy Pulse Emitter/).click();
+    await spentPage.evaluate(() => window.opensyndTest.giveItem("operator-one", "developer.scatter-emitter", 0));
+    await spentPage.getByLabel(/Field Operator 1 slot 3: Scatter Emitter/).click();
     assert.equal(await spentPage.getByLabel("Field Operator 1 slot 3: empty").count(), 1, "the spent item left the slot");
     assert.equal((await spentPage.evaluate(() => window.opensyndTest.drops())).length, 1);
     await spentPage.close();
@@ -663,13 +674,13 @@ for (const [name, type, executablePath] of targets) {
     await later.goto(`${url}?e2e`);
     await later.waitForSelector(".roster-select");
     await later.click("#begin-button");
-    await later.evaluate(() => window.opensyndTest.giveItem("operator-one", "developer.heavy-pulse-emitter"));
+    await later.evaluate(() => window.opensyndTest.giveItem("operator-one", "developer.scatter-emitter"));
     await later.waitForTimeout(500);
     const here = await later.evaluate(() => window.opensyndTest.positionOf("operator-one"));
     const walkTo = { x: Math.round(here.x), y: Math.round(here.y) - 3 };
     await later.evaluate((point) => window.opensyndTest.moveSelected(point.x, point.y), walkTo);
     await later
-      .getByLabel(/Field Operator 1 slot 3: Heavy Pulse Emitter/)
+      .getByLabel(/Field Operator 1 slot 3: Scatter Emitter/)
       .evaluate((slot) => slot.dispatchEvent(new MouseEvent("contextmenu", { shiftKey: true, bubbles: true, cancelable: true })));
     assert.equal((await later.evaluate(() => window.opensyndTest.queue("operator-one"))).pending, 1, "the drop waits for the walk");
     assert.equal((await later.evaluate(() => window.opensyndTest.drops())).length, 0, "nothing on the ground yet");
@@ -681,17 +692,17 @@ for (const [name, type, executablePath] of targets) {
     await dropper.goto(`${url}?e2e`);
     await dropper.waitForSelector(".roster-select");
     await dropper.click("#begin-button");
-    await dropper.evaluate(() => window.opensyndTest.giveItem("operator-one", "developer.heavy-pulse-emitter"));
-    const heavySlot = dropper.getByLabel(/Field Operator 1 slot 3: Heavy Pulse Emitter/);
+    await dropper.evaluate(() => window.opensyndTest.giveItem("operator-one", "developer.scatter-emitter"));
+    const heavySlot = dropper.getByLabel(/Field Operator 1 slot 3: Scatter Emitter/);
     await heavySlot.click({ button: "right" });
     assert.equal(await dropper.getByLabel("Field Operator 1 slot 3: empty").count(), 1, "the slot is free again");
     const dropsNow = await dropper.evaluate(() => window.opensyndTest.drops());
     assert.equal(dropsNow.length, 1);
-    assert.equal(dropsNow[0].item, "developer.heavy-pulse-emitter");
-    assert.match(await dropper.locator("#status-message").innerText(), /dropped the Heavy Pulse Emitter/);
+    assert.equal(dropsNow[0].item, "developer.scatter-emitter");
+    assert.match(await dropper.locator("#status-message").innerText(), /dropped the Scatter Emitter/);
     await dropper.locator("#game-canvas").focus();
     await dropper.keyboard.press("f");
-    await dropper.getByLabel(/Field Operator 1 slot 3: Heavy Pulse Emitter/).waitFor({ timeout: 5000 });
+    await dropper.getByLabel(/Field Operator 1 slot 3: Scatter Emitter/).waitFor({ timeout: 5000 });
     assert.equal((await dropper.evaluate(() => window.opensyndTest.drops())).length, 0);
     await dropper.close();
 

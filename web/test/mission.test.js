@@ -181,11 +181,11 @@ test("a squad fight against a watcher resolves identically on every run", async 
   assert.equal(run.events.at(-1).type, "disabled");
   assert.equal(run.events.at(-1).unitId, "enemy-agent-one");
   // Golden values at 30 Hz: the watcher falls on step 70 after ten shots
-  // and lands two heavy-pulse retaliation hits (20 each); the other watchers are untouched.
+  // and lands retaliation shotgun hits (the watcher carries a Scatter Emitter); the other watchers are untouched.
   assert.equal(run.events.at(-1).step, 70);
   assert.equal(run.events.length, 10);
   assert.deepEqual(run.health, {
-    "operator-one": 60,
+    "operator-one": 52,
     "operator-two": 100,
     "operator-three": 100,
     "operator-four": 100,
@@ -241,7 +241,7 @@ test("an undefended squad loses to the watchers at a repeatable step", async () 
   assert.equal(runs[0].outcome, "failure");
   // Golden value at 30 Hz: about 2.5 seconds of sustained fire from every enemy agent and guard on the map,
   // all piled into range; no enemy touched.
-  assert.deepEqual(runs[0], { step: 74, outcome: "failure", watchers: 75 });
+  assert.deepEqual(runs[0], { step: 67, outcome: "failure", watchers: 75 });
 });
 
 test("every First Light watcher patrols a real route that stays on walkable ground", async () => {
@@ -384,7 +384,7 @@ test("at the start FreeSynd's weapons are available (pistol, shotgun, persuader,
   const items = await Promise.all(pack.equipment.map((path) => read(path)));
   const free = items.filter((item) => !(item.researchCost > 0));
   const freeWeapons = free.filter((item) => item.action === "disable-pulse").map((item) => item.name).sort();
-  assert.deepEqual(freeWeapons, ["Civic Pulse Emitter", "Heavy Pulse Emitter", "Scatter Emitter"]);
+  assert.deepEqual(freeWeapons, ["Civic Pulse Emitter", "Scatter Emitter"]);
   assert.ok(free.some((item) => item.action === "persuade"), "the persuader is a starting item");
   assert.ok(free.some((item) => item.action === "scan"), "the scanner is a starting item");
   assert.ok(free.some((item) => item.action === "restore-vitality"), "the medikit is a starting item");
@@ -394,7 +394,7 @@ test("at the start FreeSynd's weapons are available (pistol, shotgun, persuader,
     assert.ok(found.every((item) => item.researchCost > 0), `${action} needs research`);
   }
 const names = items.filter((item) => item.action === "disable-pulse").map((item) => item.name);
-  for (const wanted of ["Machine Pistol", "Rotary Cannon", "Coil Gun", "Longshot Rifle"]) {
+  for (const wanted of ["Machine Pistol", "Rotary Cannon", "Coil Gun", "Longshot Rifle", "Scatter Emitter"]) {
     assert.ok(names.includes(wanted), wanted);
   }
 });

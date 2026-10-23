@@ -14,8 +14,8 @@
   "price": 8000,
   "icon": "shield",
   "weight": 4,
+  "ammoPrice": 15,
   "requires": [
-    "developer.scanner"
-  ],
-  "ammoPrice": 15
+    "developer.clearance-key"
+  ]
 }

@@ -82,3 +82,40 @@ export const eyesRange = (upgrades) => effectOf(upgrades, "eyes");
 export const AIM_PER_TIER = 0.006;
 export const AIM_PARTS = Object.freeze(["eyes", "brain", "arms", "heart", "legs"]);
 export const aimBonus = (upgrades) => AIM_PARTS.reduce((sum, part) => sum + tierOf(upgrades, part) * AIM_PER_TIER, 0);
+
+// Research for the parts: tier 1 is on sale from the start, and tiers 2 and 3 have to be researched, the second before the
+// third (FreeSynd's "legs V2", "legs V3" and so on), at FreeSynd's minimum fundings (`research.dat`).
+export const PART_RESEARCH_COSTS = Object.freeze({
+  legs: [4440, 8880],
+  arms: [4440, 8880],
+  chest: [6000, 12000],
+  heart: [3480, 6960],
+  eyes: [3480, 6960],
+  brain: [3480, 6960],
+});
+
+export const partResearchId = (part, tier) => `part.${part}.${tier}`;
+
+/** The researches that open tier 2 and 3 of every part, shaped like equipment so the research machinery runs them. */
+export function partResearchItems() {
+  const items = [];
+  for (const part of PART_NAMES) {
+    PART_RESEARCH_COSTS[part].forEach((cost, index) => {
+      const tier = index + 2;
+      items.push({
+        id: partResearchId(part, tier),
+        name: `${PARTS[part].label} tier ${tier}`,
+        description: `Opens tier ${tier} of the ${PARTS[part].label.toLowerCase()}: ${PARTS[part].effect}`,
+        researchCost: cost,
+        requires: tier > 2 ? [partResearchId(part, tier - 1)] : [],
+        kind: "part",
+        part,
+        tier,
+      });
+    });
+  }
+  return items;
+}
+
+/** Whether a tier can be fitted: tier 1 always, the others once their research is done (items is the list researched). */
+export const tierUnlocked = (items, part, tier) => tier <= 1 || items.includes(partResearchId(part, tier));

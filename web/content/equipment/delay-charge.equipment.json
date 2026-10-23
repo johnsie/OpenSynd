@@ -16,5 +16,8 @@
   "price": 25000,
   "icon": "bomb",
   "weight": 3,
-  "ammoPrice": 7500
+  "ammoPrice": 7500,
+  "requires": [
+    "developer.longshot-rifle"
+  ]
 }

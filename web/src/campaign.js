@@ -15,7 +15,7 @@ import {
   sanitizeTerritory,
   withTax,
 } from "./strategy.js";
-import { MAX_TIER, PARTS, PART_NAMES, emptyUpgrades, sanitizeUpgrades, upgradePrice } from "./upgrades.js";
+import { MAX_TIER, PARTS, partResearchItems, tierUnlocked, PART_NAMES, emptyUpgrades, sanitizeUpgrades, upgradePrice } from "./upgrades.js";
 
 export const CAMPAIGN_KEY = "opensynd.campaign.v1";
 export const SLOTS_PER_OPERATIVE = 8;
@@ -290,7 +290,7 @@ export function upgradesOf(campaign, operatorId) {
 
 export function canFit(campaign, operatorId, part) {
   const tier = upgradesOf(campaign, operatorId)[part];
-  return tier < MAX_TIER && campaign.funds >= upgradePrice(part, tier + 1);
+  return tier < MAX_TIER && tierUnlocked(campaign.items, part, tier + 1) && campaign.funds >= upgradePrice(part, tier + 1);
 }
 
 // Returns the new campaign, or the same object if the part cannot be fitted.
@@ -324,7 +324,12 @@ export function isItemAvailable(campaign, item) {
 // Research is not a purchase: pick an item and a funding level, and it runs on game time (see strategy.js), paid for
 // by the hour. Several items can be researched at once (up to MAX_ACTIVE_RESEARCH), each at its own funding level.
 export function researchBlockers(campaign, item, catalog) {
-  return missingRequirements(item, campaign.items, catalog);
+  return missingRequirements(item, campaign.items, researchCatalog(catalog));
+}
+
+/** What can be researched: the catalog's items and the body part tiers. */
+export function researchCatalog(catalog) {
+  return [...catalog, ...partResearchItems()];
 }
 
 export function canResearchItem(campaign, item, catalog = []) {
@@ -397,7 +402,7 @@ export function advanceCampaign(campaign, hours, catalog) {
   for (let step = 0; step < hours; step += 1) {
     const hour = next.hours + 1;
     let { research, funds } = next;
-    const done = researchHour(research, funds, catalog);
+    const done = researchHour(research, funds, researchCatalog(catalog));
     research = done.research;
     funds = done.funds;
     let items = next.items;

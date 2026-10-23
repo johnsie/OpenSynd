@@ -347,7 +347,7 @@ def make_mission(territory: dict, tier: int, layout: dict, map_value: dict, map_
     opponents = []
     anchors = [(zone_by_id[name]["position"]["x"], zone_by_id[name]["position"]["y"]) for name in relay_names]
     for number in range(agents):
-        equipment = ["equipment/heavy-pulse-emitter.equipment.json"] if rng.random() < heavy_share else []
+        equipment = ["equipment/scatter-emitter.equipment.json"] if rng.random() < heavy_share else []
         if rng.random() < 0.15:
             equipment = equipment + ["equipment/field-repair-kit.equipment.json"]
         source = street if number % 2 else pool
@@ -379,7 +379,7 @@ def make_mission(territory: dict, tier: int, layout: dict, map_value: dict, map_
         position = spot(post or pool)
         opponents.append(with_patrol(rng, reach, {
             "id": "warden", "unit": "units/site-warden.unit.json", "position": {"x": position[0], "y": position[1]},
-            "equipment": ["equipment/heavy-pulse-emitter.equipment.json"]}, 4, 6))
+            "equipment": ["equipment/scatter-emitter.equipment.json"]}, 4, 6))
 
     bystanders = []
     kinds = ["units/civilian-woman.unit.json", "units/civilian-man.unit.json"]

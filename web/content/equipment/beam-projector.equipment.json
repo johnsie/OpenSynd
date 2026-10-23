@@ -20,8 +20,5 @@
   "icon": "beam",
   "carry": "rifle",
   "sound": "beam",
-  "requires": [
-    "developer.coil-gun"
-  ],
   "ammoPrice": 2000
 }

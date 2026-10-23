@@ -24,8 +24,5 @@
   "icon": "flame",
   "carry": "rifle",
   "sound": "flame",
-  "requires": [
-    "developer.scatter-emitter"
-  ],
   "ammoPrice": 1
 }
