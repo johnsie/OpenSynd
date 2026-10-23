@@ -4108,6 +4108,12 @@ function goLoot(body, queue = false) {
     return;
   }
   sendLoot(nearest, body);
+  // The rest of the selection moves up with them, to the ground around the gear.
+  const others = squad.filter((unit) => unit !== nearest && !unit.disabled && !unit.inVehicle);
+  if (others.length > 0 && !inLootReach(nearest, body)) {
+    const spot = { x: Math.round(body.position.x), y: Math.round(body.position.y) };
+    for (const [unit, tile] of groupDestinations(others, spot)) orderMove(unit, tile);
+  }
 }
 
 // Send one operator to gear on the ground (lootNow once they are beside it).

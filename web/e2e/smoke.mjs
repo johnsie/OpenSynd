@@ -786,6 +786,35 @@ for (const [name, type, executablePath] of targets) {
     assert.equal(await updating.locator("#update-banner").isVisible(), false);
     await updating.close();
 
+    // Several operatives selected: they all move up to gear on the ground, and the one with fewest items picks it up.
+    const crowd = await browser.newPage({ viewport: { width: 1400, height: 900 } });
+    await crowd.goto(`${url}?e2e`);
+    await crowd.waitForSelector(".roster-select");
+    await crowd.click("#begin-button");
+    await crowd.waitForFunction(() => document.querySelector("#status-message").textContent.includes("Local map established"));
+    await crowd.evaluate(() => {
+      const test = window.opensyndTest;
+      test.giveItem("enemy-agent-three", "developer.scanner");
+      test.disableUnit("enemy-agent-three");
+      for (const id of ["operator-one", "operator-two", "operator-three"]) test.placeNear(id, "enemy-agent-three", 0, 8);
+      test.giveItem("operator-one", "developer.scanner");
+      test.focusOn("enemy-agent-three");
+    });
+    await crowd.locator("#game-canvas").focus();
+    await crowd.keyboard.press("a");
+    await crowd.waitForTimeout(700);
+    const positions = () =>
+      crowd.evaluate(() => ["operator-one", "operator-two", "operator-three"].map((id) => window.opensyndTest.positionOf(id)));
+    const startedAt = await positions();
+    await crowd.keyboard.press("f");
+    await crowd.waitForTimeout(1500);
+    const movedTo = await positions();
+    const gearAt = await crowd.evaluate(() => window.opensyndTest.positionOf("enemy-agent-three"));
+    const gap = (point) => Math.hypot(point.x - gearAt.x, point.y - gearAt.y);
+    const nearer = movedTo.filter((point, index) => gap(point) < gap(startedAt[index]) - 0.5);
+    assert.equal(nearer.length, 3, "all three selected operatives move toward the gear");
+    await crowd.close();
+
     // Gear bought before the operation begins is on the operative when it does (the operation is set up again on closing).
     const buyer = await browser.newPage();
     await buyer.goto(`${url}?e2e`);
