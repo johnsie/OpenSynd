@@ -62,49 +62,35 @@ function tone(audio, out, at, { seconds, gain, type = "sine", from, to = from })
   oscillator.stop(at + seconds);
 }
 
-// The victory theme: four bars of a driving drum groove (kick, snare, hats, a tom fill into a crash) under a pumping bass,
-// chord stabs and a brass-like fanfare, ending on one big C major hit. Built as plain data so it can be tested; the cue
-// below plays it. Times are in sixteenth-note steps from the start.
-export const VICTORY_TEMPO = 126;
+// The victory theme: four bars of a military march on drums alone. A rope-tight snare keeps a dotted marching rhythm,
+// the bass drum and low timpani-like toms beat the pulse, and the last bar rolls into one unison hit with a crash.
+// Built as plain data so it can be tested; the cue below plays it. Times are in sixteenth-note steps from the start.
+export const VICTORY_TEMPO = 108;
 export const VICTORY_BARS = 4;
-const CHORDS = [
-  { root: 36, stab: [60, 64, 67] }, // C
-  { root: 43, stab: [59, 62, 67] }, // G
-  { root: 45, stab: [60, 64, 69] }, // A minor
-  { root: 41, stab: [60, 65, 69] }, // F
-];
-const FANFARE = [
-  [0, 72, 2], [2, 76, 2], [4, 79, 4], [8, 76, 2], [10, 79, 2], [12, 84, 4], // C
-  [16, 83, 2], [18, 79, 2], [20, 74, 4], [24, 79, 2], [26, 83, 2], [28, 86, 4], // G
-  [32, 81, 4], [36, 84, 2], [38, 81, 2], [40, 76, 4], [44, 72, 4], // Am
-  [48, 77, 2], [50, 81, 2], [52, 84, 4], [56, 81, 2], [58, 84, 2], [60, 88, 4], // F
-];
+const MARCH_SNARE = [0, 3, 4, 6, 8, 10, 11, 12, 14]; // steps of the marching snare figure in a bar
+const TIMPANI = [[0, 43], [8, 38], [12, 43]]; // [step, pitch] of the low toms in a bar
 
 export function buildVictory() {
   const events = [];
   for (let bar = 0; bar < VICTORY_BARS; bar += 1) {
     const start = bar * 16;
-    const chord = CHORDS[bar];
-    for (let beat = 0; beat < 4; beat += 1) {
-      events.push({ step: start + beat * 4, kind: "kick" });
-      events.push({ step: start + beat * 4, kind: "stab", midi: chord.stab, steps: 2 });
+    const last = bar === VICTORY_BARS - 1;
+    events.push({ step: start, kind: "kick" }, { step: start + 8, kind: "kick" });
+    for (const [step, midi] of TIMPANI) events.push({ step: start + step, kind: "tom", midi });
+    for (const step of MARCH_SNARE) {
+      // The last bar's second half rolls instead of marching.
+      if (last && step >= 8) continue;
+      events.push({ step: start + step, kind: "snare" });
     }
-    events.push({ step: start + 4, kind: "snare" }, { step: start + 12, kind: "snare" });
-    for (let eighth = 0; eighth < 8; eighth += 1) {
-      events.push({ step: start + eighth * 2, kind: eighth % 2 === 1 ? "open-hat" : "hat" });
-      events.push({ step: start + eighth * 2, kind: "bass", midi: chord.root + (eighth % 4 === 3 ? 12 : 0), steps: 2 });
-    }
-    // The last bar fills with a snare roll that speeds up into the final hit.
-    if (bar === VICTORY_BARS - 1) {
-      for (let step = 12; step < 16; step += 1) events.push({ step: start + step, kind: "snare" });
-      events.push({ step: start + 8, kind: "tom", midi: 50 }, { step: start + 10, kind: "tom", midi: 47 });
+    if (bar % 2 === 1) events.push({ step: start + 15, kind: "snare" }); // a pickup into the next phrase
+    if (last) {
+      for (let step = 8; step < 16; step += 1) events.push({ step: start + step, kind: "snare" });
+      events.push({ step: start + 12, kind: "tom", midi: 50 }, { step: start + 14, kind: "tom", midi: 47 });
     }
   }
-  for (const [step, midi, steps] of FANFARE) events.push({ step, kind: "lead", midi, steps });
   const end = VICTORY_BARS * 16;
   events.push({ step: end, kind: "crash" }, { step: end, kind: "kick" }, { step: end, kind: "snare" });
-  events.push({ step: end, kind: "stab", midi: [60, 64, 67, 72], steps: 12 }, { step: end, kind: "bass", midi: 36, steps: 12 });
-  events.push({ step: end, kind: "lead", midi: 84, steps: 12 });
+  events.push({ step: end, kind: "tom", midi: 38 });
   return events.sort((left, right) => left.step - right.step);
 }
 
@@ -117,44 +103,22 @@ function playVictory(audio, destination, at) {
   out.threshold.value = -12;
   out.ratio.value = 6;
   out.connect(destination);
-  // A held or struck pitch (frequency in Hz), as a single oscillator.
-  const note = (time, midi, seconds, gain, type, octave = 1) => {
-    const frequency = frequencyOf(midi) * octave;
-    tone(audio, out, time, { seconds, gain, type, from: frequency, to: frequency });
-  };
   for (const event of buildVictory()) {
     const time = at + event.step * step;
-    const length = (event.steps ?? 1) * step;
     switch (event.kind) {
       case "kick":
         tone(audio, out, time, { seconds: 0.2, gain: 0.75, from: 160, to: 42 });
         noise(audio, out, time, { seconds: 0.03, gain: 0.3, filter: "lowpass", from: 2000, to: 400 });
         break;
       case "snare":
-        noise(audio, out, time, { seconds: 0.18, gain: 0.7, from: 2400, to: 1100, q: 0.6 });
+        noise(audio, out, time, { seconds: 0.12, gain: 0.7, from: 3200, to: 1400, q: 0.7 });
         tone(audio, out, time, { seconds: 0.1, gain: 0.35, type: "triangle", from: 210, to: 130 });
-        break;
-      case "hat":
-        noise(audio, out, time, { seconds: 0.04, gain: 0.22, filter: "highpass", from: 7500, to: 6500 });
-        break;
-      case "open-hat":
-        noise(audio, out, time, { seconds: 0.16, gain: 0.2, filter: "highpass", from: 7000, to: 5500 });
         break;
       case "tom":
         tone(audio, out, time, { seconds: 0.25, gain: 0.7, from: frequencyOf(event.midi) * 2, to: frequencyOf(event.midi) });
         break;
       case "crash":
         noise(audio, out, time, { seconds: 1.8, gain: 0.4, filter: "highpass", from: 5500, to: 3500, q: 0.4 });
-        break;
-      case "bass":
-        note(time, event.midi, Math.max(0.12, length * 0.9), 0.4, "sawtooth");
-        break;
-      case "stab":
-        for (const midi of [].concat(event.midi)) note(time, midi, Math.max(0.12, length), 0.1, "square");
-        break;
-      case "lead":
-        note(time, event.midi, Math.max(0.18, length * 1.1), 0.16, "sawtooth");
-        note(time, event.midi, Math.max(0.18, length * 1.1), 0.1, "triangle", 2);
         break;
       default:
         break;
@@ -272,7 +236,7 @@ const SYNTH = Object.freeze({
   },
   // The success theme at the end of a won operation: drums, bass, stabs and a fanfare.
   victory: {
-    caption: "Victory theme with drums",
+    caption: "Victory march on drums",
     gap: 5,
     play: playVictory,
   },
