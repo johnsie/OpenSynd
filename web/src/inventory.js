@@ -84,7 +84,8 @@ export function collectFallen(units, drops, grid = null) {
     unit.droppedAll = true;
     const cause = unit.lastDamageType ?? "bullet";
     // FreeSynd treats a collision like a bullet: the person is thrown down and what they carried falls with them.
-    const keeps = cause === "bullet" || cause === "collision" || ((cause === "burn" || cause === "explosion") && chestTier(unit.upgrades) >= 2);
+    const survivesFire = (cause === "burn" || cause === "explosion") && chestTier(unit.upgrades) >= 2;
+    const keeps = cause === "bullet" || cause === "collision" || survivesFire;
     const items = carried;
     unit.equipment = [];
     unit.sidearm = [];
