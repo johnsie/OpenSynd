@@ -1,0 +1,49 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+#
+# GitLab CI for the OpenSynd browser game: check it, build it, and publish it to https://opensyn.outiva.com.
+#
+# It expects the GitLab runner that lives on the web server, using the shell executor, with Node.js 20+ and Python 3
+# installed there and write access to the site folder (deploy/setup-apache.sh sets that up). The game needs no
+# `npm install` to build or to run its unit tests. If your runner is tagged, add `tags: [your-tag]` under `default:`.
+#
+# Pushes to the default branch deploy by themselves; other branches can be deployed from the pipeline page with the
+# manual "deploy" button.
+
+stages:
+  - check
+  - build
+  - deploy
+
+variables:
+  DOCROOT: /var/www/opensyn.outiva.com
+
+check:
+  stage: check
+  script:
+    - python3 tools/validate_content.py
+    - python3 tools/check_web_sync.py
+    - python3 tools/check_style.py
+    - python3 tools/check_provenance.py
+    - cd web && npm test
+
+build:
+  stage: build
+  script:
+    - cd web && SOURCE_REVISION="$CI_COMMIT_SHORT_SHA" node build.mjs
+  artifacts:
+    paths:
+      - web/dist
+    expire_in: 1 week
+
+deploy:
+  stage: deploy
+  needs: [check, build]
+  script:
+    - sh deploy/deploy.sh web/dist "$CI_COMMIT_SHORT_SHA"
+  environment:
+    name: production
+    url: https://opensyn.outiva.com
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - when: manual
+      allow_failure: true
