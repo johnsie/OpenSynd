@@ -22,6 +22,7 @@ import {
   buyIntoSlot,
   canBuy,
   captureItems,
+  discoverItems,
   netCost,
   sellFromSlot,
   sellValue,
@@ -155,11 +156,24 @@ test("research follows its chain: an item waits for the ones it builds on", () =
   assert.equal(startResearch(campaign, chain[1], chain).research.active, "next");
 });
 
-test("capturing the item being researched finishes that research", () => {
+test("bringing home the item being researched boosts it by a quarter, once", () => {
   let campaign = startResearch({ ...emptyCampaign(), funds: 50 }, catalog[3], catalog);
-  campaign = captureItems(campaign, "op1", ["stim"], catalog, []);
-  assert.deepEqual(campaign.items, ["stim"]);
-  assert.equal(campaign.research.active, null);
+  const found = discoverItems(campaign, ["stim"], catalog);
+  assert.deepEqual(found.events, [{ type: "discovered", itemId: "stim", finished: false }]);
+  assert.equal(found.campaign.research.progress.stim, 25);
+  assert.equal(found.campaign.research.active, "stim");
+  assert.deepEqual(found.campaign.items, [], "not unlocked yet");
+  const again = discoverItems(found.campaign, ["stim"], catalog);
+  assert.deepEqual(again.events, [], "an item boosts its research only once");
+  assert.equal(again.campaign.research.progress.stim, 25);
+  // Items nobody is researching, and unknown ones, do nothing.
+  assert.deepEqual(discoverItems(emptyCampaign(), ["stim", "ghost"], catalog).events, []);
+  // Enough progress already: the boost finishes it.
+  campaign = { ...campaign, research: { ...campaign.research, progress: { stim: 80 } } };
+  const done = discoverItems(campaign, ["stim"], catalog);
+  assert.deepEqual(done.events, [{ type: "discovered", itemId: "stim", finished: true }]);
+  assert.deepEqual(done.campaign.items, ["stim"]);
+  assert.equal(done.campaign.research.active, null);
 });
 
 test("every 24 hours a day passes: tax is collected from held territories and moods move", () => {
@@ -258,24 +272,21 @@ test("the campaign round-trips and damaged data is repaired or ignored", () => {
     },
     items: ["a"], loadouts: { op: ["x", "y"] }, achievements: [],
     roster: emptyCampaign().roster, squad: emptyCampaign().squad, permadeath: true,
-    hours: 0, territories: {}, research: { active: null, level: 4, progress: {} }, intel: {},
+    hours: 0, territories: {}, research: { active: null, level: 4, progress: {}, discovered: [] }, intel: {},
   });
   assert.equal(parseCampaign(JSON.stringify({ loadouts: { o: Array(20).fill("kit") } })).loadouts.o.length, 8);
 });
 
-test("captured gear counts as researched and joins the loadout while there is room", () => {
+test("gear that is already researched joins the loadout while there is room; new gear is not kept", () => {
   const defaults = ["pulse", "kit"];
-  let campaign = captureItems(emptyCampaign(), "op1", ["heavy", "stim"], catalog, defaults);
-  assert.deepEqual(campaign.items, ["heavy", "stim"]);
-  assert.deepEqual(loadoutFor(campaign, "op1", defaults), ["pulse", "kit", "heavy", "stim"]);
-  assert.equal(isItemAvailable(campaign, catalog[2]), true, "no research needed any more");
+  let campaign = captureItems({ ...emptyCampaign(), items: ["stim"] }, "op1", ["heavy", "stim", "ghost"], catalog, defaults);
+  assert.deepEqual(campaign.items, ["stim"], "the unresearched heavy emitter does not unlock");
+  assert.deepEqual(loadoutFor(campaign, "op1", defaults), ["pulse", "kit", "stim"]);
 
-  // Unknown items are ignored; a full loadout still unlocks the item but cannot hold it.
-  campaign = { ...emptyCampaign(), loadouts: { op1: Array(8).fill("kit") } };
-  campaign = captureItems(campaign, "op1", ["ghost", "heavy"], catalog, defaults);
-  assert.deepEqual(campaign.items, ["heavy"]);
+  campaign = { ...emptyCampaign(), items: ["stim"], loadouts: { op1: Array(8).fill("kit") } };
+  campaign = captureItems(campaign, "op1", ["stim"], catalog, defaults);
   assert.equal(campaign.loadouts.op1.length, 8);
-  assert.ok(!campaign.loadouts.op1.includes("heavy"));
+  assert.ok(!campaign.loadouts.op1.includes("stim"));
 });
 
 const shop = [

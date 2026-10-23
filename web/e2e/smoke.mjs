@@ -468,33 +468,33 @@ for (const [name, type, executablePath] of targets) {
     const base = await labFunds();
     assert.ok(base >= 220, `research cost about 60 funds, tax came in: ${base}`);
 
-    // Eight picture slots per operative: four are filled (starting kit plus the loot kept from the earlier win).
+    // Eight picture slots per operative: two are filled (the starting kit; unresearched loot is not kept).
     await page.click("#tab-lab-squad");
     const squads = page.locator(".armoury-card");
     assert.equal(await squads.count(), 1, "the chosen operative's slots");
     assert.equal(await page.locator("#roster-list .roster-pick:not(:disabled)").count(), 4);
     assert.equal(await squads.first().locator(".slot").count(), 8);
-    assert.equal(await squads.first().locator(".slot:not(.empty)").count(), 4);
-    assert.equal(await squads.first().locator(".slot svg").count(), 4, "each filled slot shows a picture");
+    assert.equal(await squads.first().locator(".slot:not(.empty)").count(), 2);
+    assert.equal(await squads.first().locator(".slot svg").count(), 2, "each filled slot shows a picture");
 
-    // Buy a scanner into slot 5, then two pulse emitters: an operative can carry several of the same weapon.
-    await page.getByLabel("Operator 1 slot 5: empty", { exact: true }).click();
-    await page.getByRole("button", { name: "Buy Scanner for Operator 1 slot 5, 40 funds" }).click();
+    // Buy a scanner into slot 3, then two pulse emitters: an operative can carry several of the same weapon.
+    await page.getByLabel("Operator 1 slot 3: empty", { exact: true }).click();
+    await page.getByRole("button", { name: "Buy Scanner for Operator 1 slot 3, 40 funds" }).click();
     assert.equal(await labFunds(), base - 40);
-    await page.getByLabel("Operator 1 slot 6: empty", { exact: true }).click();
-    await page.getByRole("button", { name: "Buy Civic Pulse Emitter for Operator 1 slot 6, 15 funds" }).click();
-    await page.getByLabel("Operator 1 slot 7: empty", { exact: true }).click();
-    await page.getByRole("button", { name: "Buy Civic Pulse Emitter for Operator 1 slot 7, 15 funds" }).click();
+    await page.getByLabel("Operator 1 slot 4: empty", { exact: true }).click();
+    await page.getByRole("button", { name: "Buy Civic Pulse Emitter for Operator 1 slot 4, 15 funds" }).click();
+    await page.getByLabel("Operator 1 slot 5: empty", { exact: true }).click();
+    await page.getByRole("button", { name: "Buy Civic Pulse Emitter for Operator 1 slot 5, 15 funds" }).click();
     assert.equal(await labFunds(), base - 70);
-    assert.equal(await squads.first().locator(".slot:not(.empty)").count(), 7);
+    assert.equal(await squads.first().locator(".slot:not(.empty)").count(), 5);
     // Swapping refunds half the price of what it replaces: the spare emitter (7 back) pays toward a repair kit (10).
-    await page.getByLabel("Operator 1 slot 7: Civic Pulse Emitter", { exact: true }).click();
-    await page.getByRole("button", { name: "Buy Field Repair Kit for Operator 1 slot 7, 3 funds" }).click();
+    await page.getByLabel("Operator 1 slot 5: Civic Pulse Emitter", { exact: true }).click();
+    await page.getByRole("button", { name: "Buy Field Repair Kit for Operator 1 slot 5, 3 funds" }).click();
     assert.equal(await labFunds(), base - 73);
     // Selling returns half the price again.
     await page.getByRole("button", { name: /Sell Field Repair Kit · \+5 funds/ }).click();
     assert.equal(await labFunds(), base - 68);
-    assert.equal(await squads.first().locator(".slot:not(.empty)").count(), 6);
+    assert.equal(await squads.first().locator(".slot:not(.empty)").count(), 4);
 
     // The roster: four operatives deploy; benching one takes them out of the Armoury until they are put back.
     assert.equal(await page.locator("#roster-list .roster-card").count(), 4);
@@ -527,8 +527,6 @@ for (const [name, type, executablePath] of targets) {
     assert.deepEqual(campaignRecord.loadouts["operator-one"], [
       "developer.civic-pulse-emitter",
       "developer.field-repair-kit",
-      "developer.heavy-pulse-emitter",
-      "developer.shadow-cloak",
       "developer.scanner",
       "developer.civic-pulse-emitter",
     ]);
@@ -543,10 +541,10 @@ for (const [name, type, executablePath] of targets) {
     await page.waitForFunction(() =>
       document.querySelector("#status-message").textContent.includes("Local map established"),
     );
-    // The purchases are in operator 1's squares when the operation starts: six items, two of them pulse emitters.
-    assert.equal(await page.locator(".roster-item").first().locator(".slot:not(.empty)").count(), 6);
-    assert.equal(await page.getByLabel("Field Operator 1 slot 5: Scanner", { exact: false }).count(), 1);
-    assert.equal(await page.getByLabel("Field Operator 1 slot 6: Civic Pulse Emitter", { exact: false }).count(), 1);
+    // The purchases are in operator 1's squares when the operation starts: four items, two of them pulse emitters.
+    assert.equal(await page.locator(".roster-item").first().locator(".slot:not(.empty)").count(), 4);
+    assert.equal(await page.getByLabel("Field Operator 1 slot 3: Scanner", { exact: false }).count(), 1);
+    assert.equal(await page.getByLabel("Field Operator 1 slot 4: Civic Pulse Emitter", { exact: false }).count(), 1);
 
 
     // The Persuader: switched on beside a civilian, it wins them over; the crosshair shows over civilians.

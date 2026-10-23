@@ -332,7 +332,7 @@ browser e2e run).
 | F9 | Accuracy, spread, fire rate | done: seeded accuracy roll (base by kind, upgrade and drug terms, weapon accuracy, 6 degree cone), spread through pellets, hold-to-fire; no reaction delay |
 | F10 | Weight and capacity | done: slowdown beyond capacity, Arms raise it |
 | F11 | Ammo and reload cost | done: refills are billed after each operation |
-| F12 | Discovery boosts research | partly: looted and captured gear counts as researched |
+| F12 | Discovery boosts research | done: unresearched gear brought home gives its open research +25 percent, once per item; it no longer unlocks it |
 | F13 | Enemies armed from your progress | done: every other enemy agent carries a researched weapon, dearest first |
 | F14 | Hit reactions | done: a flinch that stops action and persuasion |
 | F15 | Everything is lethal | have |

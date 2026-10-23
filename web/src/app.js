@@ -72,6 +72,7 @@ import {
   buyIntoSlot,
   canBuy,
   captureItems,
+  discoverItems,
   earnAchievement,
   INTEL_LABELS,
   enemyArmament,
@@ -2957,6 +2958,7 @@ function showOutcome(outcome) {
       : []),
     ...(state.opStats.lost?.length > 0 ? [["Operatives lost", state.opStats.lost.join(", ")]] : []),
     ...(state.opStats.recruited?.length > 0 ? [["Recruited", state.opStats.recruited.join(", ")]] : []),
+    ...(state.opStats.discovered?.length > 0 ? [["Discovered", state.opStats.discovered.join(", ")]] : []),
     ...(state.opStats.resupply > 0 ? [["Resupply bill", `${state.opStats.resupply} funds`]] : []),
     ...(state.opStats.civiliansHarmed + state.opStats.policeHarmed > 0
       ? [["Bystanders killed", String(state.opStats.civiliansHarmed + state.opStats.policeHarmed)]]
@@ -3020,13 +3022,25 @@ function checkAchievements() {
   updateFundsReadout();
 }
 
-// A successful operation keeps what the operators looted: captured gear counts as
-// researched and joins their loadout while there is room.
+// Bring home a weapon that is not researched and it boosts its research instead (once per item).
+function discover(itemIds) {
+  const found = discoverItems(state.campaign, itemIds, state.catalog);
+  state.campaign = found.campaign;
+  for (const event of found.events) {
+    const name = state.catalog.find((item) => item.id === event.itemId)?.name ?? event.itemId;
+    state.opStats.discovered.push(event.finished ? `${name} (research finished)` : `${name} (+25% research)`);
+  }
+}
+
+// A successful operation keeps what the operators looted: gear that is already researched joins their loadout while
+// there is room, and anything new boosts its research.
 function keepLoot() {
+  state.opStats.discovered = [];
   for (const unit of state.units.filter((item) => item.side === "team" && item.looted.length > 0)) {
     const carried = unit.equipment.map((item) => item.definition.id);
     // Start from what they carried in (without the loot), so the loadout reflects their kit.
     const before = carried.filter((id, index) => index < carried.length - unit.looted.length);
+    discover(unit.looted);
     state.campaign = captureItems(
       { ...state.campaign, loadouts: { ...state.campaign.loadouts, [unit.id]: before } },
       unit.id,
@@ -3054,7 +3068,9 @@ function settleRoster() {
     const gear = captive.equipment.map((item) => item.definition.id);
     const joined = recruit(state.campaign);
     if (!joined.member) break;
-    state.campaign = captureItems(joined.campaign, joined.member.id, gear, state.catalog, []);
+    state.campaign = joined.campaign;
+    discover(gear);
+    state.campaign = captureItems(state.campaign, joined.member.id, gear, state.catalog, []);
     state.opStats.recruited.push(joined.member.name);
   }
   if (aliveMembers(state.campaign).length === 0) {

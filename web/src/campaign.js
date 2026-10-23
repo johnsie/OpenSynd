@@ -67,7 +67,7 @@ export function emptyCampaign() {
     permadeath: true,
     hours: 0,
     territories: {},
-    research: { active: null, level: 4, progress: {} },
+    research: { active: null, level: 4, progress: {}, discovered: [] },
     intel: {},
   };
 }
@@ -152,7 +152,10 @@ function parseResearch(value) {
   }
   const level = Number.isInteger(value?.level) ? Math.min(RESEARCH_LEVELS, Math.max(1, value.level)) : 4;
   const active = typeof value?.active === "string" && value.active.length < 120 ? value.active : null;
-  return { active, level, progress };
+  const discovered = Array.isArray(value?.discovered)
+    ? [...new Set(value.discovered.filter((id) => typeof id === "string" && id.length < 120))].slice(0, 200)
+    : [];
+  return { active, level, progress, discovered };
 }
 
 // Anything damaged falls back to the starting roster; ids and names are kept short and unique.
@@ -435,17 +438,42 @@ export function brainEffect(level) {
   return { drain: 1 - 0.15 * level, recover: 1 + 0.15 * level };
 }
 
-// Items kept from a successful operation: captured gear counts as researched and
-// is added to the operative's loadout while there is room.
+// FreeSynd's discovery rule: a weapon brought home that is not yet researched does not unlock. If its research is the
+// one under way it gets a 25 percent boost, once per item; reaching 100 finishes it. Returns the new campaign and a
+// "discovered" event for every boost.
+export const DISCOVERY_BOOST = 25;
+
+export function discoverItems(campaign, itemIds, catalog) {
+  let next = campaign;
+  const events = [];
+  for (const id of itemIds) {
+    const item = catalog.find((entry) => entry.id === id);
+    const research = next.research;
+    if (!item || isItemAvailable(next, item) || research.active !== id || research.discovered.includes(id)) continue;
+    const progress = Math.min(100, (research.progress[id] ?? 0) + DISCOVERY_BOOST);
+    const finished = progress >= 100 - 1e-9;
+    next = {
+      ...next,
+      items: finished ? [...next.items, id] : next.items,
+      research: {
+        ...research,
+        active: finished ? null : id,
+        progress: { ...research.progress, [id]: finished ? 100 : progress },
+        discovered: [...research.discovered, id],
+      },
+    };
+    events.push({ type: "discovered", itemId: id, finished });
+  }
+  return { campaign: next, events };
+}
+
+// Items kept from a successful operation: gear that is already available joins the operative's loadout while there
+// is room. Gear that is not yet researched is not kept (see discoverItems).
 export function captureItems(campaign, operatorId, itemIds, catalog, defaults) {
   let next = campaign;
   for (const id of itemIds) {
     const item = catalog.find((entry) => entry.id === id);
-    if (!item) continue;
-    if (!isItemAvailable(next, item)) {
-      next = { ...next, items: [...next.items, id] };
-      if (next.research.active === id) next = suspendResearch(next);
-    }
+    if (!item || !isItemAvailable(next, item)) continue;
     const loadout = loadoutFor(next, operatorId, defaults);
     if (loadout.length < SLOTS_PER_OPERATIVE) {
       next = { ...next, loadouts: { ...next.loadouts, [operatorId]: [...loadout, id] } };
