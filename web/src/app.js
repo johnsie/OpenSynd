@@ -930,6 +930,28 @@ function renderRoster() {
     (state.squadChanged ? " Squad changes apply when the operation is restarted." : "");
 }
 
+// Which operative the Body parts and Loadout tabs are about: one button per member of the squad.
+function renderOperatorPicker(team) {
+  const picker = document.querySelector("#lab-operators");
+  picker.replaceChildren(
+    ...team.map((placement, index) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "tab";
+      button.textContent = `Operator ${index + 1}`;
+      button.title = placement.callsign ?? placement.id;
+      const on = state.armoury.operator === index;
+      button.setAttribute("aria-pressed", String(on));
+      button.classList.toggle("on", on);
+      button.addEventListener("click", () => {
+        state.armoury = { operator: index, slot: state.armoury.slot };
+        renderResearch();
+      });
+      return button;
+    }),
+  );
+}
+
 // The Armoury: each operative's eight slots as pictures, and a shop that buys into the chosen slot.
 function renderArmoury() {
   const campaign = state.campaign;
@@ -939,8 +961,10 @@ function renderArmoury() {
   const loadouts = team.map((placement) => loadoutFor(campaign, placement.id, startingLoadout(placement)));
   const byId = new Map(state.catalog.map((item) => [item.id, item]));
 
+  renderOperatorPicker(team);
   document.querySelector("#armoury-squad").replaceChildren(
     ...team.map((placement, index) => {
+      if (index !== choice.operator) return null;
       const card = document.createElement("div");
       card.className = "armoury-card";
       const heading = document.createElement("h4");
@@ -983,7 +1007,7 @@ function renderArmoury() {
       }
       card.append(heading, grid);
       return card;
-    }),
+    }).filter(Boolean),
   );
 
   const placement = team[choice.operator];
@@ -1044,6 +1068,11 @@ function renderArmoury() {
   });
   shop.replaceChildren(heading, sell, ...rows);
 }
+
+// The tabs of the Research & Armoury screen; the operative picker only shows where it matters.
+wireTabs(document.querySelector(".lab-tabs"), (tab) => {
+  document.querySelector("#lab-operators").hidden = !["lab-parts", "lab-loadout"].includes(tab.getAttribute("aria-controls"));
+});
 
 function openResearch() {
   renderResearch();

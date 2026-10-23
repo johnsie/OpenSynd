@@ -452,9 +452,16 @@ for (const [name, type, executablePath] of targets) {
     const labFunds = async () =>
       Number((await page.locator("#research-funds").innerText()).replace(/\D/g, ""));
     assert.equal(await labFunds(), 300);
+    // Four tabs: only what you are working on shows. The operative picker appears for Body parts and Loadout.
+    assert.equal(await page.locator("#lab-roster").isVisible(), true);
+    assert.equal(await page.locator("#research-items").isVisible(), false);
+    assert.equal(await page.locator("#lab-operators").isVisible(), false);
+    await page.click("#tab-lab-parts");
+    assert.equal(await page.locator("#lab-operators").isVisible(), true);
     await page.locator("#research-tracks button").first().click();
     assert.match(await page.locator("#research-tracks").innerText(), /Legs · tier 1 of 3/);
     assert.equal(await labFunds(), 294);
+    await page.click("#tab-lab-research");
     // Research runs on game time: pick an item and a funding level, then hours pass and it is paid for by the hour.
     assert.match(await page.locator("#research-dial").innerText(), /Nothing is being researched/);
     await page.getByRole("button", { name: /^Research Scanner/ }).click();
@@ -466,8 +473,10 @@ for (const [name, type, executablePath] of targets) {
     assert.ok(base >= 220, `research cost about 60 funds, tax came in: ${base}`);
 
     // Eight picture slots per operative: four are filled (starting kit plus the loot kept from the earlier win).
+    await page.click("#tab-lab-loadout");
     const squads = page.locator(".armoury-card");
-    assert.equal(await squads.count(), 4);
+    assert.equal(await squads.count(), 1, "the chosen operative's slots");
+    assert.equal(await page.locator("#lab-operators .tab").count(), 4);
     assert.equal(await squads.first().locator(".slot").count(), 8);
     assert.equal(await squads.first().locator(".slot:not(.empty)").count(), 4);
     assert.equal(await squads.first().locator(".slot svg").count(), 4, "each filled slot shows a picture");
@@ -492,14 +501,15 @@ for (const [name, type, executablePath] of targets) {
     assert.equal(await squads.first().locator(".slot:not(.empty)").count(), 6);
 
     // The roster: four operatives deploy; benching one takes them out of the Armoury until they are put back.
+    await page.click("#tab-lab-roster");
     assert.equal(await page.locator("#roster-list .roster-card").count(), 4);
     const deployBoxes = page.getByLabel(/^Deploy /);
     assert.equal(await deployBoxes.count(), 4);
     await deployBoxes.nth(3).uncheck();
-    assert.equal(await squads.count(), 3);
+    assert.equal(await page.locator("#lab-operators .tab").count(), 3);
     assert.match(await page.locator("#roster-note").innerText(), /3 of 4 deploying/);
     await deployBoxes.nth(3).check();
-    assert.equal(await squads.count(), 4);
+    assert.equal(await page.locator("#lab-operators .tab").count(), 4);
     assert.equal(await page.getByLabel("Fallen operatives are lost for good").isChecked(), true);
 
     const campaignRecord = await page.evaluate(() => JSON.parse(localStorage.getItem("opensynd.campaign.v1")));

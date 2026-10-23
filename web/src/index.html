@@ -258,32 +258,66 @@
         <button id="close-research" type="button" aria-label="Close">×</button>
       </div>
       <p id="research-funds" class="funds-large" role="status"></p>
-      <p class="hint">
-        Funds come from tax on the territories you hold and from achievements. Choose an operative's slot to
-        fit body parts to them and buy gear; changes apply when an operation starts.
-      </p>
-      <section class="roster-panel" aria-label="Roster">
-        <h3>Roster</h3>
+      <div class="tabs lab-tabs" role="tablist" aria-label="Between operations">
+        <button id="tab-lab-roster" class="tab" type="button" role="tab" aria-selected="true" aria-controls="lab-roster">Roster</button>
+        <button
+          id="tab-lab-parts"
+          class="tab"
+          type="button"
+          role="tab"
+          aria-selected="false"
+          aria-controls="lab-parts"
+          tabindex="-1"
+        >Body parts</button>
+        <button
+          id="tab-lab-loadout"
+          class="tab"
+          type="button"
+          role="tab"
+          aria-selected="false"
+          aria-controls="lab-loadout"
+          tabindex="-1"
+        >Loadout</button>
+        <button
+          id="tab-lab-research"
+          class="tab"
+          type="button"
+          role="tab"
+          aria-selected="false"
+          aria-controls="lab-research"
+          tabindex="-1"
+        >Research</button>
+      </div>
+      <div id="lab-operators" class="lab-operators" role="group" aria-label="Operative" hidden></div>
+
+      <section id="lab-roster" class="tab-panel" role="tabpanel" aria-labelledby="tab-lab-roster" aria-label="Roster">
+        <p class="hint">Four operatives deploy. Fallen operatives are lost for good unless you turn that off. Recruit and hire here.</p>
         <div id="roster-list" class="roster-list"></div>
         <p class="hint" id="roster-note"></p>
       </section>
-      <div class="lab-grid">
-        <section class="lab-research" aria-label="Research">
-          <h3 id="upgrades-heading">Body upgrades</h3>
-          <div id="research-tracks" class="research-tracks"></div>
-          <h3>New weapons and items</h3>
-          <div id="research-dial" class="research-dial"></div>
-          <div id="research-items" class="research-items"></div>
-        </section>
-        <section class="lab-armoury" aria-label="Armoury">
-          <h3>Armoury <span class="hint">(eight slots per operative)</span></h3>
+
+      <section id="lab-parts" class="tab-panel" role="tabpanel" aria-labelledby="tab-lab-parts" aria-label="Body parts" hidden>
+        <h3 id="upgrades-heading">Body upgrades</h3>
+        <div id="research-tracks" class="research-tracks"></div>
+      </section>
+
+      <section id="lab-loadout" class="tab-panel lab-loadout" role="tabpanel" aria-labelledby="tab-lab-loadout" aria-label="Loadout" hidden>
+        <div class="lab-armoury">
+          <h3>Armoury <span class="hint">(eight slots per operative; pick a slot, then buy into it)</span></h3>
           <div id="armoury-squad" class="armoury-squad"></div>
-        </section>
-        <section class="lab-shop" aria-label="Shop">
+        </div>
+        <div class="lab-shop">
           <h3>Shop</h3>
           <div id="armoury-shop" class="armoury-shop"></div>
-        </section>
-      </div>
+        </div>
+      </section>
+
+      <section id="lab-research" class="tab-panel" role="tabpanel" aria-labelledby="tab-lab-research" aria-label="Research" hidden>
+        <h3>New weapons and items</h3>
+        <p class="hint">Funds come from tax on the territories you hold and from achievements. Research is paid by the hour.</p>
+        <div id="research-dial" class="research-dial"></div>
+        <div id="research-items" class="research-items"></div>
+      </section>
     </dialog>
 
     <dialog id="confirm-dialog" aria-labelledby="confirm-heading">
