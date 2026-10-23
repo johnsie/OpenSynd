@@ -182,7 +182,7 @@ relay, operate a panel, download from a server), disable (named targets, shown w
 TARGET marker until they fall), hold (keep an able operator in a zone for a set time; progress
 drains at twice the rate when the zone is left, and shows in the objective list and as a green
 fill on the zone), reach a zone, and extract. The third operation, Dead Drop on the new Freight
-Depot map, mixes download, disable the Site Warden (a tougher watcher who carries a heavy
+Depot map, mixes download, disable the Site Warden (a tougher guard, a soldier like the rest, who carries a heavy
 emitter you can loot), hold the central uplink beacon for 20 seconds while every watcher
 converges, and extract through an open east side (no gate this time). Props are chosen per zone
 (`prop`: relay pylon, console, vault server rack, uplink beacon). Hold progress is not kept in

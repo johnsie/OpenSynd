@@ -3,7 +3,7 @@
   "id": "developer.site-warden",
   "name": "Site Warden",
   "license": "CC0-1.0",
-  "role": "enemy-agent",
+  "role": "guard",
   "stats": {
     "vitality": 150,
     "speed": 4.0,
@@ -18,8 +18,11 @@
   ],
   "appearance": {
     "shape": "hexagon",
-    "primaryColor": "#3d454d",
+    "primaryColor": "#6b6240",
     "accentColor": "#e86bd6",
-    "marker": "D"
+    "marker": "D",
+    "sprites": [
+      "guard-2"
+    ]
   }
 }
