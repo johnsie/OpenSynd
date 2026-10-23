@@ -1646,7 +1646,7 @@ function drawTile(tile, viewport) {
   if (tile.gate) {
     const gate = state.map.objects?.find((item) => item.id === tile.gate);
     const gateAlong = gate && gate.width > gate.height ? "x" : "y";
-    drawGateTile(context, project, { ...tile, gateAlong }, cellSize.height, tile.walkable, performance.now());
+    drawGateTile(context, project, { ...tile, gateAlong }, cellSize.height, tile.door ? tile.door.open : tile.walkable, performance.now());
     return;
   }
   if (tile.surface === FENCE_SURFACE) drawFenceTile(context, project, tile, cellSize.height);
@@ -2388,7 +2388,8 @@ function drawMinimap(viewport) {
   miniContext.clearRect(0, 0, minimap.width, minimap.height);
   miniContext.drawImage(state.miniTerrain, 0, 0);
   for (const gate of state.map.objects ?? []) {
-    const open = state.grid[gate.position.y][gate.position.x].walkable;
+    const gateTile = state.grid[gate.position.y][gate.position.x];
+    const open = gateTile.door ? gateTile.door.open : gateTile.walkable;
     const point = miniProject(gate.position, state.map);
     miniContext.fillStyle = open ? "#79d59b" : "#ff6b62";
     miniContext.fillRect(Math.round(point.x - 2), Math.floor(point.y) - 1, 4, 3);
@@ -3147,7 +3148,7 @@ function update(deltaSeconds) {
     if (state.mission) updateVehicleButton();
     boardWaitingOperators();
     runPendingOrders();
-    if (state.map?.objects?.some((gate) => gate.key)) syncGates();
+    if (state.map?.objects?.some((gate) => gate.key || gate.kind === "door")) syncGates();
     if (state.objectives.some((objective) => objective.type === "hold" && !objective.complete && objective.progress > 0)) {
       renderInterface();
     }

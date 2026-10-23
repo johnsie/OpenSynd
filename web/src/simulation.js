@@ -948,7 +948,7 @@ export function castShot(shooter, aim, units, grid, range, pierce = false) {
       y: shooter.position.y + direction.y * travelled,
     };
     const tile = grid[Math.round(point.y)]?.[Math.round(point.x)];
-    if (!tile || !tile.walkable) break;
+    if (!tile || !tile.walkable || (tile.door && !tile.door.open)) break;
     const struck = enemies.find(
       (enemy) =>
         !hits.includes(enemy) &&

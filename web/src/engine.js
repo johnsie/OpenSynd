@@ -26,7 +26,13 @@ export function applyGates(grid, gates, isOpen) {
         const tile = grid[y]?.[x];
         if (!tile) continue;
         tile.gate = gate.id;
-        tile.walkable = tile.baseWalkable && open;
+        if (gate.kind === "door") {
+          // A door can always be walked into (routes plan through it); it only blocks sight and shots while closed.
+          tile.door = { open };
+          tile.walkable = tile.baseWalkable;
+        } else {
+          tile.walkable = tile.baseWalkable && open;
+        }
       }
     }
   }
@@ -164,6 +170,7 @@ const tileAt = (position) => ({ x: Math.round(position.x), y: Math.round(positio
 
 function blocksSight(tile) {
   if (!tile) return true;
+  if (tile.door) return !tile.door.open;
   if (tile.walkable || tile.gate) return false;
   return !SEE_THROUGH_SURFACES.has(tile.surface);
 }

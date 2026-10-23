@@ -169,11 +169,11 @@ class Validation:
             if object_id in object_ids:
                 self.error(path, f"duplicate object id: {object_id}")
             object_ids.add(object_id)
-            if item.get("kind") != "gate":
+            if item.get("kind") not in ("gate", "door"):
                 self.error(path, f"object {object_id} has unsupported kind")
             if item.get("key") is not None and not isinstance(item.get("key"), str):
                 self.error(path, f"object {object_id} key must be an equipment id")
-            if item.get("control") not in zone_ids:
+            if item.get("kind") == "gate" and item.get("control") not in zone_ids:
                 self.error(path, f"object {object_id} control zone does not exist")
             position = item.get("position")
             rectangle = dict(position) if isinstance(position, dict) else {}

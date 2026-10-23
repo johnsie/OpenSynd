@@ -31,7 +31,7 @@
     },
     "objects": {
       "type": "array",
-      "description": "Interactive world objects. A gate blocks its tiles until the objective at its control zone is complete.",
+      "description": "Interactive world objects. A gate blocks its tiles until the objective at its control zone is complete; a door lets anyone through but blocks sight and shots while closed.",
       "items": { "$ref": "#/$defs/object" }
     }
   },
@@ -87,10 +87,10 @@
     "object": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "kind", "position", "width", "height", "control"],
+      "required": ["id", "kind", "position", "width", "height"],
       "properties": {
         "id": { "$ref": "#/$defs/id" },
-        "kind": { "enum": ["gate"] },
+        "kind": { "enum": ["gate", "door"], "description": "A gate opens when its control objective is done; a door opens whenever a living person stands beside it." },
         "position": { "$ref": "#/$defs/position" },
         "width": { "type": "integer", "minimum": 1 },
         "height": { "type": "integer", "minimum": 1 },

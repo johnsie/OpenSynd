@@ -4,7 +4,22 @@ import { applyGates, findObjectiveAtPosition, zoneContains } from "./engine.js";
 
 // A gate is open once the objective at its control zone is complete, or while an operator carrying its key
 // (`key` is an equipment id, such as a clearance key) stands within the key's reach of it.
+// A door is not controlled by an objective: it stands open while a living person (or vehicle) is beside it, and, if it is
+// locked (`key`), only while someone carrying the key is.
+export const DOOR_REACH = 1.6;
+
+function doorOpen(gate, units) {
+  return units.some((unit) => {
+    if (unit.disabled || unit.inVehicle) return false;
+    if (gate.key && !(unit.equipment ?? []).some((entry) => entry.definition.id === gate.key)) return false;
+    const nearestX = Math.max(gate.position.x, Math.min(unit.position.x, gate.position.x + gate.width - 1));
+    const nearestY = Math.max(gate.position.y, Math.min(unit.position.y, gate.position.y + gate.height - 1));
+    return Math.hypot(unit.position.x - nearestX, unit.position.y - nearestY) <= DOOR_REACH;
+  });
+}
+
 export function gateOpen(objectives, gate, units = []) {
+  if (gate.kind === "door") return doorOpen(gate, units);
   if (objectives.some((item) => item.targetZone === gate.control && item.complete)) return true;
   if (!gate.key) return false;
   return units.some((unit) => {
