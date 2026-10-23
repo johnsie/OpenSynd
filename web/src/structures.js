@@ -627,3 +627,26 @@ export function drawScenery(context, p, prop, cellHeight, time) {
     if (prop.state === "burning") flames(unit * 2.6, unit * 1.6);
   }
 }
+
+// A traffic signal at a corner of a crossing: a pole with a lamp that shows green or red for the way it faces.
+export function drawSignal(context, p, { x, y }, cellHeight, green) {
+  const base = p(x, y, 0);
+  const unit = cellHeight;
+  context.strokeStyle = "#55636d";
+  context.lineWidth = Math.max(2, unit * 0.08);
+  context.beginPath();
+  context.moveTo(base.x, base.y);
+  context.lineTo(base.x, base.y - unit * 1.5);
+  context.stroke();
+  context.fillStyle = "#1b2329";
+  context.fillRect(base.x - unit * 0.12, base.y - unit * 1.95, unit * 0.24, unit * 0.5);
+  const colour = green ? "#79d59b" : "#ff6b62";
+  context.fillStyle = colour;
+  context.beginPath();
+  context.arc(base.x, base.y - unit * (green ? 1.55 : 1.8), unit * 0.09, 0, Math.PI * 2);
+  context.fill();
+  context.fillStyle = green ? "rgba(121, 213, 155, 0.18)" : "rgba(255, 107, 98, 0.18)";
+  context.beginPath();
+  context.arc(base.x, base.y - unit * (green ? 1.55 : 1.8), unit * 0.3, 0, Math.PI * 2);
+  context.fill();
+}

@@ -371,7 +371,7 @@ browser e2e run).
 | F39 | Doors | partly: key gates; doors that open on approach are open |
 | F40 | Windows | open |
 | F41 | Flammable scenery | done: trees and billboards burn ten seconds and spread; fire ignites people beside it |
-| F42 | Street lights, traffic lights | partly: street lights and bins break; traffic lights are open |
+| F42 | Street lights, traffic lights | done: lights and bins break; signals at every crossing, cars stop on red |
 | F43 | Vehicles: lanes, collisions, kinds, trains | partly: run-over damage and queuing behind vehicles; lanes, trains, wreck scenery are open |
 | F44 | Mission editor | partly: `editor.html` moves, adds and deletes placements, edits objectives, checks the draft and downloads JSON; scripts and patrols are edited in JSON |
 

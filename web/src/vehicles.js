@@ -51,12 +51,82 @@ export function newVehicleState(driverId = null) {
 
 // Cars stay on the roads: a copy of the grid where only road tiles can be walked.
 export function createRoadGrid(grid) {
-  return grid.map((row) =>
+  const roads = grid.map((row) =>
     row.map((tile) => (tile ? { ...tile, walkable: tile.walkable && !tile.gate && ROAD_SURFACES.has(tile.surface) } : tile)),
   );
+  roads.crossings = findCrossings(grid);
+  return roads;
 }
 
 const tileOf = (position) => ({ x: Math.round(position.x), y: Math.round(position.y) });
+
+// ---- Traffic signals
+// Where the full-length streets cross, a signal runs a 20 second cycle: east-west green for 8 seconds, all red for 2,
+// north-south green for 8, all red for 2 (each crossing starts at its own point in the cycle). An AI-driven car stops
+// short of a crossing whose light is red for its way and goes on when it turns green. Cars already in the crossing
+// clear it, and a car the squad drives obeys nothing.
+export const SIGNAL_CYCLE = 20;
+export const STOP_DISTANCE = 2.2;
+
+const runs = (flags) => {
+  const found = [];
+  let start = null;
+  flags.forEach((flag, index) => {
+    if (flag && start === null) start = index;
+    if ((!flag || index === flags.length - 1) && start !== null) {
+      const end = flag && index === flags.length - 1 ? index + 1 : index;
+      found.push({ start, length: end - start });
+      start = null;
+    }
+  });
+  return found;
+};
+
+/** The crossings of a grid: rectangles where a full-height street column meets a full-width street row. */
+export function findCrossings(grid) {
+  if (!grid[0]) return [];
+  const columns = runs(grid[0].map((tile) => Boolean(tile && String(tile.id ?? "").startsWith("street-column"))));
+  const rows = runs(grid.map((row) => Boolean(row[0] && String(row[0].id ?? "").startsWith("street-row"))));
+  const crossings = [];
+  for (const row of rows) {
+    for (const column of columns) {
+      const id = `crossing-${column.start}-${row.start}`;
+      crossings.push({ id, x: column.start, y: row.start, width: column.length, height: row.length });
+    }
+  }
+  return crossings.map((crossing, index) => ({ ...crossing, offset: (index * 7) % SIGNAL_CYCLE }));
+}
+
+/** "ew" or "ns" while that way has green, "red" in the gaps. */
+export function signalAt(crossing, time) {
+  const phase = (((time + crossing.offset) % SIGNAL_CYCLE) + SIGNAL_CYCLE) % SIGNAL_CYCLE;
+  if (phase < 8) return "ew";
+  if (phase < 10) return "red";
+  if (phase < 18) return "ns";
+  return "red";
+}
+
+/** Must this car stop for a signal? It must when it is just short of a crossing that is red for the way it is heading. */
+export function stoppedBySignal(vehicle, crossings, time) {
+  const heading = vehicle.vehicle.heading;
+  if (!heading || !crossings || crossings.length === 0) return false;
+  const eastWest = Math.abs(heading.x) >= Math.abs(heading.y);
+  const { x, y } = vehicle.position;
+  for (const crossing of crossings) {
+    const green = signalAt(crossing, time);
+    if (green === (eastWest ? "ew" : "ns")) continue;
+    if (eastWest) {
+      if (y < crossing.y - 0.5 || y > crossing.y + crossing.height - 0.5) continue;
+      const gap = heading.x > 0 ? crossing.x - 0.5 - x : x - (crossing.x + crossing.width - 0.5);
+      if (gap >= 0 && gap <= STOP_DISTANCE) return true;
+    } else {
+      if (x < crossing.x - 0.5 || x > crossing.x + crossing.width - 0.5) continue;
+      const gap = heading.y > 0 ? crossing.y - 0.5 - y : y - (crossing.y + crossing.height - 0.5);
+      if (gap >= 0 && gap <= STOP_DISTANCE) return true;
+    }
+  }
+  return false;
+}
 
 // The nearest road tile to a point (looking out a few tiles), or null.
 export function nearestRoadTile(roadGrid, position, reach = 6) {
@@ -280,7 +350,7 @@ function runOver(vehicle, units, seconds) {
  * A vehicle that has just been destroyed drops its occupants and explodes, hurting everyone near it (and setting
  * off other vehicles). Returns "blast" events listing who was hurt, in the same shape as a time bomb's.
  */
-export function advanceVehicles(units, seconds, roadGrid, grid) {
+export function advanceVehicles(units, seconds, roadGrid, grid, time = 0) {
   const events = [];
   for (const vehicle of units) {
     if (!isVehicle(vehicle)) continue;
@@ -322,7 +392,9 @@ export function advanceVehicles(units, seconds, roadGrid, grid) {
     }
     const driver = state.driverId ? units.find((unit) => unit.id === state.driverId) : null;
     if (state.controlledBy) moveAlongPath(vehicle, seconds, vehicle.definition.stats.speed);
-    else if (driver && !driver.disabled && !blockedAhead(vehicle, units)) driveRoute(vehicle, seconds, roadGrid);
+    else if (driver && !driver.disabled && !blockedAhead(vehicle, units) && !stoppedBySignal(vehicle, roadGrid.crossings, time)) {
+      driveRoute(vehicle, seconds, roadGrid);
+    }
     for (const id of state.occupantIds) {
       const unit = units.find((other) => other.id === id);
       if (unit) unit.position = { ...vehicle.position };

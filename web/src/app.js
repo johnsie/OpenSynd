@@ -12,6 +12,7 @@ import {
   isVehicle,
   leaveVehicle,
   newVehicleState,
+  signalAt,
   vehicleDefinition,
 } from "./vehicles.js";
 import { createOverlay, createTileSprites } from "./textures.js";
@@ -23,6 +24,7 @@ import {
   WALL_SURFACE,
   drawBeacon,
   drawScenery,
+  drawSignal,
   drawConsole,
   drawFenceTile,
   drawGateTile,
@@ -622,6 +624,27 @@ async function loadGame(index = state.missionIndex) {
   );
   // Vehicles are units too (side "vehicle"), with an AI driver who is a unit riding inside.
   state.roadGrid = createRoadGrid(state.grid);
+  // A signal at each corner of every crossing: two corners show the east-west light, two the north-south one.
+  for (const crossing of state.roadGrid.crossings) {
+    const corners = [
+      { x: crossing.x - 0.5, y: crossing.y - 0.5, axis: "ew" },
+      { x: crossing.x + crossing.width - 0.5, y: crossing.y + crossing.height - 0.5, axis: "ew" },
+      { x: crossing.x + crossing.width - 0.5, y: crossing.y - 0.5, axis: "ns" },
+      { x: crossing.x - 0.5, y: crossing.y + crossing.height - 0.5, axis: "ns" },
+    ];
+    corners.forEach((corner, index) => {
+      state.structures.push({
+        id: `${crossing.id}-signal-${index}`,
+        x: Math.round(corner.x),
+        y: Math.round(corner.y),
+        width: 1,
+        height: 1,
+        structure: "signal",
+        signal: { crossing, axis: corner.axis, at: { x: corner.x, y: corner.y } },
+        elevation: 0,
+      });
+    });
+  }
   for (const placement of mission.vehicles ?? []) {
     const definition = vehicleDefinition(vehicleDefinitions.get(placement.vehicle));
     const driverDefinition = placement.driver ? unitDefinitions.get(placement.driver) : null;
@@ -1823,6 +1846,14 @@ function drawBombs(viewport) {
 }
 
 function drawStructure(structure, viewport) {
+  if (structure.signal) {
+    const project = propProjector(viewport, 0);
+    const at = project(structure.signal.at.x, structure.signal.at.y, 0);
+    if (at.x < -120 || at.x > viewport.width + 120 || at.y < -200 || at.y > viewport.height + 120) return;
+    const green = signalAt(structure.signal.crossing, state.missionSeconds) === structure.signal.axis;
+    drawSignal(context, project, structure.signal.at, viewport.cellSize.height, green);
+    return;
+  }
   if (structure.prop) {
     const project = propProjector(viewport, structure.elevation);
     const at = project(structure.x, structure.y, 0);
@@ -2757,7 +2788,7 @@ function simulationStep(deltaSeconds) {
       audio.play("tick");
     }
   }
-  const vehicleEvents = advanceVehicles(state.units, deltaSeconds, state.roadGrid, state.grid);
+  const vehicleEvents = advanceVehicles(state.units, deltaSeconds, state.roadGrid, state.grid, state.missionSeconds);
   for (const hit of vehicleEvents.filter((event) => event.type === "runover")) {
     const victim = state.units.find((unit) => unit.id === hit.unitId);
     const car = state.units.find((unit) => unit.id === hit.vehicleId);
