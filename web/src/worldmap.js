@@ -72,6 +72,17 @@ export function regionCard(entry, index, state, entries) {
   return { title: `Operation ${number} · ${entry.name}`, place, label, detail };
 }
 
+/** What hovering a territory with no operation yet shows. */
+export function territoryCard(territory) {
+  const people = (territory.population / 1_000_000).toFixed(1);
+  return {
+    title: territory.name,
+    place: territory.name,
+    label: "NO OPERATION YET",
+    detail: `${people} million people · held by ${territory.owner}.`,
+  };
+}
+
 const SVG = "http://www.w3.org/2000/svg";
 function svg(tag, attributes = {}, children = []) {
   const element = document.createElementNS(SVG, tag);
@@ -121,7 +132,7 @@ function drawAtlas(root) {
  * Draw the map into `container`. `onSelect(index)` is called when an unlocked region is chosen;
  * `onCard(card)` is told what to show (or null) when a region is hovered or focused.
  */
-export function renderWorldMap({ container, entries, progress, selectedIndex, onSelect, onCard }) {
+export function renderWorldMap({ container, entries, progress, selectedIndex, onSelect, onCard, territories = [] }) {
   const states = regionStates(entries, progress, selectedIndex);
   const root = svg("svg", {
     viewBox: `0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`,
@@ -131,6 +142,26 @@ export function renderWorldMap({ container, entries, progress, selectedIndex, on
     "aria-label": "World map of operations",
   });
   drawAtlas(root);
+  // Territories whose operation is not built yet: small dim markers, so the whole campaign world shows.
+  for (const territory of territories) {
+    const [x, y] = project([territory.lon, territory.lat]);
+    const card = territoryCard(territory);
+    const group = svg("g", {
+      class: "map-territory",
+      role: "img",
+      "aria-label": `${card.title}. ${card.label}. ${card.detail}`,
+      tabindex: 0,
+    });
+    group.append(
+      svg("circle", { cx: x, cy: y, r: 11, class: "map-hit" }),
+      svg("circle", { cx: x, cy: y, r: 3.5, class: "map-territory-pin" }),
+    );
+    group.addEventListener("pointerenter", () => onCard?.(card));
+    group.addEventListener("focus", () => onCard?.(card));
+    group.addEventListener("pointerleave", () => onCard?.(null));
+    group.addEventListener("blur", () => onCard?.(null));
+    root.append(group);
+  }
   const centres = entries.map((entry, index) => regionCentre(entry, index, entries.length));
   // The campaign's route: dashed between operations, lit once the earlier one is done.
   for (let index = 1; index < centres.length; index += 1) {

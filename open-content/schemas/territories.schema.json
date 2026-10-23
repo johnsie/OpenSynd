@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "OpenSynd territories",
+  "description": "The campaign's world: 50 territories on the world map, each with at most one main mission.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion",
+    "territories"
+  ],
+  "properties": {
+    "formatVersion": {
+      "const": 1
+    },
+    "territories": {
+      "type": "array",
+      "minItems": 50,
+      "maxItems": 50,
+      "items": {
+        "$ref": "#/$defs/territory"
+      }
+    }
+  },
+  "$defs": {
+    "territory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "lon",
+        "lat",
+        "population",
+        "owner"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60
+        },
+        "lon": {
+          "type": "number",
+          "minimum": -180,
+          "maximum": 180
+        },
+        "lat": {
+          "type": "number",
+          "minimum": -60,
+          "maximum": 84
+        },
+        "population": {
+          "type": "integer",
+          "minimum": 500000,
+          "maximum": 20000000,
+          "description": "People living there; drives the daily tax."
+        },
+        "owner": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 60,
+          "description": "The rival syndicate that holds it until you do."
+        },
+        "mission": {
+          "type": "string",
+          "pattern": "\\.json$",
+          "description": "Path of its main mission, relative to the pack. Territories without one are still to be built."
+        }
+      }
+    }
+  }
+}

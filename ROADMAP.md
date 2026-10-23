@@ -365,7 +365,7 @@ browser e2e run).
 | F42 | Street lights, traffic lights | done: lights and bins break; signals at every crossing, cars stop on red |
 | F43 | Vehicles: lanes, collisions, kinds, trains | partly: six kinds (fire engine, scout armored car added), run-over damage, queuing, signals; lanes and trains are open |
 | F44 | Mission editor | partly: `editor.html` moves, adds and deletes placements, edits objectives, checks the draft and downloads JSON; scripts and patrols are edited in JSON |
-| F45 | Campaign scale: 50 territories, 50 main missions | open: 5 operations on 5 regions today |
+| F45 | Campaign scale: 50 territories, 50 main missions | partly: `territories.json` holds the 50 territories (on land, own owners and populations), the validator enforces 50 and one mission each, the world map shows all 50; 5 main missions are built, 45 are open; the difficulty table, the ending and map zoom are open |
 
 ---
 

@@ -698,6 +698,9 @@ async function loadGame(index = state.missionIndex) {
       }),
     );
   }
+  if (pack.territories && !state.territories) {
+    state.territories = (await readJson(`content/${pack.territories}`)).territories;
+  }
   state.progress = parseProgress(readStored(PROGRESS_KEY));
   state.campaign = ensureTerritories(state.campaign, state.missionList);
   describeMission(mission, map, index);
@@ -1275,6 +1278,7 @@ function renderMissionList() {
   renderWorldMap({
     container: document.querySelector("#world-map"),
     entries: state.missionList,
+    territories: (state.territories ?? []).filter((territory) => !territory.mission),
     progress: state.progress,
     selectedIndex: state.missionIndex,
     onSelect: chooseMission,

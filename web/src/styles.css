@@ -850,3 +850,8 @@ main { grid-template-columns: minmax(0, 1fr) minmax(250px, 300px); gap: 0.6rem; 
 @media (max-width: 760px) { .lab-loadout { grid-template-columns: 1fr; } }
 .squad-hud .drugs { gap: 0.2rem 0.5rem; font-size: 0.68rem; }
 .squad-hud .drug { grid-template-columns: auto minmax(0, 1fr); gap: 0.25rem; }
+
+/* Territories whose operation is not built yet. */
+.map-territory { cursor: default; outline: none; }
+.map-territory-pin { fill: #50636b; stroke: #05110f; stroke-width: 1.2; }
+.map-territory:hover .map-territory-pin, .map-territory:focus-visible .map-territory-pin { fill: var(--public); }

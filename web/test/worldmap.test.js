@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-import { project } from "../src/atlas.js";
+import { ISLANDS, project } from "../src/atlas.js";
 import {
   LANDMASSES,
   MAP_HEIGHT,
@@ -14,6 +14,7 @@ import {
   regionCentre,
   regionShape,
   regionStates,
+  territoryCard,
 } from "../src/worldmap.js";
 
 const entries = [
@@ -81,4 +82,37 @@ test("the atlas outlines are closed, in range, and the map has the proportions o
   }
   assert.deepEqual(project([-180, 84]), [0, 0]);
   assert.deepEqual(project([180, -58]), [MAP_WIDTH, MAP_HEIGHT]);
+});
+
+test("the world has 50 territories, each on land and clear of the others, and the missions sit in theirs", async () => {
+  const root = new URL("../content/", import.meta.url);
+  const pack = JSON.parse(await readFile(new URL("pack.json", root), "utf8"));
+  const { territories } = JSON.parse(await readFile(new URL(pack.territories, root), "utf8"));
+  assert.equal(territories.length, 50);
+  assert.equal(new Set(territories.map((territory) => territory.id)).size, 50, "unique ids");
+  assert.equal(new Set(territories.map((territory) => territory.name)).size, 50, "unique names");
+  const points = territories.map((territory) => regionCentre({ region: territory }, 0, 1));
+  const outlines = [...LANDMASSES.map((land) => land.points), ...ISLANDS];
+  territories.forEach((territory, index) => {
+    assert.ok(outlines.some((outline) => pointInPolygon([territory.lon, territory.lat], outline)), `${territory.name} is on land`);
+    for (let other = index + 1; other < territories.length; other += 1) {
+      const gap = Math.hypot(points[index].x - points[other].x, points[index].y - points[other].y);
+      assert.ok(gap > 27, `${territory.name} and ${territories[other].name} must not crowd (${gap.toFixed(1)})`);
+    }
+  });
+  const owned = new Set();
+  for (const file of pack.missions) {
+    const mission = JSON.parse(await readFile(new URL(file, root), "utf8"));
+    const territory = territories.find((item) => item.mission === file);
+    assert.ok(territory, `${file} belongs to a territory`);
+    assert.ok(!owned.has(territory.id), "one mission per territory");
+    owned.add(territory.id);
+    assert.deepEqual([mission.region.name, mission.region.lon, mission.region.lat], [territory.name, territory.lon, territory.lat]);
+  }
+});
+
+test("a territory with no operation yet says so on hover", () => {
+  const card = territoryCard({ name: "Iberia", population: 3_400_000, owner: "Vesper Holdings" });
+  assert.equal(card.label, "NO OPERATION YET");
+  assert.match(card.detail, /3\.4 million people · held by Vesper Holdings/);
 });

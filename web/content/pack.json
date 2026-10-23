@@ -46,6 +46,7 @@
     "equipment/scanner.equipment.json",
     "equipment/clearance-key.equipment.json"
   ],
+  "territories": "territories.json",
   "missions": [
     "missions/restore-relay.mission.json",
     "missions/quiet-hours.mission.json",

@@ -577,9 +577,74 @@ class Validation:
                 mission_path, mission, pack_root, maps, units, equipment, vehicles
             )
 
+        self.validate_territories(pack_path, pack_root, pack, referenced, missions)
+
         actual = {path.resolve() for path in pack_root.rglob("*.json")}
         for unreferenced in sorted(actual - referenced):
             self.error(unreferenced, "content file is not declared in pack.json")
+
+    TERRITORY_COUNT = 50  # the campaign is 50 territories, one main mission each (ROADMAP F45)
+
+    def validate_territories(self, pack_path: Path, pack_root: Path, pack: dict[str, Any],
+                             referenced: set[Path], missions: list[tuple[Path, dict[str, Any]]]) -> None:
+        """The world: exactly 50 territories; every mission belongs to exactly one, and matches its place."""
+        reference = pack.get("territories")
+        if reference is None:
+            return
+        territories_path = self.resolve_reference(pack_root, pack_path, reference)
+        if territories_path is None:
+            return
+        referenced.add(territories_path)
+        value = self.read_object(territories_path)
+        if value is None:
+            return
+        entries = value.get("territories")
+        if not isinstance(entries, list):
+            self.error(territories_path, "territories must be an array")
+            return
+        if len(entries) != self.TERRITORY_COUNT:
+            self.error(territories_path, f"the world has {self.TERRITORY_COUNT} territories, found {len(entries)}")
+        ids: set[str] = set()
+        names: set[str] = set()
+        owned: dict[Path, dict[str, Any]] = {}
+        for entry in entries:
+            if not isinstance(entry, dict):
+                self.error(territories_path, "every territory must be an object")
+                continue
+            identifier = entry.get("id")
+            if not isinstance(identifier, str) or ID_PATTERN.fullmatch(identifier) is None:
+                self.error(territories_path, f"invalid territory id: {identifier!r}")
+                continue
+            if identifier in ids:
+                self.error(territories_path, f"duplicate territory id: {identifier}")
+            ids.add(identifier)
+            if entry.get("name") in names:
+                self.error(territories_path, f"duplicate territory name: {entry.get('name')}")
+            names.add(entry.get("name"))
+            for key in ("name", "owner"):
+                if not isinstance(entry.get(key), str) or not entry[key]:
+                    self.error(territories_path, f"territory {identifier} needs a {key}")
+            lon, lat = entry.get("lon"), entry.get("lat")
+            if not all(isinstance(v, (int, float)) for v in (lon, lat)) or not (-180 <= lon <= 180 and -60 <= lat <= 84):
+                self.error(territories_path, f"territory {identifier} needs a longitude and latitude on the map")
+            population = entry.get("population")
+            if not isinstance(population, int) or not 500_000 <= population <= 20_000_000:
+                self.error(territories_path, f"territory {identifier} population must be 500000 to 20000000")
+            if entry.get("mission") is not None:
+                mission_path = self.resolve_reference(pack_root, territories_path, entry["mission"])
+                if mission_path is None:
+                    continue
+                if mission_path in owned:
+                    self.error(territories_path, f"mission {entry['mission']} belongs to two territories")
+                owned[mission_path] = entry
+        for mission_path, mission in missions:
+            entry = owned.get(mission_path.resolve())
+            if entry is None:
+                self.error(mission_path, "mission does not belong to any territory")
+                continue
+            region = mission.get("region") or {}
+            if (region.get("name"), region.get("lon"), region.get("lat")) != (entry["name"], entry["lon"], entry["lat"]):
+                self.error(mission_path, f"mission region must match its territory {entry['id']}")
 
     def run(self) -> int:
         schema_paths = sorted(SCHEMAS_ROOT.glob("*.schema.json"))

@@ -1,0 +1,410 @@
+{
+  "formatVersion": 1,
+  "territories": [
+    {
+      "id": "developer.northern-europe",
+      "name": "Northern Europe",
+      "lon": 6,
+      "lat": 51,
+      "population": 4200000,
+      "mission": "missions/restore-relay.mission.json",
+      "owner": "Tidewater Consortium"
+    },
+    {
+      "id": "developer.eastern-north-america",
+      "name": "Eastern North America",
+      "lon": -77,
+      "lat": 40.5,
+      "population": 5600000,
+      "mission": "missions/quiet-hours.mission.json",
+      "owner": "Meridian Combine"
+    },
+    {
+      "id": "developer.southern-brazil",
+      "name": "Southern Brazil",
+      "lon": -50,
+      "lat": -22,
+      "population": 3100000,
+      "mission": "missions/dead-drop.mission.json",
+      "owner": "Meridian Combine"
+    },
+    {
+      "id": "developer.southeast-asia",
+      "name": "Southeast Asia",
+      "lon": 105,
+      "lat": 15,
+      "population": 4800000,
+      "mission": "missions/loose-ends.mission.json",
+      "owner": "Vesper Holdings"
+    },
+    {
+      "id": "developer.eastern-mediterranean",
+      "name": "Eastern Mediterranean",
+      "lon": 35,
+      "lat": 37,
+      "population": 2400000,
+      "mission": "missions/safe-passage.mission.json",
+      "owner": "Corvid Syndicate"
+    },
+    {
+      "id": "developer.alaska",
+      "name": "Alaska",
+      "lon": -150,
+      "lat": 64,
+      "population": 4700000,
+      "owner": "Halcyon Group"
+    },
+    {
+      "id": "developer.pacific-coast",
+      "name": "Pacific Coast",
+      "lon": -122,
+      "lat": 45,
+      "population": 5100000,
+      "owner": "Tidewater Consortium"
+    },
+    {
+      "id": "developer.southwest-desert",
+      "name": "Southwest Desert",
+      "lon": -111,
+      "lat": 34,
+      "population": 4100000,
+      "owner": "Ironwood Trust"
+    },
+    {
+      "id": "developer.gulf-coast",
+      "name": "Gulf Coast",
+      "lon": -96,
+      "lat": 30,
+      "population": 6000000,
+      "owner": "Tidewater Consortium"
+    },
+    {
+      "id": "developer.great-plains",
+      "name": "Great Plains",
+      "lon": -100,
+      "lat": 42,
+      "population": 5800000,
+      "owner": "Ironwood Trust"
+    },
+    {
+      "id": "developer.central-america",
+      "name": "Central America",
+      "lon": -86,
+      "lat": 13,
+      "population": 2200000,
+      "owner": "Ironwood Trust"
+    },
+    {
+      "id": "developer.colombian-highlands",
+      "name": "Colombian Highlands",
+      "lon": -74,
+      "lat": 4,
+      "population": 3900000,
+      "owner": "Tidewater Consortium"
+    },
+    {
+      "id": "developer.amazon-basin",
+      "name": "Amazon Basin",
+      "lon": -62,
+      "lat": -5,
+      "population": 3600000,
+      "owner": "Ironwood Trust"
+    },
+    {
+      "id": "developer.northeast-brazil",
+      "name": "Northeast Brazil",
+      "lon": -40,
+      "lat": -8,
+      "population": 4500000,
+      "owner": "Tidewater Consortium"
+    },
+    {
+      "id": "developer.andean-peru",
+      "name": "Andean Peru",
+      "lon": -75,
+      "lat": -10,
+      "population": 6300000,
+      "owner": "Tidewater Consortium"
+    },
+    {
+      "id": "developer.altiplano",
+      "name": "Altiplano",
+      "lon": -66,
+      "lat": -18,
+      "population": 3800000,
+      "owner": "Corvid Syndicate"
+    },
+    {
+      "id": "developer.chilean-coast",
+      "name": "Chilean Coast",
+      "lon": -71,
+      "lat": -33,
+      "population": 2800000,
+      "owner": "Ironwood Trust"
+    },
+    {
+      "id": "developer.patagonia",
+      "name": "Patagonia",
+      "lon": -68,
+      "lat": -47,
+      "population": 6100000,
+      "owner": "Halcyon Group"
+    },
+    {
+      "id": "developer.iberia",
+      "name": "Iberia",
+      "lon": -4,
+      "lat": 40,
+      "population": 3500000,
+      "owner": "Corvid Syndicate"
+    },
+    {
+      "id": "developer.scandinavia",
+      "name": "Scandinavia",
+      "lon": 15,
+      "lat": 62,
+      "population": 2700000,
+      "owner": "Ironwood Trust"
+    },
+    {
+      "id": "developer.eastern-europe",
+      "name": "Eastern Europe",
+      "lon": 30,
+      "lat": 51,
+      "population": 4000000,
+      "owner": "Ironwood Trust"
+    },
+    {
+      "id": "developer.balkans",
+      "name": "Balkans",
+      "lon": 22,
+      "lat": 43,
+      "population": 2500000,
+      "owner": "Meridian Combine"
+    },
+    {
+      "id": "developer.russian-plain",
+      "name": "Russian Plain",
+      "lon": 45,
+      "lat": 57,
+      "population": 3000000,
+      "owner": "Ironwood Trust"
+    },
+    {
+      "id": "developer.caucasus",
+      "name": "Caucasus",
+      "lon": 46,
+      "lat": 42,
+      "population": 5100000,
+      "owner": "Vesper Holdings"
+    },
+    {
+      "id": "developer.ural-region",
+      "name": "Ural Region",
+      "lon": 60,
+      "lat": 58,
+      "population": 5800000,
+      "owner": "Halcyon Group"
+    },
+    {
+      "id": "developer.western-siberia",
+      "name": "Western Siberia",
+      "lon": 75,
+      "lat": 62,
+      "population": 5100000,
+      "owner": "Ironwood Trust"
+    },
+    {
+      "id": "developer.eastern-siberia",
+      "name": "Eastern Siberia",
+      "lon": 120,
+      "lat": 64,
+      "population": 1900000,
+      "owner": "Ironwood Trust"
+    },
+    {
+      "id": "developer.iranian-plateau",
+      "name": "Iranian Plateau",
+      "lon": 54,
+      "lat": 32,
+      "population": 4000000,
+      "owner": "Meridian Combine"
+    },
+    {
+      "id": "developer.arabian-peninsula",
+      "name": "Arabian Peninsula",
+      "lon": 45,
+      "lat": 24,
+      "population": 5800000,
+      "owner": "Vesper Holdings"
+    },
+    {
+      "id": "developer.maghreb",
+      "name": "Maghreb",
+      "lon": 5,
+      "lat": 33,
+      "population": 2200000,
+      "owner": "Meridian Combine"
+    },
+    {
+      "id": "developer.western-sahara",
+      "name": "Western Sahara",
+      "lon": -6,
+      "lat": 23,
+      "population": 5200000,
+      "owner": "Meridian Combine"
+    },
+    {
+      "id": "developer.gulf-of-guinea",
+      "name": "Gulf of Guinea",
+      "lon": -3,
+      "lat": 7,
+      "population": 3600000,
+      "owner": "Halcyon Group"
+    },
+    {
+      "id": "developer.congo-basin",
+      "name": "Congo Basin",
+      "lon": 22,
+      "lat": 0,
+      "population": 5300000,
+      "owner": "Tidewater Consortium"
+    },
+    {
+      "id": "developer.horn-of-africa",
+      "name": "Horn of Africa",
+      "lon": 42,
+      "lat": 8,
+      "population": 2900000,
+      "owner": "Corvid Syndicate"
+    },
+    {
+      "id": "developer.east-african-rift",
+      "name": "East African Rift",
+      "lon": 36,
+      "lat": -3,
+      "population": 5000000,
+      "owner": "Meridian Combine"
+    },
+    {
+      "id": "developer.southern-africa",
+      "name": "Southern Africa",
+      "lon": 24,
+      "lat": -26,
+      "population": 3200000,
+      "owner": "Halcyon Group"
+    },
+    {
+      "id": "developer.kazakh-steppe",
+      "name": "Kazakh Steppe",
+      "lon": 68,
+      "lat": 48,
+      "population": 2700000,
+      "owner": "Halcyon Group"
+    },
+    {
+      "id": "developer.indus-valley",
+      "name": "Indus Valley",
+      "lon": 70,
+      "lat": 31,
+      "population": 3600000,
+      "owner": "Ironwood Trust"
+    },
+    {
+      "id": "developer.deccan",
+      "name": "Deccan",
+      "lon": 78,
+      "lat": 15,
+      "population": 6000000,
+      "owner": "Ironwood Trust"
+    },
+    {
+      "id": "developer.ganges-delta",
+      "name": "Ganges Delta",
+      "lon": 90,
+      "lat": 24,
+      "population": 5500000,
+      "owner": "Ironwood Trust"
+    },
+    {
+      "id": "developer.mongolia",
+      "name": "Mongolia",
+      "lon": 104,
+      "lat": 47,
+      "population": 2300000,
+      "owner": "Meridian Combine"
+    },
+    {
+      "id": "developer.southern-china",
+      "name": "Southern China",
+      "lon": 112,
+      "lat": 26,
+      "population": 6300000,
+      "owner": "Halcyon Group"
+    },
+    {
+      "id": "developer.manchuria",
+      "name": "Manchuria",
+      "lon": 126,
+      "lat": 45,
+      "population": 4900000,
+      "owner": "Halcyon Group"
+    },
+    {
+      "id": "developer.japan",
+      "name": "Japan",
+      "lon": 138,
+      "lat": 36,
+      "population": 2000000,
+      "owner": "Vesper Holdings"
+    },
+    {
+      "id": "developer.sumatra",
+      "name": "Sumatra",
+      "lon": 102,
+      "lat": -1,
+      "population": 5300000,
+      "owner": "Meridian Combine"
+    },
+    {
+      "id": "developer.borneo",
+      "name": "Borneo",
+      "lon": 114,
+      "lat": 0,
+      "population": 6200000,
+      "owner": "Corvid Syndicate"
+    },
+    {
+      "id": "developer.western-australia",
+      "name": "Western Australia",
+      "lon": 122,
+      "lat": -26,
+      "population": 1900000,
+      "owner": "Ironwood Trust"
+    },
+    {
+      "id": "developer.central-australia",
+      "name": "Central Australia",
+      "lon": 134,
+      "lat": -24,
+      "population": 5900000,
+      "owner": "Meridian Combine"
+    },
+    {
+      "id": "developer.eastern-australia",
+      "name": "Eastern Australia",
+      "lon": 146,
+      "lat": -26,
+      "population": 3300000,
+      "owner": "Corvid Syndicate"
+    },
+    {
+      "id": "developer.madagascar",
+      "name": "Madagascar",
+      "lon": 47,
+      "lat": -19,
+      "population": 4100000,
+      "owner": "Tidewater Consortium"
+    }
+  ]
+}
