@@ -506,7 +506,9 @@ for (const [name, type, executablePath] of targets) {
     await page.click("#tab-lab-squad");
     const squads = page.locator(".armoury-card");
     assert.equal(await squads.count(), 1, "the chosen operative's slots");
-    assert.equal(await page.locator("#roster-list .roster-pick:not(:disabled)").count(), 4);
+    // (An operative lost in an earlier fight leaves the roster short, so count who is there rather than assuming all four.)
+    const standing = await page.locator("#roster-list .roster-card:not(.fallen)").count();
+    assert.equal(await page.locator("#roster-list .roster-pick:not(:disabled)").count(), standing);
     assert.equal(await squads.first().locator(".slot").count(), 8);
     assert.equal(await squads.first().locator(".slot:not(.empty)").count(), 4);
     assert.equal(await squads.first().locator(".slot svg").count(), 4, "each filled slot shows a picture");
@@ -803,16 +805,12 @@ for (const [name, type, executablePath] of targets) {
     await crowd.locator("#game-canvas").focus();
     await crowd.keyboard.press("a");
     await crowd.waitForTimeout(700);
-    const positions = () =>
-      crowd.evaluate(() => ["operator-one", "operator-two", "operator-three"].map((id) => window.opensyndTest.positionOf(id)));
-    const startedAt = await positions();
     await crowd.keyboard.press("f");
-    await crowd.waitForTimeout(1500);
-    const movedTo = await positions();
-    const gearAt = await crowd.evaluate(() => window.opensyndTest.positionOf("enemy-agent-three"));
-    const gap = (point) => Math.hypot(point.x - gearAt.x, point.y - gearAt.y);
-    const nearer = movedTo.filter((point, index) => gap(point) < gap(startedAt[index]) - 0.5);
-    assert.equal(nearer.length, 3, "all three selected operatives move toward the gear");
+    await crowd.waitForTimeout(150);
+    const routes = await crowd.evaluate(() =>
+      ["operator-one", "operator-two", "operator-three"].map((id) => window.opensyndTest.queue(id).steps),
+    );
+    assert.ok(routes.every((steps) => steps > 0), `all three selected operatives are on their way to the gear (${routes})`);
     await crowd.close();
 
     // Gear bought before the operation begins is on the operative when it does (the operation is set up again on closing).

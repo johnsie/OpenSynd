@@ -329,6 +329,18 @@ const SYNTH = Object.freeze({
       noise(audio, out, at, { seconds: 0.9, gain: 0.05, filter: "lowpass", from: 900, to: 500, q: 0.5 });
     },
   },
+  // Someone burning to death: a roar of flame that crackles, and a wail that falls away.
+  "flame-death": {
+    caption: "Someone burns to death",
+    gap: 0.8,
+    play(audio, out, at) {
+      noise(audio, out, at, { seconds: 1.4, gain: 0.5, filter: "bandpass", from: 1800, to: 500, q: 0.6 });
+      for (let crackle = 0; crackle < 8; crackle += 1) {
+        noise(audio, out, at + crackle * 0.13, { seconds: 0.03, gain: 0.45, filter: "highpass", from: 3000, to: 5000, q: 0.8 });
+      }
+      tone(audio, out, at, { seconds: 1.2, gain: 0.22, type: "sawtooth", from: 620, to: 140 });
+    },
+  },
   // A window breaking: a sharp crack and falling shards.
   glass: {
     caption: "Breaking glass",
@@ -403,7 +415,7 @@ const SYNTH = Object.freeze({
 });
 
 export const CUES = Object.freeze({
-  select: { caption: "Operator selected", notes: [[660, 0.06]] },
+  select: { caption: "Operator selected", notes: [[660, 0.06]], say: "Agent selected", sayGap: 4 },
   move: { caption: "Move order acknowledged", notes: [[440, 0.05], [550, 0.07]] },
   pulse: { caption: "Disabling pulse fired", notes: [[880, 0.04], [330, 0.12]] },
   repair: { caption: "Repair kit applied", notes: [[392, 0.08], [523, 0.08], [659, 0.1]] },
@@ -413,16 +425,25 @@ export const CUES = Object.freeze({
   "police-warning": {
     caption: "Police: put down your weapon",
     notes: [[880, 0.14], [660, 0.14], [880, 0.14], [660, 0.14]],
+    say: "Put down your weapon",
+    sayGap: 6,
   },
   scan: { caption: "Scanner ping", notes: [[1320, 0.05], [1760, 0.14]] },
-  complete: { caption: "Operation complete", notes: [[523, 0.12], [659, 0.12], [784, 0.12], [1047, 0.32]] },
-  failed: { caption: "Operation lost", notes: [[392, 0.2], [311, 0.2], [247, 0.45]] },
+  complete: { caption: "Operation complete", notes: [[523, 0.12], [659, 0.12], [784, 0.12], [1047, 0.32]], say: "Mission completed" },
+  failed: { caption: "Operation lost", notes: [[392, 0.2], [311, 0.2], [247, 0.45]], say: "Mission failed" },
   ...Object.fromEntries(Object.entries(SYNTH).map(([name, cue]) => [name, { caption: cue.caption }])),
 });
 
-export function createAudio({ getSettings, onCaption, AudioContextClass }) {
+export function createAudio({
+  getSettings,
+  onCaption,
+  AudioContextClass,
+  speech = globalThis.speechSynthesis,
+  Utterance = globalThis.SpeechSynthesisUtterance,
+}) {
   let context = null;
   const lastPlayed = new Map();
+  const lastSpoken = new Map();
 
   function ensureContext() {
     if (context || !AudioContextClass) return context;
@@ -447,6 +468,22 @@ export function createAudio({ getSettings, onCaption, AudioContextClass }) {
     if (synth && now - (lastPlayed.get(cueName) ?? -Infinity) < synth.gap) return;
     lastPlayed.set(cueName, now);
     if (settings.captions && onCaption) onCaption(cue.caption);
+    // FreeSynd's voices ("agent selected", "put down your weapon", mission completed or failed), read aloud by the browser's own
+    // speech if there is any, quietly, and never over itself.
+    if (cue.say && settings.spoken && !silent && speech && Utterance) {
+      const spokenAt = Date.now() / 1000;
+      if (spokenAt - (lastSpoken.get(cueName) ?? -Infinity) >= (cue.sayGap ?? 2)) {
+        lastSpoken.set(cueName, spokenAt);
+        try {
+          const line = new Utterance(cue.say);
+          line.volume = Math.min(1, settings.volume);
+          line.rate = 1.05;
+          speech.speak(line);
+        } catch {
+          // Speech is a nicety: a browser that cannot do it just stays quiet.
+        }
+      }
+    }
     if (silent || !audio) return;
     if (audio.state === "suspended") audio.resume?.();
 

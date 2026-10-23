@@ -358,7 +358,7 @@ browser e2e run).
 | F35 | Squad formation | have |
 | F36 | Selection and hotkeys | done: 1-4, 0, Shift+number, Alt+1-8 |
 | F37 | The HUD | done: objective highlight, ammo badges, the drug sliders, and the portrait of anyone the police are warning flashes red for the two seconds before they shoot |
-| F38 | Voice and sound cues | partly: police warning, scanner, a victory march when an operation is won (three themes to pick in the settings: drums, brass and drums, full band), outcome stingers, door, breaking glass |
+| F38 | Voice and sound cues | done: weapon and effect sounds, a victory march (three themes to pick in the settings), outcome stingers, door, breaking glass, a train horn, a roar of flame when someone burns to death, the scanner ping, and spoken lines read by the browser's own speech ("Agent selected", "Put down your weapon", "Mission completed", "Mission failed"; switch them off in the settings), all captioned |
 | F39 | Doors | done: `door` objects open while a living person is beside them, can be locked with a key, block sight and shots when closed and are planned through by routes; from the second tier the generated maps close some alley mouths with doors (63 of them); the bars slide up over a quarter of a second as a door opens and drop as it shuts (instant with reduced motion) |
 | F40 | Windows | done: shots and blasts break the windows on a building's visible walls (shattered panes drawn dark and cracked, a glass sound); guards and enemy agents within 14 tiles who have not seen the squad go to look. Cosmetic: not saved |
 | F41 | Flammable scenery | done: trees and billboards burn ten seconds and spread; fire ignites people beside it |

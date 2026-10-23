@@ -334,6 +334,7 @@ const settingControls = {
   music: document.querySelector("#setting-music"),
   musicVolume: document.querySelector("#setting-music-volume"),
   victoryTheme: document.querySelector("#setting-victory"),
+  spoken: document.querySelector("#setting-spoken"),
   captions: document.querySelector("#setting-captions"),
   edgeScroll: document.querySelector("#setting-edge"),
   reducedMotion: document.querySelector("#setting-motion"),
@@ -395,6 +396,7 @@ function showSettings() {
   settingControls.music.checked = settings.music;
   settingControls.musicVolume.value = settings.musicVolume;
   settingControls.victoryTheme.value = settings.victoryTheme;
+  settingControls.spoken.checked = settings.spoken;
   settingControls.captions.checked = settings.captions;
   settingControls.edgeScroll.checked = settings.edgeScroll;
   settingControls.reducedMotion.value = settings.reducedMotion;
@@ -415,6 +417,7 @@ document.querySelector("#settings-form").addEventListener("input", () => {
     music: settingControls.music.checked,
     musicVolume: Number(settingControls.musicVolume.value),
     victoryTheme: settingControls.victoryTheme.value,
+    spoken: settingControls.spoken.checked,
     captions: settingControls.captions.checked,
     edgeScroll: settingControls.edgeScroll.checked,
     reducedMotion: settingControls.reducedMotion.value,
@@ -3637,6 +3640,10 @@ function stampDeaths() {
   for (const unit of state.units) {
     if (!unit.disabled || unit.diedAt !== undefined || unit.kind === "drop" || isVehicle(unit)) continue;
     unit.diedAt = seeding ? -1000 : state.elapsed;
+    if (!seeding && deathKind(unit) === "burn") {
+      const away = Math.hypot(unit.position.x - state.camera.x, unit.position.y - state.camera.y);
+      audio.play("flame-death", { volume: shotVolume(away, unit.side === "team") });
+    }
   }
 }
 

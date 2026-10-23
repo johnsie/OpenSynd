@@ -68,7 +68,10 @@ test("gunfire is quieter the further it is, your own fire stays clear, and nothi
 });
 
 test("each cue builds real sound: weapon cues use noise and tones, and none throws", () => {
-  const names = [...Object.values(SHOT_CUES), "blast", "tick", "shield-up", "shield-hit", "hit", "persuade", "door", "glass", "train-horn"];
+  const names = [
+    ...Object.values(SHOT_CUES), "blast", "tick", "shield-up", "shield-hit", "hit", "persuade", "door", "glass",
+    "train-horn", "flame-death",
+  ];
   for (const name of names) {
     const { FakeContext, made } = fakeContext();
     const audio = createAudio({ getSettings: () => settings, AudioContextClass: FakeContext });
@@ -128,4 +131,31 @@ test("the victory themes are chosen by name: drums alone, drums with brass, or t
   assert.ok(kindsOf("band").has("bass") && kindsOf("band").has("stab") && kindsOf("band").has("lead"));
   assert.ok(!kindsOf("march").has("brass") && !kindsOf("march").has("bass"));
   assert.deepEqual(buildVictory("nonsense"), buildVictory("march"));
+});
+
+test("spoken cues are read aloud only when allowed, quietly, and never twice in quick succession", async () => {
+  const { createAudio } = await import("../src/audio.js");
+  const said = [];
+  const speech = { speak: (line) => said.push([line.text, line.volume]) };
+  class Utterance {
+    constructor(text) {
+      this.text = text;
+    }
+  }
+  const make = (settings) => createAudio({ getSettings: () => settings, speech, Utterance, AudioContextClass: null });
+  const base = { volume: 0.6, muted: false, captions: false, spoken: true };
+  const talker = make(base);
+  talker.play("complete");
+  talker.play("failed");
+  talker.play("select");
+  talker.play("select");
+  assert.deepEqual(said, [["Mission completed", 0.6], ["Mission failed", 0.6], ["Agent selected", 0.6]], "the second select is too soon");
+  make({ ...base, spoken: false }).play("complete");
+  make({ ...base, muted: true }).play("complete");
+  make({ ...base, volume: 0 }).play("complete");
+  talker.play("move");
+  assert.equal(said.length, 3, "off, muted and silent cues, and cues with no line, say nothing");
+  const failing = { speak() { throw new Error("no voice"); } };
+  const broken = createAudio({ getSettings: () => base, speech: failing, Utterance, AudioContextClass: null });
+  assert.doesNotThrow(() => broken.play("police-warning"));
 });

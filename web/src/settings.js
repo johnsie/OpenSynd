@@ -12,6 +12,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
   music: true,
   musicVolume: 0.35,
   victoryTheme: "march",
+  spoken: true,
   captions: true,
   reducedMotion: "system",
   textScale: 1,
@@ -36,6 +37,7 @@ export function normalizeSettings(raw) {
   if (typeof source.music === "boolean") settings.music = source.music;
   if (Number.isFinite(source.musicVolume)) settings.musicVolume = clamp(source.musicVolume, 0, 1);
   if (VICTORY_THEME_IDS.includes(source.victoryTheme)) settings.victoryTheme = source.victoryTheme;
+  if (typeof source.spoken === "boolean") settings.spoken = source.spoken;
   if (typeof source.captions === "boolean") settings.captions = source.captions;
   if (REDUCED_MOTION_VALUES.includes(source.reducedMotion)) {
     settings.reducedMotion = source.reducedMotion;
