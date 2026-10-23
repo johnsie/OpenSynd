@@ -81,7 +81,7 @@ What I took from FreeSynd:
   plain, open files, comes straight from that project.
 
 What I did **not** take: none of the original game's graphics, sounds, music, maps, missions, writing, names or data
-files. All of that here is made again (see below) and the numbers are my own.
+files. All of that here is made again (see below), and the numbers are my own or re-used under the terms of the GPL.
 
 Other things I'm grateful for: the human model that all the characters are drawn from is by **Quaternius** (CC0), and
 the music is **"Electric Stream"** by Alexander Ehlers (CC0) and **"The Core"** by p0ss. Everything else I made myself.
