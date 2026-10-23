@@ -41,6 +41,18 @@ body {
     linear-gradient(145deg, #0b1115 0%, #10181d 48%, #090e11 100%);
 }
 
+/* A game, not a document: clicking and dragging must not select text (which pops up the browser's selection menu). */
+body {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+input, textarea, select, [contenteditable] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 button, a { font: inherit; }
 
 button {
