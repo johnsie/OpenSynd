@@ -153,10 +153,24 @@ def build(layout: dict) -> dict:
 
     rail = layout.get("rail")
     if rail:
-        # An elevated railway along the quiet top edge of the city, on a platform as high as the buildings. It is a viaduct:
-        # nobody can step onto it, and the streets pass underneath (it leaves a gap where each street column crosses).
+        # An elevated railway along the quiet top edge of the city, on a viaduct as high as the buildings. Nobody can step onto
+        # it, and the streets pass underneath (it leaves a gap where each street column crosses).
         for number, (x, width) in enumerate(rail["segments"]):
             regions.append(region(f"rail-line-{number}", x, rail["y"], width, 1, "rail", False, rail["elevation"], "#3a3f44"))
+        # Stations: a platform beside the track, one step higher than the rails (FreeSynd: "train stations are higher than
+        # trains"), reached by a short stair; trains drop their passengers on it. The tiles in front of the platform that are not
+        # the stair are scaffolding nobody can walk through.
+        platform = "#3b464f"
+        for number, station in enumerate(rail["stations"]):
+            y = rail["y"] + 1
+            step_high, step_low = rail["elevation"] - 2, rail["elevation"] - 5
+            for x in range(station["from"], station["to"] + 1):
+                regions.append(region(f"platform-{number}-{x}", x, y, 1, 1, "platform", True, rail["elevation"] + 1, platform))
+                if x != station["stair"]:
+                    regions.append(region(f"support-{number}-{x}", x, y + 1, 1, 1, "platform", False, step_high, platform))
+            stair = station["stair"]
+            regions.append(region(f"stair-{number}-high", stair, y + 1, 1, 1, "platform", True, step_high, platform))
+            regions.append(region(f"stair-{number}-low", stair, y + 2, 1, 1, "platform", True, step_low, platform))
 
     props = random.Random(layout["seed"] + 1)
     doors = []  # alley mouths closed by a door instead of a fence (layouts with "doors": True)

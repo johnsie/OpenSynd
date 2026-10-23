@@ -222,7 +222,13 @@ export function seatsLeft(vehicle) {
 
 /** Whether an operator is close enough to a working vehicle to get in. */
 export function canEnter(operator, vehicle) {
-  if (!isVehicle(vehicle) || isTrain(vehicle) || vehicle.disabled || operator.disabled || operator.inVehicle) return false;
+  // A train can be boarded only while it stands at a station, from the platform beside any of its carriages.
+  if (isTrain(vehicle)) {
+    const train = vehicle.vehicle.train;
+    if (!train || train.waiting <= 0 || operator.disabled || operator.inVehicle) return false;
+    return train.body.some((part) => Math.hypot(operator.position.x - part.x, operator.position.y - part.y) <= ENTER_RANGE);
+  }
+  if (!isVehicle(vehicle) || vehicle.disabled || operator.disabled || operator.inVehicle) return false;
   return Math.hypot(operator.position.x - vehicle.position.x, operator.position.y - vehicle.position.y) <= ENTER_RANGE;
 }
 
@@ -233,6 +239,7 @@ export function canEnter(operator, vehicle) {
  */
 export function enterVehicle(vehicle, operators, units, grid) {
   const state = vehicle.vehicle;
+  if (isTrain(vehicle)) return boardTrain(vehicle, operators, units);
   const thrownOut = state.controlledBy ? null : ejectDriver(vehicle, units, grid);
   const driver = operators.find((operator) => canEnter(operator, vehicle)) ?? null;
   if (!driver) return { entered: [], thrownOut };
@@ -261,8 +268,9 @@ export function enterVehicle(vehicle, operators, units, grid) {
   return { entered, thrownOut };
 }
 
-/** Everyone inside steps out and the car is left where it stands. Returns who got out. */
+/** Everyone inside steps out and the car is left where it stands. Returns who got out. (A train lets its riders out on the platform.) */
 export function leaveVehicle(vehicle, units, grid) {
+  if (isTrain(vehicle)) return vehicle.vehicle.train?.waiting > 0 ? dropTrainPassengers(vehicle, units, grid) : [];
   return ejectAll(vehicle, units, grid);
 }
 
@@ -439,6 +447,60 @@ export function startTrain(vehicle, stops, carriages) {
   };
 }
 
+/** Passengers get on a train waiting at a station: the operators near it, and anyone persuaded who follows them. Nobody drives it. */
+function boardTrain(vehicle, operators, units) {
+  const train = vehicle.vehicle;
+  const entered = [];
+  const board = (unit) => {
+    if (unit.inVehicle || unit.disabled) return;
+    unit.inVehicle = vehicle.id;
+    unit.path = [];
+    unit.position = { ...vehicle.position };
+    train.occupantIds.push(unit.id);
+    entered.push(unit);
+  };
+  for (const operator of operators) if (canEnter(operator, vehicle)) board(operator);
+  for (const unit of units) {
+    const owned = unit.persuaded && entered.some((member) => member.id === unit.persuadedBy);
+    if (owned && canEnter(unit, vehicle)) board(unit);
+  }
+  return { entered, thrownOut: null };
+}
+
+/**
+ * The train is at a station: everyone riding steps out onto the nearest walkable ground around its middle carriage (the
+ * platform; FreeSynd drops them at the middle of the train and has them walk to the station). Returns who got out.
+ */
+export function dropTrainPassengers(vehicle, units, grid) {
+  const train = vehicle.vehicle.train;
+  if (!train) return [];
+  const middle = train.body[Math.floor(train.body.length / 2)];
+  const spots = [];
+  for (let dy = -5; dy <= 5; dy += 1) {
+    for (let dx = -6; dx <= 6; dx += 1) {
+      const x = Math.round(middle.x) + dx;
+      const y = Math.round(middle.y) + dy;
+      const tile = grid?.[y]?.[x];
+      // A platform is where passengers belong; any other walkable ground only if there is none.
+      if (tile?.walkable) spots.push({ x, y, gap: Math.hypot(x - middle.x, y - middle.y) + (tile.surface === "platform" ? 0 : 20) });
+    }
+  }
+  spots.sort((a, b) => a.gap - b.gap);
+  const out = [];
+  const state = vehicle.vehicle;
+  for (const id of [...state.occupantIds]) {
+    const unit = units.find((item) => item.id === id);
+    state.occupantIds = state.occupantIds.filter((other) => other !== id);
+    if (!unit || unit.inVehicle !== vehicle.id) continue;
+    const spot = spots.shift() ?? { x: Math.round(middle.x), y: Math.round(middle.y) };
+    unit.inVehicle = null;
+    unit.position = { x: spot.x, y: spot.y };
+    unit.path = [];
+    out.push(unit);
+  }
+  return out;
+}
+
 /** Where the carriages are, engine first: [{ x, y, heading }]. */
 export function trainCars(vehicle) {
   const train = vehicle.vehicle.train;
@@ -528,7 +590,18 @@ export function advanceVehicles(units, seconds, roadGrid, grid, time = 0) {
     const state = vehicle.vehicle;
     if (isTrain(vehicle)) {
       const event = advanceTrain(vehicle, seconds);
-      if (event) events.push(event);
+      if (event) {
+        events.push(event);
+        if (event.type === "train-stops") {
+          const out = dropTrainPassengers(vehicle, units, grid);
+          if (out.length > 0) events.push({ type: "train-drop", vehicleId: vehicle.id, unitIds: out.map((unit) => unit.id) });
+        }
+      }
+      // The riders travel with the train.
+      for (const id of state.occupantIds) {
+        const rider = units.find((other) => other.id === id);
+        if (rider) rider.position = { ...vehicle.position };
+      }
       continue;
     }
     if (vehicle.disabled) {

@@ -706,6 +706,52 @@ for (const [name, type, executablePath] of targets) {
     await beside.getByLabel(/Field Operator 2 slot 3: Scanner/).waitFor({ timeout: 10000 });
     await beside.close();
 
+    // Trains: wait on the platform until the train pulls in, board it (V), ride to the next station and step out there.
+    const rail = await browser.newPage({ viewport: { width: 1400, height: 900 } });
+    await rail.addInitScript(() => {
+      for (const key of Object.keys(localStorage)) if (key.startsWith("opensynd.save")) localStorage.removeItem(key);
+    });
+    await rail.goto(`${url}?e2e`);
+    await rail.waitForSelector(".roster-select");
+    await rail.evaluate(async () => {
+      const pack = await (await fetch("content/pack.json")).json();
+      const ids = [];
+      for (const path of pack.missions) ids.push((await (await fetch(`content/${path}`)).json()).id);
+      localStorage.setItem("opensynd.progress.v1", JSON.stringify({ completed: ids.filter((id) => !id.includes("balkans")) }));
+    });
+    await rail.reload();
+    await rail.waitForSelector(".roster-select");
+    await rail.click("#filter-all");
+    await rail.locator("#mission-list button", { hasText: "Balkans Uplink" }).click();
+    await rail.waitForFunction(() => document.querySelector("#title-heading").textContent.includes("Balkans"));
+    await rail.click("#begin-button");
+    await rail.waitForFunction(() => document.querySelector("#status-message").textContent.includes("Local map established"));
+    const firstTrain = await rail.evaluate(() => window.opensyndTest.trains()[0]);
+    assert.equal(firstTrain.cars.length, 5, "an engine and four carriages");
+    // The middle station: wait for the train there, then stand on the platform beside its middle carriage.
+    await rail.waitForFunction(
+      () => {
+        const train = window.opensyndTest.trains()[0];
+        return train.waiting > 3 && train.cars[0].x > 40;
+      },
+      null,
+      { timeout: 40000 },
+    );
+    await rail.evaluate(() => {
+      const train = window.opensyndTest.trains()[0];
+      window.opensyndTest.placeUnit("operator-one", Math.round(train.cars[2].x), 3);
+      window.opensyndTest.focusOn("operator-one");
+    });
+    await rail.locator("#game-canvas").focus();
+    await rail.waitForFunction(() => !document.querySelector("#vehicle-button").disabled);
+    await rail.keyboard.press("v");
+    await rail.waitForFunction(() => window.opensyndTest.riders().length > 0);
+    // Out of the first station: the passenger is carried to the next, and set down on its platform.
+    await rail.waitForFunction(() => window.opensyndTest.riders().length === 0, null, { timeout: 40000 });
+    assert.match(await rail.locator("#status-message").innerText(), /got off the train at the platform/);
+    assert.equal((await rail.evaluate(() => window.opensyndTest.positionOf("operator-one"))).y, 3, "on the platform");
+    await rail.close();
+
     // Hot updates: a newer release is announced quietly and never switched in while an operation is being played.
     const updating = await browser.newPage();
     let published = "rev-a";

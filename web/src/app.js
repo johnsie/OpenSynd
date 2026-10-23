@@ -561,6 +561,7 @@ async function loadGame(index = state.missionIndex) {
   state.map = map;
   state.mission = mission;
   state.grid = createTileGrid(map);
+  markRailBridges(map, state.grid);
   state.buildings = buildingsFromMap(map);
   state.windowsBroken = new Set();
   state.targeted = {};
@@ -1805,6 +1806,30 @@ function drawScaffold(top, base, cellSize, tile) {
   context.lineCap = "butt";
 }
 
+// Where a street runs under the railway, the track carries on over it: the street tile stays a street (people and cars pass
+// underneath) and is marked with the height of the viaduct, so its track and scaffolding are drawn over it.
+function markRailBridges(map, grid) {
+  const lines = (map.regions ?? []).filter((region) => region.surface === "rail").sort((a, b) => a.y - b.y || a.x - b.x);
+  for (let index = 0; index + 1 < lines.length; index += 1) {
+    const here = lines[index];
+    const next = lines[index + 1];
+    if (here.y !== next.y || next.x - (here.x + here.width) > 8) continue;
+    for (let x = here.x + here.width; x < next.x; x += 1) {
+      const tile = grid[here.y]?.[x];
+      if (tile) tile.railOver = here.elevation;
+    }
+  }
+}
+
+function drawRailOver(tile, cellSize, origin) {
+  const base = gridToScreen(tile, cellSize, origin, 0);
+  const top = { x: base.x, y: base.y - tile.railOver * cellSize.height * 0.28 };
+  const deck = { ...tile, surface: "rail", color: "#3a3f44", elevation: tile.railOver };
+  drawScaffold(top, base, cellSize, deck);
+  const { image, offsetX, offsetY } = tileSprites(deck, cellSize.width, cellSize.height);
+  context.drawImage(image, top.x + offsetX, top.y + offsetY);
+}
+
 function drawTile(tile, viewport) {
   const { cellSize, origin } = viewport;
   const prop = tile.surface === FENCE_SURFACE || tile.surface === WALL_SURFACE;
@@ -1813,7 +1838,7 @@ function drawTile(tile, viewport) {
   const baseCenter = gridToScreen(tile, cellSize, origin, 0);
   const topCenter = { x: baseCenter.x, y: baseCenter.y - elevationHeight };
 
-  if (elevationHeight > 0 && tile.surface === "rail") {
+  if (elevationHeight > 0 && (tile.surface === "rail" || tile.surface === "platform")) {
     drawScaffold(topCenter, baseCenter, cellSize, tile);
   } else if (elevationHeight > 0) {
     context.fillStyle = shade(tile.color, -22);
@@ -1849,6 +1874,7 @@ function drawTile(tile, viewport) {
   if (tile.surface === FENCE_SURFACE) drawFenceTile(context, project, tile, cellSize.height);
   else if (tile.surface === WALL_SURFACE) drawWallTile(context, project, tile, cellSize.height, shade(tile.color, 0));
   else drawRoad(tile, topCenter, cellSize);
+  if (tile.railOver) drawRailOver(tile, cellSize, origin);
 }
 
 // One building: solid walls with a base plinth, floor ledges and a few large windows per
@@ -3223,6 +3249,11 @@ function simulationStep(deltaSeconds) {
   }
   const vehicleEvents = advanceVehicles(state.units, deltaSeconds, state.roadGrid, state.grid, state.missionSeconds);
   // A train sounds its horn as it pulls into a station and as it leaves (quieter the further it is from the view).
+  for (const event of vehicleEvents.filter((item) => item.type === "train-drop")) {
+    const names = event.unitIds.map((id) => state.units.find((unit) => unit.id === id)?.definition.name ?? id);
+    setStatus(`${names.join(", ")} got off the train at the platform.`);
+    interfaceChanged = true;
+  }
   for (const event of vehicleEvents.filter((item) => item.type === "train-stops" || item.type === "train-leaves")) {
     const away = Math.hypot(event.at.x - state.camera.x, event.at.y - state.camera.y);
     audio.play("train-horn", { volume: shotVolume(away, false) });
@@ -4391,7 +4422,10 @@ canvas.addEventListener("click", (event) => {
     if (toGear < toUnit) unit = null;
   }
   if (unit) {
-    if (isTrain(unit)) setStatus("The train does not stop for anyone, and cannot be boarded.");
+    if (isTrain(unit)) {
+      if (unit.vehicle.train?.waiting > 0) goEnterVehicle(unit, event.shiftKey);
+      else setStatus("The train is not at a station. Wait on the platform: it stops there, and you can board then.");
+    }
     else if (isVehicle(unit) && !unit.disabled && !isSquadVehicle(unit)) goEnterVehicle(unit, event.shiftKey);
     else if (unit.side !== "team") {
       // FreeSynd: a left click on a person follows them; shooting is the right click. Watchers and criminals are still engaged.
@@ -5059,13 +5093,31 @@ function goEnterVehicle(vehicle, queue = false) {
   if (squad.length > 1) setStatus(`${squad.length} operators are heading for the ${vehicle.definition.name}.`);
 }
 
+// Where to stand to board a train: the walkable tile (the platform) nearest one of its carriages.
+function platformTile(from, train) {
+  let best = null;
+  for (const part of train.vehicle.train.body) {
+    for (let dy = -3; dy <= 3; dy += 1) {
+      for (let dx = -3; dx <= 3; dx += 1) {
+        const x = Math.round(part.x) + dx;
+        const y = Math.round(part.y) + dy;
+        if (!state.grid[y]?.[x]?.walkable) continue;
+        const cost = Math.hypot(x - part.x, y - part.y) + Math.hypot(x - from.position.x, y - from.position.y) * 0.05;
+        if (!best || cost < best.cost) best = { x, y, cost };
+      }
+    }
+  }
+  return best ? { x: best.x, y: best.y } : { x: Math.round(train.position.x), y: Math.round(train.position.y) };
+}
+
 function sendEnter(nearest, vehicle, keepPending = false) {
   const gap = Math.hypot(nearest.position.x - vehicle.position.x, nearest.position.y - vehicle.position.y);
-  if (gap <= ENTER_RANGE && !canEnter(nearest, vehicle)) {
+  if (!isTrain(vehicle) && gap <= ENTER_RANGE && !canEnter(nearest, vehicle)) {
     setStatus(`No room in the ${vehicle.definition.name}.`);
     return;
   }
-  const steps = orderMove(nearest, { x: Math.round(vehicle.position.x), y: Math.round(vehicle.position.y) }, false, keepPending);
+  const goal = isTrain(vehicle) ? platformTile(nearest, vehicle) : { x: Math.round(vehicle.position.x), y: Math.round(vehicle.position.y) };
+  const steps = orderMove(nearest, goal, false, keepPending);
   nearest.enterTargetId = vehicle.id;
   if (steps === 0 && !canEnter(nearest, vehicle)) {
     nearest.enterTargetId = null;
@@ -5110,6 +5162,10 @@ function toggleVehicle(queue = false) {
     return;
   }
   const { vehicle, leaving } = candidate;
+  if (leaving && isTrain(vehicle) && !(vehicle.vehicle.train?.waiting > 0)) {
+    setStatus("The train drops its passengers at the next station.");
+    return;
+  }
   if (leaving && queue) {
     const driver = state.units.find((unit) => unit.id === vehicle.vehicle.controlledBy) ?? selectedOperators().find((u) => u.inVehicle);
     if (driver && isBusy(driver)) {

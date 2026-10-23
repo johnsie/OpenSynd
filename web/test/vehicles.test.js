@@ -395,7 +395,7 @@ test("keeping right shifts a path to the right-hand side where that is road, and
   assert.deepEqual(keepRight(edge, roads, { x: 6, y: 6 }).map((node) => node.y), [6, 6], "no road beyond the kerb: stay put");
 });
 
-test("a train runs between its stations, waits at each, turns round at the end of the line and never carries anyone", async () => {
+test("a train runs between its stations, waits at each and turns round at the end of the line", async () => {
   const { isTrain, startTrain, trainCars, TRAIN_SPACING, settleTrain } = await import("../src/vehicles.js");
   const trainDefinition = vehicleDefinition({
     id: "developer.freight-train", name: "Freight Train", kind: "train", carriages: 3,
@@ -405,7 +405,7 @@ test("a train runs between its stations, waits at each, turns round at the end o
   const train = car("train", 12, 5, null, { definition: trainDefinition, health: 2000 });
   startTrain(train, [{ x: 12, y: 5, wait: 0 }, { x: 22, y: 5, wait: 4 }, { x: 32, y: 5, wait: 2 }], 3);
   assert.equal(isTrain(train), true);
-  assert.equal(canEnter({ position: { x: 12, y: 5 }, disabled: false }, train), false, "nobody boards a train");
+  assert.equal(canEnter({ position: { x: 12, y: 5 }, disabled: false }, train), false, "nobody boards a train that is moving");
   // The carriages stand in a row behind the engine.
   assert.deepEqual(trainCars(train).map((part) => part.x), [12, 12 - TRAIN_SPACING, 12 - 2 * TRAIN_SPACING, 12 - 3 * TRAIN_SPACING]);
   const events = [];
@@ -451,4 +451,51 @@ test("cars wait for a train in their lane and drive on once it has gone", () => 
   traffic.vehicle.route = { route: [{ x: 14, y: 5 }, { x: 28, y: 5 }], index: 1 };
   for (let step = 0; step < 60; step += 1) advanceVehicles([train, traffic, cabbie], 0.1, roads, grid);
   assert.ok(traffic.position.x < 20, `the car stopped short of the train (${traffic.position.x.toFixed(1)})`);
+});
+
+test("passengers board a train waiting at a station and are put down on the platform at the next one", async () => {
+  const { dropTrainPassengers, startTrain, TRAIN_SPACING } = await import("../src/vehicles.js");
+  const trainDefinition = vehicleDefinition({
+    id: "developer.freight-train", name: "Freight Train", kind: "train", carriages: 2,
+    stats: { health: 2000, speed: 5, seats: 1, blastRadius: 1, blastDamage: 1 },
+    appearance: { primaryColor: "#5b6671", accentColor: "#e1b35a" },
+  });
+  const train = car("train", 12, 2, null, { definition: trainDefinition, health: 2000 });
+  startTrain(train, [{ x: 12, y: 2, wait: 5 }, { x: 30, y: 2, wait: 5 }], 2);
+  // The track is row 2 (no walking there); the platform is row 3, and a stair joins it to the ground.
+  const rails = createTileGrid({
+    dimensions: { width: 40, height: 8 },
+    regions: [
+      { id: "ground", x: 0, y: 0, width: 40, height: 8, surface: "service-concrete", walkable: true, elevation: 0 },
+      { id: "line", x: 0, y: 2, width: 40, height: 1, surface: "rail", walkable: false, elevation: 8 },
+      { id: "deck", x: 8, y: 3, width: 28, height: 1, surface: "platform", walkable: true, elevation: 9 },
+    ],
+  });
+  const operator = { ...person("op", 11, 3), side: "team" };
+  const stranger = person("far", 30, 6);
+  // Not at a station yet: nobody can board.
+  train.vehicle.train.waiting = 0;
+  assert.equal(canEnter(operator, train), false, "a moving train cannot be boarded");
+  train.vehicle.train.waiting = 5;
+  assert.equal(canEnter(operator, train), true, "from the platform beside it, while it waits");
+  assert.equal(canEnter(stranger, train), false, "too far from every carriage");
+  const { entered, thrownOut } = enterVehicle(train, [operator], [train, operator, stranger], rails);
+  assert.deepEqual(entered.map((unit) => unit.id), ["op"]);
+  assert.equal(thrownOut, null);
+  assert.equal(train.vehicle.controlledBy, null, "nobody drives a train");
+  assert.equal(operator.inVehicle, "train");
+  // It rides along, hidden; at the next station it is put on the platform beside the middle carriage.
+  train.vehicle.train.waiting = 0;
+  const events = [];
+  for (let step = 0; step < 400 && !events.some((event) => event.type === "train-drop"); step += 1) {
+    events.push(...advanceVehicles([train, operator], 0.1, roads, rails));
+  }
+  const drop = events.find((event) => event.type === "train-drop");
+  assert.deepEqual(drop.unitIds, ["op"]);
+  assert.equal(operator.inVehicle, null);
+  assert.equal(operator.position.y, 3, "on the platform, not on the track");
+  const middle = train.vehicle.train.body[1];
+  assert.ok(Math.abs(operator.position.x - middle.x) <= 1.5, "beside the middle carriage");
+  assert.deepEqual(dropTrainPassengers(train, [train, operator], rails), [], "nobody left to drop");
+  assert.ok(TRAIN_SPACING > 0);
 });

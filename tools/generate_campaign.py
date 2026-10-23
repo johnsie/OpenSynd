@@ -123,7 +123,21 @@ def rail_for(size: int, period: int, block: int, first: int, blocks: int, compou
         if low - start >= 4:
             segments.append((start, min(low, end + 1) - start))
         start = high
-    return {"y": 2, "elevation": RAIL_HEIGHT, "segments": [(x, w) for x, w in segments if x + w <= end + 1]}
+    segments = [(x, w) for x, w in segments if x + w <= end + 1]
+    # Three stations: near the west end, in the middle stretch and near the east end. A platform covers the stretch the train's
+    # middle carriage stands on (whichever way it arrives) within its segment, with a stair in the middle of it.
+    def station_at(stop_x: int) -> dict:
+        x0, width = next((x, w) for x, w in segments if x <= stop_x < x + w)
+        low, high = max(x0, stop_x - 8), min(x0 + width - 1, stop_x + 8)
+        return {"from": low, "to": high, "stair": (low + high) // 2}
+    stops = rail_stops(segments)
+    return {"y": 2, "elevation": RAIL_HEIGHT, "segments": segments, "stops": stops, "stations": [station_at(x) for x in stops]}
+
+
+def rail_stops(segments: list[tuple[int, int]]) -> list[int]:
+    """Where the train's engine stops: in the first segment, on the middle one, and near the far end."""
+    middle = segments[len(segments) // 2]
+    return [segments[0][0] + 11, middle[0] + middle[1] // 2, segments[-1][0] + segments[-1][1] - 2]
 
 
 def layout_for(territory: dict, tier: int) -> dict:
@@ -429,13 +443,9 @@ def make_mission(territory: dict, tier: int, layout: dict, map_value: dict, map_
         vehicles.append({"id": f"city-car-{number + 1}", "vehicle": kind, "position": {"x": x0, "y": y0},
                          "driver": drivers[number % 2], "patrol": [{"x": x0, "y": y0}, {"x": x1, "y": y1}]})
 
-    # A freight train shuttles along the viaduct, waiting at a station on the middle stretch and at each end.
+    # A freight train shuttles along the viaduct between its three stations, waiting at each.
     rail = layout["rail"]
-    segments = rail["segments"]
-    first_x = segments[0][0] + 11
-    last_x = segments[-1][0] + segments[-1][1] - 2
-    middle = segments[len(segments) // 2]
-    station_x = middle[0] + middle[1] // 2
+    first_x, station_x, last_x = rail["stops"]
     vehicles.append({
         "id": "freight-train-1", "vehicle": "vehicles/freight-train.vehicle.json", "position": {"x": first_x, "y": rail["y"]},
         "stops": [{"x": first_x, "y": rail["y"], "wait": 0}, {"x": station_x, "y": rail["y"], "wait": 8},
