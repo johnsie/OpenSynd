@@ -386,8 +386,8 @@ const VEHICLE_SHAPES = Object.freeze({
   "small-armored": { length: 2.2, width: 1.05, body: 0.68, cabin: 0.45, cabinInset: 0.4 },
 });
 
-// Cars are drawn a little smaller than their shape tables say, to sit better beside the people (FreeSynd's are one tile long).
-const CAR_SCALE = 0.88;
+// A scale for all vehicles on top of their shape tables (1 is the table size; it was briefly 0.88).
+const CAR_SCALE = 1;
 
 function shadeHex(hex, amount) {
   const value = Number.parseInt(hex.slice(1), 16);
