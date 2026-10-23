@@ -1127,7 +1127,9 @@ Ordered by what each adds per unit of work given what exists. Items in the same 
 
 - **Death drops:** a person shot down drops everything they carry, scattered on the ground around them, each item
   separately and available to pick up (F, or click it); one killed by a beam, or by fire or a blast without the second
-  chest, loses it all. Operatives drop theirs too.
+  chest, loses it all. Operatives drop theirs too; police, guards and criminals carry a weapon (`carries` in their unit
+  file: a machine pistol, a heavy emitter, a civic emitter) that drops with them, and each item shows its own icon on the
+  ground.
 - **Chest regeneration:** tier 2 and 3 chests heal a sixteenth of the operative's health every four seconds after a hit.
 - **No run-overs by the city:** only vehicles driven by operatives knock people down; the city's own cars wait for people on
   foot to get out of the way.

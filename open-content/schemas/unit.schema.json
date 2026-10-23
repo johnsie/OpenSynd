@@ -30,6 +30,11 @@
       "items": { "$ref": "#/$defs/id" },
       "uniqueItems": true
     },
+    "carries": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "\\.json$" },
+      "description": "Equipment (paths in the pack) this kind of person carries that is not in their hands in play; it drops when they are shot down."
+    },
     "appearance": {
       "type": "object",
       "additionalProperties": false,

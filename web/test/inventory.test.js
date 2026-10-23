@@ -199,3 +199,13 @@ test("the living and the unarmed drop nothing; items do not land in walls", () =
   collectFallen([faller([item("a"), item("b")])], drops, walled);
   assert.ok(drops.every((drop) => Math.round(drop.position.x) <= 10), "only on walkable ground");
 });
+
+test("a policeman's sidearm, which is not in their hands in play, drops with the rest when they are shot down", () => {
+  const cop = faller([], { sidearm: [item("machine-pistol", "disable-pulse", 60)] });
+  const drops = [];
+  const events = collectFallen([cop], drops, grassGrid);
+  assert.equal(events[0].type, "dropped");
+  assert.deepEqual(drops.map((drop) => drop.equipment[0].definition.id), ["machine-pistol"]);
+  assert.deepEqual(cop.sidearm, []);
+  assert.equal(drops[0].equipment[0].charges, 60);
+});

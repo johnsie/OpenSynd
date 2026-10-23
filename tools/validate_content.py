@@ -216,6 +216,9 @@ class Validation:
             or not isinstance(stats["cooldown"], (int, float)) or stats["cooldown"] <= 0
         ):
             self.error(path, "combat stats must use non-negative attack and positive range/cooldown")
+        carries = value.get("carries", [])
+        if not isinstance(carries, list) or not all(isinstance(item, str) and item.endswith(".json") for item in carries):
+            self.error(path, "carries must be a list of equipment paths")
         appearance = value["appearance"]
         if not isinstance(appearance, dict):
             self.error(path, "appearance must be an object")

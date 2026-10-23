@@ -42,13 +42,15 @@ const SCATTER = [
 export function collectFallen(units, drops, grid = null) {
   const events = [];
   for (const unit of units) {
-    if (!unit.disabled || unit.escaped || unit.droppedAll || (unit.equipment?.length ?? 0) === 0) continue;
+    const carried = [...(unit.equipment ?? []), ...(unit.sidearm ?? [])];
+    if (!unit.disabled || unit.escaped || unit.droppedAll || carried.length === 0) continue;
     if (unit.kind === "drop" || unit.definition?.vehicle) continue;
     unit.droppedAll = true;
     const cause = unit.lastDamageType ?? "bullet";
     const keeps = cause === "bullet" || ((cause === "burn" || cause === "explosion") && chestTier(unit.upgrades) >= 2);
-    const items = unit.equipment;
+    const items = carried;
     unit.equipment = [];
+    unit.sidearm = [];
     if (!keeps) {
       events.push({ type: "destroyed", unitId: unit.id, items: items.map((item) => item.definition.name) });
       continue;

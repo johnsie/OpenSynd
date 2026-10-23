@@ -16,6 +16,9 @@
     "observe",
     "raise-alert"
   ],
+  "carries": [
+    "equipment/heavy-pulse-emitter.equipment.json"
+  ],
   "appearance": {
     "shape": "hexagon",
     "primaryColor": "#3a4a3a",

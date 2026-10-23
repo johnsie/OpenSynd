@@ -603,6 +603,11 @@ async function loadGame(index = state.missionIndex) {
       definition: item,
       charges: item.charges,
     })),
+    // What this kind of person carries besides what is in their hands (a policeman's sidearm): it drops when they fall.
+    sidearm: (definition.carries ?? [])
+      .map((path) => equipmentDefinitions.get(path))
+      .filter(Boolean)
+      .map((item) => ({ definition: item, charges: item.charges })),
     health:
       definition.stats.vitality +
       (definition.role === "operator"
@@ -1398,6 +1403,7 @@ function applySaveSnapshot(snapshot) {
     unit.cooldownRemaining = saved.cooldownRemaining;
     unit.targetId = saved.targetId;
     unit.disabled = saved.disabled;
+    if (saved.disabled) unit.sidearm = []; // what they carried has already dropped or been lost
     unit.equipment = saved.equipment.map((item) => ({
       definition: state.catalog.find((entry) => entry.id === item.id),
       charges: item.charges,
@@ -2533,7 +2539,19 @@ function unitScreenPoint(unit, viewport) {
   return { x: point.x, y: point.y - Math.max(9, viewport.cellSize.height * 0.34) * 0.8 };
 }
 
-// Gear dropped where a watcher fell: a small case on the floor with a pulsing ring.
+// Item icons for the map: the same drawings as the item squares, as images the canvas can draw.
+const pickupIcons = new Map();
+function pickupIcon(name) {
+  if (!pickupIcons.has(name)) {
+    const image = new Image();
+    const markup = iconMarkup(name, 64).replaceAll("currentColor", "#e1b35a");
+    image.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(markup)}`;
+    pickupIcons.set(name, image);
+  }
+  return pickupIcons.get(name);
+}
+
+// Gear lying on the ground: each item shows its own icon with a pulsing ring.
 function drawPickups(viewport) {
   const { cellSize, origin } = viewport;
   for (const body of state.drops) {
@@ -2549,31 +2567,15 @@ function drawPickups(viewport) {
     context.beginPath();
     context.ellipse(0, 0, width * (1.5 + 0.4 * pulse), height * (1.5 + 0.4 * pulse), 0, 0, Math.PI * 2);
     context.stroke();
-    // The case: a lid, a front face and a side face in amber tones.
-    context.fillStyle = "#e1b35a";
+    // The item itself: its own icon on a dark plate, in the same amber as the squad's item squares.
+    const icon = pickupIcon(body.equipment[0].definition.icon);
+    const side = Math.max(14, cellSize.width * 0.3);
+    context.fillStyle = "rgba(8, 14, 18, 0.82)";
     context.beginPath();
-    context.moveTo(0, -height * 1.6);
-    context.lineTo(width, -height * 0.8);
-    context.lineTo(0, 0);
-    context.lineTo(-width, -height * 0.8);
-    context.closePath();
+    context.ellipse(0, -side * 0.35, side * 0.62, side * 0.62, 0, 0, Math.PI * 2);
     context.fill();
-    context.fillStyle = "#a9802f";
-    context.beginPath();
-    context.moveTo(-width, -height * 0.8);
-    context.lineTo(0, 0);
-    context.lineTo(0, height * 1.1);
-    context.lineTo(-width, height * 0.3);
-    context.closePath();
-    context.fill();
-    context.fillStyle = "#7d5d20";
-    context.beginPath();
-    context.moveTo(width, -height * 0.8);
-    context.lineTo(0, 0);
-    context.lineTo(0, height * 1.1);
-    context.lineTo(width, height * 0.3);
-    context.closePath();
-    context.fill();
+    context.stroke();
+    if (icon.complete && icon.naturalWidth > 0) context.drawImage(icon, -side / 2, -side * 0.85, side, side);
     context.restore();
   }
 }

@@ -16,6 +16,9 @@
     "observe",
     "enforce"
   ],
+  "carries": [
+    "equipment/machine-pistol.equipment.json"
+  ],
   "appearance": {
     "shape": "circle",
     "primaryColor": "#1d2a44",
