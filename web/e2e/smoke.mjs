@@ -580,6 +580,29 @@ for (const [name, type, executablePath] of targets) {
     assert.equal(await page.getByLabel("Field Operator 1 slot 4: Civic Pulse Emitter", { exact: false }).count(), 1);
 
 
+    // New game: wipes the campaign and what was won, keeps the settings, and asks first.
+    const fresh = await browser.newPage();
+    await fresh.goto(`${url}?e2e`);
+    await fresh.waitForSelector(".roster-select");
+    await fresh.evaluate(() => {
+      window.opensyndTest.setFunds(777);
+      localStorage.setItem("opensynd.progress.v1", JSON.stringify({ completed: ["developer.restore-relay"] }));
+      localStorage.setItem("opensynd.settings.v1", JSON.stringify({ muted: true }));
+    });
+    await fresh.reload();
+    await fresh.waitForSelector("#new-game-button");
+    await fresh.click("#new-game-button");
+    assert.match(await fresh.locator("#confirm-heading").innerText(), /Start a new game/);
+    await fresh.click("#confirm-cancel");
+    assert.ok((await fresh.evaluate(() => localStorage.getItem("opensynd.progress.v1"))) !== null, "cancelling changes nothing");
+    await fresh.click("#new-game-button");
+    await Promise.all([fresh.waitForEvent("load"), fresh.click("#confirm-accept")]);
+    await fresh.waitForSelector(".roster-select");
+    assert.equal(await fresh.evaluate(() => localStorage.getItem("opensynd.progress.v1")), null);
+    assert.ok((await fresh.evaluate(() => localStorage.getItem("opensynd.settings.v1"))).includes("muted"), "settings stay");
+    assert.equal(await fresh.locator("#mission-list button").count(), 1, "only the first operation is open again");
+    await fresh.close();
+
     // Winning the last of the 50 main missions ends the campaign, once.
     const finale = await browser.newPage();
     await finale.goto(`${url}?e2e`);

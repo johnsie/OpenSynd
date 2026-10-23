@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+import { SETTINGS_KEY } from "./settings.js";
+
 // Which operations the player has completed, kept in this browser only.
 export const PROGRESS_KEY = "opensynd.progress.v1";
 
@@ -48,4 +50,16 @@ export function prerequisites(entries, index) {
 export function isUnlocked(progress, entries, index) {
   if (index <= 0) return true;
   return prerequisites(entries, index).some((id) => isCompleted(progress, id));
+}
+
+// A new game forgets the campaign (funds, upgrades, roster, territories, research), the operations won and every saved
+// game kept in this browser; the settings (sound, keys) stay. Returns how many entries it removed.
+export function clearGameStorage(storage) {
+  const doomed = [];
+  for (let index = 0; index < storage.length; index += 1) {
+    const key = storage.key(index);
+    if (key?.startsWith("opensynd.") && key !== SETTINGS_KEY) doomed.push(key);
+  }
+  for (const key of doomed) storage.removeItem(key);
+  return doomed.length;
 }

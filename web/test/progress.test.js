@@ -70,3 +70,25 @@ test("with no unlocks listed, operations open as a chain", () => {
   assert.equal(isUnlocked(markCompleted(emptyProgress(), "a"), entries, 2), false);
   assert.equal(isUnlocked(markCompleted(emptyProgress(), "b"), entries, 2), true);
 });
+
+import { clearGameStorage } from "../src/progress.js";
+
+test("a new game wipes the campaign, progress and saves but keeps the settings and other sites' data", () => {
+  const data = new Map([
+    ["opensynd.campaign.v1", "{}"],
+    ["opensynd.progress.v1", "{}"],
+    ["opensynd.save.developer.restore-relay", "{}"],
+    ["opensynd.settings.v1", "{}"],
+    ["somebody.else", "keep"],
+  ]);
+  const storage = {
+    get length() {
+      return data.size;
+    },
+    key: (index) => [...data.keys()][index] ?? null,
+    removeItem: (key) => data.delete(key),
+  };
+  assert.equal(clearGameStorage(storage), 3);
+  assert.deepEqual([...data.keys()].sort(), ["opensynd.settings.v1", "somebody.else"]);
+  assert.equal(clearGameStorage(storage), 0);
+});

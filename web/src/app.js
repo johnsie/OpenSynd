@@ -226,6 +226,7 @@ import {
   markCompleted,
   parseProgress,
   serializeProgress,
+  clearGameStorage,
 } from "./progress.js";
 import { createMusic } from "./music.js";
 import { createAudio, shotCue, shotVolume } from "./audio.js";
@@ -1191,8 +1192,11 @@ document.querySelector("#close-research").addEventListener("click", () => resear
 const confirmDialog = document.querySelector("#confirm-dialog");
 
 // An in-page confirmation (native confirm() blocks and cannot be styled or tested reliably).
-function confirmLeave(message) {
+function confirmLeave(message, { heading = "Leave this operation?", accept = "Leave operation", cancel = "Keep playing" } = {}) {
   document.querySelector("#confirm-text").textContent = message;
+  document.querySelector("#confirm-heading").textContent = heading;
+  document.querySelector("#confirm-accept").textContent = accept;
+  document.querySelector("#confirm-cancel").textContent = cancel;
   return new Promise((resolve) => {
     const finish = (answer) => {
       confirmDialog.removeEventListener("close", onClose);
@@ -4202,6 +4206,20 @@ for (const dialog of [titleDialog, outcomeDialog]) {
 document.querySelector("#operations-button").addEventListener("click", () => {
   state.modal = true;
   titleDialog.showModal();
+});
+document.querySelector("#new-game-button").addEventListener("click", async () => {
+  const sure = await confirmLeave(
+    "This wipes your campaign: funds, upgrades, the roster, territories, research, the operations you have won and every saved " +
+      "game in this browser. Your settings are kept. There is no undo.",
+    { heading: "Start a new game?", accept: "Start a new game", cancel: "Keep this game" },
+  );
+  if (!sure) return;
+  try {
+    clearGameStorage(localStorage);
+  } catch {
+    // Storage blocked: reloading still starts from what is in memory being dropped.
+  }
+  location.reload();
 });
 document.querySelector("#reset-progress").addEventListener("click", () => {
   state.progress = emptyProgress();
