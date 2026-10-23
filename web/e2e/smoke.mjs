@@ -142,6 +142,36 @@ for (const [name, type, executablePath] of targets) {
     await page.getByRole("button", { name: "Lower Brain", exact: true }).click();
     assert.match(await page.locator("#status-message").innerText(), /Selected operators: Brain lowered/);
     assert.equal(await page.locator('.roster [aria-label^="Brain of"][aria-label$="2 of 5"]').count(), 4);
+    // Number keys pick operators; 0 switches between one and everyone; Shift+number toggles one in or out.
+    await page.locator("#game-canvas").focus();
+    await page.keyboard.press("2");
+    assert.deepEqual(await page.evaluate(() => window.opensyndTest.selection()), ["operator-two"]);
+    await page.keyboard.press("Shift+3");
+    assert.deepEqual(await page.evaluate(() => window.opensyndTest.selection()), ["operator-two", "operator-three"]);
+    await page.keyboard.press("0");
+    assert.equal((await page.evaluate(() => window.opensyndTest.selection())).length, 1, "0 narrows to the leader");
+    await page.keyboard.press("0");
+    assert.equal((await page.evaluate(() => window.opensyndTest.selection())).length, 4, "and back to everyone");
+    // Alt+1 presses inventory slot 1 of the leader, which is a weapon for the whole group.
+    await page.keyboard.press("1");
+    await page.keyboard.press("Alt+1");
+    assert.match(await page.locator("#status-message").innerText(), /Civic Pulse Emitter selected/);
+    await page.keyboard.press("Alt+1");
+    // Shift+click on the ground adds a leg to the route after the one under way (the e2e page does not reduce
+    // motion, so the operator is still walking when the second leg is added).
+    await page.keyboard.press("1");
+    await page.evaluate(() => window.opensyndTest.placeUnit("operator-one", 3, 62));
+    await page.evaluate(() => window.opensyndTest.moveSelected(3, 52));
+    const first = await page.evaluate(() => window.opensyndTest.queue("operator-one"));
+    await page.evaluate(() => window.opensyndTest.focusOn("operator-one"));
+    const ahead = await page.evaluate(() => window.opensyndTest.screenPointAt(3, 58));
+    await page.keyboard.down("Shift");
+    await page.mouse.click(ahead.x, ahead.y);
+    await page.keyboard.up("Shift");
+    const queued = await page.evaluate(() => window.opensyndTest.queue("operator-one"));
+    assert.ok(first.steps > 0 && queued.waypoints === 2, `two legs: ${JSON.stringify([first, queued])}`);
+    assert.ok(queued.steps > first.steps + 4, "the second leg adds its steps to the first");
+    await page.keyboard.press("a");
     // Arrow keys pan the view while held.
     await page.locator("#game-canvas").focus();
     const cameraBefore = await page.evaluate(() => window.opensyndTest.camera());
@@ -345,6 +375,16 @@ for (const [name, type, executablePath] of targets) {
     await page.waitForTimeout(900);
     await page.mouse.click(closeEnemy.x + 80, closeEnemy.y + 40, { button: "right" });
     assert.equal(await rounds(), roundsBefore - 2, "a shot that hits nothing still costs a round");
+    // Holding the right button keeps firing as the weapon recharges, and releasing stops it.
+    await page.waitForTimeout(900);
+    await page.mouse.move(closeEnemy.x + 80, closeEnemy.y + 40);
+    await page.mouse.down({ button: "right" });
+    await page.waitForTimeout(2200);
+    await page.mouse.up({ button: "right" });
+    const heldRounds = await rounds();
+    assert.ok(heldRounds <= roundsBefore - 4, `held fire spent several rounds: ${roundsBefore} -> ${heldRounds}`);
+    await page.waitForTimeout(1200);
+    assert.equal(await rounds(), heldRounds, "letting go stops the fire");
 
     // A watcher notices an operator who walks into its sight (shortened by the cloak just
     // picked up) and raises the alert.

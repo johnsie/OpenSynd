@@ -1902,6 +1902,36 @@ function drawUnit(unit, viewport) {
   context.restore();
 }
 
+// The route a selected operator has been told to take: a faint line through its waypoints, numbered when there are
+// several (Shift+click adds one after the last).
+function drawQueuedRoutes(viewport) {
+  for (const unit of selectedOperators()) {
+    if (unit.path.length === 0 || unit.disabled) continue;
+    const points = [unit.position, ...unit.path].map((tile) => gridToScreen(tile, viewport.cellSize, viewport.origin));
+    context.strokeStyle = "rgba(66, 214, 208, 0.55)";
+    context.lineWidth = 2;
+    context.setLineDash([6, 5]);
+    context.beginPath();
+    points.forEach((point, index) => (index === 0 ? context.moveTo(point.x, point.y) : context.lineTo(point.x, point.y)));
+    context.stroke();
+    context.setLineDash([]);
+    const marks = unit.waypoints ?? [];
+    if (marks.length < 2) continue;
+    context.font = "700 12px ui-sans-serif, sans-serif";
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+    marks.forEach((mark, index) => {
+      const at = gridToScreen(mark, viewport.cellSize, viewport.origin);
+      context.fillStyle = "rgba(10, 14, 18, 0.85)";
+      context.beginPath();
+      context.arc(at.x, at.y, 9, 0, Math.PI * 2);
+      context.fill();
+      context.fillStyle = "#42d6d0";
+      context.fillText(String(index + 1), at.x, at.y + 1);
+    });
+  }
+}
+
 function draw() {
   if (!state.map) return;
   const size = resizeCanvas();
@@ -1914,6 +1944,7 @@ function draw() {
     if (tile.surface !== BUILDING_SURFACE || tile.gate) drawTile(tile, viewport);
   });
   drawZones(viewport);
+  drawQueuedRoutes(viewport);
   drawCursor(viewport);
 
   drawPickups(viewport);
@@ -2340,6 +2371,9 @@ function updateAlertMusic(deltaSeconds) {
 function simulationStep(deltaSeconds) {
   state.missionSeconds += deltaSeconds;
   let interfaceChanged = false;
+  if (state.holdFire && state.viewport && state.outcome === "active") {
+    fireByHand(screenToGridExact(state.holdFire, state.viewport.cellSize, state.viewport.origin), true);
+  }
   for (const event of advancePursuit(state.units, state.grid)) {
     if (event.reason === "none-selected") {
       const unit = state.units.find((item) => item.id === event.unitId);
@@ -2779,13 +2813,22 @@ function selectAll() {
 }
 
 // Order one operator along a route; returns the number of steps, or 0 if there is none.
-function orderMove(unit, destination) {
+// With `queue` (Shift held) the new route is added after the one already under way, from where it ends.
+function orderMove(unit, destination, queue = false) {
   unit.targetId = null;
   unit.lootTargetId = null;
   unit.followId = null;
-  const start = { x: Math.round(unit.position.x), y: Math.round(unit.position.y) };
+  const queued = queue && unit.path.length > 0;
+  const last = queued ? unit.path.at(-1) : unit.position;
+  const start = { x: Math.round(last.x), y: Math.round(last.y) };
   const path = findPath(state.grid, start, destination);
   if (path.length === 0) return 0;
+  if (queued) {
+    unit.path = [...unit.path, ...path];
+    unit.waypoints = [...(unit.waypoints ?? []), { ...destination }];
+    return path.length;
+  }
+  unit.waypoints = [{ ...destination }];
   unit.position = start;
   unit.path = path;
   if (reduceMotion) {
@@ -2831,12 +2874,12 @@ function driveOrder(destination) {
   return true;
 }
 
-function issueMove(destination) {
+function issueMove(destination, queue = false) {
   if (driveOrder(destination)) return;
   const squad = selectedOperators();
   if (squad.length > 1) {
     const assignments = groupDestinations(squad, destination);
-    const moving = assignments.filter(([unit, tile]) => orderMove(unit, tile) > 0);
+    const moving = assignments.filter(([unit, tile]) => orderMove(unit, tile, queue) > 0);
     if (moving.length === 0) {
       setStatus("No safe route to that tile.");
       return;
@@ -2850,7 +2893,7 @@ function issueMove(destination) {
   const unit = selectedUnit();
   if (!unit || unit.side !== "team" || unit.disabled) return;
   const start = { x: Math.round(unit.position.x), y: Math.round(unit.position.y) };
-  const steps = orderMove(unit, destination);
+  const steps = orderMove(unit, destination, queue);
   if (steps === 0) {
     setStatus(
       start.x === destination.x && start.y === destination.y
@@ -3062,10 +3105,22 @@ function centreOnSelection() {
 // Dragging the map pans it; a drag must not also count as a click.
 const drag = { pointerId: null, lastX: 0, lastY: 0, moved: 0, active: false, suppressClick: false };
 canvas.addEventListener("pointerdown", (event) => {
+  if (state.map && event.button === 2 && state.viewport && !state.modal && state.outcome === "active") {
+    // Holding the right button keeps firing: an automatic weapon sprays for as long as it is held.
+    const bounds = canvas.getBoundingClientRect();
+    state.holdFire = { x: event.clientX - bounds.left, y: event.clientY - bounds.top };
+    state.firedOnDownAt = performance.now();
+    fireByHand(screenToGridExact(state.holdFire, state.viewport.cellSize, state.viewport.origin));
+    return;
+  }
   if (!state.map || event.button !== 0) return;
   Object.assign(drag, { pointerId: event.pointerId, lastX: event.clientX, lastY: event.clientY, moved: 0, active: false });
 });
 canvas.addEventListener("pointermove", (event) => {
+  if (state.holdFire && state.viewport) {
+    const bounds = canvas.getBoundingClientRect();
+    state.holdFire = { x: event.clientX - bounds.left, y: event.clientY - bounds.top };
+  }
   if (drag.pointerId !== event.pointerId || !state.viewport) return;
   const deltaX = event.clientX - drag.lastX;
   const deltaY = event.clientY - drag.lastY;
@@ -3082,6 +3137,7 @@ canvas.addEventListener("pointermove", (event) => {
 });
 for (const type of ["pointerup", "pointercancel"]) {
   canvas.addEventListener(type, (event) => {
+    if (event.button === 2 || type === "pointercancel") state.holdFire = null;
     if (drag.pointerId === event.pointerId) Object.assign(drag, { pointerId: null, active: false });
   });
 }
@@ -3105,6 +3161,7 @@ canvas.addEventListener("pointermove", (event) => {
   );
 });
 canvas.addEventListener("pointerleave", () => {
+  state.holdFire = null;
   state.edge = { x: 0, y: 0 };
   state.pointer = null;
   setPointerCursor(null);
@@ -3149,10 +3206,10 @@ canvas.addEventListener("pointermove", (event) => {
 });
 
 // Right-click: fire the selected weapon (or the best loaded one) in the direction of the pointer.
-function fireByHand(aim) {
+function fireByHand(aim, held = false) {
   const squad = selectedOperators();
   if (squad.length === 0) {
-    setStatus("Select an operator first, then right-click to fire.");
+    if (!held) setStatus("Select an operator first, then right-click to fire.");
     return;
   }
   const events = [];
@@ -3167,6 +3224,7 @@ function fireByHand(aim) {
     renderInterface();
     return;
   }
+  if (held) return;
   if (reasons.has("recharging")) setStatus("Weapon recharging.");
   else if (reasons.has("no-rounds")) setStatus("Out of rounds. Select another weapon or loot one.");
   else if (reasons.has("none-selected")) setStatus("No weapon selected. Click a weapon in the operator's inventory first.");
@@ -3175,6 +3233,8 @@ function fireByHand(aim) {
 
 canvas.addEventListener("contextmenu", (event) => {
   event.preventDefault();
+  // A mouse already fired on button-down; a long press on touch reaches the context menu without one.
+  if (performance.now() - (state.firedOnDownAt ?? -Infinity) < 600) return;
   if (!state.map || !state.viewport || state.modal || state.outcome !== "active") return;
   const bounds = canvas.getBoundingClientRect();
   const position = { x: event.clientX - bounds.left, y: event.clientY - bounds.top };
@@ -3211,11 +3271,44 @@ canvas.addEventListener("click", (event) => {
     destination.x < state.map.dimensions.width &&
     destination.y < state.map.dimensions.height
   ) {
-    issueMove(destination);
+    issueMove(destination, event.shiftKey);
   }
 });
 
+// Number keys: 1 to 4 pick an operator, Shift+number adds or removes them from the selection, 0 switches between
+// the one you have and the whole squad, and Alt+1 to 8 press that inventory slot for the selected operator (for
+// the whole selected group when there are several).
+function numberKeyShortcut(event) {
+  const match = /^(?:Digit|Numpad)([0-9])$/.exec(event.code ?? "");
+  if (!match || event.ctrlKey || event.metaKey || !state.map || state.modal) return false;
+  const digit = Number(match[1]);
+  const operators = state.units.filter((unit) => unit.side === "team");
+  if (event.altKey) {
+    const leader = selectedUnit();
+    if (digit >= 1 && digit <= SLOTS_PER_OPERATIVE && leader && leader.side === "team") pressSlot(leader, digit - 1);
+    return true;
+  }
+  if (digit === 0) {
+    if (selectedOperators().length > 1) {
+      const leader = selectedUnit();
+      if (leader) selectUnit(leader.id);
+    } else {
+      selectAll();
+    }
+    return true;
+  }
+  const unit = operators[digit - 1];
+  if (!unit || unit.disabled) return true;
+  if (event.shiftKey) toggleSelect(unit.id);
+  else selectUnit(unit.id);
+  return true;
+}
+
 canvas.addEventListener("keydown", (event) => {
+  if (numberKeyShortcut(event)) {
+    event.preventDefault();
+    return;
+  }
   const moves = {
     cursorLeft: { x: -1, y: 0 },
     cursorRight: { x: 1, y: 0 },
@@ -3368,6 +3461,16 @@ if (new URLSearchParams(location.search).has("e2e")) {
     camera() {
       return { x: state.camera.x, y: state.camera.y };
     },
+    selection() {
+      return [...(state.selectedIds ?? [])];
+    },
+    queue(id) {
+      const unit = state.units.find((item) => item.id === id);
+      return { steps: unit.path.length, waypoints: (unit.waypoints ?? []).length };
+    },
+    rounds(id, slot) {
+      return state.units.find((item) => item.id === id).equipment[slot]?.charges ?? null;
+    },
     positions() {
       return Object.fromEntries(state.units.map((unit) => [unit.id, { ...unit.position }]));
     },
@@ -3423,6 +3526,11 @@ if (new URLSearchParams(location.search).has("e2e")) {
       const unit = state.units.find((item) => item.id === id);
       const tile = state.grid[Math.round(unit.position.y)]?.[Math.round(unit.position.x)];
       const point = gridToScreen(unit.position, state.viewport.cellSize, state.viewport.origin, tile?.elevation ?? 0);
+      const bounds = canvas.getBoundingClientRect();
+      return { x: bounds.left + point.x, y: bounds.top + point.y };
+    },
+    screenPointAt(x, y) {
+      const point = gridToScreen({ x, y }, state.viewport.cellSize, state.viewport.origin, state.grid[y]?.[x]?.elevation ?? 0);
       const bounds = canvas.getBoundingClientRect();
       return { x: bounds.left + point.x, y: bounds.top + point.y };
     },
