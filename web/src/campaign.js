@@ -253,3 +253,22 @@ export function sellFromSlot(campaign, operatorId, slot, catalog, defaults) {
     loadouts: { ...campaign.loadouts, [operatorId]: loadout },
   };
 }
+
+// Reloading costs money (FreeSynd charges for every round). A used round costs a quarter of the item's price
+// spread over its full load, so an emptied magazine is a quarter of what the weapon cost. Items with unlimited
+// charges cost nothing.
+export const RELOAD_SHARE = 0.25;
+
+export function roundPrice(definition) {
+  if (!definition.charges) return 0;
+  return ((definition.price ?? 0) * RELOAD_SHARE) / definition.charges;
+}
+
+// The bill for refilling these equipment entries ({ definition, charges }) to full.
+export function resupplyCost(entries) {
+  const total = entries.reduce((sum, entry) => {
+    if (entry.charges === null || entry.charges === undefined || !entry.definition.charges) return sum;
+    return sum + Math.max(0, entry.definition.charges - entry.charges) * roundPrice(entry.definition);
+  }, 0);
+  return Math.round(total);
+}

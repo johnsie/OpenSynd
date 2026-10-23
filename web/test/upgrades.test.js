@@ -102,3 +102,12 @@ test("Eyes lengthen the reach of whatever is fired", () => {
   const bare = operator(null);
   assert.equal(pickWeapon(bare).stats.range, 8, "no upgrade record at all is fine");
 });
+
+import { followPace } from "../src/simulation.js";
+
+test("followers move at their owner's pace: quicker legs drag a faster flock, tired legs a slower one", () => {
+  assert.equal(followPace(operator({ legs: 0 })), 1);
+  assert.equal(followPace(operator({ legs: 2 })), 1.5);
+  assert.equal(followPace(operator({ legs: 0 }, { stamina: 0, levels: { speed: 1, brain: 3 } })), 0.6);
+  assert.equal(followPace(operator({ legs: 0 }, { levels: { speed: 5, brain: 3 } })), 1.5);
+});

@@ -82,6 +82,7 @@ import {
   sanitizeLoadouts,
   serializeCampaign,
   canFit,
+  resupplyCost,
   fitUpgrade,
   removeUpgrade,
   upgradesOf,
@@ -2494,6 +2495,7 @@ function showOutcome(outcome) {
     ["Time", formatDuration(state.missionSeconds)],
     ["Operators disabled", String(teamDown)],
     ["Enemies disabled", String(watchersDown)],
+    ...(state.opStats.resupply > 0 ? [["Resupply bill", `${state.opStats.resupply} funds`]] : []),
     ...(state.opStats.civiliansHarmed + state.opStats.policeHarmed > 0
       ? [["Bystanders killed", String(state.opStats.civiliansHarmed + state.opStats.policeHarmed)]]
       : []),
@@ -2560,6 +2562,11 @@ function checkOutcome() {
   state.outcome = outcome;
   state.opStats.outcome = outcome;
   state.opStats.seconds = state.missionSeconds;
+  // Refilling what the squad used up is paid for; it can leave the funds at zero but never below.
+  state.opStats.resupply = resupplyCost(
+    state.units.filter((unit) => unit.side === "team").flatMap((unit) => unit.equipment ?? []),
+  );
+  state.campaign = penalise(state.campaign, state.opStats.resupply);
   if (outcome === "success") {
     state.progress = markCompleted(state.progress, state.mission.id);
     saveProgress();

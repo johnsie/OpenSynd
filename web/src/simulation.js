@@ -1191,6 +1191,17 @@ export function advancePersuasion(units, deltaSeconds, grid = null) {
 // When its owner has a weapon out and it has none, it goes and takes one from a fallen enemy nearby.
 const FOLLOW_DISTANCE = 1.8;
 const FOLLOW_SPEED_FACTOR = 1.5;
+
+// A follower keeps its owner's pace (FreeSynd ties it to the owner's adrenaline): a quick owner drags a faster
+// flock along, a tired one a slower. Within 5 percent of normal they move at their usual follow speed.
+export const FOLLOW_FAST = 1.5;
+export const FOLLOW_SLOW = 0.6;
+export function followPace(owner) {
+  const pace = speedMultiplier(effectiveLevels(owner.levels, owner.stamina, owner.focus)) * legsPace(owner.upgrades) * weightPace(owner);
+  if (pace > 1.05) return FOLLOW_FAST;
+  if (pace < 0.95) return FOLLOW_SLOW;
+  return 1;
+}
 function advanceFollower(unit, byId, units, grid, deltaSeconds, now, events) {
   const agent = byId.get(unit.persuadedBy);
   if (!agent || agent.disabled) {
@@ -1215,7 +1226,7 @@ function advanceFollower(unit, byId, units, grid, deltaSeconds, now, events) {
         const end = unit.path.at(-1);
         const goal = tileOf(body.position);
         if (!end || Math.abs(end.x - goal.x) + Math.abs(end.y - goal.y) > 1) unit.path = findPath(grid, tileOf(unit.position), goal);
-        followPath(unit, deltaSeconds, FOLLOW_SPEED_FACTOR);
+        followPath(unit, deltaSeconds, FOLLOW_SPEED_FACTOR * followPace(agent));
         return;
       }
     } else {
@@ -1232,7 +1243,7 @@ function advanceFollower(unit, byId, units, grid, deltaSeconds, now, events) {
   if (!end || Math.abs(end.x - goal.x) + Math.abs(end.y - goal.y) > 1) {
     unit.path = findPath(grid, tileOf(unit.position), goal);
   }
-  followPath(unit, deltaSeconds, FOLLOW_SPEED_FACTOR);
+  followPath(unit, deltaSeconds, FOLLOW_SPEED_FACTOR * followPace(agent));
 }
 
 /** Shields: a raised shield stops every bullet aimed at its wearer until it runs out. */

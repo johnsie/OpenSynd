@@ -19,6 +19,8 @@ import {
   sellValue,
   canResearchItem,
   canFit,
+  resupplyCost,
+  roundPrice,
   fitUpgrade,
   removeUpgrade,
   upgradesOf,
@@ -248,4 +250,18 @@ test("harming bystanders costs funds, but never below zero", () => {
   assert.ok(POLICE_PENALTY > CIVILIAN_PENALTY, "police cost more");
   assert.equal(penalise(campaign, 500).funds, 0);
   assert.equal(penalise(campaign, -5).funds, 100, "a negative penalty never pays");
+});
+
+test("refilling spent rounds costs a quarter of the item's price spread over its load", () => {
+  const rifle = { price: 120, charges: 12 };
+  assert.equal(roundPrice(rifle), 2.5);
+  assert.equal(roundPrice({ price: 50, charges: null }), 0, "unlimited items never need refilling");
+  const entries = [
+    { definition: rifle, charges: 4 },
+    { definition: { price: 15, charges: 24 }, charges: 24 },
+    { definition: { price: 40, charges: null }, charges: null },
+    { definition: { price: 10, charges: 1 }, charges: 0 },
+  ];
+  assert.equal(resupplyCost(entries), Math.round(8 * 2.5 + 0 + 0 + 2.5));
+  assert.equal(resupplyCost([]), 0);
 });
