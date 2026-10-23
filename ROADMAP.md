@@ -353,7 +353,7 @@ browser e2e run).
 | F30 | Territories, tax and mood | done: daily tax, mood ladder, revolt, and an unlock graph (`unlocks` on a mission) |
 | F31 | Buying mission intelligence | partly: survey levels; briefing text levels are open |
 | F32 | Equipment screen | done: stats panel, roster, upgrades, buy and sell |
-| F33 | Queued orders | partly: Shift+click queues walking routes only |
+| F33 | Queued orders | done: Shift+click queues walks, pickups and getting into a vehicle in order; a step that cannot be done is skipped with a message; Esc clears. Drop, drive and follow steps are open |
 | F34 | What a click means | done: click a vehicle to get in, a drop to collect it, hold to fire |
 | F35 | Squad formation | have |
 | F36 | Selection and hotkeys | done: 1-4, 0, Shift+number, Alt+1-8 |

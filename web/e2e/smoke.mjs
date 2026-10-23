@@ -547,6 +547,35 @@ for (const [name, type, executablePath] of targets) {
     assert.equal(await page.getByLabel("Field Operator 1 slot 4: Civic Pulse Emitter", { exact: false }).count(), 1);
 
 
+    // Queued orders: walk a route, then pick up a body's gear (Shift+click), all in one sweep; Esc clears the queue.
+    const queuePage = await browser.newPage();
+    await queuePage.goto(`${url}?e2e`);
+    await queuePage.waitForSelector(".roster-select");
+    await queuePage.click("#begin-button");
+    await queuePage.evaluate(() => {
+      const test = window.opensyndTest;
+      test.disableUnit("enemy-agent-three");
+      test.placeNear("operator-one", "enemy-agent-three", 0, 9);
+      test.focusOn("operator-one");
+    });
+    await queuePage.waitForTimeout(700);
+    const queueStart = await queuePage.evaluate(() => window.opensyndTest.positions());
+    const goal = { x: Math.round(queueStart["operator-one"].x), y: Math.round(queueStart["operator-one"].y) - 4 };
+    await queuePage.evaluate((point) => window.opensyndTest.moveSelected(point.x, point.y), goal);
+    const gearPoint = await queuePage.evaluate(() => window.opensyndTest.screenPoint("enemy-agent-three"));
+    await queuePage.keyboard.down("Shift");
+    await queuePage.mouse.click(gearPoint.x, gearPoint.y);
+    await queuePage.keyboard.up("Shift");
+    assert.equal((await queuePage.evaluate(() => window.opensyndTest.queue("operator-one"))).pending, 1, "the pickup waits its turn");
+    assert.match(await queuePage.locator("#status-message").innerText(), /will pick up .* next/);
+    await queuePage.keyboard.press("Escape");
+    assert.equal((await queuePage.evaluate(() => window.opensyndTest.queue("operator-one"))).pending, 0, "Esc clears the queue");
+    await queuePage.keyboard.down("Shift");
+    await queuePage.mouse.click(gearPoint.x, gearPoint.y);
+    await queuePage.keyboard.up("Shift");
+    await queuePage.getByLabel(/Field Operator 1 slot 3:/).first().waitFor({ timeout: 30000 });
+    await queuePage.close();
+
     // A charge is armed by its slot, thrown by clicking the ground, and the Escape key puts it away.
     const bombPage = await browser.newPage();
     await bombPage.goto(`${url}?e2e`);

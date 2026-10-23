@@ -3146,6 +3146,7 @@ function update(deltaSeconds) {
     updateMeters();
     if (state.mission) updateVehicleButton();
     boardWaitingOperators();
+    runPendingOrders();
     if (state.map?.objects?.some((gate) => gate.key)) syncGates();
     if (state.objectives.some((objective) => objective.type === "hold" && !objective.complete && objective.progress > 0)) {
       renderInterface();
@@ -3323,10 +3324,17 @@ function selectAll() {
 
 // Order one operator along a route; returns the number of steps, or 0 if there is none.
 // With `queue` (Shift held) the new route is added after the one already under way, from where it ends.
-function orderMove(unit, destination, queue = false) {
+// A plain order replaces everything, including actions queued after the route (`keepPending` is for the queue itself).
+function orderMove(unit, destination, queue = false, keepPending = false) {
   unit.targetId = null;
   unit.lootTargetId = null;
   unit.followId = null;
+  if (!keepPending) unit.pending = [];
+  if (queue && unit.pending?.length > 0) {
+    // Actions are waiting after the route: the walk joins the queue behind them.
+    unit.pending.push({ type: "move", to: { ...destination } });
+    return 1;
+  }
   const queued = queue && unit.path.length > 0;
   const last = queued ? unit.path.at(-1) : unit.position;
   const start = { x: Math.round(last.x), y: Math.round(last.y) };
@@ -3420,11 +3428,11 @@ function issueMove(destination, queue = false) {
 // Clicking a watcher sends the selected armed operators after it. Each closes in until the
 // watcher is within range of the weapon it would fire (the selected one, if any), then stands
 // and shoots; if the watcher moves away it is followed again.
-function issueAttack(targetId) {
+function issueAttack(targetId, queue = false) {
   const target = state.units.find((unit) => unit.id === targetId);
   if (!target || !isAttackable(target)) return;
   if (target.disabled) {
-    if (lootableBody(target)) goLoot(target);
+    if (lootableBody(target)) goLoot(target, queue);
     else setStatus(`${target.definition.name} is already down and has nothing left to loot.`);
     return;
   }
@@ -3525,7 +3533,7 @@ function lootAction() {
 }
 
 // Send the nearest selected operator to a body; they loot it on arrival.
-function goLoot(body) {
+function goLoot(body, queue = false) {
   const squad = selectedOperators();
   if (squad.length === 0) return;
   const nearest = squad.reduce((best, unit) =>
@@ -3534,19 +3542,62 @@ function goLoot(body) {
       ? unit
       : best,
   );
-  if (inLootReach(nearest, body)) {
-    lootNow(nearest, body);
+  if (queue && isBusy(nearest)) {
+    queueAction(nearest, { type: "loot", id: body.id }, `pick up ${body.definition.name}'s gear`);
     return;
   }
-  const steps = orderMove(nearest, { x: Math.round(body.position.x), y: Math.round(body.position.y) });
+  sendLoot(nearest, body);
+}
+
+// Send one operator to a fallen body's gear (lootNow once they are beside it).
+function sendLoot(unit, body, keepPending = false) {
+  if (inLootReach(unit, body)) {
+    lootNow(unit, body);
+    return;
+  }
+  const steps = orderMove(unit, { x: Math.round(body.position.x), y: Math.round(body.position.y) }, false, keepPending);
   if (steps === 0) {
     setStatus("No safe route to that body.");
     return;
   }
-  nearest.lootTargetId = body.id;
+  unit.lootTargetId = body.id;
   audio.play("move");
-  setStatus(`${nearest.definition.name} is walking over to pick up ${body.definition.name}'s gear.`);
+  setStatus(`${unit.definition.name} is walking over to pick up ${body.definition.name}'s gear.`);
   renderInterface();
+}
+
+// Orders queued after the current route (Shift+click): walk on, pick up gear, get into a vehicle, in the order given.
+// An operator is busy while they still have somewhere to go or something to do.
+function isBusy(unit) {
+  return unit.path.length > 0 || Boolean(unit.lootTargetId) || Boolean(unit.enterTargetId) || (unit.pending?.length ?? 0) > 0;
+}
+
+function queueAction(unit, action, description) {
+  unit.pending = [...(unit.pending ?? []), action];
+  audio.play("move");
+  setStatus(`${unit.definition.name} will ${description} next (${unit.pending.length} queued, Esc clears).`);
+  renderInterface();
+}
+
+// When an operator has finished what they were doing, start the next queued order; one that can no longer be
+// done (the body is gone, the vehicle is wrecked, no route) is skipped with a message.
+function runPendingOrders() {
+  for (const unit of state.units) {
+    if (unit.side !== "team" || unit.disabled || unit.inVehicle || !unit.pending?.length) continue;
+    if (unit.path.length > 0 || unit.lootTargetId || unit.enterTargetId) continue;
+    const next = unit.pending.shift();
+    if (next.type === "move") {
+      if (orderMove(unit, next.to, false, true) === 0) setStatus(`${unit.definition.name}: no route to the next point, skipped.`);
+    } else if (next.type === "loot") {
+      const body = state.units.find((item) => item.id === next.id);
+      if (body && lootableBody(body)) sendLoot(unit, body, true);
+      else setStatus(`${unit.definition.name}: nothing left to pick up, skipped.`);
+    } else if (next.type === "enter") {
+      const vehicle = state.units.find((item) => item.id === next.id);
+      if (vehicle && !vehicle.disabled) sendEnter(unit, vehicle, true);
+      else setStatus(`${unit.definition.name}: the vehicle is gone, skipped.`);
+    }
+  }
 }
 
 // The unit under a screen point. Characters are tall, so the target is a generous box around the
@@ -3756,12 +3807,24 @@ function throwArmedBomb(target) {
   );
   renderInterface();
 }
-window.addEventListener("keydown", (event) => {
-  if (event.key === "Escape" && state.armedBomb) {
-    state.armedBomb = null;
-    setStatus("Charge put away.");
-  }
-});
+// Escape first cancels what is half done (an armed charge, then the queued orders) before it deselects anyone.
+window.addEventListener(
+  "keydown",
+  (event) => {
+    if (event.key !== "Escape") return;
+    if (state.armedBomb) {
+      state.armedBomb = null;
+      setStatus("Charge put away.");
+    } else if (selectedOperators().some((unit) => unit.pending?.length > 0)) {
+      for (const unit of selectedOperators()) unit.pending = [];
+      setStatus("Queued orders cleared.");
+    } else {
+      return;
+    }
+    event.stopPropagation();
+  },
+  true,
+);
 
 canvas.addEventListener("click", (event) => {
   if (drag.suppressClick) {
@@ -3777,9 +3840,9 @@ canvas.addEventListener("click", (event) => {
   }
   const unit = hitUnit(position);
   if (unit) {
-    if (isVehicle(unit) && !unit.disabled && !isSquadVehicle(unit)) goEnterVehicle(unit);
+    if (isVehicle(unit) && !unit.disabled && !isSquadVehicle(unit)) goEnterVehicle(unit, event.shiftKey);
     else if (unit.side !== "team") {
-      if (isAttackable(unit)) issueAttack(unit.id);
+      if (isAttackable(unit)) issueAttack(unit.id, event.shiftKey);
     }
     else if (event.ctrlKey || event.shiftKey || event.metaKey) toggleSelect(unit.id);
     else selectUnit(unit.id);
@@ -3789,7 +3852,7 @@ canvas.addEventListener("click", (event) => {
   // Clicking the ground where an enemy fell picks up its gear: an operator walks over.
   const dropped = lootableAt(state.units, destination, 0.9);
   if (dropped && selectedOperators().length > 0) {
-    goLoot(dropped);
+    goLoot(dropped, event.shiftKey);
     return;
   }
   if (
@@ -4023,7 +4086,7 @@ if (new URLSearchParams(location.search).has("e2e")) {
     },
     queue(id) {
       const unit = state.units.find((item) => item.id === id);
-      return { steps: unit.path.length, waypoints: (unit.waypoints ?? []).length };
+      return { steps: unit.path.length, waypoints: (unit.waypoints ?? []).length, pending: (unit.pending ?? []).length };
     },
     rounds(id, slot) {
       return state.units.find((item) => item.id === id).equipment[slot]?.charges ?? null;
@@ -4369,7 +4432,7 @@ function vehicleCandidate() {
 }
 
 // Left-click a vehicle: the nearest selected operator walks to it and gets in (FreeSynd: a click on a car boards it).
-function goEnterVehicle(vehicle) {
+function goEnterVehicle(vehicle, queue = false) {
   const squad = selectedOperators().filter((unit) => !unit.inVehicle);
   if (squad.length === 0) {
     setStatus("Select an operator first, then click the vehicle to get in.");
@@ -4381,12 +4444,20 @@ function goEnterVehicle(vehicle) {
       ? unit
       : best,
   );
+  if (queue && isBusy(nearest)) {
+    queueAction(nearest, { type: "enter", id: vehicle.id }, `get into the ${vehicle.definition.name}`);
+    return;
+  }
+  sendEnter(nearest, vehicle);
+}
+
+function sendEnter(nearest, vehicle, keepPending = false) {
   const gap = Math.hypot(nearest.position.x - vehicle.position.x, nearest.position.y - vehicle.position.y);
   if (gap <= ENTER_RANGE && !canEnter(nearest, vehicle)) {
     setStatus(`No room in the ${vehicle.definition.name}.`);
     return;
   }
-  const steps = orderMove(nearest, { x: Math.round(vehicle.position.x), y: Math.round(vehicle.position.y) });
+  const steps = orderMove(nearest, { x: Math.round(vehicle.position.x), y: Math.round(vehicle.position.y) }, false, keepPending);
   nearest.enterTargetId = vehicle.id;
   if (steps === 0 && !canEnter(nearest, vehicle)) {
     nearest.enterTargetId = null;
