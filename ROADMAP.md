@@ -342,7 +342,7 @@ browser e2e run).
 | F19 | Followers move at their owner's pace | done |
 | F20 | Funded, time-based research with chains | done: ten funding levels, one item at a time, chains |
 | F21 | Objective types and sequences | done: seven new types, sequence mode, failure rules |
-| F22 | Scripted people | done: walk, wait, trigger, say, escape; drive and enter vehicle are open |
+| F22 | Scripted people | done: walk, wait, trigger, say, escape, enter a vehicle, drive it to a point and leave it |
 | F23 | Carried key items | done: Clearance Key, take-item objective |
 | F24 | Minimap signal at the current objective | done |
 | F25 | Fuller debrief | done: shots and hits (accuracy) overall and per operator, kills by kind, objectives, losses, recruits, discoveries, followers, resupply bill and the change in funds |

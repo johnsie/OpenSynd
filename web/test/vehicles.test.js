@@ -302,3 +302,48 @@ test("someone leaving a car is never put in a pocket behind a wall that they cou
   // Rows 0-1 and 5-7 are walkable pavement but walled off from the road: the only way out is along it.
   assert.deepEqual([out.position.y], [3]);
 });
+
+import { advancePatrols } from "../src/simulation.js";
+
+test("a scripted person walks to a car, gets in as its driver, drives to a point, and gets out", () => {
+  const roads = createRoadGrid(grid);
+  const parked = car("taxi", 12, 5);
+  const rider = person("vip", 8, 5, {
+    script: {
+      steps: [
+        { type: "enter", vehicle: "taxi" },
+        { type: "drive", to: { x: 30, y: 5 } },
+        { type: "leave" },
+        { type: "say", text: "Here." },
+      ],
+      index: 0,
+      done: false,
+      loop: false,
+    },
+  });
+  const units = [parked, rider];
+  const said = [];
+  let boardedAt = null;
+  let arrivedAt = null;
+  for (let step = 0; step < 30 * 40 && !rider.script.done; step += 1) {
+    said.push(...advancePatrols(units, 1 / 30, grid, step / 30).filter((event) => event.type === "say"));
+    advanceVehicles(units, 1 / 30, roads, grid, step / 30);
+    if (rider.inVehicle && boardedAt === null) boardedAt = step;
+    if (rider.script.index === 2 && arrivedAt === null) arrivedAt = step;
+  }
+  assert.ok(boardedAt !== null, "the passenger got in");
+  assert.ok(arrivedAt !== null && arrivedAt > boardedAt, "and then drove somewhere");
+  assert.ok(Math.hypot(parked.position.x - 30, parked.position.y - 5) < 2.5, "the car is where the script sent it");
+  assert.equal(rider.inVehicle ?? null, null, "the person got out");
+  assert.equal(parked.vehicle.driverId, null);
+  assert.deepEqual(said.map((event) => event.text), ["Here."]);
+
+  // A car that already has a driver, or one that does not exist, is skipped rather than waited for.
+  const taken = car("busy", 12, 5, "other");
+  const skipper = person("skip", 8, 5, {
+    script: { steps: [{ type: "enter", vehicle: "busy" }, { type: "enter", vehicle: "ghost" }], index: 0, done: false, loop: false },
+  });
+  for (let step = 0; step < 10; step += 1) advancePatrols([taken, skipper], 1 / 30, grid, step / 30);
+  assert.equal(skipper.script.done, true);
+  assert.equal(skipper.inVehicle ?? null, null);
+});

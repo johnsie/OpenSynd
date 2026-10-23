@@ -2,7 +2,7 @@
 
 import { findPath, hasLineOfSight, SIGHT_STEP } from "./engine.js";
 import { LOOT_RANGE, lootBody, lootableBody } from "./inventory.js";
-import { VEHICLE_HIT_RADIUS, ejectDriver, isSquadVehicle, isVehicle } from "./vehicles.js";
+import { ENTER_RANGE, VEHICLE_HIT_RADIUS, ejectAll, ejectDriver, isSquadVehicle, isVehicle } from "./vehicles.js";
 import { damageProp, propsAlong } from "./props.js";
 import { adrenalineAim, adrenalineSpeed, drugMultiplier, intelligenceRecharge, perceptionReach } from "./drugs.js";
 import { aimBonus, armsCapacity, armsCooldown, chestTier, chestVitality, eyesRange, legsPace } from "./upgrades.js";
@@ -311,6 +311,58 @@ export function advanceScript(unit, deltaSeconds, grid, units) {
     if (near) next();
   } else if (step.type === "say") {
     scriptEvents.push({ type: "say", unitId: unit.id, text: step.text });
+    next();
+  } else if (step.type === "enter") {
+    // Walk to the named vehicle and get in as its driver (a car with someone at the wheel, or the squad's, is skipped).
+    const vehicle = units.find((other) => other.id === step.vehicle && isVehicle(other));
+    if (unit.inVehicle || !vehicle || vehicle.disabled || vehicle.vehicle.driverId || vehicle.vehicle.controlledBy) {
+      next();
+      return;
+    }
+    if (distanceBetween(unit, vehicle) <= ENTER_RANGE) {
+      unit.inVehicle = vehicle.id;
+      unit.path = [];
+      unit.position = { ...vehicle.position };
+      vehicle.vehicle.occupantIds.push(unit.id);
+      vehicle.vehicle.driverId = unit.id;
+      vehicle.vehicle.route = null;
+      vehicle.path = [];
+      next();
+      return;
+    }
+    const goal = tileOf(vehicle.position);
+    const end = unit.path.at(-1);
+    if (!end || Math.abs(end.x - goal.x) + Math.abs(end.y - goal.y) > 1) {
+      unit.path = grid ? findPath(grid, tileOf(unit.position), goal) : [];
+    }
+    if (unit.path.length === 0) {
+      next(); // no way to the car: skip the step
+      return;
+    }
+    followPath(unit, deltaSeconds, SCRIPT_SPEED_FACTOR);
+  } else if (step.type === "drive") {
+    // The vehicle drives to the point along the roads and the step ends when it is there.
+    const vehicle = units.find((other) => other.id === unit.inVehicle);
+    if (!vehicle || vehicle.disabled) {
+      next();
+      return;
+    }
+    const goal = tileOf(step.to);
+    if (!vehicle.vehicle.route || vehicle.vehicle.route.scripted !== step) {
+      vehicle.vehicle.route = { route: [goal], index: 0, scripted: step };
+      vehicle.path = [];
+    }
+    if (Math.hypot(vehicle.position.x - goal.x, vehicle.position.y - goal.y) <= 1.6) {
+      vehicle.vehicle.route = null;
+      vehicle.path = [];
+      next();
+    }
+  } else if (step.type === "leave") {
+    const vehicle = units.find((other) => other.id === unit.inVehicle);
+    if (vehicle) {
+      ejectAll(vehicle, units, grid ?? []);
+      vehicle.vehicle.route = null;
+    }
     next();
   } else if (step.type === "walk" || step.type === "escape") {
     const goal = tileOf(step.to);
@@ -631,6 +683,11 @@ export function advancePatrols(units, deltaSeconds, grid = null, now = null, dro
   scriptUnits = units;
   scriptEvents = events;
   for (const unit of units) {
+    // Someone riding in a vehicle can only be following a script (drive on, get out).
+    if (unit.inVehicle && unit.script && !unit.disabled && unit.side !== "team") {
+      advanceScript(unit, deltaSeconds, grid, units);
+      continue;
+    }
     if (unit.side === "team" || unit.disabled || unit.inVehicle || isVehicle(unit) || unit.hitStun > 0) continue;
     if (unit.persuaded) {
       if (grid) advanceFollower(unit, byId, units, grid, deltaSeconds, now, events, drops);

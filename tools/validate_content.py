@@ -418,12 +418,17 @@ class Validation:
                         script = []
                     for step in script:
                         kind = step.get("type") if isinstance(step, dict) else None
-                        needs = {"walk": "to", "escape": "to", "wait": "seconds", "trigger": "at", "say": "text"}.get(kind)
-                        if needs is None or needs not in step:
+                        needs = {"walk": "to", "escape": "to", "wait": "seconds", "trigger": "at", "say": "text",
+                                 "enter": "vehicle", "drive": "to", "leave": None}.get(kind, False)
+                        if kind == "leave":
+                            continue
+                        if needs is False or needs is None or needs not in step:
                             self.error(path, f"placement {placement_id} has an invalid script step: {step!r}")
                             continue
                         if needs == "text" and not (isinstance(step["text"], str) and 0 < len(step["text"]) <= 200):
                             self.error(path, f"placement {placement_id} has an invalid say step")
+                        if needs == "vehicle" and not isinstance(step["vehicle"], str):
+                            self.error(path, f"placement {placement_id} has an invalid enter step")
                         if needs in {"to", "at"}:
                             point = dict(step[needs]) if isinstance(step[needs], dict) else {}
                             point.update({"width": 1, "height": 1})

@@ -93,7 +93,7 @@ export function clearPatrol(mission, group, id) {
   return next;
 }
 
-const SCRIPT_TYPES = ["walk", "wait", "trigger", "escape", "say"];
+const SCRIPT_TYPES = ["walk", "wait", "trigger", "escape", "say", "enter", "drive", "leave"];
 const isPoint = (value) => Number.isInteger(value?.x) && Number.isInteger(value?.y);
 
 /**
@@ -125,10 +125,23 @@ export function parseScript(text) {
     if (step.type === "trigger" && step.radius !== undefined && !(step.radius > 0 && step.radius <= 60)) {
       return { error: `${label} (trigger) has a radius outside 0 to 60.` };
     }
+    if (step.type === "enter" && !(typeof step.vehicle === "string" && step.vehicle.length > 0)) {
+      return { error: `${label} (enter) needs "vehicle": the id of the vehicle to get into.` };
+    }
+    if (step.type === "drive" && !isPoint(step.to)) return { error: `${label} (drive) needs "to": {"x": 1, "y": 2}.` };
     if (step.type === "say" && !(typeof step.text === "string" && step.text.length > 0 && step.text.length <= 200)) {
       return { error: `${label} (say) needs "text" of up to 200 characters.` };
     }
-    const allowed = { walk: ["to"], escape: ["to"], wait: ["seconds"], trigger: ["at", "radius"], say: ["text"] }[step.type];
+    const allowed = {
+      walk: ["to"],
+      escape: ["to"],
+      wait: ["seconds"],
+      trigger: ["at", "radius"],
+      say: ["text"],
+      enter: ["vehicle"],
+      drive: ["to"],
+      leave: [],
+    }[step.type];
     const extra = Object.keys(step).filter((key) => key !== "type" && !allowed.includes(key));
     if (extra.length > 0) return { error: `${label} has "${extra[0]}", which a ${step.type} step does not use.` };
   }

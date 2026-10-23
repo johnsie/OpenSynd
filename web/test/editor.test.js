@@ -134,6 +134,11 @@ test("a typed script is checked and explained, and sets or removes a unit's scri
   const good = '[{"type":"walk","to":{"x":3,"y":4}},{"type":"wait","seconds":5},{"type":"say","text":"Hello."},' +
     '{"type":"trigger","at":{"x":1,"y":2},"radius":4},{"type":"escape","to":{"x":9,"y":9}}]';
   assert.equal(parseScript(good).steps.length, 5);
+  const driving = '[{"type":"enter","vehicle":"city-car-1"},{"type":"drive","to":{"x":5,"y":6}},{"type":"leave"}]';
+  assert.equal(parseScript(driving).steps.length, 3);
+  assert.match(parseScript('[{"type":"enter"}]').error, /vehicle/);
+  assert.match(parseScript('[{"type":"drive"}]').error, /needs "to"/);
+  assert.match(parseScript('[{"type":"leave","to":{"x":1,"y":1}}]').error, /does not use/);
   assert.deepEqual(parseScript("  ").steps, []);
   assert.match(parseScript("[{").error, /not valid JSON/);
   assert.match(parseScript("{}").error, /list of steps/);

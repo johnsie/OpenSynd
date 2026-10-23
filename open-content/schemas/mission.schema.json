@@ -89,7 +89,7 @@
         },
         "script": {
           "type": "array",
-          "description": "Steps this person follows instead of a patrol: walk, wait, trigger (wait for an operator to come near), say (speak a line) and escape (walk off the map).",
+          "description": "Steps this person follows instead of a patrol: walk, wait, trigger (wait for an operator to come near), say (speak a line), escape (walk off the map), enter (walk to a vehicle and get in as its driver), drive (take it to a point on the roads) and leave (get out).",
           "minItems": 1,
           "maxItems": 40,
           "items": { "$ref": "#/$defs/scriptStep" }
@@ -101,7 +101,8 @@
       "type": "object",
       "required": ["type"],
       "properties": {
-        "type": { "enum": ["walk", "wait", "trigger", "escape", "say"] },
+        "type": { "enum": ["walk", "wait", "trigger", "escape", "say", "enter", "drive", "leave"] },
+        "vehicle": { "$ref": "#/$defs/id", "description": "For enter: the id of the vehicle to get into." },
         "text": { "type": "string", "minLength": 1, "maxLength": 200 },
         "to": { "$ref": "#/$defs/position" },
         "seconds": { "type": "number", "exclusiveMinimum": 0, "maximum": 600 },
