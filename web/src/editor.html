@@ -1,0 +1,42 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: GPL-2.0-or-later -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#10171c" />
+    <title>OpenSynd mission editor</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="editor.css" />
+  </head>
+  <body class="editor-page">
+    <header class="editor-bar">
+      <h1>OpenSynd mission editor</h1>
+      <label>Mission <select id="mission-select"></select></label>
+      <button id="export-button" type="button">Download JSON</button>
+      <a href="index.html">Back to the game</a>
+    </header>
+    <main class="editor-layout">
+      <section class="editor-map" aria-label="Map">
+        <canvas id="editor-canvas" width="900" height="900" tabindex="0"
+          aria-label="Top-down map. Click to use the chosen tool."></canvas>
+        <p id="editor-hint" class="hint" role="status"></p>
+      </section>
+      <aside class="editor-side" aria-label="Tools">
+        <fieldset>
+          <legend>Tool</legend>
+          <div id="tool-list" class="tool-list"></div>
+        </fieldset>
+        <section aria-label="Objectives">
+          <h2>Objectives</h2>
+          <div id="objective-editor"></div>
+        </section>
+        <section aria-label="Problems">
+          <h2>Checks</h2>
+          <ul id="problem-list" class="problem-list"></ul>
+        </section>
+      </aside>
+    </main>
+    <script type="module" src="editor.js"></script>
+  </body>
+</html>

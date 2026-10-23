@@ -1,0 +1,23 @@
+/* SPDX-License-Identifier: GPL-2.0-or-later */
+/* The mission editor page. */
+.editor-page { margin: 0; background: var(--ground); color: var(--ink); min-height: 100vh; }
+.editor-bar { display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; padding: 0.6rem 1rem; border-bottom: 1px solid var(--line); }
+.editor-bar h1 { font-size: 1.1rem; margin: 0; }
+.editor-layout { display: grid; grid-template-columns: minmax(0, 1fr) 22rem; gap: 1rem; padding: 1rem; }
+.editor-map canvas {
+  width: min(100%, 85vh);
+  aspect-ratio: 1 / 1;
+  height: auto;
+  background: #0a0f12;
+  border: 1px solid var(--line);
+  cursor: crosshair;
+}
+.editor-side { display: grid; gap: 1rem; align-content: start; }
+.editor-side h2 { font-size: 0.95rem; margin: 0 0 0.4rem; }
+.tool-list { display: grid; gap: 0.3rem; }
+.tool-list label { display: flex; gap: 0.4rem; align-items: center; }
+.problem-list { margin: 0; padding-left: 1.1rem; font-size: 0.85rem; color: var(--risk); }
+.problem-list .ok { color: var(--restored); list-style: none; margin-left: -1.1rem; }
+#objective-editor { display: grid; gap: 0.5rem; }
+#objective-editor input[type="text"] { width: 100%; }
+@media (max-width: 800px) { .editor-layout { grid-template-columns: 1fr; } }

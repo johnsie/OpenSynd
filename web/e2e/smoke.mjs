@@ -677,6 +677,17 @@ for (const [name, type, executablePath] of targets) {
     assert.match(await garage.locator("#status-message").innerText(), /thrown out of the City Car|integrity/);
     await garage.close();
 
+    // The mission editor page loads a mission, accepts a placement, and checks it.
+    const editorPage = await browser.newPage();
+    await editorPage.goto(`${url}editor.html`);
+    await editorPage.waitForSelector("#problem-list li");
+    assert.match(await editorPage.locator("#problem-list").innerText(), /No problems found/);
+    await editorPage.getByLabel("Add guard").check();
+    const editorBox = await editorPage.locator("#editor-canvas").boundingBox();
+    await editorPage.mouse.click(editorBox.x + editorBox.width * 0.3, editorBox.y + editorBox.height * 0.45);
+    assert.match(await editorPage.locator("#editor-hint").innerText(), /^Added at \d+, \d+\./);
+    await editorPage.close();
+
     // Permadeath and recruiting: a fallen operative is lost after a win, and a persuaded enemy agent joins.
     const roster = await browser.newPage();
     await roster.goto(`${url}?e2e`);
