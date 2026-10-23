@@ -754,6 +754,29 @@ for (const [name, type, executablePath] of targets) {
     await street.waitForFunction(() => document.querySelector("#game-canvas").className.includes("cursor-attack"));
     await street.close();
 
+    // With everyone in one car, any selected rider can order it on: the first selected is often a passenger, not the driver.
+    const crew = await browser.newPage();
+    await crew.addInitScript(() => {
+      for (const key of Object.keys(localStorage)) if (key.startsWith("opensynd.save")) localStorage.removeItem(key);
+    });
+    await crew.goto(`${url}?e2e`);
+    await crew.waitForSelector(".roster-select");
+    await crew.click("#begin-button");
+    await crew.waitForFunction(() => document.querySelector("#status-message").textContent.includes("Local map established"));
+    await crew.locator("#game-canvas").focus();
+    for (const [key, id] of [["2", "operator-two"], ["1", "operator-one"]]) {
+      await crew.evaluate((who) => window.opensyndTest.placeNear(who, "parked-city-car-1", 1, 1), id);
+      await crew.keyboard.press(key);
+      await crew.waitForFunction(() => !document.querySelector("#vehicle-button").disabled);
+      await crew.keyboard.press("v");
+      await crew.waitForTimeout(300);
+    }
+    await crew.keyboard.press("a");
+    const carAt = await crew.evaluate(() => window.opensyndTest.positionOf("parked-city-car-1"));
+    await crew.evaluate((at) => window.opensyndTest.moveSelected(Math.round(at.x), Math.round(at.y) + 6), carAt);
+    assert.match(await crew.locator("#status-message").innerText(), /driving off/, "a passenger's order still sends the car");
+    await crew.close();
+
     // Vehicles: take a parked car and drive it, leave it, and shoot at a moving one to throw its driver out.
     const garage = await browser.newPage();
     // A fresh game: earlier pages in this browser may have left a save behind.

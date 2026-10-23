@@ -262,7 +262,7 @@ export function leaveVehicle(vehicle, units, grid) {
 
 /** Order a controlled vehicle to a point: it drives to the nearest road tile. Returns whether it has a route. */
 export function driveTo(vehicle, point, roadGrid) {
-  const goal = nearestRoadTile(roadGrid, point);
+  const goal = nearestRoadTile(roadGrid, point, 12);
   if (!goal) return false;
   const path = findPath(roadGrid, tileOf(vehicle.position), goal);
   vehicle.path = path;

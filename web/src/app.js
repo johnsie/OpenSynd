@@ -3660,13 +3660,16 @@ function groupDestinations(operators, destination) {
 
 // Orders for operators who are in a vehicle drive it: it goes to the nearest road to the point clicked.
 function driveOrder(destination, queue = false) {
-  const driver = selectedOperators().find((unit) => unit.inVehicle);
-  if (!driver) return false;
-  const car = state.units.find((unit) => unit.id === driver.inVehicle);
-  if (!car || car.vehicle.controlledBy !== driver.id) {
-    setStatus("Only the driver can steer. Leave the vehicle with V.");
+  const riders = selectedOperators().filter((unit) => unit.inVehicle);
+  if (riders.length === 0) return false;
+  // Any selected rider can give the order: the car the squad is steering goes, whoever sits where. (Everyone can ride
+  // together, so the first one selected is often a passenger.)
+  const car = riders.map((unit) => state.units.find((item) => item.id === unit.inVehicle)).find((item) => item?.vehicle.controlledBy);
+  if (!car) {
+    setStatus("Nobody is driving this vehicle. Leave it with V and take it again.");
     return true;
   }
+  const driver = state.units.find((unit) => unit.id === car.vehicle.controlledBy);
   if (queue && isBusy(driver)) {
     queueAction(driver, { type: "drive", to: { ...destination } }, "drive on to the next point");
     return true;
