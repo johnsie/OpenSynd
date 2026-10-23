@@ -1139,7 +1139,7 @@ Ordered by what each adds per unit of work given what exists. Items in the same 
 - **Dropping items:** right-click a weapon or item slot (or Alt+Shift+1-8) and it lies on the ground beside the operative,
   freeing the slot, to be picked up again by anyone.
 - **Chest regeneration:** tier 2 and 3 chests heal a sixteenth of the operative's health every four seconds after a hit.
-- **Guards are soldiers:** old-school olive-drab or khaki fatigues, a steel pot helmet, webbing, pouches and a pack, carrying a rifle.
+- **Guards are soldiers:** old-school olive-drab or khaki fatigues, bareheaded, with webbing, pouches and a pack, carrying a rifle.
 - **Deaths look like FreeSynd's:** a shot person recoils, falls and lies; a laser vaporizes (nothing left of an enemy, a scorch mark for ours); fire or a blast without a version 2 chest sets them running about burning for a second, then they collapse and smoulder for seven seconds before lying charred.
 - **No run-overs by the city:** only vehicles driven by operatives knock people down (never civilians, guards, police or enemy agents at the wheel), and those they kill drop what they carried, as with a bullet (FreeSynd treats a collision like one); the city's own cars wait for people on
   foot to get out of the way.
