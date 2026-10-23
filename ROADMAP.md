@@ -325,6 +325,54 @@ in 256ths of a tile and time in milliseconds; OpenSynd uses tiles and seconds.
 objectives (F21-F25). E Agents and the campaign (F26-F32). F Controls and interface (F33-F39). G The world (F40-F47).
 H Behaviour already mapped. I Priorities.
 
+**Status of this list** (kept current as features land; *done* means built, tested in `npm test`, and checked in the
+browser e2e run).
+
+| # | Feature | Status |
+|---|---------|--------|
+| F1 | Scatter Emitter (pellet fan) | done: pellets land by distance; no random spread |
+| F2 | Incinerator (burning) | done: damage over time, pierces; no flammable scenery yet |
+| F3 | Beam Projector | done: pierces everything on its line |
+| F4 | Scanner | done: ring marks on the view and map, minimap shows only sight range otherwise |
+| F5 | Clearance Key and locked gates | done: the key opens a gate while its carrier is near |
+| F6 | Energy shield | have: blocks fire for its duration |
+| F7 | Time bomb | partly: clear line only, chain reactions; planting at a clicked point is open |
+| F8 | Damage types | partly: bullet, burn, beam and explosion are recorded; scenery does not react yet |
+| F9 | Accuracy, spread, fire rate | partly: spread through pellets, hold-to-fire; no accuracy roll |
+| F10 | Weight and capacity | done: slowdown beyond capacity, Arms raise it |
+| F11 | Ammo and reload cost | done: refills are billed after each operation |
+| F12 | Discovery boosts research | partly: looted and captured gear counts as researched |
+| F13 | Enemies armed from your progress | open |
+| F14 | Hit reactions | done: a flinch that stops action and persuasion |
+| F15 | Everything is lethal | have |
+| F16 | Medikit | have |
+| F17 | Six body upgrades, three tiers | done: per operative, 1x/5x/10x prices; enemy upgrades open |
+| F18 | The three IPA drugs | open: Legs and Brain bars with fatigue remain the nearest thing |
+| F19 | Followers move at their owner's pace | done |
+| F20 | Funded, time-based research with chains | done: ten funding levels, one item at a time, chains |
+| F21 | Objective types and sequences | done: seven new types, sequence mode, failure rules |
+| F22 | Scripted people | done: walk, wait, trigger, say, escape; drive and enter vehicle are open |
+| F23 | Carried key items | done: Clearance Key, take-item objective |
+| F24 | Minimap signal at the current objective | done |
+| F25 | Fuller debrief | partly: objectives, losses, recruits, followers, resupply bill |
+| F26 | Roster with permanent death | done: eight places, four deploy, switch to turn it off |
+| F27 | Captured enemy agents become recruits | done |
+| F28 | The campaign clock | done: four seconds a game hour, runs during operations |
+| F29 | Persuasion points | done: points by toughness, Brain tiers lower the cost |
+| F30 | Territories, tax and mood | done: daily tax, mood ladder, revolt; the unlock graph is still a chain |
+| F31 | Buying mission intelligence | partly: survey levels; briefing text levels are open |
+| F32 | Equipment screen | done: stats panel, roster, upgrades, buy and sell |
+| F33 | Queued orders | partly: Shift+click queues walking routes only |
+| F34 | What a click means | partly: hold-to-fire done; click a vehicle or a dropped weapon is open |
+| F35 | Squad formation | have |
+| F36 | Selection and hotkeys | done: 1-4, 0, Shift+number, Alt+1-8 |
+| F37 | The HUD | partly: objective highlight and ammo badges; drug sliders wait on F18 |
+| F38 | Voice and sound cues | partly: police warning, scanner, outcome stingers; doors and glass open |
+| F39 | Doors | partly: key gates; doors that open on approach are open |
+| F40-F42 | Windows, flammable scenery, street lights | open |
+| F43 | Vehicles: lanes, collisions, kinds, trains | partly: run-over damage; lanes, trains, wreck scenery are open |
+| F44 | Mission editor | open |
+
 ---
 
 ### A. Weapons and items
