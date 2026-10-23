@@ -47,6 +47,8 @@ const SHAPES = Object.freeze({
   scanner:
     '<rect x="9" y="4" width="14" height="24" rx="2"/><circle cx="16" cy="14" r="4"/><path d="M16 14l3-3"/>' +
     '<path d="M12 22h8M12 25h5"/><path d="M4 9a14 14 0 0 0 0 12M28 9a14 14 0 0 1 0 12"/>',
+  key:
+    '<circle cx="10" cy="16" r="6"/><circle cx="10" cy="16" r="2" class="cut"/><path d="M16 16h13M24 16v5M28 16v4"/>',
   box: '<rect x="5" y="8" width="22" height="18" rx="2"/><path d="M5 14h22"/>',
 });
 

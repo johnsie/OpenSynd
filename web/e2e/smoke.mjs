@@ -65,7 +65,7 @@ for (const [name, type, executablePath] of targets) {
     assert.match(await page.locator("#title-dialog").innerText(), /First Light/);
     // A fresh browser has only the first operation open.
     const missionButtons = page.locator("#mission-list button");
-    assert.equal(await missionButtons.count(), 3);
+    assert.equal(await missionButtons.count(), 5);
     assert.equal(await missionButtons.nth(0).isDisabled(), false);
     assert.equal(await missionButtons.nth(1).isDisabled(), true);
     assert.match(await missionButtons.nth(1).innerText(), /LOCKED/);
@@ -399,6 +399,25 @@ for (const [name, type, executablePath] of targets) {
     assert.match(objectiveText, /Disable the site warden/);
     assert.match(objectiveText, /Hold the central uplink for 20 seconds .*\(0 \/ 20 s\)/);
     assert.equal(await page.locator("#objective-list li").count(), 4, "different jobs, not three relays");
+    await page.evaluate(() => window.opensyndTest.completeObjectives());
+    await page.waitForSelector("#outcome-dialog[open]");
+    assert.equal(await page.locator("#next-button").isVisible(), true);
+    // Safe Passage is done in order: the first objective stands out and the later ones wait.
+    await page.click("#next-button");
+    await page.waitForSelector("#title-dialog[open]");
+    assert.match(await page.locator("#title-heading").innerText(), /Safe Passage/);
+    await page.click("#begin-button");
+    assert.match(await page.locator("#operation-eyebrow").innerText(), /OPERATION 04/);
+    assert.equal(await page.locator("#objective-list li.current").count(), 1);
+    assert.match(await page.locator("#objective-list li.current").innerText(), /clearance key/i);
+    assert.equal(await page.locator("#objective-list li.waiting").count(), 2);
+    await page.evaluate(() => window.opensyndTest.completeObjectives());
+    await page.waitForSelector("#outcome-dialog[open]");
+    await page.click("#next-button");
+    await page.waitForSelector("#title-dialog[open]");
+    assert.match(await page.locator("#title-heading").innerText(), /Loose Ends/);
+    await page.click("#begin-button");
+    assert.match(await page.locator("#operation-eyebrow").innerText(), /OPERATION 05/);
     // The last mission has no next operation.
     await page.evaluate(() => window.opensyndTest.completeObjectives());
     await page.waitForSelector("#outcome-dialog[open]");

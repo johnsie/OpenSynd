@@ -139,6 +139,10 @@ import {
 import {
   missionComplete as isMissionComplete,
   missionOutcome,
+  currentObjective,
+  failureReason,
+  objectiveFocus,
+  resolveUnitObjectives,
   advanceHold, isOpenTarget, resolveArrival, resolveDisabled, syncGates as syncMissionGates,
 } from "./mission.js";
 import {
@@ -488,6 +492,7 @@ async function loadGame(index = state.missionIndex) {
   state.objectives = mission.objectives.map((objective) => ({
     ...objective,
     complete: false,
+    sequence: Boolean(mission.sequence),
   }));
   syncGates();
   const buildUnit = (placement, definition) => ({
@@ -501,6 +506,9 @@ async function loadGame(index = state.missionIndex) {
     stamina: 1,
     focus: 1,
     walkPhase: 0,
+    script: placement.script
+      ? { steps: placement.script, index: 0, waitLeft: null, loop: Boolean(placement.scriptLoop), done: false }
+      : null,
     patrol: placement.patrol
       ? { route: buildPatrolRoute(state.grid, placement.position, placement.patrol), index: 0 }
       : null,
@@ -590,7 +598,7 @@ async function loadGame(index = state.missionIndex) {
 }
 
 function syncGates() {
-  syncMissionGates(state.grid, state.map, state.objectives);
+  syncMissionGates(state.grid, state.map, state.objectives, state.units ?? []);
 }
 
 // Show the loaded mission's name and story wherever the page mentions it.
@@ -649,7 +657,7 @@ function renderResearch() {
   );
 
   document.querySelector("#research-items").replaceChildren(
-    ...state.catalog.map((item) => {
+    ...state.catalog.filter((item) => !item.missionItem).map((item) => {
       const row = document.createElement("div");
       row.className = "research-row";
       const name = document.createElement("span");
@@ -751,7 +759,7 @@ function renderArmoury() {
     updateFundsReadout();
     renderResearch();
   });
-  const rows = state.catalog.map((item) => {
+  const rows = state.catalog.filter((item) => !item.missionItem).map((item) => {
     const row = document.createElement("div");
     row.className = "shop-row";
     const available = isItemAvailable(campaign, item);
@@ -948,6 +956,8 @@ function applySaveSnapshot(snapshot) {
       unit.vehicle.exploded = unit.disabled;
       unit.vehicle.occupantIds = unit.vehicle.occupantIds.filter((id) => id === unit.vehicle.driverId);
     }
+    unit.escaped = saved.escaped;
+    if (unit.script) Object.assign(unit.script, { index: saved.scriptIndex, waitLeft: null, done: saved.scriptDone });
     unit.persuadedBy = saved.persuadedBy;
     unit.persuaded = saved.persuadedBy !== null;
     unit.persuasions = { ...saved.persuasions };
@@ -1679,6 +1689,7 @@ function drawSprite(unit, sheet, viewport, size) {
 }
 
 function drawUnit(unit, viewport) {
+  if (unit.escaped) return;
   if (unit.inVehicle) return;
   if (isVehicle(unit)) {
     const controlled = Boolean(unit.vehicle.controlledBy) && state.selectedIds.includes(unit.vehicle.controlledBy);
@@ -1960,6 +1971,19 @@ function drawMinimap(viewport) {
     miniContext.fillStyle = unit.persuaded ? "#79d59b" : (MINI_UNIT_COLOURS[unit.side] ?? "#ff6b62");
     const size = isVehicle(unit) ? 5 : 3;
     miniContext.fillRect(Math.round(point.x) - Math.floor(size / 2), Math.round(point.y) - Math.floor(size / 2), size, size);
+  }
+  // A pulsing marker where the current objective is, so the squad always knows where to look next.
+  const goal = currentObjective(state.objectives);
+  if (goal) {
+    const pulse = reduceMotion ? 0.5 : (state.elapsed * 1.2) % 1;
+    for (const place of objectiveFocus(goal, state.map.zones, state.units)) {
+      const point = miniProject(place, state.map);
+      miniContext.strokeStyle = `rgba(232, 107, 214, ${1 - pulse * 0.7})`;
+      miniContext.lineWidth = 2;
+      miniContext.beginPath();
+      miniContext.arc(point.x, point.y, 3 + pulse * 6, 0, Math.PI * 2);
+      miniContext.stroke();
+    }
   }
   // The area the main view currently shows.
   const corners = [
@@ -2389,6 +2413,7 @@ function simulationStep(deltaSeconds) {
   }
   for (const event of [
     ...resolveDisabled(state.objectives, state.units),
+    ...resolveUnitObjectives(state.objectives, state.map.zones, state.units),
     ...advanceHold(state.objectives, state.map.zones, state.units, deltaSeconds),
   ]) {
     state.opStats.objectivesCompleted += 1;
@@ -2409,16 +2434,19 @@ function showOutcome(outcome) {
   const won = outcome === "success";
   document.querySelector("#outcome-eyebrow").textContent = won ? "OPERATION COMPLETE" : "OPERATION LOST";
   const debrief = state.mission.debrief;
+  const reason = won ? null : failureReason(state.objectives, state.units);
   document.querySelector("#outcome-heading").textContent = won
     ? state.mission.title ?? "Operation complete"
-    : "The team has gone dark";
+    : reason
+      ? "The operation is lost"
+      : "The team has gone dark";
   const earned = state.earnedThisRun;
   document.querySelector("#outcome-awards").textContent = earned.length
     ? `Achievements: ${earned.map((item) => `${item.name} +${item.reward}`).join(", ")}.`
     : "";
   document.querySelector("#outcome-text").textContent = won
     ? debrief?.success ?? "The operation is complete."
-    : debrief?.failure ?? "Every operator has been disabled. Regroup and try a different approach.";
+    : reason ?? debrief?.failure ?? "Every operator has been disabled. Regroup and try a different approach.";
   const hasNext = won && state.missionIndex + 1 < state.missionCount;
   document.querySelector("#next-button").hidden = !hasNext;
   const teamDown = state.units.filter((unit) => unit.side === "team" && unit.disabled).length;
@@ -2530,6 +2558,7 @@ function update(deltaSeconds) {
     state.meterClock = 0;
     updateMeters();
     if (state.mission) updateVehicleButton();
+    if (state.map?.objects?.some((gate) => gate.key)) syncGates();
     if (state.objectives.some((objective) => objective.type === "hold" && !objective.complete && objective.progress > 0)) {
       renderInterface();
     }
@@ -3456,6 +3485,8 @@ function slotHint(definition) {
       return "click to raise";
     case "scan":
       return "click to scan";
+    case "key":
+      return "carried: opens locked gates";
     case "restore-vitality":
     case "restore-energy":
       return "click to use";
@@ -3776,9 +3807,12 @@ function renderInterface() {
         item.textContent += ` (${Math.floor(objective.progress ?? 0)} / ${objective.holdSeconds} s)`;
       }
       item.classList.toggle("complete", objective.complete);
+      const now = objective === currentObjective(state.objectives);
+      item.classList.toggle("current", now && Boolean(state.mission.sequence));
+      item.classList.toggle("waiting", Boolean(state.mission.sequence) && objective.required && !objective.complete && !now);
       item.setAttribute(
         "aria-label",
-        `${objective.complete ? "Complete" : "Pending"}: ${objective.description}`,
+        `${objective.complete ? "Complete" : now && state.mission.sequence ? "Current" : "Pending"}: ${objective.description}`,
       );
       return item;
     }),

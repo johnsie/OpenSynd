@@ -23,7 +23,7 @@ CONTENT_LICENSES = {"CC0-1.0", "CC-BY-4.0"}
 
 ICONS = {
     "pulse", "heavy-pulse", "medkit", "syringe", "cloak", "persuader", "smg", "rotary", "coil", "longshot",
-    "bomb", "shield", "scatter", "flame", "beam", "scanner",
+    "bomb", "shield", "scatter", "flame", "beam", "scanner", "key",
 }
 
 
@@ -157,6 +157,8 @@ class Validation:
             object_ids.add(object_id)
             if item.get("kind") != "gate":
                 self.error(path, f"object {object_id} has unsupported kind")
+            if item.get("key") is not None and not isinstance(item.get("key"), str):
+                self.error(path, f"object {object_id} key must be an equipment id")
             if item.get("control") not in zone_ids:
                 self.error(path, f"object {object_id} control zone does not exist")
             position = item.get("position")
@@ -246,7 +248,7 @@ class Validation:
         self.validate_identity(path, value)
         if value["type"] not in {"tool", "consumable"}:
             self.error(path, f"unsupported equipment type: {value['type']!r}")
-        actions = {"disable-pulse", "restore-vitality", "restore-energy", "stealth", "persuade", "time-bomb", "shield", "scan"}
+        actions = {"disable-pulse", "restore-vitality", "restore-energy", "stealth", "persuade", "time-bomb", "shield", "scan", "key"}
         if value["action"] not in actions:
             self.error(path, f"unsupported equipment action: {value['action']!r}")
         charges = value["charges"]
@@ -273,6 +275,8 @@ class Validation:
             self.error(path, "restore-energy effect requires restoreStamina or restoreFocus")
         elif value["action"] == "time-bomb" and not {"attack", "radius", "fuse"} <= effect.keys():
             self.error(path, "time-bomb effect requires attack, radius, and fuse")
+        elif value["action"] == "key" and not isinstance(effect.get("range"), (int, float)):
+            self.error(path, "key effect requires range")
         elif value["action"] == "scan" and not {"radius", "duration"} <= effect.keys():
             self.error(path, "scan effect requires radius and duration")
         elif value["action"] == "shield" and not isinstance(effect.get("duration"), (int, float)):
@@ -392,6 +396,24 @@ class Validation:
                                 path, point, dimensions["width"], dimensions["height"],
                                 f"patrol waypoint of {placement_id}",
                             )
+                script = placement.get("script")
+                if script is not None:
+                    if group_name == "team" or not isinstance(script, list) or not script:
+                        self.error(path, f"placement {placement_id} script must be a non-empty array on a non-team placement")
+                        script = []
+                    for step in script:
+                        kind = step.get("type") if isinstance(step, dict) else None
+                        needs = {"walk": "to", "escape": "to", "wait": "seconds", "trigger": "at"}.get(kind)
+                        if needs is None or needs not in step:
+                            self.error(path, f"placement {placement_id} has an invalid script step: {step!r}")
+                            continue
+                        if needs in {"to", "at"}:
+                            point = dict(step[needs]) if isinstance(step[needs], dict) else {}
+                            point.update({"width": 1, "height": 1})
+                            self.validate_rectangle(
+                                path, point, dimensions["width"], dimensions["height"],
+                                f"script step of {placement_id}",
+                            )
 
         for placement in value.get("vehicles", []):
             if not isinstance(placement, dict):
@@ -434,11 +456,24 @@ class Validation:
                 self.error(path, f"duplicate objective id: {objective_id}")
             objective_ids.add(objective_id)
             kind = objective.get("type")
+            known_ids = (
+                {item.get("id") for key in ("team", "opponents", "bystanders", "vehicles")
+                 for item in value.get(key, []) if isinstance(item, dict)}
+            )
+            targets = objective.get("targets")
             if kind == "disable":
-                targets = objective.get("targets")
                 opponents = {item.get("id") for item in value["opponents"] if isinstance(item, dict)}
                 if not isinstance(targets, list) or not targets or not set(targets) <= opponents:
                     self.error(path, f"objective {objective_id} must list opposition placements to disable")
+                continue
+            if kind in {"persuade", "destroy-vehicle", "use-vehicle", "protect"} or (kind in {"evacuate", "eliminate"} and targets):
+                if not isinstance(targets, list) or not targets or not set(targets) <= known_ids:
+                    self.error(path, f"objective {objective_id} must list placements that exist in this mission")
+            if kind == "eliminate" and not targets and not objective.get("group"):
+                self.error(path, f"objective {objective_id} needs targets or a group")
+            if kind == "take-item" and not isinstance(objective.get("item"), str):
+                self.error(path, f"objective {objective_id} needs an item")
+            if kind in {"persuade", "eliminate", "destroy-vehicle", "use-vehicle", "take-item"}:
                 continue
             if objective.get("targetZone") not in zones:
                 self.error(path, f"unknown target zone: {objective.get('targetZone')}")

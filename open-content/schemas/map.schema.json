@@ -89,7 +89,8 @@
         "position": { "$ref": "#/$defs/position" },
         "width": { "type": "integer", "minimum": 1 },
         "height": { "type": "integer", "minimum": 1 },
-        "control": { "$ref": "#/$defs/id" }
+        "control": { "$ref": "#/$defs/id" },
+        "key": { "$ref": "#/$defs/id", "description": "Equipment id of a key that also opens the gate while its carrier stands next to it." }
       }
     },
     "color": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" }

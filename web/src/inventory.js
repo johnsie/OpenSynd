@@ -11,7 +11,7 @@ export function distanceBetween(left, right) {
 
 // A body worth looting: a disabled opponent that still carries something.
 export function lootableBody(body) {
-  return (body.side === "opposition" || body.side === "criminal") && body.disabled && (body.equipment?.length ?? 0) > 0;
+  return (body.side === "opposition" || body.side === "criminal") && body.disabled && !body.escaped && (body.equipment?.length ?? 0) > 0;
 }
 
 export function inLootReach(operator, body) {

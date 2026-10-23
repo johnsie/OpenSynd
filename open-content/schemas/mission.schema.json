@@ -35,6 +35,7 @@
         "lat": { "type": "number", "minimum": -58, "maximum": 84, "description": "The atlas shows 84 degrees north to 58 degrees south." }
       }
     },
+    "sequence": { "type": "boolean", "description": "When true the required objectives must be done in the order listed; the briefing points at the one to do now." },
     "map": { "$ref": "#/$defs/path" },
     "team": { "type": "array", "minItems": 1, "maxItems": 4, "items": { "$ref": "#/$defs/placement" } },
     "opponents": { "type": "array", "items": { "$ref": "#/$defs/placement" } },
@@ -76,8 +77,28 @@
           "description": "Waypoints an opposition unit walks after its start, returning to the start and repeating.",
           "minItems": 1,
           "items": { "$ref": "#/$defs/position" }
-        }
+        },
+        "script": {
+          "type": "array",
+          "description": "Steps this person follows instead of a patrol: walk, wait, trigger (wait for an operator to come near) and escape (walk off the map).",
+          "minItems": 1,
+          "maxItems": 40,
+          "items": { "$ref": "#/$defs/scriptStep" }
+        },
+        "scriptLoop": { "type": "boolean", "description": "Start the script again when it ends." }
       }
+    },
+    "scriptStep": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "enum": ["walk", "wait", "trigger", "escape"] },
+        "to": { "$ref": "#/$defs/position" },
+        "seconds": { "type": "number", "exclusiveMinimum": 0, "maximum": 600 },
+        "at": { "$ref": "#/$defs/position" },
+        "radius": { "type": "number", "exclusiveMinimum": 0, "maximum": 60 }
+      },
+      "additionalProperties": false
     },
     "pathList": {
       "type": "array",
@@ -107,13 +128,22 @@
       "required": ["id", "type", "required", "description"],
       "properties": {
         "id": { "$ref": "#/$defs/id" },
-        "type": { "enum": ["reach-zone", "interact", "protect", "disable", "hold", "extract"] },
+        "type": {
+          "enum": [
+            "reach-zone", "interact", "protect", "disable", "hold", "extract",
+            "persuade", "eliminate", "destroy-vehicle", "use-vehicle", "take-item", "evacuate"
+          ],
+          "description": "protect: named people stand in the zone alive (an escort; losing one fails the operation). persuade: named people follow the squad. eliminate: everyone in a group is down or won over. destroy-vehicle / use-vehicle: named vehicles. take-item: an operator carries `item`. evacuate: persuaded followers stand in the zone."
+        },
+        "group": { "type": "string", "minLength": 1, "maxLength": 40, "description": "eliminate: a side or unit role such as opposition, guard or enemy-agent." },
+        "count": { "type": "integer", "minimum": 1, "maximum": 99, "description": "persuade, evacuate: how many are enough." },
+        "item": { "$ref": "#/$defs/id", "description": "take-item: the equipment id to carry." },
         "targetZone": { "$ref": "#/$defs/id", "description": "The zone to reach, use, hold or extract through. Not used by disable." },
         "targets": {
           "type": "array",
           "minItems": 1,
           "items": { "$ref": "#/$defs/id" },
-          "description": "disable: the opposition placements that must all be disabled."
+          "description": "The placements (or vehicles) the objective is about; disable needs opposition placements, all of which must be disabled and not got away."
         },
         "holdSeconds": { "type": "number", "exclusiveMinimum": 0, "description": "hold: seconds an operator must stay in the zone." },
         "required": { "type": "boolean" },

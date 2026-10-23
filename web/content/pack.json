@@ -44,12 +44,15 @@
     "equipment/scatter-emitter.equipment.json",
     "equipment/incinerator.equipment.json",
     "equipment/beam-projector.equipment.json",
-    "equipment/scanner.equipment.json"
+    "equipment/scanner.equipment.json",
+    "equipment/clearance-key.equipment.json"
   ],
   "missions": [
     "missions/restore-relay.mission.json",
     "missions/quiet-hours.mission.json",
-    "missions/dead-drop.mission.json"
+    "missions/dead-drop.mission.json",
+    "missions/safe-passage.mission.json",
+    "missions/loose-ends.mission.json"
   ],
   "vehicles": [
     "vehicles/city-car.vehicle.json",

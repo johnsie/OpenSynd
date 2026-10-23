@@ -264,7 +264,70 @@ export function armedOut(unit, now, byId = null) {
 }
 
 // A unit walks its patrol route (or back to it after a chase, along real streets).
+// Scripted people (a `script` list on the placement) follow their steps instead of a patrol route:
+//   walk {to}        walk to a tile along the streets
+//   wait {seconds}   stand still
+//   trigger {at, radius}   stand until an operator comes within `radius` tiles of `at`
+//   escape {to}      walk to a tile and leave the map: a target that does this has got away
+// The list repeats when the placement says `scriptLoop`. Anyone alerted drops the script and fights or flees as usual.
+const SCRIPT_SPEED_FACTOR = 0.8;
+const SCRIPT_TRIGGER_RADIUS = 8;
+let scriptUnits = [];
+
+export function advanceScript(unit, deltaSeconds, grid, units) {
+  const script = unit.script;
+  if (!script || script.done) return;
+  const step = script.steps[script.index];
+  if (!step) {
+    if (script.loop && script.steps.length > 0) script.index = 0;
+    else script.done = true;
+    return;
+  }
+  const next = () => {
+    script.index += 1;
+    script.waitLeft = null;
+  };
+  if (step.type === "wait") {
+    script.waitLeft ??= step.seconds;
+    script.waitLeft -= deltaSeconds;
+    if (script.waitLeft <= 0) next();
+  } else if (step.type === "trigger") {
+    const radius = step.radius ?? SCRIPT_TRIGGER_RADIUS;
+    const near = units.some(
+      (other) =>
+        other.side === "team" && !other.disabled && Math.hypot(other.position.x - step.at.x, other.position.y - step.at.y) <= radius,
+    );
+    if (near) next();
+  } else if (step.type === "walk" || step.type === "escape") {
+    const goal = tileOf(step.to);
+    if (unit.path.length === 0) {
+      if (distanceBetween(unit, { position: goal }) <= 0.6) {
+        if (step.type === "escape") {
+          unit.escaped = true;
+          unit.disabled = true;
+          unit.health = 0;
+          unit.path = [];
+        }
+        next();
+        return;
+      }
+      unit.path = grid ? findPath(grid, tileOf(unit.position), goal) : [];
+      if (unit.path.length === 0) {
+        next(); // no way there: skip the step rather than stand forever
+        return;
+      }
+    }
+    followPath(unit, deltaSeconds, SCRIPT_SPEED_FACTOR);
+  } else {
+    next();
+  }
+}
+
 function walkPatrol(unit, deltaSeconds, grid) {
+  if (unit.script) {
+    advanceScript(unit, deltaSeconds, grid, scriptUnits);
+    return;
+  }
   if (!unit.patrol || unit.patrol.route.length === 0) return;
   if (unit.path.length > 0) {
     followPath(unit, deltaSeconds, PATROL_SPEED_FACTOR);
@@ -528,13 +591,14 @@ export function advancePatrols(units, deltaSeconds, grid = null, now = null) {
   const events = [];
   const byId = new Map(units.map((unit) => [unit.id, unit]));
   const armed = now === null ? [] : units.filter((unit) => armedOut(unit, now, byId));
+  scriptUnits = units;
   for (const unit of units) {
     if (unit.side === "team" || unit.disabled || unit.inVehicle || isVehicle(unit)) continue;
     if (unit.persuaded) {
       if (grid) advanceFollower(unit, byId, units, grid, deltaSeconds, now, events);
       continue;
     }
-    const hasRoute = unit.patrol && unit.patrol.route.length > 0;
+    const hasRoute = (unit.patrol && unit.patrol.route.length > 0) || Boolean(unit.script);
     if (!hasRoute && !grid) continue;
     unit.reactLeft = Math.max(0, (unit.reactLeft ?? 0) - deltaSeconds);
     if (unit.side === "civilian") advanceCivilian(unit, armed, deltaSeconds, grid);

@@ -819,3 +819,7 @@ main { grid-template-columns: minmax(0, 1fr) minmax(250px, 300px); gap: 0.6rem; 
 @media (max-width: 760px) { .lab-grid { grid-template-columns: 1fr; } }
 /* The legend stacks at the bottom right, clear of the status banner and the action bar. */
 .map-key { top: auto; bottom: 0.6rem; right: 0.6rem; flex-direction: column; gap: 0.2rem; padding: 0.35rem 0.5rem; }
+
+/* Sequential operations: the objective to do now stands out and the later ones wait. */
+.objective-list li.current { border-color: var(--amber); color: var(--ink); font-weight: 600; }
+.objective-list li.waiting { opacity: 0.6; }

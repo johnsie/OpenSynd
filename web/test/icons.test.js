@@ -8,7 +8,7 @@ import { ICON_NAMES, hasIcon, iconMarkup } from "../src/icons.js";
 
 test("every named icon draws an SVG on the 32 x 32 grid", () => {
   assert.deepEqual([...ICON_NAMES].sort(), [
-    "beam", "bomb", "cloak", "coil", "flame", "heavy-pulse", "longshot", "medkit",
+    "beam", "bomb", "cloak", "coil", "flame", "heavy-pulse", "key", "longshot", "medkit",
     "persuader", "pulse", "rotary", "scanner", "scatter", "shield", "smg", "syringe",
   ]);
   for (const name of ICON_NAMES) {
