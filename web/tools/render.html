@@ -257,7 +257,7 @@
       }
     } else if (kit.style === "man") {
       // Cyberpunk man: high collar, a metal shoulder pad with a neon edge, a neon chest stripe, a
-      // mohawk, a cyber eye and a cybernetic forearm.
+      // mohawk, cap or bare head, a cyber eye and a cybernetic forearm.
       const jacket = material(kit.collar);
       const metal = new THREE.MeshStandardMaterial({ color: rgb(kit.metal), roughness: 0.3, metalness: 0.9 });
       place(box(unit * 1.0, unit * 0.5, unit * 0.95, jacket), offset(neck, 0, -unit * 0.1, 0), "Neck");
@@ -270,7 +270,19 @@
       limb("RightForeArm", "RightHand", unit * 0.38, unit * 0.38, accent, "RightForeArm", 0.5, 0.56);
       bootsOn(0.7, 1.5);
       gloves(material(kit.belt, 0.5), 0.3);
-      place(box(headHeight * 0.14, headHeight * 0.5, headHeight * 1.0, glow(kit.crest)), offset(headTop, 0, -headHeight * 0.02, 0), "Head");
+      if (kit.headgear === "cap") {
+        // A flat street cap in the jacket colour with a glowing band and a short peak.
+        const capCloth = material(kit.collar, 0.8);
+        const crown = head.clone().lerp(headTop, 0.55);
+        const dome = new THREE.Mesh(new THREE.SphereGeometry(headHeight * 0.62, 18, 10, 0, Math.PI * 2, 0, Math.PI * 0.5), capCloth);
+        dome.scale.set(1, 0.8, 1.08);
+        place(dome, offset(crown, 0, 0, 0), "Head");
+        place(box(headHeight * 1.12, headHeight * 0.08, headHeight * 1.12, glow(kit.crest)), offset(crown, 0, 0, 0), "Head");
+        place(box(headHeight * 0.9, headHeight * 0.06, headHeight * 0.5, capCloth), offset(crown, 0, 0, headHeight * 0.7), "Head");
+      } else if (kit.headgear !== "bare") {
+        const crest = box(headHeight * 0.14, headHeight * 0.5, headHeight * 1.0, glow(kit.crest));
+        place(crest, offset(headTop, 0, -headHeight * 0.02, 0), "Head");
+      }
       const eye = offset(head.clone().lerp(headTop, 0.45), -headHeight * 0.22, 0, headHeight * 0.42);
       place(box(headHeight * 0.34, headHeight * 0.16, headHeight * 0.12, accent), eye, "Head");
     } else if (kit.style === "guard") {

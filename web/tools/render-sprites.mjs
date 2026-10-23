@@ -115,9 +115,9 @@ const bystanderJobs = [
   ["civilian-man-1", [233, 186, 140], [20, 16, 14], [74, 44, 118], [30, 32, 42],
     { style: "man", collar: [58, 34, 94], crest: [232, 107, 214], glow: [232, 107, 214] }],
   ["civilian-man-2", [156, 114, 72], [18, 18, 22], [22, 84, 96], [26, 30, 38],
-    { style: "man", collar: [18, 66, 76], crest: [66, 214, 208], glow: [66, 214, 208] }],
+    { style: "man", collar: [18, 66, 76], crest: [66, 214, 208], glow: [66, 214, 208], headgear: "cap" }],
   ["civilian-man-3", [255, 209, 159], [40, 30, 18], [110, 56, 38], [32, 30, 36],
-    { style: "man", collar: [84, 42, 30], crest: [245, 195, 90], glow: [245, 195, 90] }],
+    { style: "man", collar: [84, 42, 30], crest: [245, 195, 90], glow: [245, 195, 90], headgear: "bare" }],
   // Police: navy armour, a visored helmet and a red and blue light bar.
   ["police-1", [233, 186, 140], [20, 16, 14], [22, 34, 64], [16, 20, 34],
     { style: "police", armour: [34, 48, 84], helmet: [24, 34, 60], glow: [74, 163, 255] }],
