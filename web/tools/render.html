@@ -43,6 +43,10 @@
     mixer.clipAction(idleClip).play();
     mixer.setTime(0);
     root.updateMatrixWorld(true);
+    if (kit.style === "woman") {
+      adultProportions(root);
+      root.updateMatrixWorld(true);
+    }
     const bone = (name) => root.getObjectByName(name);
     const at = (name) => bone(name).getWorldPosition(new THREE.Vector3());
     const hips = at("Hips");
@@ -151,6 +155,13 @@
     place(dome, offset(headTop, 0, -headHeight * 0.1, 0), "Head");
     const eyeLevel = head.clone().lerp(headTop, 0.45);
     place(box(headHeight * 0.95, headHeight * 0.14, headHeight * 0.2, glow(kit.glow)), offset(eyeLevel, 0, 0, headHeight * 0.4), "Head");
+  }
+
+  // Adult proportions for the women: a smaller head and longer legs than the base model's stocky build. The animation clips
+  // may reset bone scales, so this is applied again every frame.
+  function adultProportions(root) {
+    root.getObjectByName("Head").scale.setScalar(0.78);
+    for (const side of ["Left", "Right"]) root.getObjectByName(`${side}UpLeg`).scale.setScalar(1.16);
   }
 
   // Street clothes for the city's people: no trench coats (those are the squad's). `kit.style` is
@@ -605,6 +616,7 @@
         pivot.rotation.y = (direction * Math.PI * 2) / DIRECTIONS;
         for (let frame = 0; frame < frames; frame += 1) {
           mixer.setTime((seconds * frame) / frames);
+          if (kit?.style === "woman") adultProportions(root);
           // Blend selected bones toward the rest pose: 0 keeps the clip, 1 freezes the bone.
           for (const [boneName, amount] of Object.entries(animations[name].posture ?? {})) {
             const bone = root.getObjectByName(boneName);
