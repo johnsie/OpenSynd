@@ -119,3 +119,13 @@ test("the victory theme is a drum-only march that ends on a crash", async () => 
   assert.ok(events.some((event) => event.kind === "crash" && event.step === last.step));
   assert.match(CUES.victory.caption, /drums/);
 });
+
+test("the victory themes are chosen by name: drums alone, drums with brass, or the full band", async () => {
+  const { buildVictory, VICTORY_THEMES } = await import("../src/audio.js");
+  const kindsOf = (theme) => new Set(buildVictory(theme).map((event) => event.kind));
+  assert.deepEqual(Object.keys(VICTORY_THEMES), ["march", "brass", "band"]);
+  assert.ok(kindsOf("brass").has("brass") && kindsOf("brass").has("tuba") && !kindsOf("brass").has("lead"));
+  assert.ok(kindsOf("band").has("bass") && kindsOf("band").has("stab") && kindsOf("band").has("lead"));
+  assert.ok(!kindsOf("march").has("brass") && !kindsOf("march").has("bass"));
+  assert.deepEqual(buildVictory("nonsense"), buildVictory("march"));
+});

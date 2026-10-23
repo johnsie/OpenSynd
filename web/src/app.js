@@ -231,7 +231,7 @@ import {
   clearGameStorage,
 } from "./progress.js";
 import { createMusic } from "./music.js";
-import { createAudio, shotCue, shotVolume } from "./audio.js";
+import { createAudio, setVictoryTheme, shotCue, shotVolume } from "./audio.js";
 import { SETTINGS_KEY, parseSettings, prefersReducedMotion, serializeSettings } from "./settings.js";
 
 const canvas = document.querySelector("#game-canvas");
@@ -302,6 +302,7 @@ function updateSettings(changes) {
     // Settings still apply for this session when storage is unavailable.
   }
   bindings = settings.keyBindings;
+  setVictoryTheme(settings.victoryTheme);
   music.refresh();
   applyTextScale();
 }
@@ -316,6 +317,7 @@ const settingControls = {
   muted: document.querySelector("#setting-muted"),
   music: document.querySelector("#setting-music"),
   musicVolume: document.querySelector("#setting-music-volume"),
+  victoryTheme: document.querySelector("#setting-victory"),
   captions: document.querySelector("#setting-captions"),
   edgeScroll: document.querySelector("#setting-edge"),
   reducedMotion: document.querySelector("#setting-motion"),
@@ -376,6 +378,7 @@ function showSettings() {
   settingControls.muted.checked = settings.muted;
   settingControls.music.checked = settings.music;
   settingControls.musicVolume.value = settings.musicVolume;
+  settingControls.victoryTheme.value = settings.victoryTheme;
   settingControls.captions.checked = settings.captions;
   settingControls.edgeScroll.checked = settings.edgeScroll;
   settingControls.reducedMotion.value = settings.reducedMotion;
@@ -383,6 +386,10 @@ function showSettings() {
   settingsDialog.showModal();
 }
 
+document.querySelector("#setting-victory-play").addEventListener("click", () => {
+  setVictoryTheme(settings.victoryTheme);
+  audio.play("victory");
+});
 document.querySelector("#settings-button").addEventListener("click", showSettings);
 document.querySelector("#close-settings").addEventListener("click", () => settingsDialog.close());
 document.querySelector("#settings-form").addEventListener("input", () => {
@@ -391,6 +398,7 @@ document.querySelector("#settings-form").addEventListener("input", () => {
     muted: settingControls.muted.checked,
     music: settingControls.music.checked,
     musicVolume: Number(settingControls.musicVolume.value),
+    victoryTheme: settingControls.victoryTheme.value,
     captions: settingControls.captions.checked,
     edgeScroll: settingControls.edgeScroll.checked,
     reducedMotion: settingControls.reducedMotion.value,
@@ -398,6 +406,7 @@ document.querySelector("#settings-form").addEventListener("input", () => {
   });
 });
 applyTextScale();
+setVictoryTheme(settings.victoryTheme);
 
 const SPRITE_SKINS = ["operative-one", "operative-two", "operative-three", "operative-four"];
 // Which side of the fight a unit definition's role puts it on.

@@ -62,16 +62,33 @@ function tone(audio, out, at, { seconds, gain, type = "sine", from, to = from })
   oscillator.stop(at + seconds);
 }
 
-// The victory theme: four bars of a military march on drums alone. A rope-tight snare keeps a dotted marching rhythm,
-// the bass drum and low timpani-like toms beat the pulse, and the last bar rolls into one unison hit with a crash.
+// The victory themes. All are four bars of a march ending on one big hit; the player picks one in the settings.
+//   march: drums alone (a dotted marching snare, bass drum, timpani-like toms, a closing roll).
+//   brass: the same drums under a tuba and a bugle-like brass call.
+//   band: a driving kit under a pumping bass, chord stabs and a brass-like fanfare.
 // Built as plain data so it can be tested; the cue below plays it. Times are in sixteenth-note steps from the start.
+export const VICTORY_THEMES = Object.freeze({ march: "Drum march", brass: "Brass and drums", band: "Full band" });
+export const DEFAULT_VICTORY_THEME = "march";
 export const VICTORY_TEMPO = 108;
 export const VICTORY_BARS = 4;
 const MARCH_SNARE = [0, 3, 4, 6, 8, 10, 11, 12, 14]; // steps of the marching snare figure in a bar
 const TIMPANI = [[0, 43], [8, 38], [12, 43]]; // [step, pitch] of the low toms in a bar
+const TUBA = [36, 43, 41, 36]; // the bass note of each bar
+// A bugle-like call in C: [step, pitch, length in steps]
+const BUGLE = [
+  [0, 67, 3], [3, 67, 1], [4, 72, 4], [8, 76, 4], [12, 79, 4],
+  [16, 79, 3], [19, 79, 1], [20, 76, 4], [24, 72, 4], [28, 67, 4],
+  [32, 69, 3], [35, 72, 1], [36, 76, 4], [40, 72, 4], [44, 69, 4],
+  [48, 67, 2], [50, 72, 2], [52, 76, 2], [54, 79, 2], [56, 84, 6], [62, 79, 2],
+];
+const BAND_CHORDS = [
+  { root: 36, stab: [60, 64, 67] }, // C
+  { root: 43, stab: [59, 62, 67] }, // G
+  { root: 45, stab: [60, 64, 69] }, // A minor
+  { root: 41, stab: [60, 65, 69] }, // F
+];
 
-export function buildVictory() {
-  const events = [];
+function marchDrums(events) {
   for (let bar = 0; bar < VICTORY_BARS; bar += 1) {
     const start = bar * 16;
     const last = bar === VICTORY_BARS - 1;
@@ -88,10 +105,57 @@ export function buildVictory() {
       events.push({ step: start + 12, kind: "tom", midi: 50 }, { step: start + 14, kind: "tom", midi: 47 });
     }
   }
+}
+
+function bandKit(events) {
+  for (let bar = 0; bar < VICTORY_BARS; bar += 1) {
+    const start = bar * 16;
+    const chord = BAND_CHORDS[bar];
+    for (let beat = 0; beat < 4; beat += 1) {
+      events.push({ step: start + beat * 4, kind: "kick" });
+      events.push({ step: start + beat * 4, kind: "stab", midi: chord.stab, steps: 2 });
+    }
+    events.push({ step: start + 4, kind: "snare" }, { step: start + 12, kind: "snare" });
+    for (let eighth = 0; eighth < 8; eighth += 1) {
+      events.push({ step: start + eighth * 2, kind: eighth % 2 === 1 ? "open-hat" : "hat" });
+      events.push({ step: start + eighth * 2, kind: "bass", midi: chord.root + (eighth % 4 === 3 ? 12 : 0), steps: 2 });
+    }
+    if (bar === VICTORY_BARS - 1) {
+      for (let step = 12; step < 16; step += 1) events.push({ step: start + step, kind: "snare" });
+      events.push({ step: start + 8, kind: "tom", midi: 50 }, { step: start + 10, kind: "tom", midi: 47 });
+    }
+  }
+}
+
+export function buildVictory(chosen = DEFAULT_VICTORY_THEME) {
+  const theme = chosen in VICTORY_THEMES ? chosen : DEFAULT_VICTORY_THEME;
+  const events = [];
   const end = VICTORY_BARS * 16;
+  if (theme === "band") bandKit(events);
+  else marchDrums(events);
+  if (theme === "brass") {
+    // A tuba on the beat and the bugle call over the top.
+    for (let bar = 0; bar < VICTORY_BARS; bar += 1) {
+      for (const step of [0, 8]) events.push({ step: bar * 16 + step, kind: "tuba", midi: TUBA[bar], steps: 6 });
+    }
+    for (const [step, midi, steps] of BUGLE) events.push({ step, kind: "brass", midi, steps });
+  }
+  if (theme === "band") {
+    for (const [step, midi, steps] of BUGLE) events.push({ step, kind: "lead", midi, steps });
+  }
   events.push({ step: end, kind: "crash" }, { step: end, kind: "kick" }, { step: end, kind: "snare" });
   events.push({ step: end, kind: "tom", midi: 38 });
+  if (theme !== "march") {
+    events.push({ step: end, kind: "tuba", midi: 36, steps: 12 }, { step: end, kind: "brass", midi: 72, steps: 12 });
+    events.push({ step: end, kind: "brass", midi: 79, steps: 12 }, { step: end, kind: "brass", midi: 84, steps: 12 });
+  }
   return events.sort((left, right) => left.step - right.step);
+}
+
+let victoryTheme = DEFAULT_VICTORY_THEME;
+/** Chooses which victory theme the `victory` cue plays. */
+export function setVictoryTheme(theme) {
+  victoryTheme = theme in VICTORY_THEMES ? theme : DEFAULT_VICTORY_THEME;
 }
 
 const frequencyOf = (midi) => 440 * 2 ** ((midi - 69) / 12);
@@ -103,8 +167,14 @@ function playVictory(audio, destination, at) {
   out.threshold.value = -12;
   out.ratio.value = 6;
   out.connect(destination);
-  for (const event of buildVictory()) {
+  // A held pitch from a single oscillator (or two for a brassy edge).
+  const note = (time, midi, seconds, gain, type, octave = 1) => {
+    const frequency = frequencyOf(midi) * octave;
+    tone(audio, out, time, { seconds, gain, type, from: frequency, to: frequency });
+  };
+  for (const event of buildVictory(victoryTheme)) {
     const time = at + event.step * step;
+    const length = (event.steps ?? 1) * step;
     switch (event.kind) {
       case "kick":
         tone(audio, out, time, { seconds: 0.2, gain: 0.75, from: 160, to: 42 });
@@ -119,6 +189,32 @@ function playVictory(audio, destination, at) {
         break;
       case "crash":
         noise(audio, out, time, { seconds: 1.8, gain: 0.4, filter: "highpass", from: 5500, to: 3500, q: 0.4 });
+        break;
+      case "hat":
+        noise(audio, out, time, { seconds: 0.04, gain: 0.22, filter: "highpass", from: 7500, to: 6500 });
+        break;
+      case "open-hat":
+        noise(audio, out, time, { seconds: 0.16, gain: 0.2, filter: "highpass", from: 7000, to: 5500 });
+        break;
+      case "bass":
+        note(time, event.midi, Math.max(0.12, length * 0.9), 0.4, "sawtooth");
+        break;
+      case "tuba":
+        note(time, event.midi, Math.max(0.15, length * 0.85), 0.45, "sawtooth");
+        note(time, event.midi, Math.max(0.15, length * 0.85), 0.2, "triangle", 2);
+        break;
+      case "brass":
+        // Two slightly apart sawtooths and a square an octave down give the blare of a section.
+        note(time, event.midi, Math.max(0.2, length * 0.95), 0.12, "sawtooth");
+        note(time, event.midi, Math.max(0.2, length * 0.95), 0.1, "sawtooth", 1.006);
+        note(time, event.midi, Math.max(0.2, length * 0.95), 0.06, "square", 0.5);
+        break;
+      case "stab":
+        for (const midi of [].concat(event.midi)) note(time, midi, Math.max(0.12, length), 0.1, "square");
+        break;
+      case "lead":
+        note(time, event.midi, Math.max(0.18, length * 1.1), 0.16, "sawtooth");
+        note(time, event.midi, Math.max(0.18, length * 1.1), 0.1, "triangle", 2);
         break;
       default:
         break;
@@ -236,7 +332,7 @@ const SYNTH = Object.freeze({
   },
   // The success theme at the end of a won operation: drums, bass, stabs and a fanfare.
   victory: {
-    caption: "Victory march on drums",
+    caption: "Victory march with drums",
     gap: 5,
     play: playVictory,
   },
