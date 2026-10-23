@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: GPL-2.0-or-later -->
 
-# OpenSynd
+# OpenSynd (working name)
 
 **A small squad-tactics game that runs in your web browser.** You lead four cybernetic operatives through the streets of
 a dark, pressured, near-future world, taking one district at a time from the people who run it.
@@ -52,13 +52,42 @@ The full list of controls, and anything more technical, is in **[web/TECHNICAL.m
 A few basics to get going: click one of your operatives to select them, click the ground to walk, click one of their
 weapons to ready it, then **right-click** to fire. **Space** pauses. **A** selects everybody.
 
-## Where it comes from
+## Credits, and what comes from FreeSynd
 
-OpenSynd is a fan-made tribute to the *idea* of the classic 1990s squad game *Syndicate*, built on top of a copy of the
-open-source **FreeSynd** project. Where a rule in the old game was good I have borrowed the rule, but everything you see
-and hear in OpenSynd (names, characters, maps, missions, pictures, sound and writing) is my own or comes from free
-sources listed in the repository. It is **not** affiliated with, endorsed by or connected to the makers or owners of
-*Syndicate*, and it contains none of their files.
+**This game would not exist without [FreeSynd](http://freesynd.sourceforge.net/)** and the people who built it. FreeSynd is
+a free, open-source re-creation of the engine of the classic game *Syndicate*, and this project began as a copy (a fork)
+of its repository. Thank you to **the FreeSynd team**: Benoit Blancard, Stuart Binge, Anders Eurenius, Tarjei Knapstad,
+Davor Ocelic, Joey Parrish, Joost Peters, Bruce Sutherland, Unavowed, Trent Waddington and Bohdan Stelmak, and to its
+contributors, including Tomas Jakobsson, Mark (mentor66), Michael Schubeck, Ryan Cocks (who started the drug system),
+Roland Haeder and Luboš Novák. The full list is in the [AUTHORS](AUTHORS) file. FreeSynd also builds on work by Tomasz
+Lis (level files), Paul Chavent ("libsyndicate"), Richard J. Wagner (the config reader) and Nemanja Trifunovic (UTF8-CPP).
+
+**To be clear: this is not FreeSynd, it is not "OpenSynd" as any official project, and the FreeSynd team has nothing to do
+with it and has not seen or approved any of it.** "OpenSynd" is only my own working name for this personal browser game,
+and any mistakes in it are mine, not theirs.
+
+What I took from FreeSynd:
+
+- **The repository itself.** The original C++ engine, its documentation and its licence (the GNU GPL) are still here
+  under their original names. The browser game does not use that engine; I keep it for reference.
+- **The rules of the game.** FreeSynd's source code is where I learned *how the game works*, and I rebuilt those rules
+  from scratch in a web browser: how persuading people works (points, and how the brain upgrade lowers the cost), the six
+  cybernetic body parts and what each does, the three drugs and how they build up and wear off, how accurate a shot is,
+  how much weight an operative can carry, paying to refill ammunition, research that takes time and money, the map of
+  territories with tax, mood and revolt, scripted bystanders, the behaviour of police, guards and traffic, dropped weapons,
+  the chest that heals, vehicles with no seat limit, and a campaign of 50 territories. Where my first idea and FreeSynd's
+  rule disagreed, I changed mine to match FreeSynd.
+- **A way of working.** Reading how a game like this fits together, and the habit of keeping everything that matters in
+  plain, open files, comes straight from that project.
+
+What I did **not** take: none of the original game's graphics, sounds, music, maps, missions, writing, names or data
+files. All of that here is made again (see below) and the numbers are my own.
+
+Other things I'm grateful for: the human model that all the characters are drawn from is by **Quaternius** (CC0), and
+the music is **"Electric Stream"** by Alexander Ehlers (CC0) and **"The Core"** by p0ss. Everything else I made myself.
+
+This is also an unofficial tribute to *Syndicate* by Bullfrog Productions. It is not affiliated with or endorsed by the
+makers or owners of that game.
 
 ## Finding your way around the repository
 
