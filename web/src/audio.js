@@ -150,6 +150,15 @@ const SYNTH = Object.freeze({
       noise(audio, out, at, { seconds: 0.12, gain: 0.5, from: 6000, to: 2000, q: 0.5 });
     },
   },
+  // A door sliding open or shut.
+  door: {
+    caption: "Door",
+    gap: 0.15,
+    play(audio, out, at) {
+      noise(audio, out, at, { seconds: 0.22, gain: 0.35, filter: "lowpass", from: 1800, to: 500, q: 0.7 });
+      tone(audio, out, at + 0.2, { seconds: 0.05, gain: 0.25, type: "square", from: 220, to: 160 });
+    },
+  },
   // A big, rolling explosion.
   blast: {
     caption: "Explosion",

@@ -696,7 +696,16 @@ async function loadGame(index = state.missionIndex) {
 }
 
 function syncGates() {
+  const doors = (state.map.objects ?? []).filter((object) => object.kind === "door");
+  const wasOpen = doors.map((door) => state.grid[door.position.y]?.[door.position.x]?.door?.open);
   syncMissionGates(state.grid, state.map, state.objectives, state.units ?? []);
+  // A door that has just opened or closed near the view is heard.
+  doors.forEach((door, index) => {
+    const now = state.grid[door.position.y]?.[door.position.x]?.door?.open;
+    if (wasOpen[index] === undefined || now === wasOpen[index]) return;
+    const away = Math.hypot(door.position.x - state.camera.x, door.position.y - state.camera.y);
+    audio.play("door", { volume: shotVolume(away, false) });
+  });
 }
 
 // Show the loaded mission's name and story wherever the page mentions it.
