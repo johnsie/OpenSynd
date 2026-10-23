@@ -300,8 +300,14 @@ const policies = {
   steady: (r) => ({ engageRange: 5 + r() * 4, restBelow: 0.2 + r() * 0.2, loot: r() < 0.5 }),
   careful: (r) => ({ engageRange: 8 + r() * 3, restBelow: 0.35 + r() * 0.2, loot: true }),
 };
+// The bot only knows the original objective types; operations built on the newer ones are balanced by hand.
+const SUPPORTED = new Set(["reach-zone", "interact", "disable", "hold", "extract"]);
 for (const file of pack.missions) {
   const world = await loadWorld(file);
+  if (!world.mission.objectives.every((objective) => SUPPORTED.has(objective.type))) {
+    console.log(`\n${world.mission.name}: skipped (uses objective types the bot cannot play)`);
+    continue;
+  }
   console.log(`\n${world.mission.name}  (${world.mission.opponents.length} enemies, ${runs} runs per policy)`);
   console.log("policy    win%  timeouts  min   lost  killed  spotted  funds");
   for (const [name, make] of Object.entries(policies)) {

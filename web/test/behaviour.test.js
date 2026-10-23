@@ -189,7 +189,7 @@ test("persuasion kinds: guards need three civilians, police six, enemy agents fo
   assert.equal(persuadeKind(enemy), "opposition");
   assert.equal(persuadeKind(thug), "criminal");
   assert.equal(persuadeCheck(agent, thug).ok, true, "criminals can always be persuaded");
-  assert.deepEqual(persuadeCheck(agent, guard), { ok: false, kind: "guard", needs: "3 more civilians" });
+  assert.deepEqual(persuadeCheck(agent, guard), { ok: false, kind: "guard", needs: "3 more persuasion points", points: 0, needed: 3 });
   agent.persuasions.civilian = 3;
   assert.equal(persuadeCheck(agent, guard).ok, true);
   assert.equal(persuadeCheck(agent, person("p", "police", 5)).ok, false, "police need six");

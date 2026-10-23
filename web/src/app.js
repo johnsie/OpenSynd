@@ -114,6 +114,7 @@ import {
   hasWeaponSelected,
   raiseShield,
   advanceScanners,
+  persuadePoints,
   scannedUnits,
   scannerItem,
   useScanner,
@@ -2396,11 +2397,12 @@ function simulationStep(deltaSeconds) {
       const kinds = { civilian: "civilians", criminal: "criminals", guard: "guards", police: "police", opposition: "enemy agents" };
       const counted = event.kind === "criminal" ? "civilians" : kinds[event.kind];
       setStatus(
-        `${target.definition.name} now follows ${agent.definition.name} (${event.count} ${counted} persuaded).` +
+        `${target.definition.name} now follows ${agent.definition.name} ` +
+          `(${event.count} ${counted} persuaded, ${persuadePoints(agent)} points).` +
           (event.outOfCharges ? " The Persuader is spent." : ""),
       );
     } else if (event.type === "refused") {
-      setStatus(`${agent.definition.name} cannot persuade ${target.definition.name} yet: ${event.needs} to persuade first.`);
+      setStatus(`${agent.definition.name} cannot persuade ${target.definition.name} yet: ${event.needs} needed.`);
     } else if (event.type === "reassigned") {
       setStatus(`${state.units.find((unit) => unit.id === event.unitId).definition.name} now follows ${agent.definition.name}.`);
     }

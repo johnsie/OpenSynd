@@ -82,7 +82,7 @@ export function advanceUnits(units, deltaSeconds) {
   for (const unit of units) {
     if (unit.side !== "team" || unit.inVehicle) continue;
     // Walking drains stamina; standing still recovers it.
-    const walking = unit.path.length > 0 && !unit.disabled;
+    const walking = unit.path.length > 0 && !unit.disabled && !(unit.hitStun > 0);
     unit.stamina = nextStamina(unit.stamina, unit.levels, walking, deltaSeconds, unit.research);
     if (!walking) continue;
 
@@ -593,7 +593,7 @@ export function advancePatrols(units, deltaSeconds, grid = null, now = null) {
   const armed = now === null ? [] : units.filter((unit) => armedOut(unit, now, byId));
   scriptUnits = units;
   for (const unit of units) {
-    if (unit.side === "team" || unit.disabled || unit.inVehicle || isVehicle(unit)) continue;
+    if (unit.side === "team" || unit.disabled || unit.inVehicle || isVehicle(unit) || unit.hitStun > 0) continue;
     if (unit.persuaded) {
       if (grid) advanceFollower(unit, byId, units, grid, deltaSeconds, now, events);
       continue;
@@ -741,6 +741,10 @@ export function advanceCombat(units, deltaSeconds, grid = null, now = null) {
       0,
       attacker.cooldownRemaining - deltaSeconds,
     );
+    if (attacker.hitStun > 0) {
+      attacker.hitStun = Math.max(0, attacker.hitStun - deltaSeconds);
+      continue;
+    }
 
     // Who picks their own targets: enemies, criminals who were attacked, and armed followers (while their owner
     // has a weapon out). Police have their targets chosen by their behaviour.
@@ -775,6 +779,14 @@ export function advanceCombat(units, deltaSeconds, grid = null, now = null) {
   }
 
   return events;
+}
+
+// Hit reaction (FreeSynd's hit animation): a person who is hit flinches and can neither act nor walk for a moment, the
+// longer the harder the hit. It is also what stops a persuasion landing in the middle of a hit.
+export const HIT_STUN_MIN = 0.08;
+export const HIT_STUN_MAX = 0.4;
+export function hitStunFor(damage) {
+  return Math.min(HIT_STUN_MAX, Math.max(HIT_STUN_MIN, damage / 60));
 }
 
 // A scatter weapon puts more of its pellets on a target the closer it is: all of them point blank, about
@@ -833,6 +845,7 @@ function strike(attacker, target, weapon, stats, events, context = null, hitCoun
   const blocked = (target.shieldLeft ?? 0) > 0;
   const damage = stats.attack * hitCount;
   if (!blocked) target.health = Math.max(0, target.health - damage);
+  if (!blocked && target.health > 0 && !isVehicle(target)) target.hitStun = hitStunFor(damage);
   if (!blocked && stats.burn && target.health > 0) {
     target.burning = { left: stats.burn.seconds, dps: stats.burn.dps, by: attacker.id, carry: target.burning?.carry ?? 0 };
   }
@@ -1034,19 +1047,37 @@ export function newPersuasions() {
   return { civilian: 0, police: 0, guard: 0, opposition: 0 };
 }
 
+/**
+ * Persuasion points (FreeSynd's persuasion total): everyone an operator wins over adds to a running total,
+ * the tougher the person the more they add. Guards, police and enemy agents can be persuaded once the
+ * total reaches what each needs; the Brain body upgrade (`upgrades.brain`, 0 to 3) lowers what is needed.
+ * Civilians and criminals need nothing.
+ */
+export const PERSUADE_VALUE = Object.freeze({ civilian: 1, criminal: 1, guard: 3, police: 6, opposition: 12 });
+export const PERSUADE_NEEDS = Object.freeze({ guard: GUARD_NEEDS_CIVILIANS, police: POLICE_NEEDS_CIVILIANS, opposition: 24 });
+// What share of the base requirement is left with Brain upgrade tiers 0 to 3 (FreeSynd: 8, 4, 3, 2 for police).
+export const BRAIN_NEEDS_SHARE = Object.freeze([1, 0.5, 0.375, 0.25]);
+
+export function persuadePoints(agent) {
+  const done = { ...newPersuasions(), ...(agent.persuasions ?? {}) };
+  return Object.entries(done).reduce((sum, [kind, count]) => sum + count * (PERSUADE_VALUE[kind] ?? 0), 0);
+}
+
+export function persuadeNeeds(agent, kind) {
+  const base = PERSUADE_NEEDS[kind] ?? 0;
+  const tier = Math.min(3, Math.max(0, agent.upgrades?.brain ?? 0));
+  return Math.max(0, Math.ceil(base * BRAIN_NEEDS_SHARE[tier] - 1e-9)) + 0;
+}
+
 /** Whether `agent` may persuade `target` now; otherwise what is still needed, if anything. */
 export function persuadeCheck(agent, target) {
   const kind = persuadeKind(target);
   if (!kind || target.disabled || target.persuaded) return { ok: false, kind: null };
-  const done = { ...newPersuasions(), ...(agent.persuasions ?? {}) };
-  if (kind === "guard" && done.civilian < GUARD_NEEDS_CIVILIANS) {
-    return { ok: false, kind, needs: `${GUARD_NEEDS_CIVILIANS - done.civilian} more civilians` };
-  }
-  if (kind === "police" && done.civilian < POLICE_NEEDS_CIVILIANS) {
-    return { ok: false, kind, needs: `${POLICE_NEEDS_CIVILIANS - done.civilian} more civilians` };
-  }
-  if (kind === "opposition" && done.police < ENEMY_NEEDS_POLICE) {
-    return { ok: false, kind, needs: `${ENEMY_NEEDS_POLICE - done.police} more police` };
+  if (target.hitStun > 0) return { ok: false, kind, needs: null }; // a person in the middle of being hit cannot be won over
+  const needed = persuadeNeeds(agent, kind);
+  const have = persuadePoints(agent);
+  if (needed > have) {
+    return { ok: false, kind, needs: `${needed - have} more persuasion points`, points: have, needed };
   }
   return { ok: true, kind };
 }

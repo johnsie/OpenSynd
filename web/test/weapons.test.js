@@ -159,3 +159,60 @@ test("a scanner shows everyone within its radius for its duration", () => {
   agent.scanLeft = 0;
   assert.equal(useScanner(agent), null, "a spent scanner does nothing");
 });
+
+import { persuadeCheck, persuadeNeeds, persuadePoints } from "../src/simulation.js";
+
+test("persuasion is a running total of points: tougher people are worth more", () => {
+  const agent = person("op", "team", 2, 2, { persuasions: { civilian: 2, police: 1, guard: 1, opposition: 0 } });
+  assert.equal(persuadePoints(agent), 2 + 6 + 3);
+  const police = person("p", "police", 5, 2);
+  const guard = person("g", "opposition", 5, 2, { definition: { role: "guard", stats: {} } });
+  const enemy = person("e", "opposition", 5, 2, { definition: { role: "enemy-agent", stats: {} } });
+  assert.equal(persuadeCheck(agent, police).ok, true, "11 points is enough for police (6) and guards (3)");
+  assert.equal(persuadeCheck(agent, guard).ok, true);
+  const refused = persuadeCheck(agent, enemy);
+  assert.equal(refused.ok, false);
+  assert.equal(refused.needed - refused.points, 13);
+  assert.match(refused.needs, /13 more persuasion points/);
+});
+
+test("Brain upgrade tiers lower what each kind needs to be persuaded", () => {
+  const needs = (tier, kind) => persuadeNeeds({ upgrades: { brain: tier } }, kind);
+  assert.deepEqual([0, 1, 2, 3].map((tier) => needs(tier, "police")), [6, 3, 3, 2]);
+  assert.deepEqual([0, 1, 2, 3].map((tier) => needs(tier, "opposition")), [24, 12, 9, 6]);
+  assert.deepEqual([0, 1, 2, 3].map((tier) => needs(tier, "guard")), [3, 2, 2, 1]);
+  assert.equal(needs(3, "civilian"), 0);
+  assert.equal(persuadeNeeds({}, "police"), 6, "no upgrades is tier 0");
+});
+
+test("someone in the middle of a hit cannot be persuaded", () => {
+  const agent = person("op", "team", 2, 2, { persuasions: { civilian: 9, police: 0, guard: 0, opposition: 0 } });
+  const civilian = person("c", "civilian", 4, 2, { hitStun: 0.3 });
+  assert.equal(persuadeCheck(agent, civilian).ok, false);
+  civilian.hitStun = 0;
+  assert.equal(persuadeCheck(agent, civilian).ok, true);
+});
+
+import { hitStunFor } from "../src/simulation.js";
+
+test("a hit makes the person flinch: the harder the hit the longer, and they cannot act meanwhile", () => {
+  assert.equal(hitStunFor(12), 0.2);
+  assert.equal(hitStunFor(1), 0.08, "even a light hit is felt");
+  assert.equal(hitStunFor(500), 0.4, "and a huge one stops at 0.4 s");
+  const gun = weapon({ attack: 12, range: 8, cooldown: 0.75 });
+  const shooter = person("op", "team", 5, 4, { equipment: [gun], activeSlot: 0 });
+  const victim = person("v", "opposition", 8, 4, {
+    equipment: [weapon({ attack: 5, range: 8, cooldown: 0.1 })],
+    targetId: "op",
+    cooldownRemaining: 0,
+  });
+  fireManual(shooter, { x: 8, y: 4 }, [shooter, victim], street);
+  assert.ok(victim.hitStun > 0);
+  const before = shooter.health;
+  const stunned = advanceCombat([shooter, victim], 0.033, street, 1);
+  assert.equal(shooter.health, before, "the flinching enemy does not shoot back");
+  assert.equal(stunned.length, 0);
+  for (let step = 0; step < 10; step += 1) advanceCombat([shooter, victim], 0.033, street, 1 + step);
+  assert.equal(victim.hitStun, 0);
+  assert.ok(shooter.health < before, "once it recovers it fires again");
+});

@@ -1090,8 +1090,14 @@ test("police need six persuaded civilians first, and enemy agents four police", 
   const agent = persuader();
   const cop = personAt("cop", "police", 11);
   const enemy = personAt("enemy", "opposition", 11);
-  assert.deepEqual(persuadeCheck(agent, cop), { ok: false, kind: "police", needs: "6 more civilians" });
-  assert.deepEqual(persuadeCheck(agent, enemy), { ok: false, kind: "opposition", needs: "4 more police" });
+  assert.deepEqual(persuadeCheck(agent, cop), { ok: false, kind: "police", needs: "6 more persuasion points", points: 0, needed: 6 });
+  assert.deepEqual(persuadeCheck(agent, enemy), {
+    ok: false,
+    kind: "opposition",
+    needs: "24 more persuasion points",
+    points: 0,
+    needed: 24,
+  });
   const refused = advancePersuasion([agent, cop], 0.1, grid);
   assert.equal(refused[0].type, "refused");
   assert.equal(cop.persuaded, undefined);
