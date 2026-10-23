@@ -265,3 +265,35 @@ test("a scripted person can speak: a say step reports the line once and moves on
   assert.equal(talker.script.index, 1);
   assert.deepEqual(advancePatrols([talker], FIXED_STEP_SECONDS, grid, 1), [], "it does not repeat itself");
 });
+
+test("every placement and scripted destination in every operation stands on ground it can reach", async () => {
+  const pack = await read("pack.json");
+  for (const file of pack.missions) {
+    const mission = await read(file);
+    const map = await read(mission.map);
+    const grid = createTileGrid(map);
+    // Gates open for the check: keys and panels are exercised elsewhere.
+    for (const gate of map.objects ?? []) {
+      for (let y = gate.position.y; y < gate.position.y + gate.height; y += 1) {
+        for (let x = gate.position.x; x < gate.position.x + gate.width; x += 1) grid[y][x] = { ...grid[y][x], walkable: true };
+      }
+    }
+    const start = mission.team[0].position;
+    const reachable = (point, label) => {
+      const there = point.x === start.x && point.y === start.y;
+      assert.ok(there || findPath(grid, start, point).length > 0, `${mission.id}: ${label} at ${point.x},${point.y} is unreachable`);
+    };
+    for (const group of ["team", "opponents", "bystanders"]) {
+      for (const placement of mission[group] ?? []) {
+        reachable(placement.position, `${group} ${placement.id}`);
+        for (const step of placement.script ?? []) {
+          if (step.to) reachable(step.to, `${placement.id} script destination`);
+        }
+      }
+    }
+    for (const vehicle of mission.vehicles ?? []) {
+      assert.ok(grid[vehicle.position.y]?.[vehicle.position.x]?.walkable, `${mission.id}: ${vehicle.id} is off the road`);
+    }
+    for (const zone of map.zones) reachable(zone.position, `zone ${zone.id}`);
+  }
+});
