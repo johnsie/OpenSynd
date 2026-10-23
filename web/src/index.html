@@ -207,6 +207,26 @@
         </section>
         <aside class="title-side">
           <p id="title-story">Loading the operation…</p>
+          <div class="tabs list-filter" role="tablist" aria-label="Which operations to list">
+            <button
+              id="filter-open"
+              class="tab"
+              type="button"
+              role="tab"
+              aria-selected="true"
+              data-filter="open"
+            >Open</button>
+            <button id="filter-all" class="tab" type="button" role="tab" aria-selected="false" data-filter="all" tabindex="-1">All</button>
+            <button
+              id="filter-done"
+              class="tab"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              data-filter="done"
+              tabindex="-1"
+            >Done</button>
+          </div>
           <div id="mission-list" class="mission-list" role="group" aria-label="Operations"></div>
           <details class="title-help">
             <summary>How to play</summary>

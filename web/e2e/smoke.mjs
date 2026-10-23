@@ -65,7 +65,11 @@ for (const [name, type, executablePath] of targets) {
     assert.match(await page.locator("#title-dialog").innerText(), /First Light/);
     // A fresh browser has only the first operation open.
     const missionButtons = page.locator("#mission-list button");
-    assert.equal(await missionButtons.count(), 6);
+    // The list shows what is open to play by default (one operation on a fresh browser); All lists the 50 operations.
+    assert.equal(await missionButtons.count(), 1);
+    await page.click("#filter-all");
+    assert.equal(await missionButtons.count(), 50);
+    assert.equal(await page.locator(".map-region").count(), 50, "every territory is on the world map");
     assert.equal(await missionButtons.nth(0).isDisabled(), false);
     assert.equal(await missionButtons.nth(1).isDisabled(), true);
     assert.match(await missionButtons.nth(1).innerText(), /LOCKED/);
@@ -431,10 +435,10 @@ for (const [name, type, executablePath] of targets) {
     assert.match(await page.locator("#title-heading").innerText(), /Foyle Crossing/);
     await page.click("#begin-button");
     assert.match(await page.locator("#operation-eyebrow").innerText(), /OPERATION 06/);
-    // The last mission has no next operation.
+    // The territories it opened are next: the campaign goes on past the hand-made operations.
     await page.evaluate(() => window.opensyndTest.completeObjectives());
     await page.waitForSelector("#outcome-dialog[open]");
-    assert.equal(await page.locator("#next-button").isVisible(), false);
+    assert.equal(await page.locator("#next-button").isVisible(), true);
     // The operations list shows what is done and what is open, and reopens from the header.
     await page.click("#outcome-close");
     await page.click("#operations-button");

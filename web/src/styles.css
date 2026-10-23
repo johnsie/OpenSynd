@@ -855,3 +855,7 @@ main { grid-template-columns: minmax(0, 1fr) minmax(250px, 300px); gap: 0.6rem; 
 .map-territory { cursor: default; outline: none; }
 .map-territory-pin { fill: #50636b; stroke: #05110f; stroke-width: 1.2; }
 .map-territory:hover .map-territory-pin, .map-territory:focus-visible .map-territory-pin { fill: var(--public); }
+
+/* The operations list: a scrolling list under filter tabs, since the campaign has 50. */
+.list-filter { margin-top: 0.2rem; }
+.title-side .mission-list { max-height: 24rem; overflow-y: auto; scrollbar-width: thin; padding-right: 0.3rem; }

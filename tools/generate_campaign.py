@@ -1,0 +1,521 @@
+#!/usr/bin/env python3
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+"""Build the campaign's missions: one map and one main mission for each territory without a hand-made operation.
+
+The world is 50 territories (open-content/packs/developer/territories.json). The first six have hand-made missions.
+For every other territory this script writes a city map (the same block generator as tools/generate_maps.py, with a
+seed from the territory's name and the zones placed automatically on ground the team can reach) and a mission of one
+of several shapes (relay run, vault job, uplink, audit, blackout), harder the further the territory is from the start:
+more enemies, guards and heavier weapons. It also lays out the unlock graph: each territory is opened by its nearest
+neighbours that are closer to the start.
+
+Everything is deterministic: running it again rewrites the same files. Afterwards copy the pack to the site with
+`rm -rf web/content && cp -r open-content/packs/developer/. web/content/`.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import math
+import random
+import sys
+from collections import deque
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import generate_maps as maps  # noqa: E402
+
+ROOT = Path(__file__).resolve().parents[1]
+PACK = ROOT / "open-content/packs/developer"
+HANDMADE = {
+    "missions/restore-relay.mission.json", "missions/quiet-hours.mission.json", "missions/dead-drop.mission.json",
+    "missions/safe-passage.mission.json", "missions/loose-ends.mission.json", "missions/foyle-crossing.mission.json",
+}
+HANDMADE_MAPS = ["maps/signal-yard.map.json", "maps/audit-yard.map.json", "maps/freight-depot.map.json"]
+START = "developer.northern-europe"
+MAP_WIDTH, MAP_HEIGHT = 1000, 395  # the atlas projection in web/src/atlas.js
+
+
+def slug_of(territory: dict) -> str:
+    return territory["id"].split(".", 1)[1]
+
+
+def seed_of(text: str) -> int:
+    return int(hashlib.sha256(text.encode()).hexdigest()[:8], 16)
+
+
+def project(territory: dict) -> tuple[float, float]:
+    return ((territory["lon"] + 180) / 360 * MAP_WIDTH, (84 - territory["lat"]) / 142 * MAP_HEIGHT)
+
+
+# ----------------------------------------------------------------------------------------------------- the graph
+
+def build_graph(territories: list[dict]) -> tuple[dict[str, int], dict[str, list[str]]]:
+    """Depth from the start and, for each territory, the (up to two) closer neighbours that unlock it."""
+    points = {t["id"]: project(t) for t in territories}
+    ids = [t["id"] for t in territories]
+
+    def gap(a: str, b: str) -> float:
+        return math.hypot(points[a][0] - points[b][0], points[a][1] - points[b][1])
+
+    neighbours: dict[str, set[str]] = {i: set() for i in ids}
+    for i in ids:
+        for other in sorted((o for o in ids if o != i), key=lambda o: (gap(i, o), o))[:4]:
+            neighbours[i].add(other)
+            neighbours[other].add(i)
+    # Join any separate islands of territories to the rest by their closest pair.
+    while True:
+        seen = {START}
+        queue = deque([START])
+        while queue:
+            for other in sorted(neighbours[queue.popleft()]):
+                if other not in seen:
+                    seen.add(other)
+                    queue.append(other)
+        if len(seen) == len(ids):
+            break
+        a, b = min(((x, y) for x in seen for y in ids if y not in seen), key=lambda pair: (gap(*pair), pair))
+        neighbours[a].add(b)
+        neighbours[b].add(a)
+    depth = {START: 0}
+    queue = deque([START])
+    while queue:
+        current = queue.popleft()
+        for other in sorted(neighbours[current], key=lambda o: (gap(current, o), o)):
+            if other not in depth:
+                depth[other] = depth[current] + 1
+                queue.append(other)
+    parents: dict[str, list[str]] = {}
+    for i in ids:
+        if i == START:
+            continue
+        closer = [o for o in neighbours[i] if depth[o] < depth[i]]
+        parents[i] = sorted(closer, key=lambda o: (gap(i, o), o))[:2]
+    return depth, parents
+
+
+# ------------------------------------------------------------------------------------------------------ the maps
+
+def surfaces(map_value: dict) -> tuple[list[list[str]], list[list[bool]]]:
+    size = map_value["dimensions"]["width"]
+    surface = [[""] * size for _ in range(size)]
+    walkable = [[False] * size for _ in range(size)]
+    for r in map_value["regions"]:
+        for y in range(r["y"], r["y"] + r["height"]):
+            for x in range(r["x"], r["x"] + r["width"]):
+                surface[y][x] = r["surface"]
+                walkable[y][x] = r["walkable"]
+    return surface, walkable
+
+
+def layout_for(territory: dict, tier: int) -> dict:
+    """The parameters of a city for this territory: bigger and more fenced further along the campaign."""
+    rng = random.Random(seed_of(territory["id"]))
+    size = [96, 96, 112, 112, 128][min(tier - 1, 4)]
+    if size == 128 and rng.random() < 0.3:
+        size = 96
+    period, block = (22, 18) if size == 96 else (24, 20)
+    first = 6
+    blocks = 4 if size < 128 else 5
+    while first + block + period * (blocks - 1) + 4 > size - 2:
+        blocks -= 1
+    compound = None
+    fences = []
+    gate = None
+    if rng.random() < 0.65:
+        width, height = 14, 34
+        cx = size - width
+        cy = rng.choice([0, (size - height) // 2, size - height])
+        compound = (cx, cy, width, height)
+        gate = (cx, cy + 16, 1, 2)
+        if cy > 0:
+            fences.append(("fence-north", cx, cy, width, 1))
+        if cy + height < size:
+            fences.append(("fence-south", cx, cy + height, width, 1))
+        fences.append(("fence-west-upper", cx, cy, 1, 16))
+        fences.append(("fence-west-lower", cx, cy + 18, 1, height - 18))
+    channel = None
+    if size >= 112 and rng.random() < 0.5:
+        channel = {"x": size // 2 - 4, "width": 8, "bridges": [first + 20 + 24 * k for k in range(blocks - 1)]}
+    return {
+        "id": f"developer.{slug_of(territory)}-district",
+        "file": f"{slug_of(territory)}.map.json",
+        "name": f"{territory['name']} District",
+        "size": size,
+        "seed": seed_of(territory["id"] + ":map"),
+        "period": period,
+        "block": block,
+        "first": first,
+        "blocks": blocks,
+        "open_columns": [],
+        "channel": channel,
+        "compound": compound,
+        "fences": fences,
+        "gate": gate,
+        "entry": (2, size // 2),
+        "zones": [],
+        "watch_points": [],
+    }
+
+
+def place_zones(layout: dict, map_value: dict, rng: random.Random) -> list[dict]:
+    """Choose the entry, relays, console, server, uplink and exit on ground reachable from the start."""
+    size = layout["size"]
+    _, walkable = surfaces(map_value)
+    if layout["gate"]:
+        gx, gy, gw, gh = layout["gate"]
+        for y in range(gy, gy + gh):
+            for x in range(gx, gx + gw):
+                walkable[y][x] = False
+    entry = layout["entry"]
+    reach = maps.reachable(walkable, entry)
+    compound = layout["compound"]
+
+    def inside_compound(x: int, y: int) -> bool:
+        return bool(compound) and compound[0] - 1 <= x < compound[0] + compound[2] and compound[1] - 1 <= y < compound[1] + compound[3]
+
+    def area_ok(x: int, y: int, side: int) -> bool:
+        return all((x + dx, y + dy) in reach and not inside_compound(x + dx, y + dy)
+                   for dx in range(side) for dy in range(side))
+
+    chosen: list[tuple[int, int]] = [entry]
+    zones = [maps.zone("team-entry", "entry", entry[0], entry[1], 2, 2)]
+
+    def pick(side: int, gap: int, minimum_entry: int = 20) -> tuple[int, int]:
+        candidates = [(x, y) for x in range(3, size - 6) for y in range(3, size - 6) if area_ok(x, y, side)]
+        rng.shuffle(candidates)
+        for x, y in candidates:
+            if math.hypot(x - entry[0], y - entry[1]) < minimum_entry:
+                continue
+            if all(math.hypot(x - cx, y - cy) >= gap for cx, cy in chosen):
+                chosen.append((x, y))
+                return x, y
+        raise RuntimeError(f"{layout['name']}: no room for a {side}x{side} zone")
+
+    for name in ["relay-one", "relay-two", "relay-three"]:
+        x, y = pick(2, 22)
+        zones.append(maps.zone(name, "interaction", x, y, 2, 2, "relay"))
+    x, y = pick(2, 18)
+    zones.append(maps.zone("gate-panel", "interaction", x, y, 2, 2, "console"))
+    x, y = pick(2, 20)
+    zones.append(maps.zone("vault-server", "interaction", x, y, 2, 2, "server"))
+    x, y = pick(4, 20)
+    zones.append(maps.zone("uplink-hold", "hold", x, y, 4, 4, "beacon"))
+    if layout["gate"]:
+        cx, cy, _, _ = compound
+        zones.append(maps.zone("safe-exit", "exit", cx + 6, cy + 14, 4, 4))
+    else:
+        candidates = [(x, y) for x in range(size - 16, size - 6) for y in range(3, size - 6) if area_ok(x, y, 4)]
+        x, y = max(candidates, key=lambda point: (point[0], -abs(point[1] - size // 2), point))
+        zones.append(maps.zone("safe-exit", "exit", x, y, 4, 4))
+    return zones
+
+
+def make_map(territory: dict, tier: int) -> tuple[dict, dict]:
+    layout = layout_for(territory, tier)
+    rng = random.Random(seed_of(territory["id"] + ":zones"))
+    layout["zones"] = place_zones(layout, maps.build(layout), rng)
+    map_value = maps.build(layout)
+    maps.verify(map_value, layout)
+    return layout, map_value
+
+
+# --------------------------------------------------------------------------------------------------- the missions
+
+RECIPES = [
+    {"key": "relay-run", "noun": "Relay Run", "relays": 3, "gate": True, "server": False, "warden": False, "hold": False},
+    {"key": "vault-job", "noun": "Vault Job", "relays": 0, "gate": True, "server": True, "warden": True, "hold": False},
+    {"key": "uplink", "noun": "Uplink", "relays": 2, "gate": False, "server": False, "warden": False, "hold": True},
+    {"key": "audit", "noun": "Audit", "relays": 2, "gate": True, "server": True, "warden": False, "hold": False},
+    {"key": "blackout", "noun": "Blackout", "relays": 3, "gate": False, "server": False, "warden": True, "hold": True},
+]
+PLACES = ["freight sidings", "harbour yard", "records annex", "switching yard", "market lanes", "pump station",
+          "tram depot", "bonded warehouses", "signal tower", "water works", "customs hall", "container park"]
+RELAY_WORDS = ["north-west", "southern", "eastern", "central", "western", "river"]
+NUMBERS = ["one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve",
+           "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty"]
+
+
+def straight_patrol(rng: random.Random, reach: set[tuple[int, int]], start: tuple[int, int], low: int, high: int):
+    """The far end of a straight, open run from `start` (None if there is no room)."""
+    directions = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+    rng.shuffle(directions)
+    for dx, dy in directions:
+        length = rng.randint(low, high)
+        end = None
+        for step in range(1, length + 1):
+            if (start[0] + dx * step, start[1] + dy * step) not in reach:
+                break
+            end = (start[0] + dx * step, start[1] + dy * step)
+        if end and abs(end[0] - start[0]) + abs(end[1] - start[1]) >= low // 2:
+            return end
+    return None
+
+
+def with_patrol(rng: random.Random, reach: set[tuple[int, int]], placement: dict, low: int, high: int) -> dict:
+    start = (placement["position"]["x"], placement["position"]["y"])
+    end = straight_patrol(rng, reach, start, low, high)
+    if end:
+        placement["patrol"] = [{"x": start[0], "y": start[1]}, {"x": end[0], "y": end[1]}]
+    return placement
+
+
+def road_runs(surface: list[list[str]], reach: set[tuple[int, int]], size: int) -> list[tuple[tuple[int, int], tuple[int, int]]]:
+    """Straight stretches of open road at least 14 tiles long (east-west)."""
+    runs = []
+    for y in range(size):
+        x = 0
+        while x < size:
+            if (x, y) in reach and surface[y][x] == "street":
+                start = x
+                while x < size and (x, y) in reach and surface[y][x] == "street":
+                    x += 1
+                if x - start >= 14:
+                    runs.append(((start + 2, y), (x - 3, y)))
+            else:
+                x += 1
+    return runs
+
+
+def make_mission(territory: dict, tier: int, layout: dict, map_value: dict, map_path: str, unlocks: list[str],
+                 recipe: dict) -> dict:
+    rng = random.Random(seed_of(territory["id"] + ":mission"))
+    surface, walkable = surfaces(map_value)
+    size = layout["size"]
+    if layout["gate"]:
+        gx, gy, gw, gh = layout["gate"]
+        for y in range(gy, gy + gh):
+            for x in range(gx, gx + gw):
+                walkable[y][x] = False
+    entry = layout["entry"]
+    reach = maps.reachable(walkable, entry)
+    zone_by_id = {z["id"]: z for z in layout["zones"]}
+    reserved = set()
+    for z in layout["zones"]:
+        for y in range(z["position"]["y"] - 2, z["position"]["y"] + z["height"] + 2):
+            for x in range(z["position"]["x"] - 2, z["position"]["x"] + z["width"] + 2):
+                reserved.add((x, y))
+    pool = sorted(p for p in reach if p not in reserved and math.hypot(p[0] - entry[0], p[1] - entry[1]) > 12)
+    street = sorted(p for p in pool if surface[p[1]][p[0]] == "street")
+    rng.shuffle(pool)
+    rng.shuffle(street)
+    taken: set[tuple[int, int]] = set()
+
+    def spot(source: list[tuple[int, int]]) -> tuple[int, int]:
+        for point in source:
+            if all(abs(point[0] - t[0]) + abs(point[1] - t[1]) > 3 for t in taken):
+                taken.add(point)
+                return point
+        raise RuntimeError("no room to place everyone")
+
+    relay_names = ["relay-one", "relay-two", "relay-three"][:recipe["relays"]]
+
+    # ---- objectives
+    objectives = []
+    for name, word in zip(relay_names, rng.sample(RELAY_WORDS, len(relay_names))):
+        objectives.append({"id": f"restore-{name[6:]}", "type": "interact", "targetZone": name, "required": True,
+                           "description": f"Reconnect the {word} relay."})
+    if recipe["server"]:
+        objectives.append({"id": "download-records", "type": "interact", "targetZone": "vault-server", "required": True,
+                           "description": "Download the records from the vault server."})
+    if recipe["warden"]:
+        objectives.append({"id": "disable-warden", "type": "disable", "targets": ["warden"], "required": True,
+                           "description": "Disable the site warden."})
+    if recipe["hold"]:
+        seconds = 20 + 4 * tier
+        objectives.append({"id": "hold-uplink", "type": "hold", "targetZone": "uplink-hold", "holdSeconds": seconds,
+                           "required": True, "description": f"Hold the uplink for {seconds} seconds."})
+    if layout["gate"]:
+        objectives.append({"id": "open-gate", "type": "interact", "targetZone": "gate-panel", "required": True,
+                           "description": "Unlock the service gate."})
+    objectives.append({"id": "leave-district", "type": "extract", "targetZone": "safe-exit", "required": True,
+                       "description": "Take the team out through the exit."})
+
+    # ---- people
+    team = [
+        {"id": name, "unit": "units/field-operator.unit.json", "position": {"x": entry[0] + dx, "y": entry[1] + dy},
+         "equipment": ["equipment/civic-pulse-emitter.equipment.json", "equipment/field-repair-kit.equipment.json"]}
+        for name, (dx, dy) in zip(["operator-one", "operator-two", "operator-three", "operator-four"],
+                                  [(0, 0), (1, 0), (0, 1), (1, 1)])
+    ]
+    agents = 6 + 2 * tier
+    guards = 2 + tier
+    heavy_share = [0.0, 0.25, 0.4, 0.5, 0.6][tier - 1]
+    opponents = []
+    anchors = [(zone_by_id[name]["position"]["x"], zone_by_id[name]["position"]["y"]) for name in relay_names]
+    for number in range(agents):
+        equipment = ["equipment/heavy-pulse-emitter.equipment.json"] if rng.random() < heavy_share else []
+        if rng.random() < 0.15:
+            equipment = equipment + ["equipment/field-repair-kit.equipment.json"]
+        source = street if number % 2 else pool
+        if number % 2 == 0 and anchors:
+            anchor = anchors[number // 2 % len(anchors)]
+            source = [p for p in pool if math.hypot(p[0] - anchor[0], p[1] - anchor[1]) < 9] or pool
+        position = spot(source)
+        opponents.append(with_patrol(rng, reach, {
+            "id": f"enemy-agent-{NUMBERS[number]}", "unit": "units/enemy-agent.unit.json",
+            "position": {"x": position[0], "y": position[1]}, "equipment": equipment}, 6, 8))
+    for number in range(guards):
+        position = spot(street or pool)
+        opponents.append(with_patrol(rng, reach, {
+            "id": f"guard-{number + 1}", "unit": "units/guard.unit.json",
+            "position": {"x": position[0], "y": position[1]}, "equipment": []}, 6, 12))
+    if recipe["warden"] or recipe["server"]:
+        server = zone_by_id["vault-server"]["position"]
+        near = [p for p in pool if 4 <= math.hypot(p[0] - server["x"], p[1] - server["y"]) < 10]
+        position = spot(near or pool)
+        opponents.append(with_patrol(rng, reach, {
+            "id": "warden", "unit": "units/site-warden.unit.json", "position": {"x": position[0], "y": position[1]},
+            "equipment": ["equipment/heavy-pulse-emitter.equipment.json"]}, 6, 8))
+
+    bystanders = []
+    kinds = ["units/civilian-woman.unit.json", "units/civilian-man.unit.json"]
+    for number in range(10):
+        position = spot(street or pool)
+        bystanders.append(with_patrol(rng, reach, {
+            "id": f"civilian-{number + 1}", "unit": kinds[number % 2],
+            "position": {"x": position[0], "y": position[1]}, "equipment": []}, 6, 14))
+    for number in range(3):
+        position = spot(street or pool)
+        bystanders.append(with_patrol(rng, reach, {
+            "id": f"police-{number + 1}", "unit": "units/city-police.unit.json",
+            "position": {"x": position[0], "y": position[1]}, "equipment": []}, 6, 12))
+    for number in range(3):
+        position = spot(pool)
+        bystanders.append(with_patrol(rng, reach, {
+            "id": f"criminal-{number + 1}", "unit": "units/criminal.unit.json",
+            "position": {"x": position[0], "y": position[1]}, "equipment": []}, 6, 12))
+
+    runs = road_runs(surface, reach, size)
+    rng.shuffle(runs)
+    car_kinds = ["vehicles/city-car.vehicle.json"] * 4 + ["vehicles/patrol-car.vehicle.json"]
+    if tier >= 3:
+        car_kinds.append("vehicles/armored-car.vehicle.json")
+    drivers = ["units/civilian-man.unit.json", "units/civilian-woman.unit.json"]
+    vehicles = []
+    for number, (run, kind) in enumerate(zip(runs, car_kinds)):
+        (x0, y0), (x1, y1) = run
+        vehicles.append({"id": f"city-car-{number + 1}", "vehicle": kind, "position": {"x": x0, "y": y0},
+                         "driver": drivers[number % 2], "patrol": [{"x": x0, "y": y0}, {"x": x1, "y": y1}]})
+
+    place = rng.choice(PLACES)
+    name = f"{territory['name']} {recipe['noun']}"
+    return {
+        "formatVersion": 1,
+        "id": f"developer.op-{slug_of(territory)}",
+        "name": name,
+        "license": "CC0-1.0",
+        "title": f"{territory['name']} is ours",
+        "briefing": (f"{territory['owner']} holds {territory['name']} through its {place}. " + describe(recipe, layout)
+                     + f" Expect {agents} enemy agents and {guards} guards on the streets."),
+        "story": (f"{name}: {territory['owner']} runs {territory['name']} from its {place}, and the district only notices "
+                  f"when the lights go out. Your team has one night to {summarise(recipe)}."),
+        "debrief": {
+            "success": f"{territory['name']} wakes up with the {place} in other hands. Your team is back in the dark before morning.",
+            "failure": f"The team is down in {territory['name']} before the work was done. Regroup and try a different approach.",
+        },
+        "map": map_path,
+        "team": team,
+        "opponents": opponents,
+        "objectives": objectives,
+        "bystanders": bystanders,
+        "region": {"name": territory["name"], "lon": territory["lon"], "lat": territory["lat"],
+                   "population": territory["population"]},
+        "vehicles": vehicles,
+        "unlocks": unlocks,
+        "intel": [
+            f"Patrol survey: {agents} agents and {guards} guards cover the district; they move in pairs along the streets.",
+            "Full survey: " + ("the warden keeps the only key to the vault, so find him early."
+                               if recipe["warden"] else "the relay plazas are watched most closely; take the quieter ones first."),
+        ],
+    }
+
+
+def describe(recipe: dict, layout: dict) -> str:
+    parts = []
+    if recipe["relays"]:
+        parts.append(f"reconnect {recipe['relays']} relays")
+    if recipe["server"]:
+        parts.append("download the records from the vault server")
+    if recipe["warden"]:
+        parts.append("take down the site warden")
+    if recipe["hold"]:
+        parts.append("hold the uplink while it broadcasts")
+    if layout["gate"]:
+        parts.append("unlock the service gate")
+    parts.append("then leave by the exit")
+    text = ", ".join(parts)
+    return text[0].upper() + text[1:] + "."
+
+
+def summarise(recipe: dict) -> str:
+    verbs = []
+    if recipe["relays"]:
+        verbs.append("reconnect the relays")
+    if recipe["server"]:
+        verbs.append("download the records")
+    if recipe["warden"]:
+        verbs.append("silence the warden")
+    if recipe["hold"]:
+        verbs.append("hold the uplink")
+    verbs.append("walk out the exit")
+    return ", ".join(verbs[:-1]) + " and " + verbs[-1]
+
+
+# ------------------------------------------------------------------------------------------------------ the driver
+
+def main() -> None:
+    territories_path = PACK / "territories.json"
+    world = json.loads(territories_path.read_text(encoding="utf-8"))
+    territories = world["territories"]
+    depth, parents = build_graph(territories)
+    handmade = [t for t in territories if t.get("mission") in HANDMADE]
+    generated = sorted((t for t in territories if t.get("mission") not in HANDMADE), key=lambda t: (depth[t["id"]], t["id"]))
+    ranked = sorted(territories, key=lambda t: (depth[t["id"]], t["id"]))
+    tier_of = {t["id"]: 1 + min(4, ranked.index(t) // 10) for t in territories}
+
+    mission_id = {t["id"]: json.loads((PACK / t["mission"]).read_text(encoding="utf-8"))["id"] for t in handmade}
+    for t in generated:
+        mission_id[t["id"]] = f"developer.op-{slug_of(t)}"
+    # Unlock edges: owner -> children, for every territory.
+    children: dict[str, list[str]] = {t["id"]: [] for t in territories}
+    for child, owners in parents.items():
+        for owner in owners:
+            if mission_id[child] not in children[owner]:
+                children[owner].append(mission_id[child])
+    generated_ids = {mission_id[t["id"]] for t in generated}
+
+    for t in handmade:
+        path = PACK / t["mission"]
+        mission = json.loads(path.read_text(encoding="utf-8"))
+        kept = [u for u in mission.get("unlocks", []) if u not in generated_ids]
+        mission["unlocks"] = kept + [c for c in sorted(children[t["id"]]) if c not in kept]
+        path.write_text(json.dumps(mission, indent=2) + "\n", encoding="utf-8")
+
+    pack = json.loads((PACK / "pack.json").read_text(encoding="utf-8"))
+    pack_maps = list(HANDMADE_MAPS)
+    pack_missions = [m for m in pack["missions"] if m in HANDMADE]
+    for t in generated:
+        tier = tier_of[t["id"]]
+        layout, map_value = make_map(t, tier)
+        map_path = f"maps/{layout['file']}"
+        (PACK / map_path).write_text(json.dumps(map_value, indent=1) + "\n", encoding="utf-8")
+        recipe = RECIPES[seed_of(t["id"] + ":recipe") % len(RECIPES)]
+        mission = make_mission(t, tier, layout, map_value, map_path, sorted(children[t["id"]]), recipe)
+        mission_path = f"missions/{slug_of(t)}.mission.json"
+        (PACK / mission_path).write_text(json.dumps(mission, indent=2) + "\n", encoding="utf-8")
+        t["mission"] = mission_path
+        pack_maps.append(map_path)
+        pack_missions.append(mission_path)
+        print(f"{t['name']}: tier {tier}, depth {depth[t['id']]}, {recipe['key']}, {layout['size']}x{layout['size']}")
+
+    territories_path.write_text(json.dumps(world, indent=2) + "\n", encoding="utf-8")
+    pack["maps"] = pack_maps
+    pack["missions"] = pack_missions
+    (PACK / "pack.json").write_text(json.dumps(pack, indent=2) + "\n", encoding="utf-8")
+
+
+if __name__ == "__main__":
+    main()

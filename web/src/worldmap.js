@@ -11,6 +11,9 @@ export { MAP_HEIGHT, MAP_WIDTH };
 export const LANDMASSES = CONTINENTS;
 
 const REGION_RADIUS = 20;
+// With a whole campaign on the map the regions are small and only the chosen one is named.
+export const CROWDED = 12;
+const radiusFor = (count) => (count > CROWDED ? 10 : REGION_RADIUS);
 
 // An irregular outline around a centre, the same every time for the same id.
 export function regionShape(id, centre, radius = REGION_RADIUS, sides = 9) {
@@ -163,8 +166,26 @@ export function renderWorldMap({ container, entries, progress, selectedIndex, on
     root.append(group);
   }
   const centres = entries.map((entry, index) => regionCentre(entry, index, entries.length));
+  const radius = radiusFor(entries.length);
+  const crowded = entries.length > CROWDED;
+  if (crowded) {
+    // Only the routes that have opened are drawn: from each finished operation to the ones it unlocked.
+    entries.forEach((entry, from) => {
+      if (states[from].state !== "completed") return;
+      for (const id of entry.unlocks ?? []) {
+        const to = entries.findIndex((other) => other.id === id);
+        if (to < 0) continue;
+        root.append(
+          svg("path", {
+            d: `M${centres[from].x} ${centres[from].y}L${centres[to].x} ${centres[to].y}`,
+            class: "map-route done",
+          }),
+        );
+      }
+    });
+  }
   // The campaign's route: dashed between operations, lit once the earlier one is done.
-  for (let index = 1; index < centres.length; index += 1) {
+  for (let index = 1; index < (crowded ? 0 : centres.length); index += 1) {
     const from = centres[index - 1];
     const to = centres[index];
     const bend = { x: (from.x + to.x) / 2, y: Math.min(from.y, to.y) - 40 };
@@ -189,9 +210,9 @@ export function renderWorldMap({ container, entries, progress, selectedIndex, on
       "data-index": index,
     });
     group.append(
-      svg("circle", { cx: centre.x, cy: centre.y, r: REGION_RADIUS * 1.7, class: "map-hit" }),
-      svg("path", { d: path(regionShape(entry.id, centre)), class: "map-region-shape" }),
-      svg("circle", { cx: centre.x, cy: centre.y, r: 4, class: "map-pin" }),
+      svg("circle", { cx: centre.x, cy: centre.y, r: radius * 1.7, class: "map-hit" }),
+      svg("path", { d: path(regionShape(entry.id, centre, radius)), class: "map-region-shape" }),
+      svg("circle", { cx: centre.x, cy: centre.y, r: crowded ? 3 : 4, class: "map-pin" }),
     );
     // Labels go to the right of the pin, except in the Americas where the open sea is to the left.
     const lon = entry.region?.lon ?? (centre.x / MAP_WIDTH) * 360 - 180;
@@ -201,8 +222,8 @@ export function renderWorldMap({ container, entries, progress, selectedIndex, on
     );
     const toRight = lon > -62 && !crowdedRight;
     const anchor = toRight ? "start" : "end";
-    const labelX = centre.x + (toRight ? REGION_RADIUS + 8 : -(REGION_RADIUS + 8));
-    group.append(
+    const labelX = centre.x + (toRight ? radius + 8 : -(radius + 8));
+    if (!crowded || selected) group.append(
       text(
         { x: labelX, y: centre.y - 2, class: "map-region-name", "text-anchor": anchor },
         `${String(index + 1).padStart(2, "0")} ${card.place}`,

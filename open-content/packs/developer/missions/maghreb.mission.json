@@ -1,0 +1,729 @@
+{
+  "formatVersion": 1,
+  "id": "developer.op-maghreb",
+  "name": "Maghreb Uplink",
+  "license": "CC0-1.0",
+  "title": "Maghreb is ours",
+  "briefing": "Meridian Combine holds Maghreb through its freight sidings. Reconnect 2 relays, hold the uplink while it broadcasts, unlock the service gate, then leave by the exit. Expect 8 enemy agents and 3 guards on the streets.",
+  "story": "Maghreb Uplink: Meridian Combine runs Maghreb from its freight sidings, and the district only notices when the lights go out. Your team has one night to reconnect the relays, hold the uplink and walk out the exit.",
+  "debrief": {
+    "success": "Maghreb wakes up with the freight sidings in other hands. Your team is back in the dark before morning.",
+    "failure": "The team is down in Maghreb before the work was done. Regroup and try a different approach."
+  },
+  "map": "maps/maghreb.map.json",
+  "team": [
+    {
+      "id": "operator-one",
+      "unit": "units/field-operator.unit.json",
+      "position": {
+        "x": 2,
+        "y": 48
+      },
+      "equipment": [
+        "equipment/civic-pulse-emitter.equipment.json",
+        "equipment/field-repair-kit.equipment.json"
+      ]
+    },
+    {
+      "id": "operator-two",
+      "unit": "units/field-operator.unit.json",
+      "position": {
+        "x": 3,
+        "y": 48
+      },
+      "equipment": [
+        "equipment/civic-pulse-emitter.equipment.json",
+        "equipment/field-repair-kit.equipment.json"
+      ]
+    },
+    {
+      "id": "operator-three",
+      "unit": "units/field-operator.unit.json",
+      "position": {
+        "x": 2,
+        "y": 49
+      },
+      "equipment": [
+        "equipment/civic-pulse-emitter.equipment.json",
+        "equipment/field-repair-kit.equipment.json"
+      ]
+    },
+    {
+      "id": "operator-four",
+      "unit": "units/field-operator.unit.json",
+      "position": {
+        "x": 3,
+        "y": 49
+      },
+      "equipment": [
+        "equipment/civic-pulse-emitter.equipment.json",
+        "equipment/field-repair-kit.equipment.json"
+      ]
+    }
+  ],
+  "opponents": [
+    {
+      "id": "enemy-agent-one",
+      "unit": "units/enemy-agent.unit.json",
+      "position": {
+        "x": 38,
+        "y": 0
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 38,
+          "y": 0
+        },
+        {
+          "x": 45,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "enemy-agent-two",
+      "unit": "units/enemy-agent.unit.json",
+      "position": {
+        "x": 46,
+        "y": 94
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 46,
+          "y": 94
+        },
+        {
+          "x": 52,
+          "y": 94
+        }
+      ]
+    },
+    {
+      "id": "enemy-agent-three",
+      "unit": "units/enemy-agent.unit.json",
+      "position": {
+        "x": 70,
+        "y": 61
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 70,
+          "y": 61
+        },
+        {
+          "x": 70,
+          "y": 55
+        }
+      ]
+    },
+    {
+      "id": "enemy-agent-four",
+      "unit": "units/enemy-agent.unit.json",
+      "position": {
+        "x": 70,
+        "y": 79
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 70,
+          "y": 79
+        },
+        {
+          "x": 70,
+          "y": 71
+        }
+      ]
+    },
+    {
+      "id": "enemy-agent-five",
+      "unit": "units/enemy-agent.unit.json",
+      "position": {
+        "x": 39,
+        "y": 3
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 39,
+          "y": 3
+        },
+        {
+          "x": 45,
+          "y": 3
+        }
+      ]
+    },
+    {
+      "id": "enemy-agent-six",
+      "unit": "units/enemy-agent.unit.json",
+      "position": {
+        "x": 24,
+        "y": 61
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 24,
+          "y": 61
+        },
+        {
+          "x": 24,
+          "y": 68
+        }
+      ]
+    },
+    {
+      "id": "enemy-agent-seven",
+      "unit": "units/enemy-agent.unit.json",
+      "position": {
+        "x": 72,
+        "y": 70
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 72,
+          "y": 70
+        },
+        {
+          "x": 78,
+          "y": 70
+        }
+      ]
+    },
+    {
+      "id": "enemy-agent-eight",
+      "unit": "units/enemy-agent.unit.json",
+      "position": {
+        "x": 0,
+        "y": 26
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 0,
+          "y": 26
+        },
+        {
+          "x": 8,
+          "y": 26
+        }
+      ]
+    },
+    {
+      "id": "guard-1",
+      "unit": "units/guard.unit.json",
+      "position": {
+        "x": 80,
+        "y": 25
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 80,
+          "y": 25
+        },
+        {
+          "x": 87,
+          "y": 25
+        }
+      ]
+    },
+    {
+      "id": "guard-2",
+      "unit": "units/guard.unit.json",
+      "position": {
+        "x": 12,
+        "y": 25
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 12,
+          "y": 25
+        },
+        {
+          "x": 22,
+          "y": 25
+        }
+      ]
+    },
+    {
+      "id": "guard-3",
+      "unit": "units/guard.unit.json",
+      "position": {
+        "x": 70,
+        "y": 55
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 70,
+          "y": 55
+        },
+        {
+          "x": 70,
+          "y": 61
+        }
+      ]
+    }
+  ],
+  "objectives": [
+    {
+      "id": "restore-one",
+      "type": "interact",
+      "targetZone": "relay-one",
+      "required": true,
+      "description": "Reconnect the western relay."
+    },
+    {
+      "id": "restore-two",
+      "type": "interact",
+      "targetZone": "relay-two",
+      "required": true,
+      "description": "Reconnect the river relay."
+    },
+    {
+      "id": "hold-uplink",
+      "type": "hold",
+      "targetZone": "uplink-hold",
+      "holdSeconds": 24,
+      "required": true,
+      "description": "Hold the uplink for 24 seconds."
+    },
+    {
+      "id": "open-gate",
+      "type": "interact",
+      "targetZone": "gate-panel",
+      "required": true,
+      "description": "Unlock the service gate."
+    },
+    {
+      "id": "leave-district",
+      "type": "extract",
+      "targetZone": "safe-exit",
+      "required": true,
+      "description": "Take the team out through the exit."
+    }
+  ],
+  "bystanders": [
+    {
+      "id": "civilian-1",
+      "unit": "units/civilian-woman.unit.json",
+      "position": {
+        "x": 48,
+        "y": 15
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 48,
+          "y": 15
+        },
+        {
+          "x": 48,
+          "y": 6
+        }
+      ]
+    },
+    {
+      "id": "civilian-2",
+      "unit": "units/civilian-man.unit.json",
+      "position": {
+        "x": 66,
+        "y": 27
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 66,
+          "y": 27
+        },
+        {
+          "x": 77,
+          "y": 27
+        }
+      ]
+    },
+    {
+      "id": "civilian-3",
+      "unit": "units/civilian-woman.unit.json",
+      "position": {
+        "x": 93,
+        "y": 8
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 93,
+          "y": 8
+        },
+        {
+          "x": 93,
+          "y": 0
+        }
+      ]
+    },
+    {
+      "id": "civilian-4",
+      "unit": "units/civilian-man.unit.json",
+      "position": {
+        "x": 69,
+        "y": 43
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 69,
+          "y": 43
+        },
+        {
+          "x": 69,
+          "y": 57
+        }
+      ]
+    },
+    {
+      "id": "civilian-5",
+      "unit": "units/civilian-woman.unit.json",
+      "position": {
+        "x": 80,
+        "y": 93
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 80,
+          "y": 93
+        },
+        {
+          "x": 71,
+          "y": 93
+        }
+      ]
+    },
+    {
+      "id": "civilian-6",
+      "unit": "units/civilian-man.unit.json",
+      "position": {
+        "x": 50,
+        "y": 91
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 50,
+          "y": 91
+        },
+        {
+          "x": 50,
+          "y": 95
+        }
+      ]
+    },
+    {
+      "id": "civilian-7",
+      "unit": "units/civilian-woman.unit.json",
+      "position": {
+        "x": 51,
+        "y": 69
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 51,
+          "y": 69
+        },
+        {
+          "x": 51,
+          "y": 72
+        }
+      ]
+    },
+    {
+      "id": "civilian-8",
+      "unit": "units/civilian-man.unit.json",
+      "position": {
+        "x": 27,
+        "y": 74
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 27,
+          "y": 74
+        },
+        {
+          "x": 27,
+          "y": 81
+        }
+      ]
+    },
+    {
+      "id": "civilian-9",
+      "unit": "units/civilian-woman.unit.json",
+      "position": {
+        "x": 26,
+        "y": 39
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 26,
+          "y": 39
+        },
+        {
+          "x": 26,
+          "y": 29
+        }
+      ]
+    },
+    {
+      "id": "civilian-10",
+      "unit": "units/civilian-man.unit.json",
+      "position": {
+        "x": 69,
+        "y": 4
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 69,
+          "y": 4
+        },
+        {
+          "x": 61,
+          "y": 4
+        }
+      ]
+    },
+    {
+      "id": "police-1",
+      "unit": "units/city-police.unit.json",
+      "position": {
+        "x": 29,
+        "y": 48
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 29,
+          "y": 48
+        },
+        {
+          "x": 29,
+          "y": 45
+        }
+      ]
+    },
+    {
+      "id": "police-2",
+      "unit": "units/city-police.unit.json",
+      "position": {
+        "x": 92,
+        "y": 11
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 92,
+          "y": 11
+        },
+        {
+          "x": 89,
+          "y": 11
+        }
+      ]
+    },
+    {
+      "id": "police-3",
+      "unit": "units/city-police.unit.json",
+      "position": {
+        "x": 23,
+        "y": 71
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 23,
+          "y": 71
+        },
+        {
+          "x": 30,
+          "y": 71
+        }
+      ]
+    },
+    {
+      "id": "criminal-1",
+      "unit": "units/criminal.unit.json",
+      "position": {
+        "x": 49,
+        "y": 40
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 49,
+          "y": 40
+        },
+        {
+          "x": 45,
+          "y": 40
+        }
+      ]
+    },
+    {
+      "id": "criminal-2",
+      "unit": "units/criminal.unit.json",
+      "position": {
+        "x": 2,
+        "y": 2
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 2,
+          "y": 2
+        },
+        {
+          "x": 2,
+          "y": 13
+        }
+      ]
+    },
+    {
+      "id": "criminal-3",
+      "unit": "units/criminal.unit.json",
+      "position": {
+        "x": 45,
+        "y": 8
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 45,
+          "y": 8
+        },
+        {
+          "x": 45,
+          "y": 0
+        }
+      ]
+    }
+  ],
+  "region": {
+    "name": "Maghreb",
+    "lon": 5,
+    "lat": 33,
+    "population": 2200000
+  },
+  "vehicles": [
+    {
+      "id": "city-car-1",
+      "vehicle": "vehicles/city-car.vehicle.json",
+      "position": {
+        "x": 2,
+        "y": 46
+      },
+      "driver": "units/civilian-man.unit.json",
+      "patrol": [
+        {
+          "x": 2,
+          "y": 46
+        },
+        {
+          "x": 93,
+          "y": 46
+        }
+      ]
+    },
+    {
+      "id": "city-car-2",
+      "vehicle": "vehicles/city-car.vehicle.json",
+      "position": {
+        "x": 30,
+        "y": 24
+      },
+      "driver": "units/civilian-woman.unit.json",
+      "patrol": [
+        {
+          "x": 30,
+          "y": 24
+        },
+        {
+          "x": 93,
+          "y": 24
+        }
+      ]
+    },
+    {
+      "id": "city-car-3",
+      "vehicle": "vehicles/city-car.vehicle.json",
+      "position": {
+        "x": 2,
+        "y": 48
+      },
+      "driver": "units/civilian-man.unit.json",
+      "patrol": [
+        {
+          "x": 2,
+          "y": 48
+        },
+        {
+          "x": 93,
+          "y": 48
+        }
+      ]
+    },
+    {
+      "id": "city-car-4",
+      "vehicle": "vehicles/city-car.vehicle.json",
+      "position": {
+        "x": 2,
+        "y": 70
+      },
+      "driver": "units/civilian-woman.unit.json",
+      "patrol": [
+        {
+          "x": 2,
+          "y": 70
+        },
+        {
+          "x": 79,
+          "y": 70
+        }
+      ]
+    },
+    {
+      "id": "city-car-5",
+      "vehicle": "vehicles/patrol-car.vehicle.json",
+      "position": {
+        "x": 2,
+        "y": 91
+      },
+      "driver": "units/civilian-man.unit.json",
+      "patrol": [
+        {
+          "x": 2,
+          "y": 91
+        },
+        {
+          "x": 79,
+          "y": 91
+        }
+      ]
+    }
+  ],
+  "unlocks": [
+    "developer.op-gulf-of-guinea"
+  ],
+  "intel": [
+    "Patrol survey: 8 agents and 3 guards cover the district; they move in pairs along the streets.",
+    "Full survey: the relay plazas are watched most closely; take the quieter ones first."
+  ]
+}

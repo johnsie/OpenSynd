@@ -956,5 +956,8 @@
   "intel": [
     "Patrol survey: the broker waits on the east road; 10 agents and 4 guards hold the yard.",
     "Full survey: he runs for the south service road when anyone comes within about fourteen tiles, so use your longest reach."
+  ],
+  "unlocks": [
+    "developer.op-borneo"
   ]
 }

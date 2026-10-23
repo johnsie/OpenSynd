@@ -451,6 +451,7 @@ const state = {
   effects: createEffects(),
   bombs: [],
   armedBomb: null,
+  listFilter: "open",
   elapsed: 0,
   map: null,
   mission: null,
@@ -1150,6 +1151,10 @@ function renderArmoury() {
 }
 
 wireTabs(document.querySelector(".lab-tabs"));
+wireTabs(document.querySelector(".list-filter"), (tab) => {
+  state.listFilter = tab.dataset.filter;
+  renderMissionList();
+});
 
 function openResearch() {
   renderResearch();
@@ -1292,6 +1297,12 @@ function renderMissionList() {
     ...state.missionList.map((entry, index) => {
       const unlocked = isUnlocked(state.progress, state.missionList, index);
       const done = isCompleted(state.progress, entry.id);
+      // The list can show just what is open to play, what is finished, or everything; the chosen one always shows.
+      const shown =
+        state.listFilter === "all" ||
+        index === state.missionIndex ||
+        (state.listFilter === "done" ? done : unlocked && !done);
+      if (!shown) return null;
       const button = document.createElement("button");
       button.type = "button";
       button.disabled = !unlocked;
@@ -1311,7 +1322,7 @@ function renderMissionList() {
       button.append(name, status, note);
       button.addEventListener("click", () => chooseMission(index));
       return button;
-    }),
+    }).filter(Boolean),
   );
 }
 
