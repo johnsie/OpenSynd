@@ -77,7 +77,6 @@ import {
   campaignEnding,
   captureItems,
   discoverItems,
-  earnAchievement,
   INTEL_LABELS,
   enemyArmament,
   enemyUpgrades,
@@ -147,7 +146,7 @@ import {
   partResearchItems,
   tierUnlocked,
 } from "./upgrades.js";
-import { newStats, newlyEarned } from "./achievements.js";
+import { newStats } from "./opstats.js";
 import {
   distanceBetween,
   clearWeaponForAll,
@@ -456,10 +455,8 @@ const state = {
   campaign: emptyCampaign(),
   catalog: [],
   opStats: newStats(0),
-  earnedThisRun: [],
   shownFunds: -1,
   campaignTimer: 0,
-  achievementTimer: 0,
   progress: emptyProgress(),
   missionList: [],
   missionIndex: 0,
@@ -701,7 +698,6 @@ async function loadGame(index = state.missionIndex) {
   state.opStats = newStats(mission.opponents.length);
   state.fundsAtStart = state.campaign.funds;
   state.debrief = newDebriefCounts();
-  state.earnedThisRun = [];
   state.camera = createCamera(mission.team[0].position);
   buildMiniTerrain();
   state.selectedId = mission.team[0].id;
@@ -3215,10 +3211,6 @@ function showOutcome(outcome) {
     : reason
       ? "The operation is lost"
       : "The team has gone dark";
-  const earned = state.earnedThisRun;
-  document.querySelector("#outcome-awards").textContent = earned.length
-    ? `Achievements: ${earned.map((item) => item.name).join(", ")}.`
-    : "";
   document.querySelector("#outcome-text").textContent = finale
     ? `${debrief?.success ?? ""} That was the last of the ${state.missionList.length} territories: ` +
       "no syndicate holds a district any more."
@@ -3310,18 +3302,6 @@ function passHours(hours) {
   updateFundsReadout();
 }
 
-// Pay out any achievements the operation's record now satisfies.
-function checkAchievements() {
-  for (const achievement of newlyEarned(state.opStats, state.campaign.achievements)) {
-    state.campaign = earnAchievement(state.campaign, achievement);
-    state.earnedThisRun.push(achievement);
-    document.querySelector("#achievement-toast").textContent =
-      `Achievement: ${achievement.name}. ${achievement.description}`;
-    audio.play("objective");
-    persistCampaign();
-  }
-  updateFundsReadout();
-}
 
 // Bring home a weapon that is not researched and it boosts its research instead (once per item).
 function discover(itemIds) {
@@ -3403,7 +3383,6 @@ function checkOutcome() {
     settleRoster();
     state.campaign = winTerritory(state.campaign, state.mission.id);
   }
-  checkAchievements();
   persistCampaign();
   showOutcome(outcome);
 }
@@ -3437,12 +3416,7 @@ function update(deltaSeconds) {
     }
     state.opStats.seconds = state.missionSeconds;
     state.campaignTimer += deltaSeconds;
-    state.achievementTimer += deltaSeconds;
     if (state.campaignTimer >= 5) persistCampaign();
-    if (state.achievementTimer >= 0.5) {
-      state.achievementTimer = 0;
-      checkAchievements();
-    }
     if (state.campaign.funds !== state.shownFunds) updateFundsReadout();
   }
   state.meterClock = (state.meterClock ?? 0) + deltaSeconds;
@@ -3851,7 +3825,6 @@ function lootNow(operator, body) {
   );
   audio.play("objective");
   addEffect(state.effects, "restore", { unitId: operator.id });
-  checkAchievements();
   renderInterface();
 }
 

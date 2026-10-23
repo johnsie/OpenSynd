@@ -8,7 +8,6 @@ import {
   POLICE_PENALTY,
   penalise,
   SLOTS_PER_OPERATIVE,
-  earnAchievement,
   advanceCampaign,
   dayOf,
   ensureTerritories,
@@ -68,13 +67,6 @@ const catalog = [
   { id: "heavy", researchCost: 12 },
   { id: "stim", researchCost: 8 },
 ];
-
-test("an achievement pays its reward once", () => {
-  const achievement = { id: "first", reward: 15 };
-  let campaign = earnAchievement({ ...emptyCampaign(), funds: 0 }, achievement);
-  assert.deepEqual([campaign.funds, campaign.achievements], [15, ["first"]]);
-  assert.equal(earnAchievement(campaign, achievement), campaign);
-});
 
 test("body parts are fitted per operative in three tiers priced 1x, 5x and 10x", () => {
   let campaign = { ...emptyCampaign(), funds: 100000, items: ["part.legs.2", "part.legs.3"] };
@@ -273,7 +265,7 @@ test("research effects scale the fatigue rates", () => {
 });
 
 test("the campaign round-trips and damaged data is repaired or ignored", () => {
-  let campaign = earnAchievement({ ...emptyCampaign(), funds: 20 }, { id: "a", reward: 5 });
+  let campaign = { ...emptyCampaign(), funds: 20000 };
   campaign = fitUpgrade(campaign, "op1", "eyes");
   campaign = setSlot(campaign, "op1", 0, "kit", catalog, ["pulse"]);
   assert.deepEqual(parseCampaign(serializeCampaign(campaign)), campaign);
@@ -283,7 +275,6 @@ test("the campaign round-trips and damaged data is repaired or ignored", () => {
   const repaired = parseCampaign(JSON.stringify({
     funds: -3, heart: 99, brain: "x", upgrades: { op: { legs: 9, arms: -2, tail: 1 }, bad: 3 },
     items: ["a", 4, "a", ""], loadouts: { op: ["x", 5, "y"], bad: "no" },
-    achievements: "none",
   }));
   assert.deepEqual(repaired, {
     funds: 200,
@@ -291,7 +282,7 @@ test("the campaign round-trips and damaged data is repaired or ignored", () => {
       op: { legs: 3, arms: 0, chest: 0, heart: 0, eyes: 0, brain: 0 },
       bad: { legs: 0, arms: 0, chest: 0, heart: 0, eyes: 0, brain: 0 },
     },
-    items: ["a"], loadouts: { op: ["x", "y"] }, achievements: [],
+    items: ["a"], loadouts: { op: ["x", "y"] },
     roster: emptyCampaign().roster, squad: emptyCampaign().squad, permadeath: true,
     hours: 0, territories: {}, research: { active: [], level: 4, progress: {}, discovered: [] }, intel: {}, ended: false,
   });

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 // Between-mission progression, kept in this browser: funds (money) earned while
-// playing and from achievements, spent on body upgrades and on new items, plus each
+// playing, spent on body upgrades and on new items, plus each
 // operative's loadout of up to eight items.
 import {
   HOURS_PER_DAY,
@@ -65,7 +65,6 @@ export function emptyCampaign() {
     upgrades: {},
     items: [],
     loadouts: {},
-    achievements: [],
     roster: initialRoster(),
     squad: [...STARTING_IDS],
     permadeath: true,
@@ -137,7 +136,6 @@ export function parseCampaign(text) {
     upgrades,
     items: ids(value.items),
     loadouts,
-    achievements: ids(value.achievements),
     roster,
     squad,
     permadeath: value.permadeath !== false,
@@ -271,16 +269,6 @@ export const POLICE_PENALTY = 0;
 
 export function penalise(campaign, amount) {
   return { ...campaign, funds: Math.max(0, campaign.funds - Math.max(0, amount)) };
-}
-
-// An achievement is recorded once, ever. (FreeSynd has no achievements; any reward they carry is paid once.)
-export function earnAchievement(campaign, achievement) {
-  if (campaign.achievements.includes(achievement.id)) return campaign;
-  return {
-    ...campaign,
-    funds: campaign.funds + achievement.reward,
-    achievements: [...campaign.achievements, achievement.id],
-  };
 }
 
 // Body upgrades, per operative. Each part has three tiers; fitting the next one costs its price.
