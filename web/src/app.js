@@ -62,11 +62,9 @@ import { iconMarkup } from "./icons.js";
 import {
   CAMPAIGN_KEY,
   SLOTS_PER_OPERATIVE,
-  TRACKS,
   canResearchItem,
   buyIntoSlot,
   canBuy,
-  canResearchTrack,
   captureItems,
   earnAchievement,
   earnTime,
@@ -77,15 +75,26 @@ import {
   penalise,
   loadoutFor,
   netCost,
-  nextTrackCost,
   parseCampaign,
   researchItem,
-  researchTrack,
   sellFromSlot,
   sellValue,
   sanitizeLoadouts,
   serializeCampaign,
+  canFit,
+  fitUpgrade,
+  removeUpgrade,
+  upgradesOf,
 } from "./campaign.js";
+import {
+  MAX_TIER,
+  PARTS,
+  PART_NAMES,
+  brainLevel,
+  chestVitality,
+  heartLevel,
+  upgradePrice,
+} from "./upgrades.js";
 import { newStats, newlyEarned } from "./achievements.js";
 import {
   distanceBetween,
@@ -114,6 +123,7 @@ import {
   hasWeaponSelected,
   raiseShield,
   advanceScanners,
+  maxHealth,
   persuadePoints,
   scannedUnits,
   scannerItem,
@@ -514,7 +524,14 @@ async function loadGame(index = state.missionIndex) {
       ? { route: buildPatrolRoute(state.grid, placement.position, placement.patrol), index: 0 }
       : null,
     path: [],
-    research: definition.role === "operator" ? { heart: state.campaign.heart, brain: state.campaign.brain } : null,
+    upgrades: definition.role === "operator" ? upgradesOf(state.campaign, placement.id) : null,
+    research:
+      definition.role === "operator"
+        ? {
+            heart: heartLevel(upgradesOf(state.campaign, placement.id)),
+            brain: brainLevel(upgradesOf(state.campaign, placement.id)),
+          }
+        : null,
     looted: [],
     activeSlot: null,
     initialEquipment: [],
@@ -522,7 +539,7 @@ async function loadGame(index = state.missionIndex) {
       definition: item,
       charges: item.charges,
     })),
-    health: definition.stats.vitality,
+    health: definition.stats.vitality + (definition.role === "operator" ? chestVitality(upgradesOf(state.campaign, placement.id)) : 0),
     cooldownRemaining: 0,
     targetId: null,
     disabled: false,
@@ -632,27 +649,45 @@ function renderResearch() {
   const campaign = state.campaign;
   document.querySelector("#research-funds").textContent = `Funds ${campaign.funds}`;
 
+  // Body upgrades for the operative chosen in the Armoury: six parts, three tiers each.
+  const fitted = state.mission.team[Math.min(state.armoury.operator, state.mission.team.length - 1)];
+  const owned = upgradesOf(campaign, fitted.id);
   document.querySelector("#research-tracks").replaceChildren(
-    ...Object.entries(TRACKS).map(([track, info]) => {
+    ...PART_NAMES.map((part) => {
+      const info = PARTS[part];
+      const tier = owned[part];
       const row = document.createElement("div");
       row.className = "research-row";
       const name = document.createElement("span");
-      const level = campaign[track];
-      name.textContent = `${info.label} (${info.bar}) · level ${level} of ${info.maxLevel}`;
-      const cost = nextTrackCost(campaign, track);
-      const button = document.createElement("button");
-      button.type = "button";
-      button.textContent = cost === null ? "Fully researched" : `Research level ${level + 1} · ${cost} funds`;
-      button.disabled = !canResearchTrack(campaign, track);
-      button.addEventListener("click", () => {
-        state.campaign = researchTrack(state.campaign, track);
+      name.textContent = `${info.label} · tier ${tier} of ${MAX_TIER}`;
+      const controls = document.createElement("span");
+      const fit = document.createElement("button");
+      fit.type = "button";
+      fit.textContent = tier >= MAX_TIER ? "Fully upgraded" : `Fit tier ${tier + 1} · ${upgradePrice(part, tier + 1)} funds`;
+      fit.setAttribute("aria-label", `${info.label} for Operator ${state.armoury.operator + 1}: ${fit.textContent}`);
+      fit.disabled = !canFit(campaign, fitted.id, part);
+      fit.addEventListener("click", () => {
+        state.campaign = fitUpgrade(state.campaign, fitted.id, part);
         persistCampaign();
         updateFundsReadout();
         renderResearch();
       });
+      controls.append(fit);
+      if (tier > 0) {
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.textContent = `Remove · +${upgradePrice(part, tier)}`;
+        remove.addEventListener("click", () => {
+          state.campaign = removeUpgrade(state.campaign, fitted.id, part);
+          persistCampaign();
+          updateFundsReadout();
+          renderResearch();
+        });
+        controls.append(remove);
+      }
       const note = document.createElement("small");
       note.textContent = info.effect;
-      row.append(name, button, note);
+      row.append(name, controls, note);
       return row;
     }),
   );
@@ -911,7 +946,7 @@ function saveContext() {
         unit.id,
         {
           side: unit.side,
-          vitality: unit.definition.stats.vitality,
+          vitality: maxHealth(unit),
           cooldown: unit.definition.stats.cooldown,
         },
       ]),
@@ -2871,7 +2906,7 @@ function useRepairOn(unit, kit) {
     setStatus("No field repair kit is available.");
     return;
   }
-  const maximum = unit.definition.stats.vitality;
+  const maximum = maxHealth(unit);
   if (unit.health >= maximum) {
     setStatus("Operator integrity is already full.");
     return;
@@ -3865,7 +3900,7 @@ function renderInterface() {
       name.title = label;
       const health = document.createElement("small");
       health.className = "hp";
-      health.textContent = `${unit.health}/${unit.definition.stats.vitality}`;
+      health.textContent = `${unit.health}/${maxHealth(unit)}`;
       name.append(" ", health);
       const position = document.createElement("span");
       position.className = "operator-position";
@@ -3926,7 +3961,7 @@ function renderInterface() {
       vitality.className = "vitality";
       vitality.textContent = unit.disabled
         ? "DISABLED"
-        : `${unit.health}/${unit.definition.stats.vitality}`;
+        : `${unit.health}/${maxHealth(unit)}`;
       button.append(name, vitality);
       return button;
     }),
@@ -3941,7 +3976,7 @@ function renderInterface() {
   const canRepair = Boolean(
     unit &&
     !unit.disabled &&
-    unit.health < unit.definition.stats.vitality &&
+    unit.health < maxHealth(unit) &&
     repairKit &&
     repairKit.charges !== 0,
   );
@@ -3968,7 +4003,7 @@ function renderInterface() {
   if (unit?.path.length) orders = ` · moving · ${unit.path.length} steps remain`;
   else if (unit?.targetId) orders = " · pulse target locked";
   selectedReadout.textContent = unit
-    ? `${unit.definition.name} · integrity ${unit.health}/${unit.definition.stats.vitality}` +
+    ? `${unit.definition.name} · integrity ${unit.health}/${maxHealth(unit)}` +
       ` · at ${Math.round(unit.position.x)}, ${Math.round(unit.position.y)}${orders}`
     : "No operator selected.";
 }

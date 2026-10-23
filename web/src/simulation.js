@@ -3,6 +3,7 @@
 import { findPath } from "./engine.js";
 import { LOOT_RANGE, lootBody, lootableBody } from "./inventory.js";
 import { VEHICLE_HIT_RADIUS, ejectDriver, isSquadVehicle, isVehicle } from "./vehicles.js";
+import { armsCapacity, armsCooldown, chestVitality, eyesRange, legsPace } from "./upgrades.js";
 import { cooldownMultiplier, effectiveLevels, nextFocus, nextStamina, speedMultiplier } from "./stats.js";
 
 export const FIXED_STEP_SECONDS = 1 / 30;
@@ -87,7 +88,7 @@ export function advanceUnits(units, deltaSeconds) {
     if (!walking) continue;
 
     // Tired legs take levels off the Legs bar, so the pace follows the effective level.
-    const pace = speedMultiplier(effectiveLevels(unit.levels, unit.stamina, unit.focus)) * weightPace(unit);
+    const pace = speedMultiplier(effectiveLevels(unit.levels, unit.stamina, unit.focus)) * weightPace(unit) * legsPace(unit.upgrades);
     let remaining = deltaSeconds * unit.definition.stats.speed * pace * 0.7;
     while (remaining > 0 && unit.path.length > 0) {
       const destination = unit.path[0];
@@ -124,7 +125,7 @@ export function carriedWeight(unit) {
 }
 
 export function weightPace(unit) {
-  const over = Math.max(0, carriedWeight(unit) - WEIGHT_CAPACITY);
+  const over = Math.max(0, carriedWeight(unit) - WEIGHT_CAPACITY - armsCapacity(unit.upgrades));
   return Math.max(WEIGHT_PACE_FLOOR, 1 - over * WEIGHT_SLOWDOWN);
 }
 
@@ -677,7 +678,20 @@ export function hasWeaponSelected(unit) {
   return unit.side !== "team" || Number.isInteger(unit.activeSlot);
 }
 
+// An operative's Eyes upgrade lengthens the reach of whatever they fire.
 export function pickWeapon(unit, distance = null) {
+  const pick = chooseWeapon(unit, distance);
+  const reach = eyesRange(unit.upgrades);
+  if (reach === 1 || !pick.item) return pick;
+  return { item: pick.item, stats: { ...pick.stats, range: pick.stats.range * reach } };
+}
+
+/** The most health a unit can have: its base vitality plus any Chest upgrade. */
+export function maxHealth(unit) {
+  return unit.definition.stats.vitality + chestVitality(unit.upgrades);
+}
+
+function chooseWeapon(unit, distance) {
   if (!hasWeaponSelected(unit)) return { item: null, stats: DISARMED };
   const all = pulseItems(unit);
   if (all.length === 0) return { item: null, stats: unit.definition.stats };
@@ -833,7 +847,7 @@ export function advanceBurning(units, deltaSeconds) {
 // The recharge before a unit can fire again: the weapon's cooldown, scaled by its effective Brain.
 function startCooldown(unit, stats) {
   unit.cooldownRemaining =
-    stats.cooldown * cooldownMultiplier(effectiveLevels(unit.levels, unit.stamina, unit.focus));
+    stats.cooldown * cooldownMultiplier(effectiveLevels(unit.levels, unit.stamina, unit.focus)) * armsCooldown(unit.upgrades);
 }
 
 // Apply a hit and report it; a unit reduced to zero health is disabled.

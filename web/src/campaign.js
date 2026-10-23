@@ -1,32 +1,22 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 // Between-mission progression, kept in this browser: funds (money) earned while
-// playing and from achievements, spent on cyborg heart and brain research and on
-// new items, plus each operative's loadout of up to eight items.
+// playing and from achievements, spent on body upgrades and on new items, plus each
+// operative's loadout of up to eight items.
+import { MAX_TIER, PARTS, emptyUpgrades, sanitizeUpgrades, upgradePrice } from "./upgrades.js";
+
 export const CAMPAIGN_KEY = "opensynd.campaign.v1";
 export const SLOTS_PER_OPERATIVE = 8;
 // Funds trickle in during game time: six per minute of play.
 export const FUNDS_PER_SECOND = 0.1;
 
-export const TRACKS = Object.freeze({
-  heart: {
-    label: "Cyborg heart",
-    bar: "Stamina",
-    maxLevel: 5,
-    costs: [20, 30, 40, 50, 60],
-    effect: "Legs tire 12% slower and recover 15% faster per level.",
-  },
-  brain: {
-    label: "Cyborg brain",
-    bar: "Brain",
-    maxLevel: 5,
-    costs: [20, 30, 40, 50, 60],
-    effect: "Mental strain builds 15% slower and clears 15% faster per level.",
-  },
-});
+// Cyborg heart and brain used to be squad-wide research tracks; they are now body parts (see upgrades.js). Old
+// records are refunded what was spent on them.
+const OLD_TRACK_COSTS = [20, 30, 40, 50, 60];
+const refundOldTrack = (level) => OLD_TRACK_COSTS.slice(0, Math.min(5, wholeNumber(level))).reduce((sum, cost) => sum + cost, 0);
 
 export function emptyCampaign() {
-  return { funds: 0, carry: 0, heart: 0, brain: 0, items: [], loadouts: {}, achievements: [] };
+  return { funds: 0, carry: 0, upgrades: {}, items: [], loadouts: {}, achievements: [] };
 }
 
 function wholeNumber(value, fallback = 0) {
@@ -56,12 +46,17 @@ export function parseCampaign(text) {
       }
     }
   }
+  const upgrades = {};
+  if (value.upgrades !== null && typeof value.upgrades === "object" && !Array.isArray(value.upgrades)) {
+    for (const [operator, parts] of Object.entries(value.upgrades)) {
+      if (operator.length < 120) upgrades[operator] = sanitizeUpgrades(parts);
+    }
+  }
   const carry = typeof value.carry === "number" && value.carry >= 0 && value.carry < 1 ? value.carry : 0;
   return {
-    funds: wholeNumber(value.funds),
+    funds: wholeNumber(value.funds) + refundOldTrack(value.heart) + refundOldTrack(value.brain),
     carry,
-    heart: Math.min(TRACKS.heart.maxLevel, wholeNumber(value.heart)),
-    brain: Math.min(TRACKS.brain.maxLevel, wholeNumber(value.brain)),
+    upgrades,
     items: ids(value.items),
     loadouts,
     achievements: ids(value.achievements),
@@ -98,23 +93,36 @@ export function earnAchievement(campaign, achievement) {
   };
 }
 
-export function nextTrackCost(campaign, track) {
-  const level = campaign[track];
-  return level >= TRACKS[track].maxLevel ? null : TRACKS[track].costs[level];
+// Body upgrades, per operative. Each part has three tiers; fitting the next one costs its price.
+export function upgradesOf(campaign, operatorId) {
+  return campaign.upgrades?.[operatorId] ?? emptyUpgrades();
 }
 
-export function canResearchTrack(campaign, track) {
-  const cost = nextTrackCost(campaign, track);
-  return cost !== null && campaign.funds >= cost;
+export function canFit(campaign, operatorId, part) {
+  const tier = upgradesOf(campaign, operatorId)[part];
+  return tier < MAX_TIER && campaign.funds >= upgradePrice(part, tier + 1);
 }
 
-// Returns the new campaign, or the same object if the research is not allowed.
-export function researchTrack(campaign, track) {
-  if (!canResearchTrack(campaign, track)) return campaign;
+// Returns the new campaign, or the same object if the part cannot be fitted.
+export function fitUpgrade(campaign, operatorId, part) {
+  if (!PARTS[part] || !canFit(campaign, operatorId, part)) return campaign;
+  const current = upgradesOf(campaign, operatorId);
+  const tier = current[part] + 1;
   return {
     ...campaign,
-    funds: campaign.funds - nextTrackCost(campaign, track),
-    [track]: campaign[track] + 1,
+    funds: campaign.funds - upgradePrice(part, tier),
+    upgrades: { ...campaign.upgrades, [operatorId]: { ...current, [part]: tier } },
+  };
+}
+
+// Taking the top tier off returns what it cost.
+export function removeUpgrade(campaign, operatorId, part) {
+  const current = upgradesOf(campaign, operatorId);
+  if (!PARTS[part] || current[part] === 0) return campaign;
+  return {
+    ...campaign,
+    funds: campaign.funds + upgradePrice(part, current[part]),
+    upgrades: { ...campaign.upgrades, [operatorId]: { ...current, [part]: current[part] - 1 } },
   };
 }
 

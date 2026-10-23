@@ -18,15 +18,16 @@ import {
   sellFromSlot,
   sellValue,
   canResearchItem,
-  canResearchTrack,
+  canFit,
+  fitUpgrade,
+  removeUpgrade,
+  upgradesOf,
   emptyCampaign,
   heartEffect,
   isItemAvailable,
   loadoutFor,
-  nextTrackCost,
   parseCampaign,
   researchItem,
-  researchTrack,
   sanitizeLoadouts,
   serializeCampaign,
   setSlot,
@@ -58,19 +59,36 @@ test("an achievement pays its reward once", () => {
   assert.equal(earnAchievement(campaign, achievement), campaign);
 });
 
-test("heart and brain research costs points, rises by level and stops at the top", () => {
-  let campaign = { ...emptyCampaign(), funds: 25 };
-  assert.equal(nextTrackCost(campaign, "heart"), 20);
-  assert.equal(canResearchTrack(campaign, "heart"), true);
-  campaign = researchTrack(campaign, "heart");
-  assert.deepEqual([campaign.funds, campaign.heart], [5, 1]);
-  assert.equal(nextTrackCost(campaign, "heart"), 30);
-  assert.equal(researchTrack(campaign, "heart"), campaign, "cannot afford the next level");
-  assert.equal(researchTrack(campaign, "brain"), campaign, "cannot afford brain either");
+test("body parts are fitted per operative in three tiers priced 1x, 5x and 10x", () => {
+  let campaign = { ...emptyCampaign(), funds: 100 };
+  assert.deepEqual(upgradesOf(campaign, "op1"), { legs: 0, arms: 0, chest: 0, heart: 0, eyes: 0, brain: 0 });
+  campaign = fitUpgrade(campaign, "op1", "legs");
+  assert.deepEqual([campaign.funds, upgradesOf(campaign, "op1").legs], [94, 1], "tier 1 costs the base price of 6");
+  campaign = fitUpgrade(campaign, "op1", "legs");
+  assert.deepEqual([campaign.funds, upgradesOf(campaign, "op1").legs], [64, 2], "tier 2 costs 30");
+  assert.equal(canFit(campaign, "op1", "legs"), true);
+  campaign = fitUpgrade(campaign, "op1", "legs");
+  assert.deepEqual([campaign.funds, upgradesOf(campaign, "op1").legs], [4, 3], "tier 3 costs 60");
+  assert.equal(canFit(campaign, "op1", "legs"), false, "nothing above tier 3");
+  assert.equal(fitUpgrade(campaign, "op1", "legs"), campaign);
+  assert.equal(fitUpgrade(campaign, "op1", "brain"), campaign, "cannot afford the brain (8)");
+  assert.equal(upgradesOf(campaign, "op2").legs, 0, "other operatives are untouched");
+  assert.equal(fitUpgrade(campaign, "op1", "tail"), campaign, "no such part");
+});
 
-  const maxed = { ...emptyCampaign(), funds: 999, heart: 5 };
-  assert.equal(nextTrackCost(maxed, "heart"), null);
-  assert.equal(researchTrack(maxed, "heart"), maxed);
+test("taking a part off returns what its top tier cost", () => {
+  let campaign = { ...emptyCampaign(), funds: 100 };
+  campaign = fitUpgrade(fitUpgrade(campaign, "op1", "chest"), "op1", "chest");
+  assert.equal(campaign.funds, 100 - 8 - 40);
+  campaign = removeUpgrade(campaign, "op1", "chest");
+  assert.deepEqual([campaign.funds, upgradesOf(campaign, "op1").chest], [100 - 8, 1]);
+  assert.equal(removeUpgrade(emptyCampaign(), "op1", "chest").funds, 0);
+});
+
+test("old heart and brain research is refunded when a saved campaign is read", () => {
+  const old = parseCampaign(JSON.stringify({ funds: 5, heart: 2, brain: 1 }));
+  assert.equal(old.funds, 5 + 20 + 30 + 20);
+  assert.equal("heart" in old, false);
 });
 
 test("new items must be researched before they can be used", () => {
@@ -135,18 +153,24 @@ test("research effects scale the fatigue rates", () => {
 
 test("the campaign round-trips and damaged data is repaired or ignored", () => {
   let campaign = earnAchievement({ ...emptyCampaign(), funds: 20 }, { id: "a", reward: 5 });
-  campaign = researchTrack(campaign, "heart");
+  campaign = fitUpgrade(campaign, "op1", "eyes");
   campaign = setSlot(campaign, "op1", 0, "kit", catalog, ["pulse"]);
   assert.deepEqual(parseCampaign(serializeCampaign(campaign)), campaign);
 
   assert.deepEqual(parseCampaign("garbage"), emptyCampaign());
   assert.deepEqual(parseCampaign("[1,2]"), emptyCampaign());
   const repaired = parseCampaign(JSON.stringify({
-    funds: -3, carry: 7, heart: 99, brain: "x", items: ["a", 4, "a", ""], loadouts: { op: ["x", 5, "y"], bad: "no" },
+    funds: -3, carry: 7, heart: 99, brain: "x", upgrades: { op: { legs: 9, arms: -2, tail: 1 }, bad: 3 },
+    items: ["a", 4, "a", ""], loadouts: { op: ["x", 5, "y"], bad: "no" },
     achievements: "none",
   }));
   assert.deepEqual(repaired, {
-    funds: 0, carry: 0, heart: 5, brain: 0, items: ["a"], loadouts: { op: ["x", "y"] }, achievements: [],
+    funds: 200, carry: 0,
+    upgrades: {
+      op: { legs: 3, arms: 0, chest: 0, heart: 0, eyes: 0, brain: 0 },
+      bad: { legs: 0, arms: 0, chest: 0, heart: 0, eyes: 0, brain: 0 },
+    },
+    items: ["a"], loadouts: { op: ["x", "y"] }, achievements: [],
   });
   assert.equal(parseCampaign(JSON.stringify({ loadouts: { o: Array(20).fill("kit") } })).loadouts.o.length, 8);
 });

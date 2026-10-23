@@ -437,10 +437,10 @@ for (const [name, type, executablePath] of targets) {
       Number((await page.locator("#research-funds").innerText()).replace(/\D/g, ""));
     assert.equal(await labFunds(), 300);
     await page.locator("#research-tracks button").first().click();
-    assert.match(await page.locator("#research-tracks").innerText(), /Cyborg heart \(Stamina\) · level 1 of 5/);
-    assert.equal(await labFunds(), 280);
+    assert.match(await page.locator("#research-tracks").innerText(), /Legs · tier 1 of 3/);
+    assert.equal(await labFunds(), 294);
     await page.getByRole("button", { name: "Research Stim Injector for 40 funds" }).click();
-    assert.equal(await labFunds(), 240);
+    assert.equal(await labFunds(), 254);
 
     // Eight picture slots per operative: four are filled (starting kit plus the loot kept from the earlier win).
     const squads = page.locator(".armoury-card");
@@ -452,24 +452,24 @@ for (const [name, type, executablePath] of targets) {
     // Buy a stim into slot 5, then two pulse emitters: an operative can carry several of the same weapon.
     await page.getByLabel("Operator 1 slot 5: empty", { exact: true }).click();
     await page.getByRole("button", { name: "Buy Stim Injector for Operator 1 slot 5, 20 funds" }).click();
-    assert.equal(await labFunds(), 220);
+    assert.equal(await labFunds(), 234);
     await page.getByLabel("Operator 1 slot 6: empty", { exact: true }).click();
     await page.getByRole("button", { name: "Buy Civic Pulse Emitter for Operator 1 slot 6, 15 funds" }).click();
     await page.getByLabel("Operator 1 slot 7: empty", { exact: true }).click();
     await page.getByRole("button", { name: "Buy Civic Pulse Emitter for Operator 1 slot 7, 15 funds" }).click();
-    assert.equal(await labFunds(), 190);
+    assert.equal(await labFunds(), 204);
     assert.equal(await squads.first().locator(".slot:not(.empty)").count(), 7);
     // Swapping refunds half the price of what it replaces: the spare emitter (7 back) pays toward a repair kit (10).
     await page.getByLabel("Operator 1 slot 7: Civic Pulse Emitter", { exact: true }).click();
     await page.getByRole("button", { name: "Buy Field Repair Kit for Operator 1 slot 7, 3 funds" }).click();
-    assert.equal(await labFunds(), 187);
+    assert.equal(await labFunds(), 201);
     // Selling returns half the price again.
     await page.getByRole("button", { name: /Sell Field Repair Kit · \+5 funds/ }).click();
-    assert.equal(await labFunds(), 192);
+    assert.equal(await labFunds(), 206);
     assert.equal(await squads.first().locator(".slot:not(.empty)").count(), 6);
 
     const campaignRecord = await page.evaluate(() => JSON.parse(localStorage.getItem("opensynd.campaign.v1")));
-    assert.equal(campaignRecord.heart, 1);
+    assert.equal(campaignRecord.upgrades["operator-one"].legs, 1);
     assert.deepEqual(campaignRecord.loadouts["operator-one"], [
       "developer.civic-pulse-emitter",
       "developer.field-repair-kit",
