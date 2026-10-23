@@ -135,9 +135,14 @@ test("the squad takes a car: the driver is thrown out, operators and nearby foll
   assert.equal(isSquadVehicle(vehicle), true);
   assert.equal(canEnter(far, vehicle), false);
 
-  // Seats: 3 in this car, so a fourth cannot get in.
+  // FreeSynd has no seat limit: a fourth and a fifth agent get in the three-seat car, and the first stays the driver.
   const late = operator("late", 10, 5);
-  assert.equal(canEnter(late, vehicle), false, "no seat left");
+  const later = operator("later", 10.5, 5);
+  assert.equal(canEnter(late, vehicle), true);
+  assert.equal(enterVehicle(vehicle, [late], [...units, late], grid).entered.length, 1);
+  assert.equal(enterVehicle(vehicle, [later], [...units, late, later], grid).entered.length, 1);
+  assert.equal(vehicle.vehicle.occupantIds.length, 5);
+  assert.equal(vehicle.vehicle.controlledBy, "one", "whoever got in first keeps the wheel");
 });
 
 test("a controlled vehicle drives where it is told, along roads, with its passengers", () => {
@@ -197,6 +202,7 @@ test("a moving car runs over people on foot: harder when faster, never twice in 
   assert.equal(runOverDamage(6.5), 33);
   assert.ok(runOverDamage(8) > runOverDamage(4));
     const lorry = car("car", 10, 5, null, { path: [{ x: 30, y: 5 }] });
+  lorry.vehicle.controlledBy = "op"; // driven by the squad
   const walker = person("walker", 10.3, 5);
   const rider = person("rider", 10.2, 5, { inVehicle: "car" });
   const events = advanceVehicles([lorry, walker, rider], 1 / 30, roads, grid);
@@ -208,13 +214,21 @@ test("a moving car runs over people on foot: harder when faster, never twice in 
   const again = advanceVehicles([lorry, walker, rider], 1 / 30, roads, grid).filter((event) => event.type === "runover");
   assert.equal(again.length, 0, "not hit twice at once");
   assert.ok(RUNOVER_COOLDOWN >= 1);
+
+  // The city's own cars, driven by civilians, never run anyone down.
+  const taxi = car("taxi", 10, 5, "cabbie", { path: [{ x: 30, y: 5 }] });
+  const cabbie = person("cabbie", 10, 5, { inVehicle: "taxi" });
+  const bystander = person("bystander", 10.3, 5);
+  const taxiEvents = advanceVehicles([taxi, cabbie, bystander], 1 / 30, roads, grid);
+  assert.equal(taxiEvents.filter((event) => event.type === "runover").length, 0);
+  assert.equal(bystander.health, bystander.definition.stats.vitality);
   lorry.path = [];
   walker.runOverLeft = 0;
   const parked = advanceVehicles([lorry, walker], 1 / 30, roads, grid).filter((event) => event.type === "runover");
   assert.equal(parked.length, 0, "a parked car hurts nobody");
 });
 
-import { FOLLOW_GAP, blockedAhead } from "../src/vehicles.js";
+import { FOLLOW_GAP, PEDESTRIAN_GAP, blockedAhead } from "../src/vehicles.js";
 
 test("traffic queues: a car waits for one close ahead that has priority, never locks up, and ignores parked cars", () => {
   const lead = car("car-1", 10, 5, "d1");
@@ -256,4 +270,16 @@ test("a following car actually holds back while the one ahead stays put, then mo
   lead.position = { x: 20, y: 5 };
   for (let step = 0; step < 30; step += 1) advanceVehicles(units, 1 / 30, roadGrid, grid);
   assert.ok(follower.position.x > before + 3, "and off again once the road is clear");
+});
+
+test("a civilian car waits for people on foot to get out of its way, but not for those beside it, behind it or down", () => {
+  const driving = car("a", 10, 5, "d", { path: [{ x: 30, y: 5 }] });
+  driving.vehicle.heading = { x: 1, y: 0 };
+  const ahead = (x, y, over = {}) => person("p", x, y, over);
+  assert.equal(blockedAhead(driving, [driving, ahead(10 + PEDESTRIAN_GAP - 0.3, 5)]), true, "someone in the road ahead");
+  assert.equal(blockedAhead(driving, [driving, ahead(10 + PEDESTRIAN_GAP + 1, 5)]), false, "far enough off to keep going");
+  assert.equal(blockedAhead(driving, [driving, ahead(12, 6.5)]), false, "on the pavement beside the road");
+  assert.equal(blockedAhead(driving, [driving, ahead(8, 5)]), false, "behind it");
+  assert.equal(blockedAhead(driving, [driving, ahead(11, 5, { disabled: true })]), false, "a fallen person does not stop traffic for ever");
+  assert.equal(blockedAhead(driving, [driving, ahead(11, 5, { inVehicle: "x" })]), false, "someone riding is not in the way");
 });

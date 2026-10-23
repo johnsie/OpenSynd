@@ -79,6 +79,7 @@ export function advanceBombs(bombs, units, deltaSeconds, grid = null) {
       const amount = blastDamage(bomb.attack, distance, bomb.radius);
       if (amount === 0 || !hasLineOfSight(grid, bomb.at, unit.position)) continue;
       unit.health = Math.max(0, unit.health - amount);
+      unit.lastDamageType = "explosion";
       const down = unit.health === 0;
       if (down) {
         unit.disabled = true;

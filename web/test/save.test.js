@@ -265,3 +265,20 @@ test("a save from before the street was populated loads, with the new bystanders
   assert.equal(added.disabled, false);
   assert.equal(parsed.units.length, 3);
 });
+
+test("gear lying on the ground survives a save, and a save without drops reads as none", () => {
+  const withGear = {
+    ...state,
+    drops: [{ id: "drop-a-0", position: { x: 3.4, y: 2.2 }, equipment: [{ definition: { id: "heavy" }, charges: 7 }] }],
+  };
+  const snapshot = createSaveSnapshot(withGear, "2026-10-22T12:00:00.000Z");
+  assert.deepEqual(snapshot.drops, [{ id: "drop-a-0", itemId: "heavy", charges: 7, x: 3.4, y: 2.2 }]);
+  const known = { ...context, itemIds: ["heavy", "pulse", "stim", "kit"] };
+  assert.deepEqual(parseSaveSnapshot(JSON.stringify(snapshot), known).drops, snapshot.drops);
+  const { drops, ...older } = snapshot;
+  assert.deepEqual(parseSaveSnapshot(JSON.stringify(older), known).drops, []);
+  const bad = (change) => ({ ...snapshot, drops: [{ ...snapshot.drops[0], ...change }] });
+  assert.throws(() => parseSaveSnapshot(JSON.stringify(bad({ itemId: "mystery" })), known), /dropped item/);
+  assert.throws(() => parseSaveSnapshot(JSON.stringify(bad({ x: 99 })), known), /dropped item/);
+  assert.throws(() => parseSaveSnapshot(JSON.stringify(bad({ charges: -1 })), known), /dropped item/);
+});

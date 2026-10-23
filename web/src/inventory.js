@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 import { SLOTS_PER_OPERATIVE } from "./campaign.js";
+import { chestTier } from "./upgrades.js";
 
 // How close an operator must stand to a body to loot it.
 export const LOOT_RANGE = 1.6;
@@ -9,9 +10,64 @@ export function distanceBetween(left, right) {
   return Math.hypot(left.position.x - right.position.x, left.position.y - right.position.y);
 }
 
-// A body worth looting: a disabled opponent that still carries something.
+// Something on the ground worth picking up: a drop that still holds an item.
 export function lootableBody(body) {
-  return (body.side === "opposition" || body.side === "criminal") && body.disabled && !body.escaped && (body.equipment?.length ?? 0) > 0;
+  return body.kind === "drop" && (body.equipment?.length ?? 0) > 0;
+}
+
+// A dropped item on the map: shaped like a small container so looting works on it as on anything that holds gear.
+export function makeDrop(id, item, position) {
+  return {
+    id,
+    kind: "drop",
+    side: "drop",
+    disabled: true,
+    position: { x: position.x, y: position.y },
+    equipment: [item],
+    definition: { name: item.definition.name },
+  };
+}
+
+// Where the things a fallen person carried land: spread on the ground around them, each on its own bit of floor.
+const SCATTER = [
+  [0.7, 0.2], [-0.6, 0.5], [0.2, -0.8], [-0.5, -0.5], [0.9, -0.6], [-1.0, -0.1],
+  [0.4, 0.95], [-0.2, 1.0], [1.2, 0.6], [-1.2, 0.7], [0.0, -1.3], [1.3, -0.2],
+];
+
+/**
+ * FreeSynd's death rule: a person shot down drops everything they carry (`dropAllWeapons`); one killed by a beam, or by
+ * fire or a blast without the second-version chest to survive it, loses it all. Every disabled person with gear is dealt
+ * with once. `drops` is added to; returns what happened as events.
+ */
+export function collectFallen(units, drops, grid = null) {
+  const events = [];
+  for (const unit of units) {
+    if (!unit.disabled || unit.escaped || unit.droppedAll || (unit.equipment?.length ?? 0) === 0) continue;
+    if (unit.kind === "drop" || unit.definition?.vehicle) continue;
+    unit.droppedAll = true;
+    const cause = unit.lastDamageType ?? "bullet";
+    const keeps = cause === "bullet" || ((cause === "burn" || cause === "explosion") && chestTier(unit.upgrades) >= 2);
+    const items = unit.equipment;
+    unit.equipment = [];
+    if (!keeps) {
+      events.push({ type: "destroyed", unitId: unit.id, items: items.map((item) => item.definition.name) });
+      continue;
+    }
+    items.forEach((item, index) => {
+      const ring = 1 + Math.floor(index / SCATTER.length);
+      let chosen = null;
+      for (let attempt = 0; attempt < SCATTER.length && !chosen; attempt += 1) {
+        const [dx, dy] = SCATTER[(index + attempt) % SCATTER.length];
+        const at = { x: unit.position.x + dx * ring, y: unit.position.y + dy * ring };
+        const floor = grid?.[Math.round(at.y)]?.[Math.round(at.x)];
+        const clear = !grid || (floor && floor.walkable);
+        if (clear && drops.every((other) => Math.hypot(other.position.x - at.x, other.position.y - at.y) > 0.4)) chosen = at;
+      }
+      drops.push(makeDrop(`drop-${unit.id}-${index}`, item, chosen ?? unit.position));
+    });
+    events.push({ type: "dropped", unitId: unit.id, items: items.map((item) => item.definition.name) });
+  }
+  return events;
 }
 
 export function inLootReach(operator, body) {
@@ -70,34 +126,62 @@ export function nearestLootable(from, units) {
   return best?.body ?? null;
 }
 
-// Select the same weapon for several operatives. A weapon is "the same" when it is the same item;
-// each operative may carry it in a different slot, and uses their own copy with rounds left (the
-// one with the most if they carry several). Operatives who do not carry it are left as they are.
-// Returns who got it and who has none.
-export function selectWeaponForAll(units, definitionId) {
-  const selected = [];
-  const missing = [];
-  for (const unit of units) {
-    let best = -1;
-    unit.equipment.forEach((item, slot) => {
-      if (item.definition.id !== definitionId || item.charges === 0) return;
-      const rounds = item.charges ?? Infinity;
-      if (best === -1 || rounds > (unit.equipment[best].charges ?? Infinity)) best = slot;
-    });
-    if (best === -1) {
-      missing.push(unit.id);
-    } else {
-      unit.activeSlot = best;
-      selected.push(unit.id);
-    }
-  }
-  return { selected, missing };
+// How alike two weapons are (0 is identical): their reach, damage and recharge, and whether they burn, pierce or scatter.
+export function weaponDistance(left, right) {
+  const a = left.effect ?? {};
+  const b = right.effect ?? {};
+  const gap = (x, y) => (Math.max(x ?? 0, y ?? 0) === 0 ? 0 : Math.abs((x ?? 0) - (y ?? 0)) / Math.max(x ?? 0, y ?? 0));
+  let distance = gap(a.range, b.range) + gap(a.attack, b.attack) + gap(a.cooldown, b.cooldown);
+  if ((a.damageType ?? "bullet") !== (b.damageType ?? "bullet")) distance += 0.6;
+  if (Boolean(a.pierce) !== Boolean(b.pierce)) distance += 0.4;
+  if ((a.pellets ?? 1) > 1 !== (b.pellets ?? 1) > 1) distance += 0.4;
+  if (left.carry !== right.carry) distance += 0.2;
+  return distance;
 }
 
-// Put the same weapon away for several operatives: whoever has it selected goes back to automatic.
-export function clearWeaponForAll(units, definitionId) {
+// The slot an operative would raise to match `reference`: their own copy of it (the fullest one) if they carry it,
+// otherwise the loaded weapon most like it. -1 if they have nothing loaded.
+export function matchingSlot(unit, reference) {
+  let best = -1;
+  let bestDistance = Infinity;
+  unit.equipment.forEach((item, slot) => {
+    if (item.definition.action !== "disable-pulse" || item.charges === 0) return;
+    const distance = item.definition.id === reference.id ? -1 : weaponDistance(reference, item.definition);
+    const rounds = item.charges ?? Infinity;
+    const better =
+      distance < bestDistance || (distance === bestDistance && best !== -1 && rounds > (unit.equipment[best].charges ?? Infinity));
+    if (better) {
+      best = slot;
+      bestDistance = distance;
+    }
+  });
+  return best;
+}
+
+// Choose a weapon for several operatives (FreeSynd: one choice for the whole selection). Each takes up their own copy of
+// it, in whatever slot it is (the one with most rounds if they carry several); an operative without it takes the most
+// similar weapon they do have. Returns who got it, who got a stand-in, and who has nothing loaded.
+export function selectWeaponForAll(units, definitionId) {
+  const reference = units.flatMap((unit) => unit.equipment).find((item) => item.definition.id === definitionId)?.definition;
+  const selected = [];
+  const substituted = [];
+  const missing = [];
   for (const unit of units) {
-    const chosen = Number.isInteger(unit.activeSlot) ? unit.equipment[unit.activeSlot] : null;
-    if (chosen && chosen.definition.id === definitionId) unit.activeSlot = null;
+    const slot = reference ? matchingSlot(unit, reference) : -1;
+    if (slot === -1) {
+      missing.push(unit.id);
+      continue;
+    }
+    unit.activeSlot = slot;
+    (unit.equipment[slot].definition.id === definitionId ? selected : substituted).push(unit.id);
+  }
+  return { selected, substituted, missing };
+}
+
+// Put the weapon away for several operatives: whoever raised it (or its stand-in) goes back to automatic.
+export function clearWeaponForAll(units, definitionId) {
+  const reference = units.flatMap((unit) => unit.equipment).find((item) => item.definition.id === definitionId)?.definition;
+  for (const unit of units) {
+    if (reference && Number.isInteger(unit.activeSlot) && unit.activeSlot === matchingSlot(unit, reference)) unit.activeSlot = null;
   }
 }

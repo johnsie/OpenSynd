@@ -203,6 +203,8 @@ export function ejectDriver(vehicle, units, grid) {
   return driver;
 }
 
+// FreeSynd puts no limit on how many agents a vehicle carries (`addPassenger` never refuses), so the squad can all ride
+// together whatever the vehicle's `seats`; seats are only a figure for vehicles driven by the city.
 export function seatsLeft(vehicle) {
   return Math.max(0, vehicle.definition.vehicle.stats.seats - vehicle.vehicle.occupantIds.length);
 }
@@ -210,15 +212,12 @@ export function seatsLeft(vehicle) {
 /** Whether an operator is close enough to a working vehicle to get in. */
 export function canEnter(operator, vehicle) {
   if (!isVehicle(vehicle) || vehicle.disabled || operator.disabled || operator.inVehicle) return false;
-  // A full car cannot be boarded, unless its AI driver is about to be thrown out of it.
-  const aiDriven = Boolean(vehicle.vehicle.driverId) && !vehicle.vehicle.controlledBy;
-  if (seatsLeft(vehicle) === 0 && !aiDriven) return false;
   return Math.hypot(operator.position.x - vehicle.position.x, operator.position.y - vehicle.position.y) <= ENTER_RANGE;
 }
 
 /**
  * The squad takes a vehicle. The first operator in drives; any AI driver is thrown out (and reacts), the other
- * operators and anyone persuaded who is near get in as passengers while there are seats. Returns who got in
+ * operators and anyone persuaded who is near get in as passengers (there is no seat limit). Returns who got in
  * and who was thrown out.
  */
 export function enterVehicle(vehicle, operators, units, grid) {
@@ -228,7 +227,7 @@ export function enterVehicle(vehicle, operators, units, grid) {
   if (!driver) return { entered: [], thrownOut };
   const entered = [];
   const board = (unit) => {
-    if (seatsLeft(vehicle) === 0 || unit.inVehicle || unit.disabled) return;
+    if (unit.inVehicle || unit.disabled) return;
     unit.inVehicle = vehicle.id;
     unit.path = [];
     unit.position = { ...vehicle.position };
@@ -236,8 +235,11 @@ export function enterVehicle(vehicle, operators, units, grid) {
     entered.push(unit);
   };
   board(driver);
-  state.driverId = driver.id;
-  state.controlledBy = driver.id;
+  // The first agent in drives; those who get in after them ride.
+  if (!state.controlledBy) {
+    state.driverId = driver.id;
+    state.controlledBy = driver.id;
+  }
   const near = (unit) => Math.hypot(unit.position.x - vehicle.position.x, unit.position.y - vehicle.position.y) <= ENTER_RANGE * 2.5;
   for (const other of operators) if (other !== driver && near(other)) board(other);
   for (const unit of units) {
@@ -293,13 +295,25 @@ function driveRoute(vehicle, seconds, roadGrid) {
   moveAlongPath(vehicle, seconds, vehicle.definition.stats.speed);
 }
 
-// Traffic does not drive through itself: an AI-driven car waits when another vehicle is close ahead of it, unless that
+// Traffic does not drive through itself: an AI-driven car waits when a person on foot or another vehicle is close ahead of it, unless that
 // one has to wait for it. Parked cars are ignored. Wrecks that are still burning and cars the squad drives always have
 // the right of way; between two ordinary cars the one with the lower id goes first, so no queue can lock up.
 export const FOLLOW_GAP = 1.9;
+export const PEDESTRIAN_GAP = 1.8;
+export const PEDESTRIAN_WIDTH = 0.85;
 export function blockedAhead(vehicle, units) {
   const heading = vehicle.vehicle.heading;
   if (!heading) return false;
+  // The city's cars never run anyone down: they wait for people on foot to get out of the way.
+  const person = units.some((other) => {
+    if (other === vehicle || isVehicle(other) || other.disabled || other.inVehicle) return false;
+    const dx = other.position.x - vehicle.position.x;
+    const dy = other.position.y - vehicle.position.y;
+    const ahead = dx * heading.x + dy * heading.y;
+    const aside = Math.abs(dx * heading.y - dy * heading.x);
+    return ahead > 0 && ahead <= PEDESTRIAN_GAP && aside <= PEDESTRIAN_WIDTH;
+  });
+  if (person) return true;
   return units.some((other) => {
     if (other === vehicle || !isVehicle(other)) return false;
     if (other.disabled && !(other.vehicle.wreckLeft > 0)) return false;
@@ -314,8 +328,8 @@ export function blockedAhead(vehicle, units) {
   });
 }
 
-// A moving vehicle hurts anyone on foot it runs into: damage grows with its speed, and a person hit is thrown aside and
-// flinches. Nobody is hit twice in under a second.
+// A vehicle driven by the squad hurts anyone on foot it runs into (FreeSynd: the city's own cars never run anyone
+// down): damage grows with its speed, and a person hit is thrown aside and flinches. Nobody is hit twice in under a second.
 export const RUNOVER_RADIUS = 0.9;
 export const RUNOVER_COOLDOWN = 1;
 export function runOverDamage(speed) {
@@ -324,7 +338,7 @@ export function runOverDamage(speed) {
 
 function runOver(vehicle, units, seconds) {
   const events = [];
-  if (vehicle.path.length === 0) return events;
+  if (vehicle.path.length === 0 || !vehicle.vehicle.controlledBy) return events;
   const amount = runOverDamage(vehicle.definition.stats.speed);
   for (const unit of units) {
     if (unit === vehicle || isVehicle(unit) || unit.disabled || unit.inVehicle) continue;
@@ -368,6 +382,7 @@ export function advanceVehicles(units, seconds, roadGrid, grid, time = 0) {
           const amount = blastDamage(damage, distance, blastRadius);
           if (amount === 0 || !hasLineOfSight(grid, vehicle.position, unit.position)) continue;
           unit.health = Math.max(0, unit.health - amount);
+          unit.lastDamageType = "explosion";
           const down = unit.health === 0;
           if (down) {
             unit.disabled = true;

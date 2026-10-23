@@ -146,7 +146,10 @@ import { newStats, newlyEarned } from "./achievements.js";
 import {
   distanceBetween,
   clearWeaponForAll,
+  collectFallen,
   findLoot,
+  freeSlots,
+  makeDrop,
   inLootReach,
   lootBody,
   lootableAt,
@@ -157,6 +160,7 @@ import {
 import {
   advanceCombat,
   advancePursuit,
+  advanceRegeneration,
   combatStats,
   fireManual,
   heldWeapon,
@@ -452,6 +456,7 @@ const state = {
   modal: false,
   effects: createEffects(),
   bombs: [],
+  drops: [],
   armedBomb: null,
   listFilter: "open",
   elapsed: 0,
@@ -530,6 +535,7 @@ async function loadGame(index = state.missionIndex) {
   state.grid = createTileGrid(map);
   state.buildings = buildingsFromMap(map);
   state.bombs = [];
+  state.drops = [];
   state.armedBomb = null;
   state.alertHold = 0;
   state.alertMusic = false;
@@ -1377,6 +1383,12 @@ function saveContext() {
 }
 
 function applySaveSnapshot(snapshot) {
+  state.drops = (snapshot.drops ?? [])
+    .map((drop) => {
+      const definition = state.catalog.find((entry) => entry.id === drop.itemId);
+      return definition ? makeDrop(drop.id, { definition, charges: drop.charges }, { x: drop.x, y: drop.y }) : null;
+    })
+    .filter(Boolean);
   const unitsById = new Map(snapshot.units.map((unit) => [unit.id, unit]));
   for (const unit of state.units) {
     const saved = unitsById.get(unit.id);
@@ -2524,8 +2536,7 @@ function unitScreenPoint(unit, viewport) {
 // Gear dropped where a watcher fell: a small case on the floor with a pulsing ring.
 function drawPickups(viewport) {
   const { cellSize, origin } = viewport;
-  for (const body of state.units) {
-    if (!lootableBody(body)) continue;
+  for (const body of state.drops) {
     const tile = state.grid[Math.round(body.position.y)]?.[Math.round(body.position.x)];
     const centre = gridToScreen(body.position, cellSize, origin, tile?.elevation ?? 0);
     const width = cellSize.width * 0.18;
@@ -2844,9 +2855,11 @@ function simulationStep(deltaSeconds) {
     }
   }
   const arrivals = advanceUnits(state.units, deltaSeconds);
+  advanceRegeneration(state.units, deltaSeconds);
+  collectFallenGear();
   for (const unit of state.units) {
     if (!unit.lootTargetId || unit.path.length > 0) continue;
-    const body = state.units.find((item) => item.id === unit.lootTargetId);
+    const body = state.drops.find((item) => item.id === unit.lootTargetId);
     unit.lootTargetId = null;
     if (body && lootableBody(body) && inLootReach(unit, body)) {
       lootNow(unit, body);
@@ -2857,7 +2870,7 @@ function simulationStep(deltaSeconds) {
     interfaceChanged = true;
     interfaceChanged = completeObjectivesAt(arrival.position) || interfaceChanged;
   }
-  for (const event of advancePatrols(state.units, deltaSeconds, state.grid, state.elapsed)) {
+  for (const event of advancePatrols(state.units, deltaSeconds, state.grid, state.elapsed, state.drops)) {
     const watcher = state.units.find((unit) => unit.id === event.unitId);
     if (event.type === "pickup") {
       setStatus(`${watcher.definition.name} takes ${event.items.join(" and ")} from the fallen.`);
@@ -3517,7 +3530,8 @@ function issueAttack(targetId, queue = false) {
   const target = state.units.find((unit) => unit.id === targetId);
   if (!target || !isAttackable(target)) return;
   if (target.disabled) {
-    if (lootableBody(target)) goLoot(target, queue);
+    const gear = nearestDrop(target.position, 3);
+    if (gear) goLoot(gear, queue);
     else setStatus(`${target.definition.name} is already down and has nothing left to loot.`);
     return;
   }
@@ -3577,10 +3591,33 @@ function useRepairKit() {
   useRepairOn(unit, equipmentWithAction(unit, "restore-vitality"));
 }
 
-// Take a disabled watcher's gear with one of the selected operators.
+// Anyone who has just been put down drops what they carried, scattered around where they fell (FreeSynd), unless a
+// beam, or fire or a blast without a strong chest, took it with them.
+function collectFallenGear() {
+  const events = collectFallen(state.units, state.drops, state.grid);
+  for (const event of events) {
+    const who = state.units.find((unit) => unit.id === event.unitId);
+    if (event.type === "destroyed" && who?.side === "opposition") setStatus(`${who.definition.name}'s gear was destroyed with them.`);
+  }
+  if (state.drops.some((drop) => !lootableBody(drop))) state.drops = state.drops.filter(lootableBody);
+  if (events.some((event) => event.type === "dropped")) renderInterface();
+}
+
+// The nearest gear lying within `within` tiles of a point, or null.
+function nearestDrop(position, within) {
+  let best = null;
+  for (const drop of state.drops) {
+    const gap = Math.hypot(drop.position.x - position.x, drop.position.y - position.y);
+    if (gap <= within && (!best || gap < best.gap)) best = { drop, gap };
+  }
+  return best?.drop ?? null;
+}
+
+// Pick up gear lying on the ground with one of the selected operators.
 function lootNow(operator, body) {
   const { taken, left } = lootBody(operator, body);
   operator.lootTargetId = null;
+  state.drops = state.drops.filter(lootableBody);
   if (taken.length === 0) {
     setStatus(`${operator.definition.name} has no free slots (${SLOTS_PER_OPERATIVE} items maximum), so cannot pick anything up.`);
     return;
@@ -3601,20 +3638,25 @@ function lootNow(operator, body) {
 // closest body that still carries gear.
 function lootAction() {
   const squad = selectedOperators();
-  const found = findLoot(squad, state.units);
+  // Everything within reach goes in at once, as far as there are free slots.
+  let found = findLoot(squad, state.drops);
   if (found) {
-    lootNow(found.operator, found.body);
+    if (freeSlots(found.operator) === 0) lootNow(found.operator, found.body); // says why nothing was taken
+    while (found && freeSlots(found.operator) > 0) {
+      lootNow(found.operator, found.body);
+      found = findLoot(squad, state.drops);
+    }
     return;
   }
   let target = null;
   for (const unit of squad) {
-    const candidate = nearestLootable(unit, state.units);
+    const candidate = nearestLootable(unit, state.drops);
     if (candidate && (!target || distanceBetween(unit, candidate) < distanceBetween(target.unit, target.body))) {
       target = { unit, body: candidate };
     }
   }
   if (target) goLoot(target.body);
-  else setStatus("There is nothing to pick up. Disable an enemy that carries gear first.");
+  else setStatus("There is nothing to pick up. Gear lies where an armed person falls.");
 }
 
 // Send the nearest selected operator to a body; they loot it on arrival.
@@ -3628,13 +3670,13 @@ function goLoot(body, queue = false) {
       : best,
   );
   if (queue && isBusy(nearest)) {
-    queueAction(nearest, { type: "loot", id: body.id }, `pick up ${body.definition.name}'s gear`);
+    queueAction(nearest, { type: "loot", id: body.id }, `pick up the ${body.definition.name}`);
     return;
   }
   sendLoot(nearest, body);
 }
 
-// Send one operator to a fallen body's gear (lootNow once they are beside it).
+// Send one operator to gear on the ground (lootNow once they are beside it).
 function sendLoot(unit, body, keepPending = false) {
   if (inLootReach(unit, body)) {
     lootNow(unit, body);
@@ -3642,12 +3684,12 @@ function sendLoot(unit, body, keepPending = false) {
   }
   const steps = orderMove(unit, { x: Math.round(body.position.x), y: Math.round(body.position.y) }, false, keepPending);
   if (steps === 0) {
-    setStatus("No safe route to that body.");
+    setStatus("No safe route to that gear.");
     return;
   }
   unit.lootTargetId = body.id;
   audio.play("move");
-  setStatus(`${unit.definition.name} is walking over to pick up ${body.definition.name}'s gear.`);
+  setStatus(`${unit.definition.name} is walking over to pick up the ${body.definition.name}.`);
   renderInterface();
 }
 
@@ -3674,7 +3716,7 @@ function runPendingOrders() {
     if (next.type === "move") {
       if (orderMove(unit, next.to, false, true) === 0) setStatus(`${unit.definition.name}: no route to the next point, skipped.`);
     } else if (next.type === "loot") {
-      const body = state.units.find((item) => item.id === next.id);
+      const body = state.drops.find((item) => item.id === next.id);
       if (body && lootableBody(body)) sendLoot(unit, body, true);
       else setStatus(`${unit.definition.name}: nothing left to pick up, skipped.`);
     } else if (next.type === "enter") {
@@ -3818,7 +3860,7 @@ function pointerKindAt(position) {
     return reachable ? "attack" : "attack-far";
   }
   const ground = screenToGrid(position, state.viewport.cellSize, state.viewport.origin);
-  if ((unit && lootableBody(unit)) || lootableAt(state.units, ground, 0.9)) return "loot";
+  if ((unit?.disabled && nearestDrop(unit.position, 3)) || lootableAt(state.drops, ground, 0.9)) return "loot";
   return null;
 }
 
@@ -3935,7 +3977,7 @@ canvas.addEventListener("click", (event) => {
   }
   const destination = screenToGrid(position, state.viewport.cellSize, state.viewport.origin);
   // Clicking the ground where an enemy fell picks up its gear: an operator walks over.
-  const dropped = lootableAt(state.units, destination, 0.9);
+  const dropped = lootableAt(state.drops, destination, 0.9);
   if (dropped && selectedOperators().length > 0) {
     goLoot(dropped, event.shiftKey);
     return;
@@ -4271,6 +4313,9 @@ if (new URLSearchParams(location.search).has("e2e")) {
       unit.equipment.push({ definition, charges: definition.charges });
       renderInterface();
     },
+    riders() {
+      return state.units.filter((unit) => unit.side === "team" && unit.inVehicle).map((unit) => unit.id);
+    },
     positionOf(id) {
       return { ...state.units.find((item) => item.id === id).position };
     },
@@ -4380,11 +4425,12 @@ function pressSlot(unit, slot) {
         clearWeaponForAll(squad, definition.id);
         setStatus(`${squad.length} operators: weapons put away. Select one to fire.`);
       } else {
-        const { selected, missing } = selectWeaponForAll(squad, definition.id);
+        const { selected, substituted, missing } = selectWeaponForAll(squad, definition.id);
         unit.activeSlot = slot; // the operative clicked keeps the exact copy they clicked
         setStatus(
-          `${selected.length} operators: ${definition.name} selected.` +
-            (missing.length > 0 ? ` ${missing.length} without one keep their own choice.` : ""),
+          `${selected.length + substituted.length} operators: ${definition.name} selected.` +
+            (substituted.length > 0 ? ` ${substituted.length} took the most similar weapon they carry.` : "") +
+            (missing.length > 0 ? ` ${missing.length} have nothing loaded.` : ""),
         );
       }
       audio.play("select");
@@ -4527,17 +4573,12 @@ function goEnterVehicle(vehicle, queue = false) {
     setStatus("Select an operator first, then click the vehicle to get in.");
     return;
   }
-  const nearest = squad.reduce((best, unit) =>
-    Math.hypot(unit.position.x - vehicle.position.x, unit.position.y - vehicle.position.y) <
-    Math.hypot(best.position.x - vehicle.position.x, best.position.y - vehicle.position.y)
-      ? unit
-      : best,
-  );
-  if (queue && isBusy(nearest)) {
-    queueAction(nearest, { type: "enter", id: vehicle.id }, `get into the ${vehicle.definition.name}`);
-    return;
+  // Everyone selected heads for the vehicle (FreeSynd: a click on a car sends the whole selection in).
+  for (const unit of squad) {
+    if (queue && isBusy(unit)) queueAction(unit, { type: "enter", id: vehicle.id }, `get into the ${vehicle.definition.name}`);
+    else sendEnter(unit, vehicle);
   }
-  sendEnter(nearest, vehicle);
+  if (squad.length > 1) setStatus(`${squad.length} operators are heading for the ${vehicle.definition.name}.`);
 }
 
 function sendEnter(nearest, vehicle, keepPending = false) {
@@ -4601,6 +4642,8 @@ function toggleVehicle() {
       setStatus(`No room in the ${vehicle.definition.name}.`);
       return;
     }
+    // Selected operators who were further off walk over and get in too.
+    for (const unit of selectedOperators()) if (!unit.inVehicle && !unit.disabled) sendEnter(unit, vehicle);
     setStatus(
       `${entered.length} got into the ${vehicle.definition.name}` +
         (thrownOut ? `; ${thrownOut.definition.name} was thrown out.` : ". Click a road to drive, V to get out."),
@@ -4755,8 +4798,8 @@ function renderInterface() {
   );
   repairButton.disabled = !canRepair;
   const lootButton = document.querySelector("#loot-button");
-  const nearBody = findLoot(selectedOperators(), state.units);
-  const bodies = state.units.filter(lootableBody).length;
+  const nearBody = findLoot(selectedOperators(), state.drops);
+  const bodies = state.drops.length;
   updateVehicleButton();
   lootButton.disabled = !nearBody && bodies === 0;
   document.querySelector("#loot-label").textContent = nearBody

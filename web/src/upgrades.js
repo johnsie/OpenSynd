@@ -23,7 +23,7 @@ export const PARTS = Object.freeze({
     label: "Chest",
     base: 8,
     tiers: Object.freeze([0, 20, 40, 70]),
-    effect: "More integrity: 20, 40 and 70 extra.",
+    effect: "More integrity: 20, 40 and 70 extra. From tier 2, wounds heal on their own.",
   },
   heart: {
     label: "Heart",
@@ -74,6 +74,7 @@ export const legsPace = (upgrades) => effectOf(upgrades, "legs");
 export const armsCooldown = (upgrades) => effectOf(upgrades, "arms");
 export const armsCapacity = (upgrades) => [0, 4, 8, 12][tierOf(upgrades, "arms")];
 export const chestVitality = (upgrades) => effectOf(upgrades, "chest");
+export const chestTier = (upgrades) => tierOf(upgrades, "chest");
 export const eyesRange = (upgrades) => effectOf(upgrades, "eyes");
 
 // FreeSynd's accuracy: each of the Eyes, Brain, Arms, Heart and Legs parts adds a little for every tier fitted.

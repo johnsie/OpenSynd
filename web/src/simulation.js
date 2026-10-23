@@ -5,7 +5,7 @@ import { LOOT_RANGE, lootBody, lootableBody } from "./inventory.js";
 import { VEHICLE_HIT_RADIUS, ejectDriver, isSquadVehicle, isVehicle } from "./vehicles.js";
 import { damageProp, propsAlong } from "./props.js";
 import { adrenalineAim, adrenalineSpeed, drugMultiplier, intelligenceRecharge, perceptionReach } from "./drugs.js";
-import { aimBonus, armsCapacity, armsCooldown, chestVitality, eyesRange, legsPace } from "./upgrades.js";
+import { aimBonus, armsCapacity, armsCooldown, chestTier, chestVitality, eyesRange, legsPace } from "./upgrades.js";
 import { createRandom } from "./random.js";
 
 // The simulation's source of chance (shot accuracy). Reseed it at the start of an operation for a repeatable run.
@@ -72,6 +72,37 @@ export function advancePursuit(units, grid) {
     }
   }
   return events;
+}
+
+// FreeSynd's chest regeneration: an agent with the second version of the chest (tier 2 or 3) who has been hit heals one
+// point every four seconds until whole again (a sixteenth of the agent's health a time on our scale). It starts on a hit
+// (any loss of health) and stops at full health. Everyone else heals only with a repair kit.
+export const REGEN_SECONDS = 4;
+export const REGEN_FROM_TIER = 2;
+export const REGEN_SHARE = 1 / 16;
+
+export function advanceRegeneration(units, deltaSeconds) {
+  for (const unit of units) {
+    if (unit.disabled || chestTier(unit.upgrades) < REGEN_FROM_TIER) {
+      unit.healthSeen = unit.health;
+      unit.regenerating = false;
+      continue;
+    }
+    if (unit.healthSeen !== undefined && unit.health < unit.healthSeen) unit.regenerating = true;
+    if (unit.regenerating) {
+      unit.regenClock = (unit.regenClock ?? 0) + deltaSeconds;
+      while (unit.regenClock >= REGEN_SECONDS - 1e-9 && unit.regenerating) {
+        unit.regenClock -= REGEN_SECONDS;
+        const full = maxHealth(unit);
+        unit.health = Math.min(full, unit.health + Math.max(1, Math.round(full * REGEN_SHARE)));
+        if (unit.health >= full) {
+          unit.regenerating = false;
+          unit.regenClock = 0;
+        }
+      }
+    }
+    unit.healthSeen = unit.health;
+  }
 }
 
 /**
@@ -571,7 +602,7 @@ function advanceHostile(unit, units, byId, deltaSeconds, grid, now, events) {
  * "spotted" events when an enemy first notices an operator, and "pickup" events when a follower
  * takes a weapon.
  */
-export function advancePatrols(units, deltaSeconds, grid = null, now = null) {
+export function advancePatrols(units, deltaSeconds, grid = null, now = null, drops = []) {
   const events = [];
   const byId = new Map(units.map((unit) => [unit.id, unit]));
   const armed = now === null ? [] : units.filter((unit) => armedOut(unit, now, byId));
@@ -580,7 +611,7 @@ export function advancePatrols(units, deltaSeconds, grid = null, now = null) {
   for (const unit of units) {
     if (unit.side === "team" || unit.disabled || unit.inVehicle || isVehicle(unit) || unit.hitStun > 0) continue;
     if (unit.persuaded) {
-      if (grid) advanceFollower(unit, byId, units, grid, deltaSeconds, now, events);
+      if (grid) advanceFollower(unit, byId, units, grid, deltaSeconds, now, events, drops);
       continue;
     }
     const hasRoute = (unit.patrol && unit.patrol.route.length > 0) || Boolean(unit.script);
@@ -829,6 +860,7 @@ export function advanceBurning(units, deltaSeconds) {
     if (whole <= 0) continue;
     fire.carry -= whole;
     unit.health = Math.max(0, unit.health - whole);
+    unit.lastDamageType = "burn";
     events.push({ type: "burn", attackerId: fire.by, targetId: unit.id, amount: whole, remaining: unit.health });
     if (unit.health === 0) {
       unit.disabled = true;
@@ -857,7 +889,10 @@ function strike(attacker, target, weapon, stats, events, context = null, hitCoun
   }
   const blocked = (target.shieldLeft ?? 0) > 0;
   const damage = stats.attack * hitCount;
-  if (!blocked) target.health = Math.max(0, target.health - damage);
+  if (!blocked) {
+    target.health = Math.max(0, target.health - damage);
+    target.lastDamageType = stats.damageType ?? "bullet";
+  }
   if (!blocked && target.health > 0 && !isVehicle(target)) target.hitStun = hitStunFor(damage);
   if (!blocked && stats.burn && target.health > 0) {
     target.burning = { left: stats.burn.seconds, dps: stats.burn.dps, by: attacker.id, carry: target.burning?.carry ?? 0 };
@@ -1249,7 +1284,7 @@ export function followPace(owner) {
   if (pace < 0.95) return FOLLOW_SLOW;
   return 1;
 }
-function advanceFollower(unit, byId, units, grid, deltaSeconds, now, events) {
+function advanceFollower(unit, byId, units, grid, deltaSeconds, now, events, drops) {
   const agent = byId.get(unit.persuadedBy);
   if (!agent || agent.disabled) {
     unit.path = [];
@@ -1260,10 +1295,10 @@ function advanceFollower(unit, byId, units, grid, deltaSeconds, now, events) {
     unit.pickupCheck = (unit.pickupCheck ?? 0) - deltaSeconds;
     if (!unit.pickupTarget && unit.pickupCheck <= 0) {
       unit.pickupCheck = 1;
-      const body = nearestOf(unit, units.filter(lootableBody), FOLLOWER_WEAPON_SEARCH);
+      const body = nearestOf(unit, drops.filter(lootableBody), FOLLOWER_WEAPON_SEARCH);
       unit.pickupTarget = body?.id ?? null;
     }
-    const body = unit.pickupTarget ? byId.get(unit.pickupTarget) : null;
+    const body = unit.pickupTarget ? drops.find((drop) => drop.id === unit.pickupTarget) : null;
     if (body && lootableBody(body)) {
       if (distanceBetween(unit, body) <= LOOT_RANGE) {
         const { taken } = lootBody(unit, body);

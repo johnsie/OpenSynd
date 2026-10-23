@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { createTileGrid } from "../src/engine.js";
+import { makeDrop } from "../src/inventory.js";
 import {
   CIVILIAN_SCOUT,
   FIXED_STEP_SECONDS,
@@ -50,12 +51,12 @@ function person(id, side, x, over = {}) {
 
 const operator = (x, armed, over = {}) =>
   person("op", "team", x, { equipment: [pistol()], activeSlot: armed ? 0 : null, patrol: null, ...over });
-const clock = (units, seconds, now0 = 10, grid = street) => {
+const clock = (units, seconds, now0 = 10, grid = street, drops = []) => {
   const events = [];
   const steps = Math.round(seconds / FIXED_STEP_SECONDS);
   for (let step = 0; step < steps; step += 1) {
     const now = now0 + step * FIXED_STEP_SECONDS;
-    events.push(...advancePatrols(units, FIXED_STEP_SECONDS, grid, now));
+    events.push(...advancePatrols(units, FIXED_STEP_SECONDS, grid, now, drops));
     events.push(...advanceCombat(units, FIXED_STEP_SECONDS, grid, now));
   }
   return events;
@@ -211,24 +212,19 @@ test("persuaded criminals count as civilians toward what guards and police need"
 
 test("a follower with no weapon takes one from a fallen enemy when its owner draws, and then fires only while the owner is armed", () => {
   const owner = operator(10, false);
-  const body = person("dead", "opposition", 12, {
-    disabled: true,
-    health: 0,
-    equipment: [pistol()],
-    definition: { role: "enemy-agent", stats: stats() },
-  });
+  const body = makeDrop("dropped-pistol", pistol(), { x: 12, y: 2 });
   const follower = person("f", "civilian", 11, {
     persuaded: true,
     persuadedBy: "op",
     patrol: null,
     definition: { role: "civilian", stats: stats({ attack: 0, range: 1 }) },
   });
-  const events = clock([owner, body, follower], 3);
+  const events = clock([owner, follower], 3, 10, street, [body]);
   assert.equal(follower.equipment.length, 0, "the owner's weapon is away: no need for a gun");
   assert.equal(events.some((event) => event.type === "pickup"), false);
 
   owner.activeSlot = 0;
-  const later = clock([owner, body, follower], 3, 20);
+  const later = clock([owner, follower], 3, 20, street, [body]);
   assert.ok(later.some((event) => event.type === "pickup" && event.unitId === "f"), "armed owner: the follower arms itself");
   assert.equal(follower.equipment.length, 1);
   assert.equal(body.equipment.length, 0);

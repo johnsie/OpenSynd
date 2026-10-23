@@ -7,9 +7,11 @@ import {
   LOOT_RANGE,
   clearWeaponForAll,
   selectWeaponForAll,
+  weaponDistance,
   findLoot,
   freeSlots,
   inLootReach,
+  collectFallen,
   lootBody,
   lootableAt,
   lootableBody,
@@ -24,18 +26,18 @@ const item = (id, action = "disable-pulse", charges = null, effect = {}) => ({
 const operator = (x, y, equipment = []) => ({ id: "op", side: "team", disabled: false, position: { x, y }, equipment });
 const body = (x, y, equipment, overrides = {}) => ({
   id: "w",
-  side: "opposition",
+  kind: "drop",
+  side: "drop",
   disabled: true,
   position: { x, y },
   equipment,
   ...overrides,
 });
 
-test("only disabled opponents that still carry something can be looted", () => {
+test("only a drop that still holds an item can be picked up", () => {
   assert.equal(lootableBody(body(0, 0, [item("a")])), true);
   assert.equal(lootableBody(body(0, 0, [])), false);
-  assert.equal(lootableBody(body(0, 0, [item("a")], { disabled: false })), false);
-  assert.equal(lootableBody(body(0, 0, [item("a")], { side: "team" })), false);
+  assert.equal(lootableBody(body(0, 0, [item("a")], { kind: undefined, side: "opposition" })), false, "a fallen person is not a drop");
 });
 
 test("looting needs the operator to stand close to the body", () => {
@@ -83,13 +85,13 @@ test("the nearest reachable body is chosen, and disabled operators cannot loot",
 test("a click on the ground where an enemy fell finds its gear", () => {
   const fallen = body(10, 5, [item("heavy")], { id: "fallen" });
   const empty = body(20, 5, [], { id: "empty" });
-  const alive = body(30, 5, [item("x")], { id: "alive", disabled: false });
+  const alive = body(30, 5, [item("x")], { id: "alive", kind: undefined });
   const units = [fallen, empty, alive];
   assert.equal(lootableAt(units, { x: 10, y: 5 }), fallen);
   assert.equal(lootableAt(units, { x: 10.5, y: 5.4 }), fallen, "close enough counts");
   assert.equal(lootableAt(units, { x: 12, y: 5 }), null, "too far");
   assert.equal(lootableAt(units, { x: 20, y: 5 }), null, "nothing left to take");
-  assert.equal(lootableAt(units, { x: 30, y: 5 }), null, "the watcher is still up");
+  assert.equal(lootableAt(units, { x: 30, y: 5 }), null, "a person is not a drop");
 });
 
 test("the nearest lootable body is found across the map", () => {
@@ -108,7 +110,7 @@ test("choosing a weapon for several operatives picks their own copy of it, in wh
   const first = carrier("a", [gun("pistol", 20), gun("rifle", 5)]);
   const second = carrier("b", [gun("rifle", 5), gun("pistol", 8)]);
   const result = selectWeaponForAll([first, second], "pistol");
-  assert.deepEqual(result, { selected: ["a", "b"], missing: [] });
+  assert.deepEqual(result, { selected: ["a", "b"], substituted: [], missing: [] });
   assert.equal(first.activeSlot, 0);
   assert.equal(second.activeSlot, 1, "the second operative carries it in slot 2");
 });
@@ -119,22 +121,81 @@ test("an operative with several copies uses the fullest one; empty copies are sk
   assert.equal(stocked.activeSlot, 1);
 
   const dry = carrier("b", [gun("pistol", 0)]);
-  assert.deepEqual(selectWeaponForAll([dry], "pistol"), { selected: [], missing: ["b"] });
+  assert.deepEqual(selectWeaponForAll([dry], "pistol"), { selected: [], substituted: [], missing: ["b"] });
   assert.equal(dry.activeSlot, null);
 });
 
-test("operatives who do not carry the weapon keep their own choice", () => {
-  const armed = carrier("a", [gun("pistol", 10)]);
-  const other = { ...carrier("b", [gun("rifle", 4)]), activeSlot: 0 };
-  const result = selectWeaponForAll([armed, other], "pistol");
-  assert.deepEqual(result, { selected: ["a"], missing: ["b"] });
-  assert.equal(other.activeSlot, 0, "left on the rifle");
+const armed = (id, charges, effect, carry = "pistol") => ({ definition: { id, action: "disable-pulse", effect, carry }, charges });
+
+test("an operative without the weapon takes the most similar one they carry", () => {
+  const pistol = { attack: 12, range: 8, cooldown: 0.5 };
+  const flamer = { attack: 4, range: 3, cooldown: 0.2, damageType: "burn" };
+  const lead = carrier("a", [armed("pistol", 10, pistol), armed("flamer", 5, flamer, "rifle")]);
+  const other = carrier("b", [
+    armed("flamer", 5, flamer, "rifle"),
+    armed("machine", 30, { attack: 10, range: 9, cooldown: 0.4 }, "pistol"),
+  ]);
+  const result = selectWeaponForAll([lead, other], "pistol");
+  assert.deepEqual(result, { selected: ["a"], substituted: ["b"], missing: [] });
+  assert.equal(lead.activeSlot, 0);
+  assert.equal(other.activeSlot, 1, "the machine pistol is nearer a pistol than the flamer is");
+  assert.equal(weaponDistance({ effect: pistol }, { effect: pistol }), 0);
 });
 
-test("putting a weapon away goes back to automatic only for those holding it", () => {
+test("an operative with nothing loaded keeps what they had", () => {
+  const lead = carrier("a", [armed("pistol", 10, { attack: 12, range: 8, cooldown: 0.5 })]);
+  const dry = { ...carrier("b", [armed("rifle", 0, { attack: 20, range: 12, cooldown: 1 }, "rifle")]), activeSlot: 0 };
+  const result = selectWeaponForAll([lead, dry], "pistol");
+  assert.deepEqual(result, { selected: ["a"], substituted: [], missing: ["b"] });
+  assert.equal(dry.activeSlot, 0);
+});
+
+test("putting a weapon away also puts away the stand-ins others raised for it", () => {
   const first = { ...carrier("a", [gun("pistol", 10), gun("rifle", 4)]), activeSlot: 0 };
   const second = { ...carrier("b", [gun("rifle", 4)]), activeSlot: 0 };
   clearWeaponForAll([first, second], "pistol");
   assert.equal(first.activeSlot, null);
-  assert.equal(second.activeSlot, 0, "the rifle stays selected");
+  assert.equal(second.activeSlot, null, "their rifle was the stand-in for the pistol");
+});
+
+const grassGrid = Array.from({ length: 20 }, () => Array.from({ length: 20 }, () => ({ walkable: true })));
+const faller = (equipment, extra = {}) => ({
+  id: "f", side: "opposition", disabled: true, position: { x: 10, y: 10 }, equipment, definition: {}, ...extra,
+});
+
+test("a person shot down drops everything they carry, scattered on their own bits of floor", () => {
+  const drops = [];
+  const unit = faller([item("a"), item("b"), item("c")]);
+  const events = collectFallen([unit], drops, grassGrid);
+  assert.deepEqual(events, [{ type: "dropped", unitId: "f", items: [undefined, undefined, undefined] }]);
+  assert.equal(unit.equipment.length, 0);
+  assert.equal(drops.length, 3);
+  assert.deepEqual(drops.map((drop) => drop.equipment[0].definition.id), ["a", "b", "c"]);
+  for (const [index, drop] of drops.entries()) {
+    assert.ok(Math.hypot(drop.position.x - 10, drop.position.y - 10) < 2, "close to where they fell");
+    for (const other of drops.slice(index + 1)) {
+      assert.ok(Math.hypot(drop.position.x - other.position.x, drop.position.y - other.position.y) > 0.4, "not on top of each other");
+    }
+    assert.equal(lootableBody(drop), true);
+  }
+  assert.deepEqual(collectFallen([unit], drops, grassGrid), [], "they drop it once");
+  assert.equal(drops.length, 3);
+});
+
+test("a beam kills what it hits and its gear with it; fire and blasts do too, unless the chest is the second version", () => {
+  const lasered = faller([item("a")], { lastDamageType: "beam" });
+  const burned = faller([item("b")], { lastDamageType: "burn", id: "g" });
+  const shielded = faller([item("c")], { lastDamageType: "explosion", id: "h", upgrades: { chest: 2 } });
+  const drops = [];
+  const events = collectFallen([lasered, burned, shielded], drops, grassGrid);
+  assert.deepEqual(events.map((event) => [event.type, event.unitId]), [["destroyed", "f"], ["destroyed", "g"], ["dropped", "h"]]);
+  assert.deepEqual(drops.map((drop) => drop.equipment[0].definition.id), ["c"]);
+});
+
+test("the living and the unarmed drop nothing; items do not land in walls", () => {
+  const drops = [];
+  assert.deepEqual(collectFallen([faller([item("a")], { disabled: false }), faller([])], drops, grassGrid), []);
+  const walled = grassGrid.map((row, y) => row.map((tile, x) => ({ walkable: !(x === 10 && y === 10) ? !(x > 10) : true })));
+  collectFallen([faller([item("a"), item("b")])], drops, walled);
+  assert.ok(drops.every((drop) => Math.round(drop.position.x) <= 10), "only on walkable ground");
 });

@@ -743,6 +743,25 @@ for (const [name, type, executablePath] of targets) {
     assert.match(await garage.locator("#status-message").innerText(), /thrown out of the City Car|integrity/);
     await garage.close();
 
+    // The whole squad gets in together (FreeSynd has no seat limit): select everyone and click the car.
+    const convoy = await browser.newPage();
+    await convoy.goto(`${url}?e2e`);
+    await convoy.waitForSelector(".roster-select");
+    await convoy.click("#begin-button");
+    await convoy.evaluate(() => {
+      for (const id of ["operator-one", "operator-two", "operator-three", "operator-four"]) {
+        window.opensyndTest.placeNear(id, "parked-city-car-1", 4, 0);
+      }
+      window.opensyndTest.focusOn("parked-city-car-1");
+    });
+    await convoy.waitForTimeout(800);
+    await convoy.locator("#game-canvas").focus();
+    await convoy.keyboard.press("a");
+    const squadCar = await convoy.evaluate(() => window.opensyndTest.screenPoint("parked-city-car-1"));
+    await convoy.mouse.click(squadCar.x, squadCar.y - 12);
+    await convoy.waitForFunction(() => window.opensyndTest.riders().length === 4, null, { timeout: 20000 });
+    await convoy.close();
+
     // The mission editor page loads a mission, accepts a placement, and checks it.
     const editorPage = await browser.newPage();
     await editorPage.goto(`${url}editor.html`);

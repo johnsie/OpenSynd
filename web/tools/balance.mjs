@@ -11,7 +11,7 @@ import { fileURLToPath } from "node:url";
 
 import { ACHIEVEMENTS, newStats, newlyEarned } from "../src/achievements.js";
 import { buildPatrolRoute, createTileGrid, findPath, formationTiles, zoneContains } from "../src/engine.js";
-import { findLoot, lootBody, lootableBody, nearestLootable } from "../src/inventory.js";
+import { collectFallen, findLoot, lootBody, nearestLootable } from "../src/inventory.js";
 import { advanceHold, missionOutcome, resolveArrival, resolveDisabled, resolveInteraction, syncGates } from "../src/mission.js";
 import {
   FIXED_STEP_SECONDS,
@@ -90,6 +90,7 @@ function playOnce(world, tactics) {
   const earned = [];
   let seconds = 0;
   let nextThink = 0;
+  const drops = [];
   const team = units.filter((unit) => unit.side === "team");
   const watchers = units.filter((unit) => unit.side === "opposition");
   const zoneOf = (objective) => map.zones.find((zone) => zone.id === objective.targetZone);
@@ -152,10 +153,10 @@ function playOnce(world, tactics) {
 
     // Looting what has fallen, if this squad bothers to.
     if (tactics.loot) {
-      const found = findLoot(active, units);
+      const found = findLoot(active, drops);
       if (found) lootBody(found.operator, found.body);
       else {
-        const body = active.length ? nearestLootable(active[0], units) : null;
+        const body = active.length ? nearestLootable(active[0], drops) : null;
         if (body && dist(active[0], body) < 10 && active[0].path.length === 0) send(active[0], tileOf(body.position));
       }
     }
@@ -222,7 +223,8 @@ function playOnce(world, tactics) {
       if (event.type === "complete") stats.objectivesCompleted += 1;
       syncGates(grid, map, objectives);
     }
-    for (const event of advancePatrols(units, FIXED_STEP_SECONDS, grid)) {
+    collectFallen(units, drops, grid);
+    for (const event of advancePatrols(units, FIXED_STEP_SECONDS, grid, null, drops)) {
       if (event.type === "spotted") stats.spotted += 1;
     }
     for (const event of advanceCombat(units, FIXED_STEP_SECONDS, grid)) {

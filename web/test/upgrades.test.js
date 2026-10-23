@@ -107,3 +107,42 @@ test("followers move at their owner's pace: quicker legs drag a faster flock, a 
   assert.equal(followPace(operator({ legs: 0 })), 1);
   assert.equal(followPace(operator({ legs: 2 })), 1.5);
 });
+
+import { advanceRegeneration } from "../src/simulation.js";
+
+// A fresh operator with this chest tier, hit for `damage` (the regeneration sees the loss on its next step).
+function woundedOperator(chest, damage) {
+  const unit = operator({ chest });
+  unit.health = maxHealth(unit);
+  advanceRegeneration([unit], 1 / 30);
+  unit.health -= damage;
+  return unit;
+}
+const runFor = (unit, seconds) => {
+  for (let step = 0; step < Math.round(seconds * 30); step += 1) advanceRegeneration([unit], 1 / 30);
+  return unit.health;
+};
+
+test("a chest of the second version or better heals a hit agent a sixteenth every four seconds, until whole", () => {
+  const unit = woundedOperator(2, 40); // vitality 100 + 40 from the chest = 140; a sixteenth is 9 (rounded)
+  const start = unit.health;
+  assert.equal(runFor(unit, 3.9), start, "not yet");
+  assert.equal(runFor(unit, 0.2), start + 9, "the first point after four seconds");
+  assert.equal(runFor(unit, 4), start + 18);
+  assert.equal(runFor(unit, 60), 140, "stops at full health");
+  assert.equal(unit.regenerating, false);
+  assert.equal(runFor(unit, 30), 140, "and does not start again without another hit");
+});
+
+test("the first version of the chest, and no chest, do not regenerate", () => {
+  assert.equal(runFor(woundedOperator(1, 30), 60), 100 + 20 - 30);
+  assert.equal(runFor(woundedOperator(0, 30), 60), 100 - 30);
+});
+
+test("a new hit while healing keeps the healing going", () => {
+  const unit = woundedOperator(3, 50);
+  runFor(unit, 4.1);
+  const mid = unit.health;
+  unit.health -= 10;
+  assert.equal(runFor(unit, 4), mid - 10 + 11, "a sixteenth of 170 is 11");
+});

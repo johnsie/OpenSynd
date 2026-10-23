@@ -61,6 +61,13 @@ export function createSaveSnapshot(state, createdAt = new Date().toISOString()) 
     missionId: state.mission.id,
     selectedId: state.selectedId,
     cursor: { ...state.cursor },
+    drops: (state.drops ?? []).map((drop) => ({
+      id: drop.id,
+      itemId: drop.equipment[0].definition.id,
+      charges: drop.equipment[0].charges,
+      x: drop.position.x,
+      y: drop.position.y,
+    })),
     units: state.units.map((unit) => ({
       id: unit.id,
       position: { ...unit.position },
@@ -84,6 +91,25 @@ export function createSaveSnapshot(state, createdAt = new Date().toISOString()) 
       complete: objective.complete,
     })),
   };
+}
+
+// Gear lying on the ground (optional: older saves have none): each is one known item at a point on the map.
+function validateDrops(value, context) {
+  if (value === undefined) return [];
+  if (!Array.isArray(value) || value.length > 200) fail("drops must be a short list");
+  const seen = new Set();
+  return value.map((drop) => {
+    if (!isObject(drop) || typeof drop.id !== "string" || drop.id.length === 0 || drop.id.length > 120 || seen.has(drop.id)) {
+      fail("a dropped item is invalid");
+    }
+    seen.add(drop.id);
+    const validCharges = drop.charges === null || (Number.isInteger(drop.charges) && drop.charges >= 0 && drop.charges <= 99);
+    const known = typeof drop.itemId === "string" && (!context.itemIds || context.itemIds.includes(drop.itemId));
+    const inside = Number.isFinite(drop.x) && Number.isFinite(drop.y) && drop.x >= 0 && drop.y >= 0 &&
+      drop.x < context.bounds.width && drop.y < context.bounds.height;
+    if (!known || !validCharges || !inside) fail(`dropped item ${drop.id} is invalid`);
+    return { id: drop.id, itemId: drop.itemId, charges: drop.charges, x: drop.x, y: drop.y };
+  });
 }
 
 export function validateSaveSnapshot(value, context) {
@@ -215,6 +241,7 @@ export function validateSaveSnapshot(value, context) {
     missionId: value.missionId,
     selectedId: value.selectedId,
     cursor: validatePoint(value.cursor, context.bounds, "cursor"),
+    drops: validateDrops(value.drops, context),
     units,
     objectives,
   };

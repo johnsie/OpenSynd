@@ -605,8 +605,9 @@ brain) must be **researched** (version 3 only after version 2). Purchase prices 
 - **Arms.** Capacity grows (F10) and accuracy gains the same small bonus. (FreeSynd's intended arms effect, a
   steadier or faster weapon hand, is not wired in; the TODO list says weapon-range and accuracy modifiers are still
   to come.)
-- **Chest.** From version 1 the agent **regenerates health** one point every four seconds after being hit (the
-  regeneration timer starts on a hit and stops when full health returns); from version 2 a fallen agent **explodes** on
+- **Chest.** From the second version the agent **regenerates health** one point every four seconds after being hit (the
+  regeneration timer starts on a hit and stops when full health returns; read from the source: the timer only starts at
+  the second version); from version 2 a fallen agent **explodes** on
   a suicide command (area damage around them and their weapons are destroyed) instead of just shooting themselves,
   and when killed by fire or a blast they die normally and **keep their weapons** (they drop them) rather than
   burning. This is the survivability part.
@@ -625,7 +626,7 @@ brain) must be **researched** (version 3 only after version 2). Purchase prices 
 Brain as training bars with a points budget. **Design:** make the six parts first-class, per operator, with three
 tiers each, researched (tier 2 and 3) and bought and fitted per operator in the Armoury, with effects scaled to our
 game: Legs +20 percent speed per tier and capacity; Arms +capacity, +accuracy, and a faster weapon cooldown (-6
-percent per tier); Chest regenerates 1 point every 4 s from tier 1, survives blasts and keeps gear from tier 2, and
+percent per tier); Chest regenerates a sixteenth of the agent's health every 4 s from tier 2 after a hit (built), survives blasts and keeps gear from tier 2, and
 explodes on command at tier 2 (a deliberate last stand); Heart cuts stamina drain and recovers faster (what we have
 now); Eyes +accuracy and, from tier 2, a longer sight against cloaked units (it cuts the Shadow Cloak's effect), with
 detection of cloaked units at tier 3; Brain as now plus the persuasion cost reduction and access-card use at tier 3. The existing training bars
@@ -1121,6 +1122,18 @@ Ordered by what each adds per unit of work given what exists. Items in the same 
 8. **Queued orders, hotkeys, hold-to-fire** (F33, F34, F36, F37).
 9. **The mission editor** (F44), once the mission format has stabilised.
 10. **Campaign scale** (F45): 50 territories and 50 main missions, built on the editor, the generator and the graph.
+
+## Rules brought in from FreeSynd's source (principle 8)
+
+- **Death drops:** a person shot down drops everything they carry, scattered on the ground around them, each item
+  separately and available to pick up (F, or click it); one killed by a beam, or by fire or a blast without the second
+  chest, loses it all. Operatives drop theirs too.
+- **Chest regeneration:** tier 2 and 3 chests heal a sixteenth of the operative's health every four seconds after a hit.
+- **No run-overs by the city:** only vehicles driven by operatives knock people down; the city's own cars wait for people on
+  foot to get out of the way.
+- **No seat limit:** every operative can ride in the same vehicle, and clicking a vehicle sends the whole selection to it.
+- **One weapon for the selection:** choosing a weapon with several operatives selected raises it for each of them, or the
+  most similar weapon they carry.
 
 ## Art direction
 
