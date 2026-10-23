@@ -70,18 +70,6 @@
               <div class="dock-head">
                 <p class="section-number">FIELD TEAM</p>
                 <button id="select-all-button" type="button" class="text-button">Select all</button>
-                <div class="tabs squad-tabs" role="tablist" aria-label="Squad view">
-                  <button id="squad-tab-gear" class="tab" type="button" role="tab" aria-selected="true" data-view="gear">Gear</button>
-                  <button
-                    id="squad-tab-drugs"
-                    class="tab"
-                    type="button"
-                    role="tab"
-                    aria-selected="false"
-                    data-view="drugs"
-                    tabindex="-1"
-                  >Drugs</button>
-                </div>
               </div>
               <div id="roster" class="roster"></div>
             </div>
@@ -231,7 +219,7 @@
               <li>Stand on a relay, panel or server and press E to use it.</li>
               <li>Some operations ask you to disable a marked target or hold a position for a set time.</li>
               <li>Press A, or use Select all, to order the whole team at once.</li>
-              <li>Open the Drugs tab on the squad to set Adrenaline, Perception and Intelligence for each operator.</li>
+              <li>Each operator's three coloured sliders set Adrenaline, Perception and Intelligence.</li>
               <li>
                 Drag, use the arrow keys or push the mouse to the map edge to pan; scroll or +/- to zoom,
                 C to centre, or click the minimap.
@@ -259,25 +247,7 @@
       </div>
       <p id="research-funds" class="funds-large" role="status"></p>
       <div class="tabs lab-tabs" role="tablist" aria-label="Between operations">
-        <button id="tab-lab-roster" class="tab" type="button" role="tab" aria-selected="true" aria-controls="lab-roster">Roster</button>
-        <button
-          id="tab-lab-parts"
-          class="tab"
-          type="button"
-          role="tab"
-          aria-selected="false"
-          aria-controls="lab-parts"
-          tabindex="-1"
-        >Body parts</button>
-        <button
-          id="tab-lab-loadout"
-          class="tab"
-          type="button"
-          role="tab"
-          aria-selected="false"
-          aria-controls="lab-loadout"
-          tabindex="-1"
-        >Loadout</button>
+        <button id="tab-lab-squad" class="tab" type="button" role="tab" aria-selected="true" aria-controls="lab-squad">Squad</button>
         <button
           id="tab-lab-research"
           class="tab"
@@ -288,28 +258,30 @@
           tabindex="-1"
         >Research</button>
       </div>
-      <div id="lab-operators" class="lab-operators" role="group" aria-label="Operative" hidden></div>
 
-      <section id="lab-roster" class="tab-panel" role="tabpanel" aria-labelledby="tab-lab-roster" aria-label="Roster">
+      <section id="lab-squad" class="tab-panel" role="tabpanel" aria-labelledby="tab-lab-squad" aria-label="Squad">
+      <div class="lab-roster" aria-label="Roster">
         <p class="hint">Four operatives deploy. Fallen operatives are lost for good unless you turn that off. Recruit and hire here.</p>
         <div id="roster-list" class="roster-list"></div>
         <p class="hint" id="roster-note"></p>
-      </section>
+      </div>
 
-      <section id="lab-parts" class="tab-panel" role="tabpanel" aria-labelledby="tab-lab-parts" aria-label="Body parts" hidden>
-        <h3 id="upgrades-heading">Body upgrades</h3>
-        <div id="research-tracks" class="research-tracks"></div>
-      </section>
-
-      <section id="lab-loadout" class="tab-panel lab-loadout" role="tabpanel" aria-labelledby="tab-lab-loadout" aria-label="Loadout" hidden>
+      <div id="lab-operators" class="lab-operators" role="group" aria-label="Operative"></div>
+      <div class="lab-loadout">
         <div class="lab-armoury">
-          <h3>Armoury <span class="hint">(eight slots per operative; pick a slot, then buy into it)</span></h3>
+          <h3>Armoury <span class="hint">(pick a slot, then buy into it)</span></h3>
           <div id="armoury-squad" class="armoury-squad"></div>
+        </div>
+        <div class="lab-parts">
+          <h3 id="upgrades-heading">Body upgrades</h3>
+          <div id="research-tracks" class="research-tracks"></div>
         </div>
         <div class="lab-shop">
           <h3>Shop</h3>
           <div id="armoury-shop" class="armoury-shop"></div>
         </div>
+      </div>
+
       </section>
 
       <section id="lab-research" class="tab-panel" role="tabpanel" aria-labelledby="tab-lab-research" aria-label="Research" hidden>

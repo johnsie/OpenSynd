@@ -1069,10 +1069,7 @@ function renderArmoury() {
   shop.replaceChildren(heading, sell, ...rows);
 }
 
-// The tabs of the Research & Armoury screen; the operative picker only shows where it matters.
-wireTabs(document.querySelector(".lab-tabs"), (tab) => {
-  document.querySelector("#lab-operators").hidden = !["lab-parts", "lab-loadout"].includes(tab.getAttribute("aria-controls"));
-});
+wireTabs(document.querySelector(".lab-tabs"));
 
 function openResearch() {
   renderResearch();
@@ -3821,7 +3818,7 @@ for (const button of document.querySelectorAll("[data-cursor-x]")) {
 moveButton.addEventListener("click", () => issueMove(state.cursor));
 document.querySelector("#select-all-button").addEventListener("click", selectAll);
 
-// Tabs: a tablist whose buttons show one panel (`aria-controls`) or set a view on the squad HUD (`data-view`).
+// Tabs: a tablist whose buttons show one panel (`aria-controls`).
 function wireTabs(tablist, onSelect) {
   const tabs = [...tablist.querySelectorAll('[role="tab"]')];
   const select = (chosen, focus = false) => {
@@ -3846,10 +3843,6 @@ function wireTabs(tablist, onSelect) {
   }
 }
 wireTabs(document.querySelector("#mission-panel > .tabs"));
-wireTabs(document.querySelector(".squad-tabs"), (tab) => {
-  document.querySelector(".squad-hud").dataset.view = tab.dataset.view;
-});
-document.querySelector(".squad-hud").dataset.view = "gear";
 actionButton.addEventListener("click", performInteraction);
 repairButton.addEventListener("click", useRepairKit);
 document.querySelector("#loot-button").addEventListener("click", lootAction);
@@ -4412,7 +4405,7 @@ function renderInterface() {
         const row = document.createElement("label");
         row.className = `drug drug-${name}`;
         const text = document.createElement("span");
-        text.textContent = DRUG_LABELS[name];
+        text.textContent = DRUG_LABELS[name].slice(0, 3);
         const slider = document.createElement("input");
         slider.type = "range";
         slider.min = "0";

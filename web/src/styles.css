@@ -807,12 +807,8 @@ main { grid-template-columns: minmax(0, 1fr) minmax(250px, 300px); gap: 0.6rem; 
 .tab-panel[hidden] { display: none; }
 .mission-panel { display: block; }
 .mission-panel .tabs { position: sticky; top: 0; z-index: 1; background: var(--panel); }
-.squad-tabs { margin-left: auto; border-bottom: 0; }
-.squad-tabs .tab { padding: 0.15rem 0.6rem; font-size: 0.78rem; }
 
-/* The squad shows one view at a time: weapons in big squares, or the drug sliders. */
-.squad-hud[data-view="gear"] .drugs { display: none; }
-.squad-hud[data-view="drugs"] .slots { display: none; }
+/* The squad card shows the weapon squares and, under them, the three drug sliders. */
 .squad-hud .slots { gap: 4px; }
 .squad-hud .slot svg { width: 76%; height: 76%; }
 .squad-hud .slot .charges { font-size: 0.7rem; right: 3px; bottom: 2px; }
@@ -823,22 +819,27 @@ main { grid-template-columns: minmax(0, 1fr) minmax(250px, 300px); gap: 0.6rem; 
 .drug-intelligence { --drug: #b48cff; }
 .drug { color: var(--drug); font-weight: 560; }
 .drug input[type="range"] { accent-color: var(--drug); }
-.squad-hud[data-view="drugs"] .drugs { grid-template-columns: 1fr; gap: 0.5rem; padding: 0.3rem 0; font-size: 0.8rem; }
-.squad-hud[data-view="drugs"] .drug { grid-template-columns: 5.6rem minmax(0, 1fr); gap: 0.5rem; }
-.squad-hud[data-view="drugs"] .drug input[type="range"] { height: 1.4rem; }
 
 /* Research & Armoury: one tab at a time (Roster, Body parts, Loadout, Research). */
-.research { width: min(64rem, 96vw); }
+.research { width: min(84rem, 97vw); }
 .lab-tabs { margin: 0.5rem 0 0.6rem; }
 .lab-tabs .tab { padding: 0.45rem 1.1rem; font-size: 0.95rem; }
 .lab-operators { display: flex; gap: 0.4rem; margin-bottom: 0.6rem; }
-.lab-operators[hidden] { display: none; }
 .lab-operators .tab { border: 1px solid var(--line); border-radius: 4px; padding: 0.25rem 0.8rem; font-size: 0.85rem; }
 .lab-operators .tab.on { color: var(--ink); border-color: var(--public); }
 .research .tab-panel { min-height: 22rem; }
-.lab-loadout { display: grid; grid-template-columns: minmax(18rem, 1fr) minmax(20rem, 1.2fr); gap: 1rem; align-items: start; }
-.lab-loadout[hidden] { display: none; }
+.lab-roster .roster-card { padding: 0.25rem 0.5rem; }
+.lab-roster { margin-bottom: 0.6rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--line); }
+.lab-loadout {
+  display: grid;
+  grid-template-columns: minmax(15rem, 1fr) minmax(16rem, 1fr) minmax(18rem, 1.2fr);
+  gap: 1rem;
+  align-items: start;
+}
+@media (max-width: 1100px) { .lab-loadout { grid-template-columns: 1fr 1fr; } .lab-shop { grid-column: 1 / -1; } }
 .lab-loadout .armoury-squad { grid-template-columns: minmax(0, 1fr); }
 .lab-loadout .slot.big { min-height: 3.6rem; }
 .research-tracks, .research-items { display: grid; gap: 0.4rem; }
 @media (max-width: 760px) { .lab-loadout { grid-template-columns: 1fr; } }
+.squad-hud .drugs { gap: 0.2rem 0.5rem; font-size: 0.68rem; }
+.squad-hud .drug { grid-template-columns: auto minmax(0, 1fr); gap: 0.25rem; }

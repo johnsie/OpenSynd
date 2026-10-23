@@ -115,14 +115,12 @@ for (const [name, type, executablePath] of targets) {
     await page.click("#select-all-button");
     assert.match(await page.locator("#status-message").innerText(), /All 4 operators selected/);
     // Drug sliders: moving one sets it for everyone selected, and the dose takes effect over the next seconds.
-    await page.click("#squad-tab-drugs");
     await page.getByLabel("Adrenaline of Field Operator 1").fill("100");
     assert.equal((await page.evaluate(() => window.opensyndTest.drugOf("operator-three", "adrenaline"))).amount, 100);
     await page.waitForTimeout(2200);
     const dose = await page.evaluate(() => window.opensyndTest.drugOf("operator-three", "adrenaline"));
     assert.ok(dose.effect > 50, `the effect is building: ${JSON.stringify(dose)}`);
     await page.getByLabel("Adrenaline of Field Operator 1").fill("50");
-    await page.click("#squad-tab-gear");
     // The side panel has tabs: Mission shows the objectives, Enemies the threats, Save the archive tools.
     await page.click("#tab-enemies");
     assert.equal(await page.locator("#objective-list").isVisible(), false);
@@ -452,12 +450,11 @@ for (const [name, type, executablePath] of targets) {
     const labFunds = async () =>
       Number((await page.locator("#research-funds").innerText()).replace(/\D/g, ""));
     assert.equal(await labFunds(), 300);
-    // Four tabs: only what you are working on shows. The operative picker appears for Body parts and Loadout.
-    assert.equal(await page.locator("#lab-roster").isVisible(), true);
+    // Two tabs: Squad (roster, body parts, loadout) and Research. The operative picker belongs to the squad tab.
+    assert.equal(await page.locator("#roster-list").isVisible(), true);
     assert.equal(await page.locator("#research-items").isVisible(), false);
-    assert.equal(await page.locator("#lab-operators").isVisible(), false);
-    await page.click("#tab-lab-parts");
     assert.equal(await page.locator("#lab-operators").isVisible(), true);
+    assert.equal(await page.locator("#research-tracks").isVisible(), true, "body parts are on the squad tab");
     await page.locator("#research-tracks button").first().click();
     assert.match(await page.locator("#research-tracks").innerText(), /Legs · tier 1 of 3/);
     assert.equal(await labFunds(), 294);
@@ -473,7 +470,7 @@ for (const [name, type, executablePath] of targets) {
     assert.ok(base >= 220, `research cost about 60 funds, tax came in: ${base}`);
 
     // Eight picture slots per operative: four are filled (starting kit plus the loot kept from the earlier win).
-    await page.click("#tab-lab-loadout");
+    await page.click("#tab-lab-squad");
     const squads = page.locator(".armoury-card");
     assert.equal(await squads.count(), 1, "the chosen operative's slots");
     assert.equal(await page.locator("#lab-operators .tab").count(), 4);
@@ -501,7 +498,6 @@ for (const [name, type, executablePath] of targets) {
     assert.equal(await squads.first().locator(".slot:not(.empty)").count(), 6);
 
     // The roster: four operatives deploy; benching one takes them out of the Armoury until they are put back.
-    await page.click("#tab-lab-roster");
     assert.equal(await page.locator("#roster-list .roster-card").count(), 4);
     const deployBoxes = page.getByLabel(/^Deploy /);
     assert.equal(await deployBoxes.count(), 4);

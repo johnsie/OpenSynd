@@ -254,10 +254,10 @@ FreeSynd has no such mechanic). Heart and Brain now do what FreeSynd's parts do:
 Brain the persuasion points. Older saves load and drop the stored levels and meters.
 
 The game screen is split into tabs: the side panel shows Mission (brief, objectives, active order), Enemies (the
-threat list with a live count) or Save, and the squad block shows Gear (eight big item squares) or Drugs (three
-coloured sliders: Adrenaline orange, Perception cyan, Intelligence violet) for every operator. The Research & Armoury
-screen has four tabs, Roster, Body parts, Loadout and Research, with an operative picker on the two that are about one
-operative.
+threat list with a live count) or Save, and the squad block shows, for every operator, eight big item squares with the three
+coloured drug sliders under them (Adrenaline orange, Perception cyan, Intelligence violet). The Research & Armoury
+screen has two tabs: Squad (the roster, an operative picker, and for that operative the armoury slots, body parts and shop) and
+Research.
 
 Operators can be picked individually: each roster entry has a selection checkbox,
 Ctrl/Shift-click adds or removes an operator, and each entry carries its own
