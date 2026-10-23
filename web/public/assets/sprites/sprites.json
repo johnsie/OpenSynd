@@ -665,6 +665,44 @@
           "seconds": 0.66
         }
       ]
+    },
+    "guard-1-heavy-pulse": {
+      "file": "guard-1-heavy-pulse.png",
+      "frameSize": 128,
+      "directions": 8,
+      "animations": [
+        {
+          "name": "idle",
+          "row": 0,
+          "frames": 4,
+          "seconds": 2
+        },
+        {
+          "name": "walk",
+          "row": 8,
+          "frames": 8,
+          "seconds": 0.66
+        }
+      ]
+    },
+    "guard-2-heavy-pulse": {
+      "file": "guard-2-heavy-pulse.png",
+      "frameSize": 128,
+      "directions": 8,
+      "animations": [
+        {
+          "name": "idle",
+          "row": 0,
+          "frames": 4,
+          "seconds": 2
+        },
+        {
+          "name": "walk",
+          "row": 8,
+          "frames": 8,
+          "seconds": 0.66
+        }
+      ]
     }
   }
 }

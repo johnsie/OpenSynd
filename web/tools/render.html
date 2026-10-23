@@ -314,36 +314,53 @@
       const eye = offset(head.clone().lerp(headTop, 0.45), -headHeight * 0.22, 0, headHeight * 0.42);
       place(box(headHeight * 0.34, headHeight * 0.16, headHeight * 0.12, accent), eye, "Head");
     } else if (kit.style === "guard") {
-      // Corporate guard: heavy armour over dark fatigues, a full helmet with an amber visor, shoulder and knee
-      // plates with hazard-yellow chevrons, long sleeves and black boots and gloves.
-      const plate = material(kit.armour, 0.55);
-      const dark = material(kit.helmet, 0.5);
-      const sleeve = material(kit.cloth, 0.75);
-      const hazard = glow([240, 190, 60]);
+      // An old-school soldier: plain olive-drab fatigues, a steel pot helmet with a chin strap, canvas webbing crossed
+      // over the chest, a belt with ammunition pouches and a canteen, a small pack, elbow and knee patches and boots.
+      const webbing = material(kit.armour, 0.9);
+      const fatigue = material(kit.cloth, 0.9);
+      const patchCloth = material(kit.camo, 0.9);
+      const helmet = new THREE.MeshStandardMaterial({ color: rgb(kit.helmet), roughness: 0.55, metalness: 0.35 });
+      const strap = material([30, 26, 22], 0.8);
       for (const side of ["Left", "Right"]) {
-        limb(`${side}Shoulder`, `${side}Arm`, unit * 0.46, unit * 0.43, sleeve, `${side}Shoulder`, -0.2, 1.1);
-        limb(`${side}Arm`, `${side}ForeArm`, unit * 0.43, unit * 0.34, sleeve, `${side}Arm`, -0.3, 1.04);
-        limb(`${side}ForeArm`, `${side}Hand`, unit * 0.33, unit * 0.27, plate, `${side}ForeArm`, 0.1, 1.08);
-        limb(`${side}UpLeg`, `${side}Leg`, unit * 0.44, unit * 0.36, sleeve, `${side}UpLeg`, 0.05, 1.0);
+        limb(`${side}Shoulder`, `${side}Arm`, unit * 0.46, unit * 0.43, fatigue, `${side}Shoulder`, -0.2, 1.1);
+        limb(`${side}Arm`, `${side}ForeArm`, unit * 0.43, unit * 0.34, fatigue, `${side}Arm`, -0.3, 1.04);
+        limb(`${side}ForeArm`, `${side}Hand`, unit * 0.33, unit * 0.27, fatigue, `${side}ForeArm`, 0.1, 1.08);
+        limb(`${side}UpLeg`, `${side}Leg`, unit * 0.46, unit * 0.38, fatigue, `${side}UpLeg`, 0.05, 1.0);
         const knee = at(`${side}Leg`);
-        place(box(unit * 0.62, unit * 0.5, unit * 0.6, plate), offset(knee, 0, 0, unit * 0.2), `${side}Leg`);
+        place(box(unit * 0.52, unit * 0.36, unit * 0.52, patchCloth), offset(knee, 0, 0, unit * 0.2), `${side}Leg`);
+        const elbow = at(`${side}ForeArm`);
+        place(box(unit * 0.38, unit * 0.26, unit * 0.38, patchCloth), offset(elbow, 0, 0, 0), `${side}ForeArm`);
       }
-      place(box(unit * 1.7, unit * 1.25, unit * 0.45, plate), offset(chest, 0, unit * 0.1, unit * 0.52), "Spine2");
-      place(box(unit * 1.2, unit * 0.14, unit * 0.06, hazard), offset(chest, 0, unit * 0.28, unit * 0.77), "Spine2");
-      place(box(unit * 1.2, unit * 0.14, unit * 0.06, hazard), offset(chest, 0, unit * 0.02, unit * 0.77), "Spine2");
+      // A tunic with a stand collar, and the webbing: two shoulder straps crossing at the chest.
+      place(box(unit * 1.6, unit * 1.2, unit * 0.4, fatigue), offset(chest, 0, unit * 0.1, unit * 0.5), "Spine2");
+      for (const lean of [-0.55, 0.55]) {
+        const strapMesh = box(unit * 0.26, unit * 1.45, unit * 0.1, webbing);
+        strapMesh.rotation.z = lean;
+        place(strapMesh, offset(chest, 0, unit * 0.1, unit * 0.74), "Spine2");
+      }
       for (const side of [-1, 1]) {
-        place(box(unit * 0.75, unit * 0.22, unit * 0.7, plate), offset(neck, side * unit * 0.95, -unit * 0.05, 0), "Spine2");
-        place(box(unit * 0.75, unit * 0.06, unit * 0.1, hazard), offset(neck, side * unit * 0.95, unit * 0.08, unit * 0.32), "Spine2");
+        place(box(unit * 0.7, unit * 0.2, unit * 0.62, fatigue), offset(neck, side * unit * 0.95, -unit * 0.05, 0), "Spine2");
       }
-      place(box(unit * 1.75, unit * 0.24, unit * 1.05, material(kit.belt)), offset(hips, 0, unit * 0.15, 0), "Hips");
-      bootsOn(0.85, 1.5);
+      // Belt, ammunition pouches either side of the buckle, a canteen on the hip and a small pack behind.
+      place(box(unit * 1.75, unit * 0.26, unit * 1.05, webbing), offset(hips, 0, unit * 0.15, 0), "Hips");
+      for (const side of [-1, 1]) {
+        place(box(unit * 0.42, unit * 0.42, unit * 0.3, webbing), offset(hips, side * unit * 0.35, unit * 0.1, unit * 0.62), "Hips");
+      }
+      place(new THREE.Mesh(new THREE.CylinderGeometry(unit * 0.18, unit * 0.18, unit * 0.5, 10), patchCloth), offset(hips, unit * 0.95, 0, unit * 0.05), "Hips");
+      place(box(unit * 1.2, unit * 1.1, unit * 0.5, webbing), offset(chest, 0, unit * 0.1, -unit * 0.62), "Spine2");
+      bootsOn(0.95, 1.5);
       gloves(material(kit.belt, 0.5), 0.3);
-      const dome = new THREE.Mesh(new THREE.SphereGeometry(headHeight * 0.7, 20, 14), dark);
-      dome.scale.set(1, 0.95, 1.1);
-      place(dome, offset(head.clone().lerp(headTop, 0.5), 0, headHeight * 0.02, 0), "Head");
-      const eyeLine = head.clone().lerp(headTop, 0.4);
-      place(box(headHeight * 1.05, headHeight * 0.3, headHeight * 0.3, accent), offset(eyeLine, 0, 0, headHeight * 0.5), "Head");
-      place(box(headHeight * 0.1, headHeight * 0.5, headHeight * 0.9, hazard), offset(headTop, 0, -headHeight * 0.02, 0), "Head");
+      // The pot helmet: a smooth steel dome with a wide, even brim all round, a chin strap and no face cover.
+      const crown = head.clone().lerp(headTop, 0.5);
+      const dome = new THREE.Mesh(new THREE.SphereGeometry(headHeight * 0.74, 22, 14, 0, Math.PI * 2, 0, Math.PI * 0.52), helmet);
+      dome.scale.set(1.06, 0.9, 1.1);
+      place(dome, offset(crown, 0, -headHeight * 0.06, 0), "Head");
+      const brim = new THREE.Mesh(new THREE.CylinderGeometry(headHeight * 0.88, headHeight * 0.84, headHeight * 0.07, 24), helmet);
+      brim.scale.set(1.06, 1, 1.1);
+      place(brim, offset(head.clone().lerp(headTop, 0.4), 0, 0, 0), "Head");
+      for (const side of [-1, 1]) {
+        place(box(headHeight * 0.06, headHeight * 0.55, headHeight * 0.06, strap), offset(head, side * headHeight * 0.5, -headHeight * 0.12, headHeight * 0.05), "Head");
+      }
     } else if (kit.style === "criminal") {
       // Street criminal: a sleeveless studded vest, bare arms with glowing tattoos, a bandana over the lower face,
       // a mohawk or cap, cargo trousers and heavy boots.

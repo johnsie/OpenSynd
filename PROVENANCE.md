@@ -22,14 +22,14 @@ the overview is in the [README](README.md).
 
 ## Honest caveats
 
-- The registry has **56 quarantined, 7 excluded and 0 approved** entries.
+- The registry has **58 quarantined, 7 excluded and 0 approved** entries.
   "Approved" is only given after a named person reviews a file, and that has not happened: I did the intake
   checking with an AI assistant, which is not a legal review.
 - Anything marked `NOASSERTION` is inherited and its licence is **unknown**; I am not relying on it.
 
 ## Character pictures (sprite sheets)
 
-36 sheets in `web/public/assets/sprites/`, made by `web/tools/render-sprites.mjs` from the model below
+38 sheets in `web/public/assets/sprites/`, made by `web/tools/render-sprites.mjs` from the model below
 (clothes, hair, boots and gear are generated shapes added to its skeleton by `web/tools/render.html`).
 Licence CC0-1.0; creator credited as Quaternius for the model, with rendering and styling by the project's contributors.
 

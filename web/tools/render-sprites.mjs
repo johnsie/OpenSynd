@@ -133,10 +133,10 @@ const isOnlyNew = (name) => ["civilian-", "police-", "guard-", "criminal-"].some
 
 // Corporate guards and street criminals (neither wears the squad's trench coat).
 const hostileJobs = [
-  ["guard-1", [233, 186, 140], [20, 16, 14], [44, 58, 50], [38, 48, 42],
-    { style: "guard", armour: [56, 72, 64], helmet: [34, 44, 40], cloth: [44, 58, 50], glow: [240, 170, 50] }],
-  ["guard-2", [196, 146, 104], [20, 16, 14], [52, 54, 60], [40, 42, 48],
-    { style: "guard", armour: [70, 72, 80], helmet: [38, 40, 48], cloth: [52, 54, 60], glow: [240, 170, 50] }],
+  ["guard-1", [233, 186, 140], [20, 16, 14], [78, 88, 54], [70, 80, 50],
+    { style: "guard", armour: [112, 100, 66], helmet: [88, 98, 66], cloth: [84, 92, 56], camo: [66, 74, 44], glow: [200, 60, 50] }],
+  ["guard-2", [196, 146, 104], [20, 16, 14], [150, 130, 90], [140, 120, 84],
+    { style: "guard", armour: [96, 74, 48], helmet: [112, 112, 84], cloth: [150, 132, 92], camo: [122, 104, 70], glow: [200, 60, 50] }],
   ["criminal-1", [233, 186, 140], [20, 16, 14], [28, 24, 30], [52, 56, 40],
     { style: "criminal", vest: [34, 28, 34], cloth: [180, 40, 50], glow: [255, 138, 74], crest: [255, 138, 74] }],
   ["criminal-2", [156, 114, 72], [20, 16, 14], [32, 30, 44], [44, 44, 56],
@@ -150,7 +150,7 @@ for (const [name, skin, hair, jacket, trousers, extra] of hostileJobs) {
 for (const job of [...jobs]) {
   // Only the police ever hold a weapon among the city's people, and only a pistol.
   const single = ["police-", "guard-", "criminal-"].some((prefix) => job.name.startsWith(prefix));
-  const weapons = job.name.startsWith("civilian-") ? [] : single ? ["pulse"] : ["pulse", "heavy-pulse"];
+  const weapons = job.name.startsWith("civilian-") ? [] : single && !job.name.startsWith("guard-") ? ["pulse"] : ["pulse", "heavy-pulse"];
   for (const weapon of weapons) {
     jobs.push({ name: `${job.name}-${weapon}`, options: { ...job.options, aim: weapon } });
   }
@@ -168,12 +168,12 @@ try {
   await page.waitForFunction(() => window.ready === true, null, { timeout: 30000 });
   await mkdir(output, { recursive: true });
   // ONLY=street renders just the civilians and police, leaving the existing sheets untouched.
-  const onlyStreet = ["street", "police", "hostile", "women", "civilians"].includes(process.env.ONLY ?? "");
+  const onlyStreet = ["street", "police", "hostile", "guards", "women", "civilians"].includes(process.env.ONLY ?? "");
   let manifest = { source: "Quaternius Animated Human (CC0-1.0)", sheets: {} };
   if (onlyStreet) manifest = JSON.parse(await readFile(join(output, "sprites.json"), "utf8"));
   for (const { name, options } of jobs) {
     if (onlyStreet) {
-      const groups = { police: ["police-"], hostile: ["guard-", "criminal-"], women: ["civilian-woman"], civilians: ["civilian-"] };
+      const groups = { guards: ["guard-"], police: ["police-"], hostile: ["guard-", "criminal-"], women: ["civilian-woman"], civilians: ["civilian-"] };
       const wanted = groups[process.env.ONLY];
       if (wanted ? !wanted.some((prefix) => name.startsWith(prefix)) : !isOnlyNew(name)) continue;
     }
