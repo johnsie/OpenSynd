@@ -4139,13 +4139,12 @@ function setPointerCursor(kind) {
   canvas.classList.toggle("cursor-attack", kind === "attack");
   canvas.classList.toggle("cursor-attack-far", kind === "attack-far");
   canvas.classList.toggle("cursor-loot", kind === "loot");
-  canvas.classList.toggle("cursor-follow", kind === "follow");
 }
 
-// People the squad follows when clicked: civilians, police and anyone persuaded (not the watchers, who are engaged).
+// People the squad follows when clicked: civilians and anyone persuaded. Police, like the watchers, are engaged.
 function isFollowable(unit) {
   if (isVehicle(unit) || unit.disabled) return false;
-  return unit.persuaded || unit.side === "civilian" || unit.side === "police";
+  return unit.persuaded || unit.side === "civilian";
 }
 
 // Left-click on someone: the selected operatives, not in a vehicle, walk after them and stay beside them (no shooting).
@@ -4186,8 +4185,8 @@ function pointerKindAt(position) {
     const toUnit = Math.hypot(unit.position.x - underPointer.x, unit.position.y - underPointer.y);
     if (toGear < toUnit) unit = null;
   }
-  if (unit && isFollowable(unit)) return "follow";
-  if (unit && isAttackable(unit) && !unit.disabled && !isVehicle(unit)) {
+  // The crosshair marks every person under the pointer (right-click shoots them); white when out of range of everyone selected.
+  if (unit && (isAttackable(unit) || isFollowable(unit)) && !unit.disabled && !isVehicle(unit)) {
     const reachable = squad.some((operator) => {
       const gap = distanceBetween(operator, unit);
       return gap <= combatStats(operator, gap).range;

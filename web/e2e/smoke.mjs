@@ -674,7 +674,7 @@ for (const [name, type, executablePath] of targets) {
     await tail.waitForTimeout(700);
     const walkerPoint = await tail.evaluate(() => window.opensyndTest.screenPoint("civilian-1"));
     await tail.mouse.move(walkerPoint.x, walkerPoint.y);
-    await tail.waitForFunction(() => document.querySelector("#game-canvas").classList.contains("cursor-follow"));
+    await tail.waitForFunction(() => document.querySelector("#game-canvas").className.includes("cursor-attack"));
     await tail.mouse.click(walkerPoint.x, walkerPoint.y);
     assert.match(await tail.locator("#status-message").innerText(), /following/i);
     assert.match(await tail.locator("#selected-readout").innerText(), /following/);
@@ -848,8 +848,8 @@ for (const [name, type, executablePath] of targets) {
     const stranger = await street.evaluate(() => window.opensyndTest.screenPoint("civilian-1"));
     await street.mouse.move(stranger.x + 40, stranger.y + 40);
     await street.mouse.move(stranger.x, stranger.y);
-    await street.waitForFunction(() => document.querySelector("#game-canvas").className.includes("cursor-follow"));
-    // Police get the follow pointer too, and it is easy to land: a little above and beside the figure still counts.
+    await street.waitForFunction(() => document.querySelector("#game-canvas").className.includes("cursor-attack"));
+    // Police get the crosshair too, and it is easy to land: a little above and beside the figure still counts.
     await street.evaluate(() => {
       window.opensyndTest.placeNear("police-15", "operator-one", 3, 0);
       window.opensyndTest.focusOn("operator-one");
@@ -859,7 +859,7 @@ for (const [name, type, executablePath] of targets) {
     const officer = await street.evaluate(() => window.opensyndTest.screenPoint("police-15"));
     await street.mouse.move(officer.x + 40, officer.y + 60);
     await street.mouse.move(officer.x + 14, officer.y - 55);
-    await street.waitForFunction(() => document.querySelector("#game-canvas").className.includes("cursor-follow"));
+    await street.waitForFunction(() => document.querySelector("#game-canvas").className.includes("cursor-attack"));
     await street.close();
 
     // With everyone in one car, any selected rider can order it on: the first selected is often a passenger, not the driver.
