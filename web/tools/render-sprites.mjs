@@ -107,10 +107,10 @@ const street = {
 };
 const bystanderJobs = [
   // Women: dark clothes, black tights (the trousers colour) and a short skirt.
-  ["civilian-woman-1", [255, 209, 159], [20, 16, 22], [34, 30, 46], [10, 10, 12],
-    { style: "woman", skirt: [28, 24, 38], hair: [24, 18, 26], glow: [232, 107, 214] }],
-  ["civilian-woman-2", [196, 146, 104], [96, 34, 44], [26, 34, 40], [10, 10, 12],
-    { style: "woman", skirt: [22, 26, 34], hair: [96, 34, 44], glow: [66, 214, 208] }],
+  ["civilian-woman-1", [255, 209, 159], [48, 30, 70], [150, 70, 170], [14, 12, 20],
+    { style: "woman", skirt: [70, 36, 96], top: [150, 70, 170], hair: [48, 30, 70], glow: [232, 107, 214] }],
+  ["civilian-woman-2", [196, 146, 104], [150, 56, 40], [34, 130, 140], [14, 14, 20],
+    { style: "woman", skirt: [24, 80, 96], top: [34, 130, 140], hair: [150, 56, 40], glow: [66, 214, 208] }],
   // Men: cyberpunk street fashion in loud jackets and neon accents.
   ["civilian-man-1", [233, 186, 140], [20, 16, 14], [74, 44, 118], [30, 32, 42],
     { style: "man", collar: [58, 34, 94], crest: [232, 107, 214], glow: [232, 107, 214] }],
@@ -168,12 +168,12 @@ try {
   await page.waitForFunction(() => window.ready === true, null, { timeout: 30000 });
   await mkdir(output, { recursive: true });
   // ONLY=street renders just the civilians and police, leaving the existing sheets untouched.
-  const onlyStreet = ["street", "police", "hostile"].includes(process.env.ONLY ?? "");
+  const onlyStreet = ["street", "police", "hostile", "women"].includes(process.env.ONLY ?? "");
   let manifest = { source: "Quaternius Animated Human (CC0-1.0)", sheets: {} };
   if (onlyStreet) manifest = JSON.parse(await readFile(join(output, "sprites.json"), "utf8"));
   for (const { name, options } of jobs) {
     if (onlyStreet) {
-      const wanted = { police: ["police-"], hostile: ["guard-", "criminal-"] }[process.env.ONLY];
+      const wanted = { police: ["police-"], hostile: ["guard-", "criminal-"], women: ["civilian-woman"] }[process.env.ONLY];
       if (wanted ? !wanted.some((prefix) => name.startsWith(prefix)) : !isOnlyNew(name)) continue;
     }
     const result = await page.evaluate((job) => window.renderSheet(job), options);

@@ -2452,17 +2452,24 @@ function drawMinimap(viewport) {
     const size = isVehicle(unit) ? 5 : 3;
     miniContext.fillRect(Math.round(point.x) - Math.floor(size / 2), Math.round(point.y) - Math.floor(size / 2), size, size);
   }
-  // A pulsing marker where the current objective is, so the squad always knows where to look next.
+  // A beacon where the current objective is: rings spread out over the whole minimap, so it is easy to find from anywhere.
   const goal = currentObjective(state.objectives);
   if (goal) {
-    const pulse = reduceMotion ? 0.5 : (state.elapsed * 1.2) % 1;
+    const reach = Math.hypot(minimap.width, minimap.height);
     for (const place of objectiveFocus(goal, state.map.zones, state.units)) {
       const point = miniProject(place, state.map);
-      miniContext.strokeStyle = `rgba(232, 107, 214, ${1 - pulse * 0.7})`;
-      miniContext.lineWidth = 2;
+      miniContext.lineWidth = 1.5;
+      for (let ring = 0; ring < 4; ring += 1) {
+        const phase = reduceMotion ? (ring + 0.5) / 4 : (state.elapsed * 0.3 + ring / 4) % 1;
+        miniContext.strokeStyle = `rgba(232, 107, 214, ${(1 - phase) * 0.7})`;
+        miniContext.beginPath();
+        miniContext.arc(point.x, point.y, 4 + phase * reach, 0, Math.PI * 2);
+        miniContext.stroke();
+      }
+      miniContext.fillStyle = "#e86bd6";
       miniContext.beginPath();
-      miniContext.arc(point.x, point.y, 3 + pulse * 6, 0, Math.PI * 2);
-      miniContext.stroke();
+      miniContext.arc(point.x, point.y, 2.5, 0, Math.PI * 2);
+      miniContext.fill();
     }
   }
   // The area the main view currently shows.

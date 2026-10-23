@@ -283,7 +283,10 @@ const policies = {
 };
 // The bot only knows the original objective types; operations built on the newer ones are balanced by hand.
 const SUPPORTED = new Set(["reach-zone", "interact", "disable", "hold", "extract"]);
+// Optional second argument: only operations whose file name contains it (the campaign has 50).
+const only = process.argv[3] ?? "";
 for (const file of pack.missions) {
+  if (only && !file.includes(only)) continue;
   const world = await loadWorld(file);
   if (!world.mission.objectives.every((objective) => SUPPORTED.has(objective.type))) {
     console.log(`\n${world.mission.name}: skipped (uses objective types the bot cannot play)`);
