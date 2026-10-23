@@ -13,6 +13,7 @@ export const VAPORIZE_SECONDS = 0.9;
 export const BURN_RUN_SECONDS = 1;
 export const BURN_COLLAPSE_SECONDS = 0.5;
 export const SMOULDER_SECONDS = 7;
+export const BLOOD_SECONDS = 2.5;
 
 /** "shot", "laser" or "burn": which death a fallen person gets, from what killed them and their chest. */
 export function deathKind(unit) {
@@ -26,10 +27,10 @@ const clamp01 = (value) => Math.min(1, Math.max(0, value));
 
 /**
  * What to draw `age` seconds after death: { drawn, fall (0 upright to 1 lying), fade (alpha), squash (vertical scale),
- * flames, smoke (each 0 to 1), run (0 to 1 while still running about), charred, ash, flash }.
+ * flames, smoke, blood (each 0 to 1), run (0 to 1 while still running about), charred, ash, flash }.
  */
 export function deathLook(kind, age, ours = false) {
-  const look = { drawn: true, fall: 0, fade: 1, squash: 1, flames: 0, smoke: 0, run: 0, charred: false, ash: false, flash: 0 };
+  const look = { drawn: true, fall: 0, fade: 1, squash: 1, flames: 0, smoke: 0, run: 0, charred: false, ash: false, flash: 0, blood: 0 };
   if (kind === "laser") {
     const t = clamp01(age / VAPORIZE_SECONDS);
     look.flash = 1 - t;
@@ -59,5 +60,6 @@ export function deathLook(kind, age, ours = false) {
     return look;
   }
   look.fall = clamp01(age / FALL_SECONDS);
+  look.blood = clamp01((age - 0.2) / BLOOD_SECONDS); // a pool spreads under someone who was shot
   return look;
 }

@@ -20,6 +20,11 @@ test("a shot person falls and then lies", () => {
   assert.ok(deathLook("shot", 0.2).fall > 0 && deathLook("shot", 0.2).fall < 1);
   assert.equal(deathLook("shot", 5).fall, 1);
   assert.equal(deathLook("shot", 5).drawn, true);
+  assert.equal(deathLook("shot", 0).blood, 0);
+  assert.ok(deathLook("shot", 1).blood > 0 && deathLook("shot", 1).blood < 1, "a pool spreads");
+  assert.equal(deathLook("shot", 6).blood, 1);
+  assert.equal(deathLook("laser", 0.3).blood, 0);
+  assert.equal(deathLook("burn", 5).blood, 0);
 });
 
 test("a laser vaporizes: an enemy leaves nothing, one of ours a scorch mark", () => {

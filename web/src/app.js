@@ -2161,6 +2161,8 @@ function spriteSheetFor(unit) {
     const index = state.units.filter((item) => item.side === "team").indexOf(unit);
     key = SPRITE_SKINS[index % SPRITE_SKINS.length];
   }
+  // Someone who has fallen is not holding a weapon (it lies with the rest of their gear).
+  if (unit.disabled) return sheets[key] || null;
   const held = heldWeapon(unit, state.elapsed);
   if (held) {
     // New weapons borrow the art of the pistol or rifle grip they are held with.
@@ -2305,6 +2307,18 @@ function drawUnit(unit, viewport) {
   context.beginPath();
   context.ellipse(0, size * 1.05, size * 0.9, size * 0.35, 0, 0, Math.PI * 2);
   context.fill();
+  if (dying?.blood > 0) {
+    // A pool of blood spreads out under the body where they fell (the body lies to the side it fell toward).
+    const side = unit.id.length % 2 ? 1 : -1;
+    for (const [grow, tone] of [[1, "rgba(110, 10, 16, .95)"], [0.6, "rgba(176, 22, 30, .8)"]]) {
+      context.fillStyle = tone;
+      context.beginPath();
+      const across = size * (0.4 + dying.blood * 1.3) * grow;
+      const down = size * (0.18 + dying.blood * 0.5) * grow;
+      context.ellipse(side * size * 1.0, size * 1.05, across, down, 0.15 * side, 0, Math.PI * 2);
+      context.fill();
+    }
+  }
 
   const picked = state.selectedIds.includes(unit.id) && !unit.disabled;
   if (unit.id === state.selectedId || picked) {
