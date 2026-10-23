@@ -71,7 +71,7 @@ const catalog = [
 
 test("an achievement pays its reward once", () => {
   const achievement = { id: "first", reward: 15 };
-  let campaign = earnAchievement(emptyCampaign(), achievement);
+  let campaign = earnAchievement({ ...emptyCampaign(), funds: 0 }, achievement);
   assert.deepEqual([campaign.funds, campaign.achievements], [15, ["first"]]);
   assert.equal(earnAchievement(campaign, achievement), campaign);
 });
@@ -99,7 +99,7 @@ test("taking a part off returns what its top tier cost", () => {
   assert.equal(campaign.funds, 100 - 8 - 40);
   campaign = removeUpgrade(campaign, "op1", "chest");
   assert.deepEqual([campaign.funds, upgradesOf(campaign, "op1").chest], [100 - 8, 1]);
-  assert.equal(removeUpgrade(emptyCampaign(), "op1", "chest").funds, 0);
+  assert.equal(removeUpgrade({ ...emptyCampaign(), funds: 0 }, "op1", "chest").funds, 0);
 });
 
 test("old heart and brain research is refunded when a saved campaign is read", () => {
@@ -197,7 +197,8 @@ test("bringing home the item being researched boosts it by a quarter, once", () 
 });
 
 test("every 24 hours a day passes: tax is collected from held territories and moods move", () => {
-  let campaign = ensureTerritories(emptyCampaign(), [{ id: "m1", population: 3_000_000 }, { id: "m2", population: 4_000_000 }]);
+  const fresh = { ...emptyCampaign(), funds: 0 };
+  let campaign = ensureTerritories(fresh, [{ id: "m1", population: 3_000_000 }, { id: "m2", population: 4_000_000 }]);
   assert.deepEqual(Object.keys(campaign.territories), ["m1", "m2"]);
   assert.equal(ensureTerritories(campaign, [{ id: "m1" }]), campaign, "existing territories are kept");
   let result = advanceCampaign(campaign, 24, catalog);
@@ -363,7 +364,7 @@ test("selling an item returns half its price and packs the loadout", () => {
 
 test("harming bystanders costs funds, but never below zero", () => {
   const campaign = { ...emptyCampaign(), funds: 100 };
-  assert.equal(penalise(campaign, CIVILIAN_PENALTY).funds, 60);
+  assert.equal(penalise(campaign, CIVILIAN_PENALTY).funds, 100 - CIVILIAN_PENALTY);
   assert.ok(POLICE_PENALTY > CIVILIAN_PENALTY, "police cost more");
   assert.equal(penalise(campaign, 500).funds, 0);
   assert.equal(penalise(campaign, -5).funds, 100, "a negative penalty never pays");
@@ -442,7 +443,7 @@ test("hiring costs funds, except when the whole roster has been lost", () => {
   const paid = hire({ ...emptyCampaign(), funds: HIRE_PRICE + 5 });
   assert.equal(paid.campaign.funds, 5);
   assert.ok(paid.member);
-  const wiped = loseOperatives(emptyCampaign(), ["operator-one", "operator-two", "operator-three", "operator-four"]);
+  const wiped = loseOperatives({ ...emptyCampaign(), funds: 0 }, ["operator-one", "operator-two", "operator-three", "operator-four"]);
   assert.equal(aliveMembers(wiped).length, 0);
   const volunteer = hire(wiped);
   assert.equal(volunteer.campaign.funds, 0, "a volunteer is free");
@@ -565,4 +566,10 @@ test("each persuaded person still following the squad pays a bonus when an opera
   ];
   assert.deepEqual(persuadedBonus(units), { count: 3, amount: 3 * PERSUADED_BONUS });
   assert.deepEqual(persuadedBonus([]), { count: 0, amount: 0 });
+});
+
+test("a new campaign starts with funds, enough for a few weapons from the Armoury", async () => {
+  const { STARTING_FUNDS } = await import("../src/campaign.js");
+  assert.equal(emptyCampaign().funds, STARTING_FUNDS);
+  assert.ok(STARTING_FUNDS >= 300);
 });

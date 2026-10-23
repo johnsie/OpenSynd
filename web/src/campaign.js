@@ -56,9 +56,12 @@ export function initialRoster() {
   return roster;
 }
 
+// What a new campaign starts with (FreeSynd gives 30000 against weapon prices from 250 to 50000; these are our prices).
+export const STARTING_FUNDS = 500;
+
 export function emptyCampaign() {
   return {
-    funds: 0,
+    funds: STARTING_FUNDS,
     upgrades: {},
     items: [],
     loadouts: {},
@@ -262,8 +265,8 @@ export function serializeCampaign(campaign) {
 }
 
 // What harming bystanders costs. Funds never go below zero.
-export const CIVILIAN_PENALTY = 40;
-export const POLICE_PENALTY = 80;
+export const CIVILIAN_PENALTY = 10;
+export const POLICE_PENALTY = 20;
 
 export function penalise(campaign, amount) {
   return { ...campaign, funds: Math.max(0, campaign.funds - Math.max(0, amount)) };

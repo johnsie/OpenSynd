@@ -7,7 +7,7 @@
   "type": "tool",
   "action": "scan",
   "charges": 3,
-  "researchCost": 60,
+  "researchCost": 15,
   "effect": {
     "radius": 20,
     "duration": 20

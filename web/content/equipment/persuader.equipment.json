@@ -7,7 +7,7 @@
   "type": "tool",
   "action": "persuade",
   "charges": 30,
-  "researchCost": 80,
+  "researchCost": 20,
   "effect": {
     "range": 3.5,
     "cooldown": 1.2
