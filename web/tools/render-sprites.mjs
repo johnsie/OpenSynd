@@ -107,9 +107,9 @@ const street = {
 };
 const bystanderJobs = [
   // Women: dark clothes, black tights (the trousers colour) and a short skirt.
-  ["civilian-woman-1", [255, 209, 159], [48, 30, 70], [150, 70, 170], [112, 84, 86],
+  ["civilian-woman-1", [255, 209, 159], [48, 30, 70], [150, 70, 170], [84, 82, 92],
     { style: "woman", skirt: [70, 36, 96], top: [150, 70, 170], hair: [48, 30, 70], glow: [232, 107, 214] }],
-  ["civilian-woman-2", [196, 146, 104], [150, 56, 40], [34, 130, 140], [84, 58, 52],
+  ["civilian-woman-2", [196, 146, 104], [150, 56, 40], [34, 130, 140], [62, 60, 70],
     { style: "woman", skirt: [24, 80, 96], top: [34, 130, 140], hair: [150, 56, 40], glow: [66, 214, 208] }],
   // Men: cyberpunk street fashion in loud jackets and neon accents.
   ["civilian-man-1", [233, 186, 140], [20, 16, 14], [74, 44, 118], [30, 32, 42],
