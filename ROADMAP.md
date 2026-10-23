@@ -304,6 +304,192 @@ stray `console.log` in game or test code. It runs in CI alongside syntax
 checks; a full linter would add transitive dependencies that each need a
 provenance record, so it remains an open decision.
 
+## What FreeSynd's source teaches us
+
+A read of the FreeSynd source (`src/`, `data/ref/`, `TODO.txt`) for gameplay ideas, written down so the roadmap
+can draw on it. This is study of behaviour and design, not a copy: FreeSynd's data tables (`data/ref/weapons.dat`,
+`research.dat`), art, text and mission files remain quarantined legacy data, so the numbers below are described by
+ratio and role, and anything we build is original content with its own values. The code is GPL, so reading it to
+learn how a rule works is fine; we reimplement in our own structure and test it.
+
+Legend: **have** = already in OpenSynd, **partly** = a version of it exists, **new** = not yet.
+
+### Weapons and items
+
+FreeSynd has 14 items; five are available from the start (Persuadatron, Pistol, Shotgun, Scanner, MediKit) and the
+rest are researched. What each does and where we stand:
+
+| FreeSynd item | What it does | OpenSynd |
+|---|---|---|
+| Pistol | cheap, accurate, short reach, 13 rounds, free and reloaded for free after each mission | **have** (Civic Pulse Emitter; reload-between-missions is **new**) |
+| Shotgun | fires several pellets in a wide cone; short range; cheap; an early weapon | **new**: spread shot that hits everyone in a cone, strong at close range |
+| Uzi | automatic, fast, light, short to medium range | **have** (Machine Pistol); hold-to-fire automatic is **new** |
+| Minigun | automatic burst of many pellets, huge ammunition, very heavy (slows the carrier) | **partly** (Rotary Cannon); weight is **new** |
+| Flamer | short-range stream that sets people on fire (burn damage over time), also burns trees and street furniture; fuel is cheap | **new**: burn damage type, burning units flee/panic, flammable props |
+| Long Range | a sniper rifle: the longest reach, slow shots, perfect accuracy | **have** (Longshot Rifle) |
+| Laser | instant beam, very high damage, area damage at the impact, few expensive charges | **new**: instant-hit beam with a small blast at the end |
+| Gauss Gun | a slow projectile that flies to the target and explodes on arrival for area damage, 3 shots, very expensive | **partly** (Coil Gun pierces a line); FreeSynd's is a visible projectile with a blast, which could be a second mode |
+| Time Bomb | planted, explodes after a fuse; also explodes if shot or caught in another blast; enemy agents carry them | **have** (Delay Charge); chain-reaction when hit is **new** |
+| Energy Shield | a pool of energy that drains while the shield is on; it is selected like a weapon and put away to stop the drain | **partly** (Deflector Shield is a timed use); an energy pool you can switch off is **new** |
+| Persuadatron | persuades people in range, no ammunition | **have** (Persuader, with charges and our own unlock rules) |
+| Scanner | widens the minimap's reach so nearby people show on it | **new**: without one the minimap shows a small area; with one, a wide one |
+| MediKit | one-use healing | **have** (Field Repair Kit) |
+| Access Card | opens locked doors and gates (only useful with the best Brain upgrade) | **new**: key items for doors, tied to Brain research |
+
+Item rules worth taking:
+
+- **Weight.** Every item has a weight; a carrier's capacity grows with their Legs and Arms upgrades; over capacity
+  halves their speed and far over leaves them crawling. A minigun is 25 times a pistol. This makes loadouts a real
+  choice. **new**.
+- **Ammunition and reloading cost money.** Weapons are bought, then reloaded for a fee between missions
+  (ammunition price is per weapon, the Gauss and Laser are very expensive to refill, the Flamer almost free). We
+  charge only the first purchase. **new**.
+- **Damage types.** Bullet, laser, burn, explosion, collision (cars and doors) and persuasion are separate, and
+  dying differently: bullets make a person drop their weapons; lasers leave nothing; fire and blasts burn.
+  Resistances by upgrade (a good Chest upgrade survives a blast and keeps their gear) follow from this. **new**.
+- **Accuracy and spread.** Each weapon has an accuracy and a cone; shots land randomly within it, and the shooter's
+  eyes, brain, arms, legs, perception and adrenaline narrow it. We fire exact rays today. A little spread, wider for
+  shotguns and miniguns, tighter with upgrades, would give upgrades and weapon choice more weight. **new**.
+- **Reaction time and rate of fire.** A shooter waits a reaction time (about a fifth of a second) plus the weapon's
+  reload before each shot; automatic weapons fire continuously while the button is held. **partly** (cooldowns).
+- **Weapons on the ground.** Dropped weapons lie where they fell, anyone can pick them up, and persuaded followers
+  go and fetch them. **have** (loot, followers).
+- **Discovering a weapon boosts research.** Carrying home a weapon you have not researched does not unlock it; it
+  gives that research a head start (a quarter of the way). Our looting unlocks immediately; this is a better rule.
+  **new**.
+- **Enemies scale with the player.** Enemy agents are armed with the best two weapons the player has researched,
+  plus a bomb, so the arms race follows the player's progress. **new**: an opt-in difficulty rule.
+- **Hit reaction.** A hit person staggers and cannot be persuaded for a moment; a car hit throws its driver out.
+  **partly** (knockback, ejection).
+- **Everything is lethal.** Agents have little health relative to weapon damage (a pistol takes about eight hits,
+  a laser or gauss round kills at once). Ours has a similar ratio.
+
+### Upgrades ("mods") and the IPA drugs
+
+- **Six body upgrades with three tiers each** (Legs, Arms, Chest, Heart, Eyes, Brain; versions 1 to 3), researched in
+  order, each tier costing double the last. Effects as the code uses them:
+  Legs raise speed (about a quarter more per tier) and carrying capacity; Arms raise carrying capacity and
+  accuracy; Chest from the second tier regenerates health after being hit and makes a fallen agent explode, and
+  keeps their gear when burned; Heart gives stamina and a little accuracy; Eyes and Brain improve accuracy, and
+  Brain lowers the persuasion points needed and, at the top tier, enables the access card. Enemy agents get the
+  top tier of everything. **partly** (we have Heart and Brain research, and Legs and Brain training bars).
+- **IPA: Intelligence, Perception, Adrenaline.** Three sliders per agent, each between a half and double
+  strength. Adrenaline scales speed and (inversely) accuracy; Perception scales accuracy and sight; Intelligence
+  scales reaction and persuading. The drug model is the clever part: the bar you set (the amount) pulls the real
+  effect up to it over a few seconds, then both creep back towards a "dependency" mark, and the dependency itself
+  creeps towards your amount, so a sustained high dose wears off and leaves the agent worse once it fades. Our
+  Legs and Brain bars with fatigue are a cousin of Adrenaline and Intelligence. **new**: a Perception bar and the
+  dependency drift.
+- **Persuaded followers move at a speed set by their owner's adrenaline**: fast owner, fast flock. **new**.
+
+### Research
+
+FreeSynd research is a slow, funded process rather than a purchase: each item has a minimum funding; the player sets
+a funding level on ten steps (from 1 to 100 times the minimum), which sets how many hours of game time it takes
+(a day is 24 game hours; a minimum-funded research lasts ten days); only one research is active at a time and others
+can be suspended; weapons form chains in four categories (Heavy: Gauss, Laser; Automatic: Uzi, Minigun; Assault:
+Flamer, Long Range, Time Bomb; Misc: Access Card, Energy Shield) so finishing one opens the next; upgrades run
+version 1, 2, 3 with doubling costs. Ours is instant and funds-based. **new**, a good fit for the campaign layer:
+research with a funding dial, a projected finish time, categories and chains, suspension, and the weapon-discovery
+bonus above.
+
+### Missions and objectives
+
+FreeSynd objectives are strictly sequential: only the current objective is checked, finishing it starts the next,
+and a failed objective ends the mission in failure. The types it has, against ours:
+
+| FreeSynd objective | OpenSynd |
+|---|---|
+| Persuade a named person | **new** |
+| Assassinate a named person (fails if the target escapes the map) | **partly** (disable a target; the escape rule is **new**) |
+| Protect a person (fails if they die; some missions need them to reach a destination) | **new**: an escort or VIP objective |
+| Destroy a vehicle | **new** (vehicles exist now) |
+| Use a vehicle (take control of it) | **new** (we can enter and drive cars now) |
+| Acquire a weapon or item | **new** (pick up a named item) |
+| Eliminate a group (every agent, every guard, every police officer) | **new**: "combat sweep" |
+| Evacuate: bring agents and persuaded people into a zone | **partly** (extract; bringing followers along is **new**) |
+| Hold, interact, reach | **have**; the sequential chain and "fail on failure" are **new** |
+
+Mission scripts also give non-player people **walk and drive scripts** (go to a place, take a vehicle and go on,
+repeat from the start), **proximity triggers** (stand still until the squad comes within about six tiles, then walk
+somewhere: ambushes and reinforcements), **trains that stop and wait**, and a **target that runs for the exit**.
+These are worth adding to the mission format. The minimap shows a **blinking signal at the current objective's
+target or the evacuation zone**; ours does not point at objectives.
+
+Mission results are recorded and shown at the debrief: how many agents were used, time taken, enemies, criminals,
+civilians, guards and police killed, people persuaded, enemy agents captured, and shooting accuracy (hits over
+shots). Killing civilians and police was meant to lower a country's happiness. We record some of this (kills by
+type, bystander penalties); accuracy, persuaded counts, captured agents and a fuller debrief are **new**.
+
+### Agents, roster and the campaign
+
+- A **roster of up to 18 agents, eight at the start** (alternating men and women, with a women-only option),
+  four of which go on each mission. Agents have surnames. They keep their weapons and upgrades between missions, and
+  **death is permanent**: a fallen agent is removed from the cryo chamber. **new** (ours is a fixed squad of four).
+- **Captured enemy agents become recruits.** An enemy agent you persuaded and brought out alive on a successful
+  mission joins the roster with their weapons and upgrades. **new**, and a strong reward for the Persuader.
+- **A strategic map of 50 territories**, each with a population that drifts day to day, a **tax rate from 0 to 100
+  percent** you set, daily tax income, and a **satisfaction ladder** (very happy, happy, content, unhappy,
+  discontent, rebel). At or under 30 percent tax a territory slowly improves (a step every 15 days); above that it
+  slips, every few days at moderate rates and every day or two above 90 percent; a territory that reaches rebel
+  becomes hostile and has to be retaken. Finished territories pay; finishing a mission opens its neighbours; rival
+  syndicates own territory by colour. This is the engine behind the money. **new**, and it fits our world map: each
+  region could carry a population, a tax setting and a mood.
+- **A game clock**: four real seconds per game hour. Research, taxes and population run on days. **new**.
+- **Buying mission intelligence.** Before a mission the player can pay for further levels of briefing information
+  and for map enhancements (more detail about objectives and the area). **new**: a cheap way to sink money and
+  reward planning.
+
+### Controls and interface
+
+- **Queued orders.** Holding Ctrl while giving an order adds it to a queue instead of replacing the current one, so
+  a squad can be given a route of several waypoints, a pickup, then a vehicle. **new**.
+- **Click means what it points at**: a person to follow and fight, a weapon to pick up, a vehicle to get into or
+  out of, the ground to walk to. **partly** (follow and loot have it; vehicles use V).
+- **Hold the fire button for automatic weapons.** **new** with automatic weapons.
+- **Number keys and function keys.** 1 to 4 select an agent, 0 selects everyone, Ctrl plus a number adds or removes
+  one; F5 to F12 pick the carried item in each of the eight slots; one click on an item selects it for the group.
+  **partly** (we select all and slots by click); the slot hotkeys are **new**.
+- **A minimap you can click to send the squad**, which only sees far with a scanner. **partly**.
+- **IPA sliders on the HUD** you can drag during play. **partly** (Legs and Brain steppers).
+- Pause, music and sound toggles on keys. **have**.
+
+### The world: things that can be touched
+
+FreeSynd's map has **doors** that open for agents and **large doors**, **trees** that burn, **windows** that break
+when shot and some that animate, **neon signs**, **traffic semaphores** with states, destructible street furniture
+(bins, phone booths, post boxes, billboards), and **vehicles** that hurt people (collision damage). Its own TODO list
+asks for exactly what we just built (vehicle capacity, speed, damage and blast radius per type) and for destructible
+statics. We have fences, walls and gates only. **new**: breakable windows, doors that open for the squad and are
+locked to others, flammable props, traffic lights, and cars that run people over.
+
+### Behaviour table (done)
+
+The ped types and behaviours (agent, enemy agent, guard, police, civilian, criminal, persuaded, vehicles) are covered
+in "People and behaviours, mapped from FreeSynd" above and are **have**.
+
+### Where the biggest wins are
+
+Ordered by how much they add per unit of work, given what exists:
+
+1. **Objective types and a sequential chain** (persuade, protect or escort, destroy and use a vehicle, take an item,
+   eliminate a group, evacuate with followers; fail on failure) plus **scripted people** (walk and drive routes,
+   proximity ambushes, a target that runs for the exit). These use pieces we already have and make missions differ.
+2. **The weapons we are missing**: shotgun (cone), flamer (burn over time), laser (instant beam), scanner, access
+   card; with **weight**, **spread/accuracy** and **reload costs** to make choices matter.
+3. **Research as a funded process** with categories, chains, a funding dial and the discovery bonus, which the
+   world map can drive.
+4. **A persistent roster with permadeath and captured recruits**, which gives the Persuader a payoff.
+5. **The strategic layer**: territories with population, tax and mood on the existing world map, a game clock, and
+   bought mission intelligence.
+6. **Perception and the drug-dependency model**, upgrade tiers for all six body parts, and the Chest's regeneration
+   and blast survival.
+7. **A fuller debrief** (accuracy, persuaded, captured) and **touchable scenery** (windows, doors, flammable props,
+   traffic lights, collision damage).
+8. **Ctrl-queued orders, slot hotkeys and hold-to-fire.**
+9. A **mission editor** in the browser, as FreeSynd's source has one (`src/editor/`), to build on our JSON mission
+   format.
+
 ## Non-negotiable principles
 
 1. **No original game data.** Development, tests, demos, releases, screenshots,
