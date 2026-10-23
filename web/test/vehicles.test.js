@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { createTileGrid } from "../src/engine.js";
+import { ejectAll } from "../src/vehicles.js";
 import {
   ENTER_RANGE,
   RUNOVER_COOLDOWN,
@@ -282,4 +283,22 @@ test("a civilian car waits for people on foot to get out of its way, but not for
   assert.equal(blockedAhead(driving, [driving, ahead(8, 5)]), false, "behind it");
   assert.equal(blockedAhead(driving, [driving, ahead(11, 5, { disabled: true })]), false, "a fallen person does not stop traffic for ever");
   assert.equal(blockedAhead(driving, [driving, ahead(11, 5, { inVehicle: "x" })]), false, "someone riding is not in the way");
+});
+
+test("someone leaving a car is never put in a pocket behind a wall that they could not walk out of", () => {
+  const pocketGrid = createTileGrid({
+    dimensions: { width: 12, height: 8 },
+    regions: [
+      { id: "ground", x: 0, y: 0, width: 12, height: 8, surface: "service-concrete", walkable: true, elevation: 0 },
+      { id: "road", x: 0, y: 3, width: 12, height: 1, surface: "street", walkable: true, elevation: 0 },
+      { id: "wall", x: 0, y: 2, width: 12, height: 1, surface: "service-wall", walkable: false, elevation: 2 },
+      { id: "wall-below", x: 0, y: 4, width: 12, height: 1, surface: "service-wall", walkable: false, elevation: 2 },
+    ],
+  });
+  const parked = car("c", 5, 3, "d");
+  const rider = person("d", 5, 3, { inVehicle: "c" });
+  const [out] = ejectAll(parked, [parked, rider], pocketGrid);
+  assert.equal(out.id, "d");
+  // Rows 0-1 and 5-7 are walkable pavement but walled off from the road: the only way out is along it.
+  assert.deepEqual([out.position.y], [3]);
 });

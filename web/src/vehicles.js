@@ -163,7 +163,12 @@ function spotBeside(vehicle, grid, taken) {
   }
   const isTaken = (spot) => taken.some((other) => other.x === spot.x && other.y === spot.y);
   const free = offsets.filter((spot) => grid[spot.y]?.[spot.x]?.walkable && !isTaken(spot));
-  return free.find((spot) => grid[spot.y][spot.x].surface !== "street") ?? free[0] ?? origin;
+  // Never step out into a pocket the car cannot be reached from (a gap behind a fence or a wall): someone put there
+  // would be stuck. A pavement is preferred to the road when both connect.
+  const connected = (spot) => findPath(grid, spot, origin).length > 0;
+  const onRoad = (spot) => grid[spot.y][spot.x].surface === "street";
+  const ordered = [...free.filter((spot) => !onRoad(spot)), ...free.filter(onRoad)];
+  return ordered.find(connected) ?? origin;
 }
 
 // Everyone inside steps out around the vehicle. Returns who got out.
