@@ -18,6 +18,7 @@ import {
   enterVehicle,
   isSquadVehicle,
   isVehicle,
+  keepRight,
   leaveVehicle,
   nearestRoadTile,
   newVehicleState,
@@ -89,7 +90,7 @@ test("an AI driver drives the route along the road and carries the driver with i
   const units = [vehicle, driver];
   for (let step = 0; step < 30; step += 1) advanceVehicles(units, 0.1, roads, grid);
   assert.ok(vehicle.position.x > 15, `drove ${vehicle.position.x - 5} tiles in 3 s at 6 tiles/s`);
-  assert.equal(vehicle.position.y, 5, "stays on the road");
+  assert.equal(vehicle.position.y, 6, "keeps to its lane, one tile to the right of the line it follows (heading east)");
   assert.deepEqual(driver.position, vehicle.position, "the driver rides inside");
   assert.ok(vehicle.vehicle.heading.x > 0.9, "heading along the road");
   for (let step = 0; step < 100; step += 1) advanceVehicles(units, 0.1, roads, grid);
@@ -362,4 +363,33 @@ test("a scripted person walks to a car, gets in as its driver, drives to a point
   for (let step = 0; step < 10; step += 1) advancePatrols([taken, skipper], 1 / 30, grid, step / 30);
   assert.equal(skipper.script.done, true);
   assert.equal(skipper.inVehicle ?? null, null);
+});
+
+test("cars keep to their lane: oncoming traffic on a wide street passes without meeting or stopping", () => {
+  // The road is three tiles wide (rows 4 to 6). East-bound cars keep right (south of the line they follow), west-bound north.
+  const east = car("east", 2, 5, "de");
+  east.vehicle.route = { route: [{ x: 2, y: 5 }, { x: 30, y: 5 }], index: 1 };
+  const west = car("west", 30, 5, "dw");
+  west.vehicle.route = { route: [{ x: 30, y: 5 }, { x: 2, y: 5 }], index: 1 };
+  const units = [east, west, person("de", 2, 5, { inVehicle: "east" }), person("dw", 30, 5, { inVehicle: "west" })];
+  let closest = Infinity;
+  let stopped = 0;
+  for (let step = 0; step < 35; step += 1) {
+    const before = { east: east.position.x, west: west.position.x };
+    advanceVehicles(units, 0.1, roads, grid);
+    if (east.position.x === before.east || west.position.x === before.west) stopped += 1;
+    closest = Math.min(closest, Math.hypot(east.position.x - west.position.x, east.position.y - west.position.y));
+  }
+  assert.ok(east.position.x > 18 && west.position.x < 14, "both got past each other");
+  assert.ok(closest >= 0.9, `they never overlapped (closest ${closest.toFixed(2)})`);
+  assert.equal(stopped, 0, "nobody waited for the other");
+});
+
+test("keeping right shifts a path to the right-hand side where that is road, and leaves it alone where it is not", () => {
+  const path = [{ x: 6, y: 5 }, { x: 7, y: 5 }, { x: 8, y: 5 }];
+  assert.deepEqual(keepRight(path, roads, { x: 5, y: 5 }).map((node) => node.y), [6, 6, 6], "east: the south side");
+  const back = [{ x: 7, y: 5 }, { x: 6, y: 5 }];
+  assert.deepEqual(keepRight(back, roads, { x: 8, y: 5 }).map((node) => node.y), [4, 4], "west: the north side");
+  const edge = [{ x: 7, y: 6 }, { x: 8, y: 6 }];
+  assert.deepEqual(keepRight(edge, roads, { x: 6, y: 6 }).map((node) => node.y), [6, 6], "no road beyond the kerb: stay put");
 });

@@ -289,12 +289,37 @@ function moveAlongPath(vehicle, seconds, speed) {
 }
 
 // The AI driver follows the route: on to the next waypoint along the roads, forever.
+/**
+ * Keep to the lane (FreeSynd's cars keep to the direction of traffic): the way a car goes decides which side of the street it
+ * uses, one tile to the right of the line it is following whenever that is road too. Cars passing in opposite directions on a
+ * wide street are in different lanes, so they never drive through each other. Returns a new path.
+ */
+export function keepRight(path, roadGrid, from = null) {
+  const lane = [];
+  let before = from;
+  for (let index = 0; index < path.length; index += 1) {
+    const node = path[index];
+    const heading = before
+      ? { x: Math.sign(node.x - before.x), y: Math.sign(node.y - before.y) }
+      : path[index + 1]
+        ? { x: Math.sign(path[index + 1].x - node.x), y: Math.sign(path[index + 1].y - node.y) }
+        : { x: 0, y: 0 };
+    const side = { x: -heading.y, y: heading.x };
+    const shifted = { x: node.x + side.x, y: node.y + side.y };
+    const usable = (side.x !== 0 || side.y !== 0) && roadGrid[shifted.y]?.[shifted.x]?.walkable;
+    lane.push(usable ? shifted : { x: node.x, y: node.y });
+    before = node;
+  }
+  return lane;
+}
+
 function driveRoute(vehicle, seconds, roadGrid) {
   const state = vehicle.vehicle;
   if (!state.route || state.route.route.length === 0) return;
   if (vehicle.path.length === 0) {
     const waypoint = state.route.route[state.route.index % state.route.route.length];
-    vehicle.path = findPath(roadGrid, tileOf(vehicle.position), waypoint);
+    const start = tileOf(vehicle.position);
+    vehicle.path = keepRight(findPath(roadGrid, start, waypoint), roadGrid, start);
     state.route.index = (state.route.index + 1) % state.route.route.length;
   }
   moveAlongPath(vehicle, seconds, vehicle.definition.stats.speed);
@@ -306,6 +331,7 @@ function driveRoute(vehicle, seconds, roadGrid) {
 export const FOLLOW_GAP = 1.9;
 export const PEDESTRIAN_GAP = 1.8;
 export const PEDESTRIAN_WIDTH = 0.85;
+export const LANE_WIDTH = 0.8;
 export function blockedAhead(vehicle, units) {
   const heading = vehicle.vehicle.heading;
   if (!heading) return false;
@@ -329,6 +355,8 @@ export function blockedAhead(vehicle, units) {
     const distance = Math.hypot(dx, dy);
     if (distance === 0 || distance > FOLLOW_GAP) return false;
     if ((dx * heading.x + dy * heading.y) / distance < 0.75) return false;
+    // A car in the next lane is not in the way.
+    if (Math.abs(dx * heading.y - dy * heading.x) > LANE_WIDTH) return false;
     return other.disabled || Boolean(other.vehicle.controlledBy) || other.id < vehicle.id;
   });
 }
