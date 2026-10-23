@@ -701,6 +701,7 @@ async function loadGame(index = state.missionIndex) {
           region: entry.region ?? null,
           population: entry.region?.population,
           unlocks: entry.unlocks ?? [],
+          intel: entry.intel ?? [],
         };
       }),
     );
@@ -1179,7 +1180,10 @@ function renderTerritoryPanel() {
     });
     survey.append(buy);
   }
-  panel.replaceChildren(title, taxRow, mood, survey);
+  const lines = (entry.intel ?? [])
+    .slice(0, level)
+    .map((text) => Object.assign(document.createElement("p"), { textContent: text }));
+  panel.replaceChildren(title, taxRow, mood, survey, ...lines);
 }
 
 function changeTax(id, tax) {

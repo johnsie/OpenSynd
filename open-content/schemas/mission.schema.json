@@ -36,6 +36,11 @@
         "lat": { "type": "number", "minimum": -58, "maximum": 84, "description": "The atlas shows 84 degrees north to 58 degrees south." }
       }
     },
+    "intel": {
+      "type": "array", "maxItems": 2,
+      "items": { "type": "string", "minLength": 1, "maxLength": 400 },
+      "description": "Extra briefing lines that each survey level adds, in order."
+    },
     "unlocks": {
       "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/id" },
       "description": "Operations (by id) that open when this one is won. If no operation in a pack lists any, they open as a chain."

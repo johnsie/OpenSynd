@@ -11,12 +11,15 @@ client stores one optional slot in browser-local storage and transmits nothing.
 Every document contains:
 
 - `format`: the literal `opensynd-save`;
-- `formatVersion`: the integer `3`;
+- `formatVersion`: the integer `10` (see Compatibility for how older versions are read);
 - `createdAt`: a normalized UTC ISO 8601 timestamp;
 - `missionId`: the active open-content mission identifier;
 - `selectedId` and `cursor`: current input state;
 - `units`: every mission unit's identifier, position, remaining route, health,
-  cooldown, target, and disabled state; and
+  cooldown, target, disabled state, training levels, fatigue, carried items,
+  looted items and persuasion state. Optional fields read as defaults when
+  missing: `drugs` (the three dose records, neutral), `escaped` (false),
+  `scriptIndex` and `scriptDone` (the start of a scripted person's steps); and
 - `objectives`: every mission objective's identifier and completion state.
 
 Imports must match the active mission exactly. Unknown, duplicate, or missing
@@ -38,3 +41,7 @@ deterministic and covered by tests.
 
 The current browser client limits imported files to 256 KiB. Exported saves do
 not include code, content-pack assets, unit definitions, or legacy game data.
+
+Fields added without a version bump (`drugs`, `escaped`, `scriptIndex`, `scriptDone`) are optional and repaired to
+safe defaults when absent or damaged. Campaign progress (funds, research, roster, upgrades, territories, intelligence)
+is kept in a separate browser-local record, never in a mission save, and is repaired field by field when read.
