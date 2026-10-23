@@ -91,6 +91,7 @@ function playOnce(world, tactics) {
   let seconds = 0;
   let nextThink = 0;
   const drops = [];
+  const ignoreUntil = new Map();
   const team = units.filter((unit) => unit.side === "team");
   const watchers = units.filter((unit) => unit.side === "opposition");
   const zoneOf = (objective) => map.zones.find((zone) => zone.id === objective.targetZone);
@@ -137,15 +138,20 @@ function playOnce(world, tactics) {
       }
     }
 
-    if (close.length > 0) {
+    // Someone it cannot reach or see (walled off) is ignored for a while rather than waited on for ever.
+    const reachable = close.filter((w) => (ignoreUntil.get(w.id) ?? 0) <= seconds);
+    if (reachable.length > 0) {
       for (const unit of active) {
-        const target = close.reduce((best, w) => (dist(unit, w) < dist(unit, best) ? w : best));
+        const target = reachable.reduce((best, w) => (dist(unit, w) < dist(unit, best) ? w : best));
         if (roundsLeft(unit) === 0) continue;
-        if (dist(unit, target) <= combatStats(unit, dist(unit, target)).range) {
+        const gap = dist(unit, target);
+        if (gap <= combatStats(unit, gap).range && hasLineOfSight(grid, unit.position, target.position)) {
           unit.path = [];
           unit.targetId = target.id;
         } else if (unit.path.length === 0) {
+          const before = unit.path.length;
           send(unit, tileOf(target.position));
+          if (unit.path.length === before) ignoreUntil.set(target.id, seconds + 20);
         }
       }
       return;

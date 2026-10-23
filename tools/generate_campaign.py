@@ -340,9 +340,9 @@ def make_mission(territory: dict, tier: int, layout: dict, map_value: dict, map_
         for name, (dx, dy) in zip(["operator-one", "operator-two", "operator-three", "operator-four"],
                                   [(0, 0), (1, 0), (0, 1), (1, 1)])
     ]
-    agents = 6 + 2 * tier
-    guards = 2 + tier
-    heavy_share = [0.0, 0.25, 0.4, 0.5, 0.6][tier - 1]
+    agents = [5, 7, 9, 12, 16][tier - 1]
+    guards = [2, 3, 4, 5, 6][tier - 1]
+    heavy_share = [0.0, 0.15, 0.3, 0.4, 0.5][tier - 1]
     opponents = []
     anchors = [(zone_by_id[name]["position"]["x"], zone_by_id[name]["position"]["y"]) for name in relay_names]
     for number in range(agents):
