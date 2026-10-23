@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-import { advanceBombs, plantBomb } from "./bombs.js";
+import { THROW_RANGE, advanceBombs, plantBomb, shootBombs } from "./bombs.js";
 import {
   advanceVehicles,
   ENTER_RANGE,
@@ -448,6 +448,7 @@ const state = {
   modal: false,
   effects: createEffects(),
   bombs: [],
+  armedBomb: null,
   elapsed: 0,
   map: null,
   mission: null,
@@ -524,6 +525,7 @@ async function loadGame(index = state.missionIndex) {
   state.grid = createTileGrid(map);
   state.buildings = buildingsFromMap(map);
   state.bombs = [];
+  state.armedBomb = null;
   state.alertHold = 0;
   state.alertMusic = false;
   music.setAlert(false);
@@ -2692,6 +2694,12 @@ function handleCombatEvents(combatEvents) {
     if (event.type === "damage" || event.type === "shot") {
       const shooter = state.units.find((item) => item.id === event.attackerId);
       addEffect(state.effects, "muzzle", { unitId: event.attackerId });
+      // A bomb on the ground goes off when a shot passes it.
+      if (shooter && state.bombs.length > 0) {
+        const struck = event.type === "damage" ? state.units.find((item) => item.id === event.targetId) : null;
+        const to = struck?.position ?? event.end;
+        if (to && shootBombs(state.bombs, shooter.position, to) > 0) setStatus("A shot hit a charge on the ground: it is about to go off.");
+      }
       // Each weapon sounds like itself; fire further from the view is quieter.
       if (shooter) {
         const away = Math.hypot(shooter.position.x - state.camera.x, shooter.position.y - state.camera.y);
@@ -3721,6 +3729,40 @@ canvas.addEventListener("contextmenu", (event) => {
   fireByHand(screenToGridExact(position, state.viewport.cellSize, state.viewport.origin));
 });
 
+// Throw the armed charge to a spot on the ground, within range and on walkable ground.
+function throwArmedBomb(target) {
+  const { unitId, slot } = state.armedBomb;
+  const unit = state.units.find((item) => item.id === unitId);
+  const entry = unit?.equipment[slot];
+  if (!unit || unit.disabled || !entry || entry.definition.action !== "time-bomb" || entry.charges === 0) {
+    state.armedBomb = null;
+    return;
+  }
+  const tile = { x: Math.round(target.x), y: Math.round(target.y) };
+  if (Math.hypot(tile.x - unit.position.x, tile.y - unit.position.y) > THROW_RANGE) {
+    setStatus(`Too far: a charge can be thrown ${THROW_RANGE} tiles.`);
+    return;
+  }
+  if (!isWalkable(state.grid, tile.x, tile.y)) {
+    setStatus("It cannot land there.");
+    return;
+  }
+  state.armedBomb = null;
+  plantBomb(unit, entry, state.bombs, tile);
+  audio.play("tick");
+  setStatus(
+    `${unit.definition.name} throws a ${entry.definition.name}: ${entry.definition.effect.fuse} seconds. ` +
+      `Keep everyone ${entry.definition.effect.radius} tiles from it.`,
+  );
+  renderInterface();
+}
+window.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && state.armedBomb) {
+    state.armedBomb = null;
+    setStatus("Charge put away.");
+  }
+});
+
 canvas.addEventListener("click", (event) => {
   if (drag.suppressClick) {
     drag.suppressClick = false;
@@ -3729,6 +3771,10 @@ canvas.addEventListener("click", (event) => {
   if (!state.map || !state.viewport) return;
   const bounds = canvas.getBoundingClientRect();
   const position = { x: event.clientX - bounds.left, y: event.clientY - bounds.top };
+  if (state.armedBomb) {
+    throwArmedBomb(screenToGrid(position, state.viewport.cellSize, state.viewport.origin));
+    return;
+  }
   const unit = hitUnit(position);
   if (unit) {
     if (isVehicle(unit) && !unit.disabled && !isSquadVehicle(unit)) goEnterVehicle(unit);
@@ -4076,6 +4122,12 @@ if (new URLSearchParams(location.search).has("e2e")) {
       unit.equipment.push({ definition, charges: definition.charges });
       renderInterface();
     },
+    positionOf(id) {
+      return { ...state.units.find((item) => item.id === id).position };
+    },
+    bombs() {
+      return state.bombs.map((bomb) => ({ ...bomb.at, left: bomb.left }));
+    },
     persuade(id, ownerId) {
       const unit = state.units.find((item) => item.id === id);
       unit.persuaded = true;
@@ -4196,10 +4248,22 @@ function pressSlot(unit, slot) {
     audio.play("select");
     renderInterface();
   } else if (definition.action === "time-bomb") {
-    if (!plantBomb(unit, entry, state.bombs)) {
+    if (entry.charges === 0) {
       setStatus("That charge is used up.");
       return;
     }
+    // The first click arms the charge: click the ground to throw it there. Clicking the slot again drops it underfoot.
+    if (state.armedBomb?.unitId !== unit.id || state.armedBomb.slot !== slot) {
+      state.armedBomb = { unitId: unit.id, slot };
+      audio.play("select");
+      setStatus(
+        `${unit.definition.name}: click the ground within ${THROW_RANGE} tiles to throw the ${definition.name}, ` +
+          "click its slot again to drop it here, Esc to cancel.",
+      );
+      return;
+    }
+    state.armedBomb = null;
+    plantBomb(unit, entry, state.bombs);
     audio.play("tick");
     setStatus(
       `${unit.definition.name} plants a ${definition.name}: ${definition.effect.fuse} seconds. ` +

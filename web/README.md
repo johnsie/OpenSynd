@@ -27,6 +27,7 @@ not work reliably because browsers restrict local `fetch()` calls.
   button to keep firing. Weapons: pulse, machine pistol, scatter, flame, beam, rotary, coil, long rifle; items:
   repair kit, cloak, Persuader, scanner, shield, delay charge.
 - Sliders under each operator set Adrenaline, Perception and Intelligence doses; Legs and Brain are training bars.
+- A Delay Charge is armed by its slot: click the ground within six tiles to throw it, click the slot again to drop it, Esc cancels.
 - **E** interacts, **F** loots, **R** repairs, **Space** pauses; every key can be rebound in Settings.
 - Between operations (Operations, then Research & Armoury): fit body parts, buy and sell gear, choose the squad
   from the roster, fund research, set tax and buy a survey for each territory. Fallen operatives are lost for good

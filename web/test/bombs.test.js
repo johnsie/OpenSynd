@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { advanceBombs, blastDamage, plantBomb } from "../src/bombs.js";
+import { THROW_RANGE, advanceBombs, blastDamage, plantBomb, shootBombs } from "../src/bombs.js";
 
 const charge = (charges = 3) => ({
   definition: { id: "bomb", action: "time-bomb", effect: { attack: 55, radius: 3, fuse: 6 } },
@@ -84,4 +84,33 @@ test("a blast sets off a bomb within reach, a moment later, in a chain; a bomb b
   for (let step = 0; step < 10; step += 1) events.push(...advanceBombs(bombs, [], 0.1, walled));
   assert.equal(events.length, 1);
   assert.equal(bombs.length, 1);
+});
+
+test("a charge can be thrown to a spot instead of dropped underfoot", () => {
+  const bombs = [];
+  const bomb = plantBomb(person("op", 4, 5), charge(), bombs, { x: 8, y: 5 });
+  assert.deepEqual(bomb.at, { x: 8, y: 5 });
+  assert.ok(THROW_RANGE > 0);
+});
+
+test("a shot that passes a bomb on the ground sets it off a moment later", () => {
+  const bombs = [];
+  plantBomb(person("op", 10, 10), charge(), bombs);
+  assert.equal(shootBombs(bombs, { x: 0, y: 0 }, { x: 20, y: 0 }), 0, "a shot far from it");
+  assert.equal(shootBombs(bombs, { x: 10, y: 0 }, { x: 10, y: 20 }), 1, "a shot straight through it");
+  assert.ok(bombs[0].left <= 0.3);
+  assert.equal(shootBombs(bombs, { x: 10, y: 0 }, { x: 10, y: 20 }), 0, "already going off");
+  const short = [];
+  plantBomb(person("op", 10, 10), charge(), short);
+  assert.equal(shootBombs(short, { x: 10, y: 0 }, { x: 10, y: 5 }), 0, "a shot that stops short");
+});
+
+test("someone inside a vehicle is shielded from a blast", () => {
+  const bombs = [];
+  plantBomb(person("planter", 10, 10), charge(), bombs);
+  const rider = { ...person("rider", 11, 10), inVehicle: "car" };
+  const walker = person("walker", 11, 11);
+  const [blast] = advanceBombs(bombs, [rider, walker], 6);
+  assert.deepEqual(blast.hits.map((hit) => hit.unitId), ["walker"]);
+  assert.equal(rider.health, 100);
 });

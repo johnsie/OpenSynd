@@ -8,13 +8,17 @@ import { hasLineOfSight } from "./engine.js";
 // A bomb set off by another blast goes off this long afterwards.
 export const CHAIN_DELAY = 0.3;
 
-export function plantBomb(unit, item, bombs) {
+// How far an operative can throw a charge.
+export const THROW_RANGE = 6;
+
+// Plant a charge where the operative stands, or (with `at`) throw it to that spot.
+export function plantBomb(unit, item, bombs, at = null) {
   if (!item || item.charges === 0 || unit.disabled) return null;
   if (item.charges !== null) item.charges -= 1;
   const { attack, radius, fuse } = item.definition.effect;
   const bomb = {
-    id: `bomb-${bombs.length + 1}-${Math.round(unit.position.x)}-${Math.round(unit.position.y)}`,
-    at: { x: unit.position.x, y: unit.position.y },
+    id: `bomb-${bombs.length + 1}-${Math.round((at ?? unit.position).x)}-${Math.round((at ?? unit.position).y)}`,
+    at: { x: (at ?? unit.position).x, y: (at ?? unit.position).y },
     attack,
     radius,
     fuse,
@@ -29,6 +33,27 @@ export function plantBomb(unit, item, bombs) {
 export function blastDamage(attack, distance, radius) {
   if (distance > radius) return 0;
   return Math.max(1, Math.round(attack * (1 - 0.6 * (distance / radius))));
+}
+
+// A bomb on the ground goes off when a shot passes it (FreeSynd): any bomb within BOMB_HIT_RADIUS of the line from
+// `from` to `to` is set to blow a moment later. Returns how many were set off.
+export const BOMB_HIT_RADIUS = 0.6;
+
+export function shootBombs(bombs, from, to) {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const lengthSquared = dx * dx + dy * dy;
+  let hit = 0;
+  for (const bomb of bombs) {
+    const projected = ((bomb.at.x - from.x) * dx + (bomb.at.y - from.y) * dy) / lengthSquared;
+    const along = lengthSquared === 0 ? 0 : Math.max(0, Math.min(1, projected));
+    const gap = Math.hypot(bomb.at.x - (from.x + dx * along), bomb.at.y - (from.y + dy * along));
+    if (gap <= BOMB_HIT_RADIUS && bomb.left > CHAIN_DELAY) {
+      bomb.left = CHAIN_DELAY;
+      hit += 1;
+    }
+  }
+  return hit;
 }
 
 /**
@@ -49,7 +74,7 @@ export function advanceBombs(bombs, units, deltaSeconds, grid = null) {
       if (gap <= bomb.radius && hasLineOfSight(grid, bomb.at, other.at)) other.left = Math.min(other.left, CHAIN_DELAY);
     }
     for (const unit of units) {
-      if (unit.disabled) continue;
+      if (unit.disabled || unit.inVehicle) continue; // a vehicle shields whoever is inside it
       const distance = Math.hypot(unit.position.x - bomb.at.x, unit.position.y - bomb.at.y);
       const amount = blastDamage(bomb.attack, distance, bomb.radius);
       if (amount === 0 || !hasLineOfSight(grid, bomb.at, unit.position)) continue;

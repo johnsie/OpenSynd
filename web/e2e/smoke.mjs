@@ -547,6 +547,33 @@ for (const [name, type, executablePath] of targets) {
     assert.equal(await page.getByLabel("Field Operator 1 slot 4: Civic Pulse Emitter", { exact: false }).count(), 1);
 
 
+    // A charge is armed by its slot, thrown by clicking the ground, and the Escape key puts it away.
+    const bombPage = await browser.newPage();
+    await bombPage.goto(`${url}?e2e`);
+    await bombPage.waitForSelector(".roster-select");
+    await bombPage.click("#begin-button");
+    await bombPage.evaluate(() => {
+      window.opensyndTest.giveItem("operator-one", "developer.delay-charge");
+      window.opensyndTest.focusOn("operator-one");
+    });
+    await bombPage.waitForTimeout(700);
+    const bombSlot = bombPage.getByLabel(/Field Operator 1 slot \d+: Delay Charge/);
+    await bombSlot.click();
+    assert.match(await bombPage.locator("#status-message").innerText(), /click the ground within 6 tiles to throw/);
+    await bombPage.keyboard.press("Escape");
+    assert.match(await bombPage.locator("#status-message").innerText(), /put away/);
+    await bombSlot.click();
+    const where = await bombPage.evaluate(() => {
+      const unit = window.opensyndTest.positionOf("operator-one");
+      return window.opensyndTest.screenPointAt(unit.x + 3, unit.y);
+    });
+    await bombPage.mouse.click(where.x, where.y);
+    await bombPage.waitForFunction(() => window.opensyndTest.bombs().length === 1);
+    const thrown = await bombPage.evaluate(() => window.opensyndTest.bombs()[0]);
+    const start = await bombPage.evaluate(() => window.opensyndTest.positionOf("operator-one"));
+    assert.ok(Math.abs(thrown.x - start.x - 3) < 1 && Math.abs(thrown.y - start.y) < 1, "it landed three tiles away");
+    await bombPage.close();
+
     // The Persuader: switched on beside a civilian, it wins them over; the crosshair shows over civilians.
     const street = await browser.newPage();
     await street.goto(`${url}?e2e`);
