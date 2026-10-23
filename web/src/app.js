@@ -208,19 +208,7 @@ import {
   recoilOffset,
   walkBob,
 } from "./effects.js";
-import { effectiveLevels, speedMultiplier } from "./stats.js";
-import {
-  BARS,
-  BAR_HINTS,
-  BAR_LABELS,
-  LEVEL_MAX,
-  LEVEL_MIN,
-  TRAINING_BUDGET_DEFAULT,
-  adjustLevel,
-  defaultLevels,
-  pointsLeft,
-  setBarForAll,
-} from "./stats.js";
+import { defaultLevels, effectiveLevels, speedMultiplier } from "./stats.js";
 import { isSelected, prune, selectMany, selectOnly, toggle } from "./selection.js";
 import {
   PROGRESS_KEY,
@@ -447,7 +435,6 @@ const state = {
   shownFunds: -1,
   campaignTimer: 0,
   achievementTimer: 0,
-  trainingBudget: TRAINING_BUDGET_DEFAULT,
   progress: emptyProgress(),
   missionList: [],
   missionIndex: 0,
@@ -688,7 +675,6 @@ async function loadGame(index = state.missionIndex) {
   briefingText.textContent = mission.briefing;
   state.missionIndex = index;
   state.missionCount = pack.missions.length;
-  state.trainingBudget = mission.trainingBudget ?? TRAINING_BUDGET_DEFAULT;
   if (state.missionList.length !== pack.missions.length) {
     state.missionList = await Promise.all(
       pack.missions.map(async (path) => {
@@ -4242,14 +4228,21 @@ function paintDrug(slider, unit) {
     `x${times.toFixed(2)}. A high dose fades as the body adapts.`;
 }
 
-// Moving a slider sets it for every selected operator when this one is among them (like weapons and the bars).
+// The operatives a change on this operative's own controls applies to: everyone selected when this
+// one is among several selected, otherwise just this one.
+function controlGroup(unit) {
+  const squad = selectedOperators();
+  return squad.length > 1 && squad.some((member) => member.id === unit.id) ? squad : [unit];
+}
+
+// Moving a slider sets it for every selected operator when this one is among them (like weapons).
 function setDrugForGroup(unit, name, value) {
-  for (const member of levelGroup(unit)) {
+  for (const member of controlGroup(unit)) {
     if (member.drugs && !member.disabled) member.drugs = setDrug(member.drugs, name, value);
   }
   for (const slider of document.querySelectorAll(`.drug input[data-drug="${name}"]`)) {
     const owner = state.units.find((candidate) => candidate.id === slider.dataset.unit);
-    if (owner && levelGroup(unit).includes(owner) && slider !== document.activeElement) paintDrug(slider, owner);
+    if (owner && controlGroup(unit).includes(owner) && slider !== document.activeElement) paintDrug(slider, owner);
   }
 }
 
@@ -4265,24 +4258,6 @@ function makeMeter(unit, kind, label) {
   return meter;
 }
 
-// Fatigue shows on the bars: levels lost to tiredness are drawn hollow. The
-// bar keeps its trained level, and the effective level is what actually counts.
-function paintBar(element, unit) {
-  const bar = element.dataset.bar;
-  const level = unit.levels[bar];
-  const effective = Math.round(effectiveLevels(unit.levels, unit.stamina, unit.focus)[bar]);
-  const lost = level - effective;
-  element.querySelectorAll("i").forEach((segment, index) => {
-    segment.classList.toggle("filled", index + 1 <= effective);
-    segment.classList.toggle("fatigued", index + 1 > effective && index + 1 <= level);
-  });
-  element.setAttribute(
-    "aria-label",
-    `${element.dataset.label} ${level} of ${LEVEL_MAX}${lost > 0 ? `, tired down to ${effective}` : ""}`,
-  );
-  element.title = lost > 0 ? `${BAR_LABELS[bar]} is ${lost} level${lost > 1 ? "s" : ""} lower from fatigue.` : "";
-}
-
 // Fatigue changes every step, so update the meters and bars in place instead of
 // rebuilding the roster (which would swallow clicks on its buttons).
 function updateMeters() {
@@ -4294,54 +4269,6 @@ function updateMeters() {
     const unit = state.units.find((item) => item.id === element.dataset.unit);
     if (unit) paintMeter(element, unit);
   }
-  for (const element of document.querySelectorAll(".bar[data-unit]")) {
-    const unit = state.units.find((item) => item.id === element.dataset.unit);
-    if (unit) paintBar(element, unit);
-  }
-}
-
-function levelBar(unit, bar, label) {
-  const element = document.createElement("span");
-  element.className = "bar";
-  element.setAttribute("role", "img");
-  element.dataset.bar = bar;
-  element.dataset.label = label;
-  for (let index = 1; index <= LEVEL_MAX; index += 1) element.append(document.createElement("i"));
-  if (unit) {
-    element.dataset.unit = unit.id;
-    paintBar(element, unit);
-  } else {
-    element.setAttribute("aria-label", `${label} none`);
-  }
-  return element;
-}
-
-// Change one bar. `reference` is the operative whose level the change is based on; with several
-// operatives selected (and the reference among them) everyone selected is set to the level the
-// reference ends up at, limited for each by their own training points.
-function changeBar(reference, bar, delta, group, subject) {
-  const next = adjustLevel(reference.levels, bar, delta, state.trainingBudget)[bar];
-  if (next === reference.levels[bar]) {
-    const outOfPoints = delta > 0 && reference.levels[bar] < LEVEL_MAX;
-    setStatus(
-      outOfPoints
-        ? "No training points left: lower another bar first."
-        : `${BAR_LABELS[bar]} cannot go ${delta > 0 ? "higher" : "lower"}.`,
-    );
-    return;
-  }
-  const { limited } = setBarForAll(group, bar, next, state.trainingBudget);
-  const several = group.length > 1;
-  const who = subject ?? (several ? `${group.length} operators` : reference.definition.name);
-  const action = `${BAR_LABELS[bar]} ${delta > 0 ? "raised" : "lowered"}`;
-  setStatus(
-    several
-      ? `${who}: ${action} to ${next}.` +
-          (limited.length > 0 ? ` ${limited.length} could not reach it: not enough training points.` : "")
-      : `${who}: ${action}.`,
-  );
-  audio.play("select");
-  renderInterface();
 }
 
 // The vehicle the selected squad could use right now: the one they are in (to leave), or the nearest one a
@@ -4451,63 +4378,6 @@ function updateVehicleButton() {
   document.querySelector("#vehicle-label").textContent = ride?.leaving ? "Leave vehicle" : ride ? "Take vehicle" : "Enter vehicle";
 }
 
-// The operatives a change on this operative's own controls applies to: everyone selected when this
-// one is among several selected, otherwise just this one.
-function levelGroup(unit) {
-  const squad = selectedOperators();
-  return squad.length > 1 && squad.some((member) => member.id === unit.id) ? squad : [unit];
-}
-
-// Change a bar from an operative's roster entry.
-function adjustOperator(unit, bar, delta) {
-  changeBar(unit, bar, delta, levelGroup(unit));
-}
-
-// Change a bar for everyone selected from the Training panel (which shows the primary operative).
-function adjustTraining(bar, delta) {
-  const group = selectedOperators();
-  const reference = selectedUnit() ?? group[0];
-  if (!reference) return;
-  changeBar(reference, bar, delta, group, group.length > 1 ? "Selected operators" : undefined);
-  canvas.focus();
-}
-
-function renderTraining() {
-  const unit = selectedUnit();
-  const container = document.querySelector("#training-bars");
-  const picked = selectedOperators();
-  document.querySelector("#training-heading").textContent = picked.length > 1
-    ? `${picked.length} operators selected`
-    : unit
-      ? `${unit.definition.name} ${state.units.filter((item) => item.side === "team").indexOf(unit) + 1}` +
-        ` · ${pointsLeft(unit.levels, state.trainingBudget)} points left`
-      : "Operative bars";
-  container.replaceChildren(
-    ...BARS.map((bar) => {
-      const row = document.createElement("div");
-      row.className = "training-row";
-      row.title = BAR_HINTS[bar];
-      const label = document.createElement("span");
-      label.textContent = BAR_LABELS[bar];
-      const level = unit?.levels[bar] ?? 0;
-      const lower = document.createElement("button");
-      lower.type = "button";
-      lower.textContent = "−";
-      lower.setAttribute("aria-label", `Lower ${BAR_LABELS[bar]}`);
-      lower.disabled = !unit || level <= 1;
-      lower.addEventListener("click", () => adjustTraining(bar, -1));
-      const raise = document.createElement("button");
-      raise.type = "button";
-      raise.textContent = "+";
-      raise.setAttribute("aria-label", `Raise ${BAR_LABELS[bar]}`);
-      raise.disabled = !unit || level >= LEVEL_MAX || pointsLeft(unit.levels, state.trainingBudget) <= 0;
-      raise.addEventListener("click", () => adjustTraining(bar, 1));
-      row.append(label, levelBar(unit, bar, BAR_LABELS[bar]), lower, raise);
-      return row;
-    }),
-  );
-}
-
 function renderInterface() {
   if (!state.mission) return;
   objectiveList.replaceChildren(
@@ -4581,29 +4451,7 @@ function renderInterface() {
       position.textContent = `${pad(unit.position.x)}:${pad(unit.position.y)}`;
       button.append(glyph, name, position);
 
-      // Each operator's own bars: these change only this operator.
-      const bars = document.createElement("div");
-      bars.className = "roster-bars";
-      for (const bar of BARS) {
-        const group = document.createElement("span");
-        group.className = "bar-group";
-        const lower = document.createElement("button");
-        lower.type = "button";
-        lower.textContent = "−";
-        lower.disabled = unit.disabled || unit.levels[bar] <= LEVEL_MIN;
-        lower.setAttribute("aria-label", `Lower ${BAR_LABELS[bar]} for ${label}`);
-        lower.addEventListener("click", () => adjustOperator(unit, bar, -1));
-        const raise = document.createElement("button");
-        raise.type = "button";
-        raise.textContent = "+";
-        raise.disabled =
-          unit.disabled || unit.levels[bar] >= LEVEL_MAX || pointsLeft(unit.levels, state.trainingBudget) <= 0;
-        raise.setAttribute("aria-label", `Raise ${BAR_LABELS[bar]} for ${label}`);
-        raise.addEventListener("click", () => adjustOperator(unit, bar, 1));
-        group.append(BAR_LABELS[bar], levelBar(unit, bar, `${BAR_LABELS[bar]} of ${label}`), lower, raise);
-        bars.append(group);
-      }
-      const chemistry = document.createElement("div");
+            const chemistry = document.createElement("div");
       chemistry.className = "drugs";
       for (const name of DRUG_NAMES) {
         const row = document.createElement("label");
@@ -4627,19 +4475,10 @@ function renderInterface() {
       const meters = document.createElement("div");
       meters.className = "meters";
       meters.append(makeMeter(unit, "stamina", label), makeMeter(unit, "focus", label));
-      const points = document.createElement("span");
-      points.className = "points";
-      const left = pointsLeft(unit.levels, state.trainingBudget);
-      points.textContent = `${left} pts`;
-      points.title = `Each operator may spend ${state.trainingBudget} points across Legs and Brain.`;
-      points.classList.toggle("none", left <= 0);
-      button.insertBefore(points, button.lastChild);
-      item.append(checkbox, button, slotRow(unit, label), bars, chemistry, meters);
+      item.append(checkbox, button, slotRow(unit, label), chemistry, meters);
       return item;
     }),
   );
-
-  renderTraining();
 
   const threats = state.units.filter((unit) => unit.side === "opposition" && !unit.persuaded);
   threatsElement.replaceChildren(

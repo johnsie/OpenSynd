@@ -104,9 +104,8 @@ operation is remembered in this browser (`web/src/progress.js`, a tolerant,
 tested record), unlocks the next, and an Operations button in the header reopens
 the list at any time; a Settings button clears completed operations.
 
-Training now costs points: each mission sets a per-operator budget
-(`trainingBudget`: 8 for First Light, 9 for Quiet Hours) that the Legs and Brain
-levels may not exceed in total, so raising one bar means lowering the other.
+The free Legs and Brain training bars were removed (principle 8): an operative's pace, stamina and reload now
+come from the bought upgrades and the drugs, and fatigue still lowers them.
 Leaving an operation in progress (switching operations or resetting) asks for
 confirmation first.
 
@@ -144,12 +143,6 @@ armed variants of each character rendered from the same animation frames. Firing
 at the weapon, a short recoil kick, and a thin aim line to the locked target. An
 operative also draws the weapon while firing at a locked target, so a gun never
 fires from empty hands.
-
-With several operatives selected, Legs and Brain work the same way: changing a bar on
-one selected operative sets that bar to the same level for everyone selected, with a
-raise limited for each by their own training points (the message says how many could not
-reach it) and a lowering always allowed; the Training panel applies the primary
-operative's result to the whole selection.
 
 With several operatives selected, choosing a weapon chooses the same weapon for all of
 them: each takes up their own copy (in whatever slot they carry it, the fullest if they

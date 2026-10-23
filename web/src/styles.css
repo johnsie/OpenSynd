@@ -263,9 +263,6 @@ canvas:focus-visible { box-shadow: inset 0 0 0 2px var(--public); }
   background: none;
   border: 0;
 }
-.roster-bars { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; font-size: 0.8rem; color: var(--muted); }
-.roster-bars .bar-group { display: inline-flex; align-items: center; gap: 0.4rem; }
-.roster-bars button { min-width: 1.6rem; padding: 0.05rem 0.35rem; font-size: 0.9rem; }
 .operator-glyph { color: var(--public); font-size: 1.3rem; }
 .operator-position { color: var(--muted); font: 0.68rem ui-monospace, monospace; }
 .threats { display: grid; gap: 0.55rem; margin-top: 0.75rem; }
@@ -336,20 +333,6 @@ dialog a { color: var(--public); }
 .outcome-stats dt { color: var(--muted); }
 .outcome-stats dd { margin: 0; }
 dialog .primary { margin-right: 0.5rem; }
-.training-bars { display: grid; gap: 0.65rem; margin-top: 0.75rem; }
-.training-row { display: grid; grid-template-columns: 4.5rem 1fr auto auto; align-items: center; gap: 0.5rem; }
-.training-row button { min-width: 2rem; padding: 0.25rem 0.5rem; }
-.bar { display: inline-flex; gap: 3px; }
-.bar i {
-  display: block;
-  width: 100%;
-  min-width: 0.9rem;
-  height: 0.7rem;
-  background: rgba(124, 161, 170, 0.22);
-  border: 1px solid rgba(124, 161, 170, 0.35);
-}
-.bar i.filled { background: var(--public); border-color: var(--public); }
-.roster-bars .bar i { min-width: 0.7rem; height: 0.5rem; }
 
 /* Keep the mission panel on screen: it scrolls on its own instead of growing past the viewport. */
 @media (min-width: 981px) {
@@ -380,21 +363,11 @@ details.panel-section > p, details.panel-section > div { margin-top: 0.5rem; }
 .objective-list li { padding: 0.4rem 0.5rem 0.4rem 1.8rem; font-size: 0.9rem; }
 .roster { margin-top: 0.4rem; gap: 0.35rem; }
 .roster-item { padding: 0.3rem 0.4rem; gap: 0.2rem 0.5rem; }
-.roster-bars { gap: 0.2rem 0.8rem; }
-.training-bars { margin-top: 0.4rem; gap: 0.35rem; }
 .threats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.35rem; margin-top: 0.4rem; }
 .threats button { padding: 0.35rem 0.5rem; font-size: 0.85rem; }
 .system-log { position: sticky; bottom: 0; background: var(--panel); }
 .roster-select { gap: 0.5rem; font-size: 0.95rem; }
 .roster-select .operator-glyph { font-size: 1.05rem; }
-.roster-bars { flex-wrap: nowrap; justify-content: space-between; font-size: 0.75rem; }
-.roster-bars .bar-group { gap: 0.25rem; }
-.roster-bars .bar { gap: 2px; }
-.roster-bars .bar i { min-width: 0.5rem; height: 0.45rem; }
-.roster-bars button { min-width: 1.35rem; padding: 0 0.3rem; font-size: 0.85rem; line-height: 1.3; }
-.training-row { grid-template-columns: 3rem 1fr auto auto; gap: 0.4rem; }
-.training-row button { padding: 0 0.45rem; }
-#training-heading { font-size: 0.95rem; }
 .objective-list li { padding: 0.3rem 0.5rem 0.3rem 1.7rem; font-size: 0.85rem; }
 .selected-readout { font-size: 0.85rem; }
 .selected-readout #selected-readout { margin: 0; }
@@ -428,10 +401,6 @@ details.panel-section > p, details.panel-section > div { margin-top: 0.5rem; }
 .meter.focus i { background: var(--public); }
 .meter.low i { background: var(--amber); }
 .meter.empty i { background: var(--risk); }
-.bar i.fatigued {
-  background: transparent;
-  border: 1px dashed var(--amber);
-}
 /* The title screen: the atlas on the left fills the space, the brief and controls sit on the right. */
 dialog.title-screen[open] {
   display: flex;
@@ -527,8 +496,6 @@ dialog.title-screen[open] {
 .mission-list button small { grid-column: 1 / -1; color: var(--muted); }
 .mission-list button[aria-pressed="true"] small { color: inherit; }
 .mission-list .state { font-size: 0.8rem; letter-spacing: 0.05em; }
-.roster-bars .points { flex-basis: 100%; font-size: 0.72rem; color: var(--muted); }
-.roster-bars .points.none { color: var(--amber); }
 .funds {
   margin: 0 1.5rem 0 auto;
   color: var(--amber);
@@ -717,12 +684,6 @@ footer { padding: 0.2rem 0 0.4rem; font-size: 0.7rem; }
 .roster-item { padding: 0.3rem 0.4rem; gap: 0.25rem 0.4rem; }
 .roster-select { grid-template-columns: auto 1fr auto auto; gap: 0.4rem; font-size: 0.88rem; }
 .roster-select .hp { color: var(--muted); font-size: 0.72rem; }
-.roster-select .points { font-size: 0.72rem; color: var(--muted); }
-.roster-select .points.none { color: var(--amber); }
-.roster-bars { gap: 0.2rem 0.5rem; font-size: 0.72rem; }
-.roster-bars .bar-group { gap: 0.2rem; }
-.roster-bars .bar i { min-width: 0.4rem; }
-.roster-bars button { min-width: 1.15rem; padding: 0 0.2rem; font-size: 0.8rem; line-height: 1.2; }
 .meters { gap: 0.1rem 0.5rem; }
 .meter { grid-template-columns: 2.6rem 1fr; font-size: 0.68rem; }
 
@@ -764,14 +725,9 @@ main { grid-template-columns: minmax(0, 1fr) minmax(250px, 300px); gap: 0.6rem; 
 .squad-hud .roster-select { gap: 0.3rem; font-size: 0.82rem; grid-template-columns: auto 1fr auto auto; }
 .squad-hud .roster-select .operator-glyph { font-size: 0.9rem; }
 .squad-hud .roster-select .operator-position { font-size: 0.66rem; }
-.squad-hud .slots { gap: 2px; }
-.squad-hud .slot svg { width: 72%; height: 72%; }
-.squad-hud .slot .charges { font-size: 0.5rem; }
-.squad-hud .roster-bars { justify-content: space-between; flex-wrap: nowrap; gap: 0.15rem; font-size: 0.64rem; }
-.squad-hud .roster-bars .bar-group { gap: 0.15rem; }
-.squad-hud .roster-bars .bar { gap: 1px; }
-.squad-hud .roster-bars .bar i { min-width: 0.3rem; height: 0.4rem; }
-.squad-hud .roster-bars button { min-width: 0.95rem; padding: 0; font-size: 0.72rem; line-height: 1.1; }
+.squad-hud .slots { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 3px; }
+.squad-hud .slot svg { width: 74%; height: 74%; }
+.squad-hud .slot .charges { font-size: 0.64rem; right: 2px; bottom: 1px; }
 .squad-hud .meters { gap: 0 0.4rem; }
 .squad-hud .meter { grid-template-columns: 2.1rem 1fr; gap: 0.2rem; font-size: 0.58rem; }
 .squad-hud .meter i { height: 0.22rem; }

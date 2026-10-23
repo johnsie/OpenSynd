@@ -13,7 +13,6 @@
     "license": { "enum": ["CC0-1.0", "CC-BY-4.0"] },
     "briefing": { "type": "string", "minLength": 1, "maxLength": 2000 },
     "title": { "type": "string", "minLength": 1, "maxLength": 120, "description": "Headline shown when the operation succeeds." },
-    "trainingBudget": { "type": "integer", "minimum": 2, "maximum": 10, "description": "Training points each operator may spend across their bars." },
     "story": { "type": "string", "minLength": 1, "maxLength": 2000, "description": "Opening text on the title screen." },
     "debrief": {
       "type": "object",

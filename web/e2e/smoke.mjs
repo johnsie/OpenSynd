@@ -86,37 +86,12 @@ for (const [name, type, executablePath] of targets) {
     await page.waitForTimeout(300);
     assert.match(await page.locator("#status-message").innerText(), /Route/);
 
-    // Training bars: raise Speed for one operator, then lower Brain for everyone.
-    await page.locator("#training-panel summary").click();
-    await page.getByRole("button", { name: "Raise Legs", exact: true }).click();
-    assert.match(await page.locator("#status-message").innerText(), /Legs raised/);
-    assert.equal(await page.locator('#training-bars [aria-label="Legs 4 of 5"]').count(), 1);
-    assert.equal(await page.locator('.roster [aria-label^="Legs of"]').count(), 4);
-    // Each operator's own controls change only that operator.
-    await page.getByRole("button", { name: "Raise Brain for Field Operator 3" }).click();
-    assert.equal(await page.locator('[aria-label="Brain of Field Operator 3 4 of 5"]').count(), 1);
-    assert.equal(await page.locator('[aria-label="Brain of Field Operator 1 4 of 5"]').count(), 0);
-    await page.getByRole("button", { name: "Lower Brain for Field Operator 3" }).click();
-    // Training points are limited: with Legs at 5 there is nothing left for Brain until Legs comes down.
-    await page.getByRole("button", { name: "Raise Legs for Field Operator 1" }).click();
-    assert.equal(
-      await page.getByRole("button", { name: "Raise Brain for Field Operator 1" }).isDisabled(),
-      true,
-    );
-    assert.match(await page.locator(".roster-item").first().innerText(), /0 pts/);
-    await page.getByRole("button", { name: "Lower Legs for Field Operator 1" }).click();
-    assert.equal(
-      await page.getByRole("button", { name: "Raise Brain for Field Operator 1" }).isDisabled(),
-      false,
-    );
     // Pick two operators with the roster checkboxes.
     await page.getByLabel("Include Field Operator 2 in the selection").check();
     await page.getByLabel("Include Field Operator 3 in the selection").check();
     assert.match(await page.locator("#status-message").innerText(), /3 operators selected/);
     await page.getByLabel("Include Field Operator 1 in the selection").uncheck();
     assert.match(await page.locator("#status-message").innerText(), /2 operators selected/);
-    await page.getByRole("button", { name: "Lower Legs", exact: true }).click();
-    assert.match(await page.locator("#status-message").innerText(), /Selected operators: Legs lowered/);
     await page.locator(".roster-select").first().click();
     // With everyone selected, choosing a weapon chooses it for all of them (and again puts it away for all).
     await page.keyboard.press("a");
@@ -139,11 +114,7 @@ for (const [name, type, executablePath] of targets) {
     assert.deepEqual(pressed, ["true", "true", "true", "true"]);
     await page.click("#select-all-button");
     assert.match(await page.locator("#status-message").innerText(), /All 4 operators selected/);
-    await page.getByRole("button", { name: "Lower Brain", exact: true }).click();
-    assert.match(await page.locator("#status-message").innerText(), /Selected operators: Brain lowered/);
-    assert.equal(await page.locator('.roster [aria-label^="Brain of"][aria-label$="2 of 5"]').count(), 4);
     // Drug sliders: moving one sets it for everyone selected, and the dose takes effect over the next seconds.
-    await page.keyboard.press("a");
     await page.getByLabel("Adrenaline of Field Operator 1").fill("100");
     assert.equal((await page.evaluate(() => window.opensyndTest.drugOf("operator-three", "adrenaline"))).amount, 100);
     await page.waitForTimeout(2200);
@@ -215,22 +186,7 @@ for (const [name, type, executablePath] of targets) {
       await page.locator('.stamina[data-unit="operator-two"]').getAttribute("aria-label"),
       /Stamina of Field Operator 2 10 percent/,
     );
-    // Fatigue shows on the bars: a spent operator-two has hollow (lost) Legs segments.
-    await page.evaluate(() => window.opensyndTest.setStamina("operator-two", 0));
-    await page.waitForFunction(
-      () => document.querySelector('.roster .bar[data-unit="operator-two"][data-bar="speed"]')
-        .getAttribute("aria-label").includes("tired down to"),
-    );
-    assert.ok(
-      (await page.locator('.roster .bar[data-unit="operator-two"][data-bar="speed"] i.fatigued').count()) > 0,
-    );
     assert.equal(await page.locator(".meter.focus").count(), 4);
-    // Mental fatigue lowers the Brain bar the same way.
-    await page.evaluate(() => window.opensyndTest.setFocus("operator-three", 0));
-    await page.waitForFunction(
-      () => document.querySelector('.roster .bar[data-unit="operator-three"][data-bar="brain"]')
-        .getAttribute("aria-label").includes("tired down to"),
-    );
     await page.evaluate(() => window.opensyndTest.setFocus("operator-three", 1));
     await page.evaluate(() => window.opensyndTest.setStamina("operator-two", 0.1));
     // Camera controls: zoom with the wheel and keys, jump with the minimap, recentre with C.
@@ -595,10 +551,10 @@ for (const [name, type, executablePath] of targets) {
     assert.match(await street.locator("#status-message").innerText(), /now follows/);
     // The crosshair appears over a civilian the squad could fire on, but not over a follower.
     await street.evaluate(() => {
-      window.opensyndTest.placeNear("civilian-1", "operator-one", 0, 3);
+      window.opensyndTest.placeNear("civilian-1", "operator-one", 3, 0);
       window.opensyndTest.focusOn("operator-one");
     });
-    await street.waitForTimeout(300);
+    await street.waitForTimeout(700);
     const stranger = await street.evaluate(() => window.opensyndTest.screenPoint("civilian-1"));
     await street.mouse.move(stranger.x + 40, stranger.y + 40);
     await street.mouse.move(stranger.x, stranger.y);
@@ -715,42 +671,6 @@ for (const [name, type, executablePath] of targets) {
     await roster.click("#begin-button");
     assert.equal(await roster.locator(".roster-select").count(), 4);
     await roster.close();
-
-    // Legs and Brain work like weapons: with everyone selected, one operative's controls set them all.
-    const group = await browser.newPage();
-    await group.goto(`${url}?e2e`);
-    await group.waitForSelector(".roster-select");
-    await group.click("#begin-button");
-    await group.locator("#game-canvas").focus();
-    await group.keyboard.press("a");
-    const levels = (bar) =>
-      group.locator(`.roster .bar[data-bar="${bar}"]`).evaluateAll((bars) =>
-        bars.map((element) => element.getAttribute("aria-label")),
-      );
-    const raiseLegs = group.getByRole("button", { name: "Raise Legs for Field Operator 2" });
-    await raiseLegs.click();
-    assert.ok((await levels("speed")).every((label) => label.includes("4 of 5")), "all four Legs are now 4");
-    assert.match(await group.locator("#status-message").innerText(), /4 operators: Legs raised to 4/);
-    assert.ok((await levels("brain")).every((label) => label.includes("3 of 5")), "Brain is untouched");
-    await group.getByRole("button", { name: "Lower Legs for Field Operator 3" }).click();
-    await group.getByRole("button", { name: "Lower Brain for Field Operator 4" }).click();
-    assert.ok((await levels("speed")).every((label) => label.includes("3 of 5")));
-    assert.ok((await levels("brain")).every((label) => label.includes("2 of 5")));
-    // Someone out of training points is limited: operator 3 spends their spare points on Brain
-    // (Legs 3, Brain 5, none left), so a group raise of Legs cannot take them up.
-    await group.locator(".roster-select").nth(2).click();
-    for (let step = 0; step < 3; step += 1) {
-      await group.getByRole("button", { name: "Raise Brain for Field Operator 3" }).click();
-    }
-    assert.match(await group.locator(".roster-item").nth(2).innerText(), /0 pts/);
-    await group.locator("#game-canvas").focus();
-    await group.keyboard.press("a");
-    await group.getByRole("button", { name: "Raise Legs for Field Operator 2" }).click();
-    assert.match(await group.locator("#status-message").innerText(), /1 could not reach it: not enough training points/);
-    const finalLegs = await levels("speed");
-    assert.ok(finalLegs[0].includes("4 of 5") && finalLegs[1].includes("4 of 5") && finalLegs[3].includes("4 of 5"));
-    assert.ok(finalLegs[2].includes("3 of 5"), "operator 3 stayed at 3");
-    await group.close();
 
     assert.deepEqual(errors, []);
     console.log(`ok ${name}`);

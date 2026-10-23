@@ -4,19 +4,15 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
-  adjustLevel,
   clampLevel,
   cooldownMultiplier,
   defaultLevels,
   isValidLevel,
-  levelPoints,
-  pointsLeft,
   effectiveLevels,
   focusDrainPerSecond,
   isValidMeter,
   nextFocus,
   nextStamina,
-  setBarForAll,
   staminaDrainPerSecond,
   maxCooldownMultiplier,
   speedMultiplier,
@@ -38,20 +34,12 @@ test("speed and brain scale in the right directions across the range", () => {
   assert.ok(Math.abs(maxCooldownMultiplier() - 1.3 * Math.SQRT2) < 1e-9, "the slowest brain and the lowest Intelligence together");
 });
 
-test("levels are clamped to 1-5 and adjustments stop at the ends", () => {
+test("levels are clamped to 1-5", () => {
   assert.equal(clampLevel(0), 1);
   assert.equal(clampLevel(9), 5);
   assert.equal(isValidLevel(3), true);
   assert.equal(isValidLevel(3.5), false);
   assert.equal(isValidLevel(6), false);
-
-  const levels = defaultLevels();
-  assert.deepEqual(adjustLevel(levels, "speed", 1), { speed: 4, brain: 3 });
-  const capped = { speed: 5, brain: 1 };
-  assert.equal(adjustLevel(capped, "speed", 1), capped);
-  assert.equal(adjustLevel(capped, "brain", -1), capped);
-  assert.equal(adjustLevel(capped, "other", 1), capped);
-  assert.deepEqual(adjustLevel(capped, "brain", 1), { speed: 5, brain: 2 });
 });
 
 test("walking drains stamina, resting recovers it slowly, and Legs slow the drain", () => {
@@ -114,26 +102,6 @@ test("a strong, rested operator beats the baseline and a spent one falls to it o
   assert.equal(isValidMeter(NaN), false);
 });
 
-test("training points limit how far the bars can be raised together", () => {
-  const levels = defaultLevels();
-  assert.equal(levelPoints(levels), 6);
-  assert.equal(pointsLeft(levels, 8), 2);
-
-  let next = adjustLevel(levels, "speed", 1, 8);
-  next = adjustLevel(next, "speed", 1, 8);
-  assert.deepEqual(next, { speed: 5, brain: 3 });
-  assert.equal(pointsLeft(next, 8), 0);
-
-  // Out of points: Brain cannot go up until Legs comes down.
-  assert.equal(adjustLevel(next, "brain", 1, 8), next);
-  const traded = adjustLevel(adjustLevel(next, "speed", -1, 8), "brain", 1, 8);
-  assert.deepEqual(traded, { speed: 4, brain: 4 });
-
-  // Lowering always works, and no budget means no limit.
-  assert.deepEqual(adjustLevel({ speed: 5, brain: 5 }, "brain", -1, 8), { speed: 5, brain: 4 });
-  assert.deepEqual(adjustLevel({ speed: 5, brain: 4 }, "brain", 1), { speed: 5, brain: 5 });
-});
-
 test("cyborg heart and brain research slow the drains and speed the recovery", () => {
   const levels = defaultLevels();
   const baseline = nextStamina(1, levels, true, 30);
@@ -144,36 +112,4 @@ test("cyborg heart and brain research slow the drains and speed the recovery", (
   const strained = { speed: 3, brain: 5 };
   assert.ok(nextFocus(1, strained, 20, { brain: 5 }) > nextFocus(1, strained, 20));
   assert.ok(nextFocus(0, { speed: 3, brain: 2 }, 20, { brain: 5 }) > nextFocus(0, { speed: 3, brain: 2 }, 20));
-});
-
-const trained = (id, speed, brain) => ({ id, levels: { speed, brain } });
-
-test("setting a bar for several operatives gives them all the same level", () => {
-  const squad = [trained("a", 3, 3), trained("b", 2, 3), trained("c", 4, 3)];
-  const result = setBarForAll(squad, "speed", 4, 8);
-  assert.deepEqual(squad.map((unit) => unit.levels.speed), [4, 4, 4]);
-  assert.deepEqual(result, { reached: ["a", "b"], limited: [], unchanged: ["c"] });
-  assert.deepEqual(squad.map((unit) => unit.levels.brain), [3, 3, 3], "the other bar is untouched");
-});
-
-test("raising is limited by each operative's own training points; lowering always works", () => {
-  const squad = [trained("a", 3, 3), trained("b", 4, 4), trained("c", 2, 2)];
-  // Budget 8: "a" has 2 free points, "b" has 0, "c" has 4. Raising Legs to 5 gets a to 5, b stays at 4, c to 5.
-  const result = setBarForAll(squad, "speed", 5, 8);
-  assert.deepEqual(squad.map((unit) => unit.levels.speed), [5, 4, 5]);
-  assert.deepEqual(result, { reached: ["a", "c"], limited: ["b"], unchanged: [] });
-
-  const lowered = setBarForAll(squad, "speed", 1, 8);
-  assert.deepEqual(squad.map((unit) => unit.levels.speed), [1, 1, 1]);
-  assert.deepEqual(lowered.limited, []);
-});
-
-test("setting a bar clamps the level and ignores unknown bars", () => {
-  const squad = [trained("a", 3, 3)];
-  setBarForAll(squad, "brain", 99);
-  assert.equal(squad[0].levels.brain, 5);
-  setBarForAll(squad, "brain", -4);
-  assert.equal(squad[0].levels.brain, 1);
-  assert.deepEqual(setBarForAll(squad, "nonsense", 3), { reached: [], limited: [], unchanged: [] });
-  assert.deepEqual(squad[0].levels, { speed: 3, brain: 1 });
 });
