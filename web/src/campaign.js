@@ -543,3 +543,32 @@ export function buyIntel(campaign, missionId, enemies) {
   if (campaign.funds < price) return campaign;
   return { ...campaign, funds: campaign.funds - price, intel: { ...campaign.intel, [missionId]: next } };
 }
+
+// The figures shown for an item in the shop (FreeSynd lists rounds, price per round, range, damage and weight).
+export function describeStats(item) {
+  const effect = item.effect ?? {};
+  const parts = [];
+  if (item.action === "disable-pulse") {
+    const pellets = effect.pellets ? ` x${effect.pellets}` : "";
+    parts.push(`Damage ${effect.attack}${pellets}`, `Range ${effect.range}`, `Recharge ${effect.cooldown} s`);
+    if (effect.pierce) parts.push("Pierces");
+    if (effect.burn) parts.push(`Burns ${effect.burn.dps} a second for ${effect.burn.seconds} s`);
+  } else if (item.action === "time-bomb") {
+    parts.push(`Blast ${effect.attack}`, `Radius ${effect.radius}`, `Fuse ${effect.fuse} s`);
+  } else if (item.action === "shield") {
+    parts.push(`Lasts ${effect.duration} s`);
+  } else if (item.action === "scan") {
+    parts.push(`Reach ${effect.radius}`, `Lasts ${effect.duration} s`);
+  } else if (item.action === "restore-vitality") {
+    parts.push(`Restores ${effect.restoreVitality}`);
+  } else if (item.action === "persuade") {
+    parts.push(`Range ${effect.range}`);
+  }
+  if (item.charges) {
+    const each = roundPrice(item);
+    parts.push(`${item.charges} ${item.action === "disable-pulse" ? "rounds" : "uses"}`);
+    if (each > 0) parts.push(`${each.toFixed(2)} funds each to refill`);
+  }
+  if (item.weight) parts.push(`Weight ${item.weight}`);
+  return parts;
+}

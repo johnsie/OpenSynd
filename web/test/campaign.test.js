@@ -37,6 +37,7 @@ import {
   loseOperatives,
   recruit,
   INTEL_LEVELS,
+  describeStats,
   buyIntel,
   intelLevel,
   intelPrice,
@@ -439,4 +440,17 @@ test("survey intelligence is bought a level at a time, priced by the enemies, an
   assert.equal(buyIntel({ ...emptyCampaign(), funds: 5 }, "m1", 12).intel.m1, undefined, "too poor");
   assert.equal(parseCampaign(JSON.stringify({ intel: { a: 9, b: 1, c: -1, d: "x" } })).intel.a, 2);
   assert.deepEqual(Object.keys(parseCampaign(JSON.stringify({ intel: { a: 9, b: 1, c: -1, d: "x" } })).intel), ["a", "b"]);
+});
+
+test("the shop lists an item's figures", () => {
+  const rifle = { action: "disable-pulse", effect: { attack: 24, range: 15, cooldown: 1.8 }, charges: 12, price: 85, weight: 5 };
+  assert.deepEqual(describeStats(rifle), ["Damage 24", "Range 15", "Recharge 1.8 s", "12 rounds", "1.77 funds each to refill", "Weight 5"]);
+  const scatter = { action: "disable-pulse", effect: { attack: 6, range: 6, cooldown: 1.1, pellets: 5 }, charges: 8, price: 70, weight: 6 };
+  assert.ok(describeStats(scatter).includes("Damage 6 x5"));
+  const flame = { action: "disable-pulse", effect: { attack: 4, range: 4.5, cooldown: 0.25, pierce: true, burn: { dps: 8, seconds: 4 } } };
+  assert.ok(describeStats(flame).includes("Pierces") && describeStats(flame).includes("Burns 8 a second for 4 s"));
+  const bomb = { action: "time-bomb", effect: { attack: 55, radius: 3, fuse: 6 }, charges: 3, price: 70 };
+  assert.deepEqual(describeStats(bomb).slice(0, 3), ["Blast 55", "Radius 3", "Fuse 6 s"]);
+  assert.deepEqual(describeStats({ action: "shield", effect: { duration: 8 } }), ["Lasts 8 s"]);
+  assert.deepEqual(describeStats({ action: "stealth", effect: {} }), []);
 });

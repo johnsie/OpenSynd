@@ -68,6 +68,7 @@ import {
   captureItems,
   earnAchievement,
   INTEL_LABELS,
+  describeStats,
   INTEL_LEVELS,
   buyIntel,
   intelLevel,
@@ -991,7 +992,10 @@ function renderArmoury() {
     note.textContent = available
       ? `${item.description}${supply}`
       : `${item.description}${supply} Research it first (${item.researchCost} funds).`;
-    text.append(name, note);
+    const figures = document.createElement("small");
+    figures.className = "stats";
+    figures.textContent = describeStats(item).join(" · ");
+    text.append(name, note, figures);
     const buy = document.createElement("button");
     buy.type = "button";
     const net = netCost(campaign, placement.id, choice.slot, item, state.catalog, defaults);

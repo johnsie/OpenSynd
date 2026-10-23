@@ -847,3 +847,5 @@ main { grid-template-columns: minmax(0, 1fr) minmax(250px, 300px); gap: 0.6rem; 
 .research-dial { display: grid; gap: 0.3rem; margin-bottom: 0.5rem; font-size: 0.9rem; }
 .research-dial .dial-row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
 .research-row progress { width: 6rem; }
+
+.shop-row .stats { display: block; opacity: 0.85; color: var(--amber, #e1b35a); }
