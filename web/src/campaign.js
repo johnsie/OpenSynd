@@ -14,7 +14,7 @@ import {
   sanitizeTerritory,
   withTax,
 } from "./strategy.js";
-import { MAX_TIER, PARTS, emptyUpgrades, sanitizeUpgrades, upgradePrice } from "./upgrades.js";
+import { MAX_TIER, PARTS, PART_NAMES, emptyUpgrades, sanitizeUpgrades, upgradePrice } from "./upgrades.js";
 
 export const CAMPAIGN_KEY = "opensynd.campaign.v1";
 export const SLOTS_PER_OPERATIVE = 8;
@@ -599,6 +599,20 @@ export function describeStats(item) {
   }
   if (item.weight) parts.push(`Weight ${item.weight}`);
   return parts;
+}
+
+/**
+ * Enemy agents are fitted with the best of every body part the squad has (FreeSynd gives them the highest version
+ * available), so upgrading your own agents makes theirs tougher, faster and steadier too.
+ */
+export function enemyUpgrades(campaign) {
+  const best = emptyUpgrades();
+  for (const member of campaign.roster ?? []) {
+    if (!member.alive) continue;
+    const owned = upgradesOf(campaign, member.id);
+    for (const part of PART_NAMES) best[part] = Math.max(best[part], owned[part]);
+  }
+  return best;
 }
 
 /**

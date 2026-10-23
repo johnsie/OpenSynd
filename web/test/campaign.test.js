@@ -39,6 +39,7 @@ import {
   recruit,
   INTEL_LEVELS,
   enemyArmament,
+  enemyUpgrades,
   describeStats,
   buyIntel,
   intelLevel,
@@ -484,4 +485,22 @@ test("enemy agents carry the weapons you have researched: every other one, deare
   const more = enemyArmament(ids, { ...emptyCampaign(), items: ["mid", "big"] }, weapons);
   assert.deepEqual([...more.values()].map((item) => item.id), ["big", "mid"]);
   assert.deepEqual([...enemyArmament(ids, some, weapons)], [...arms], "repeatable");
+});
+
+test("enemy agents are fitted with the best of every part the living squad has", () => {
+  assert.deepEqual(enemyUpgrades(emptyCampaign()), { legs: 0, arms: 0, chest: 0, heart: 0, eyes: 0, brain: 0 });
+  const campaign = {
+    ...emptyCampaign(),
+    roster: [
+      { id: "a", name: "A", alive: true },
+      { id: "b", name: "B", alive: true },
+      { id: "c", name: "C", alive: false },
+    ],
+    upgrades: {
+      a: { legs: 2, arms: 0, chest: 1, heart: 0, eyes: 0, brain: 0 },
+      b: { legs: 1, arms: 3, chest: 0, heart: 0, eyes: 2, brain: 0 },
+      c: { legs: 3, arms: 3, chest: 3, heart: 3, eyes: 3, brain: 3 },
+    },
+  };
+  assert.deepEqual(enemyUpgrades(campaign), { legs: 2, arms: 3, chest: 1, heart: 0, eyes: 2, brain: 0 }, "the fallen do not count");
 });

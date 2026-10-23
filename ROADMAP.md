@@ -337,7 +337,7 @@ browser e2e run).
 | F14 | Hit reactions | done: a flinch that stops action and persuasion |
 | F15 | Everything is lethal | have |
 | F16 | Medikit | have |
-| F17 | Six body upgrades, three tiers | done: per operative, 1x/5x/10x prices; enemy upgrades open |
+| F17 | Six body upgrades, three tiers | done: per operative, 1x/5x/10x prices; enemy agents are fitted with the best tier of each part the living squad has |
 | F18 | The three IPA drugs | done: three sliders with the dose, effect and tolerance drift; the training bars and fatigue meters are gone |
 | F19 | Followers move at their owner's pace | done |
 | F20 | Funded, time-based research with chains | done: ten funding levels, one item at a time, chains |

@@ -77,6 +77,7 @@ import {
   earnAchievement,
   INTEL_LABELS,
   enemyArmament,
+  enemyUpgrades,
   describeStats,
   INTEL_LEVELS,
   buyIntel,
@@ -579,7 +580,12 @@ async function loadGame(index = state.missionIndex) {
       ? { route: buildPatrolRoute(state.grid, placement.position, placement.patrol), index: 0 }
       : null,
     path: [],
-    upgrades: definition.role === "operator" ? upgradesOf(state.campaign, placement.id) : null,
+    upgrades:
+      definition.role === "operator"
+        ? upgradesOf(state.campaign, placement.id)
+        : definition.role === "enemy-agent"
+          ? enemyUpgrades(state.campaign)
+          : null,
     drugs: definition.role === "operator" ? newDrugs() : null,
     looted: [],
     activeSlot: null,
@@ -588,7 +594,13 @@ async function loadGame(index = state.missionIndex) {
       definition: item,
       charges: item.charges,
     })),
-    health: definition.stats.vitality + (definition.role === "operator" ? chestVitality(upgradesOf(state.campaign, placement.id)) : 0),
+    health:
+      definition.stats.vitality +
+      (definition.role === "operator"
+        ? chestVitality(upgradesOf(state.campaign, placement.id))
+        : definition.role === "enemy-agent"
+          ? chestVitality(enemyUpgrades(state.campaign))
+          : 0),
     cooldownRemaining: 0,
     targetId: null,
     disabled: false,
