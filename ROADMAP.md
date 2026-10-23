@@ -1061,6 +1061,12 @@ Ordered by what each adds per unit of work given what exists. Items in the same 
    or ambiguous licenses. They do not provide the freedoms required here.
 7. **Legal gates block releases.** Missing provenance is a release blocker, not
    documentation debt.
+8. **FreeSynd's gameplay rules win.** Where a FreeSynd feature or rule (behaviours,
+   weapon and item rules, research, persuasion, campaign and strategic rules,
+   controls) conflicts with an existing OpenSynd feature or rule, FreeSynd's
+   takes priority and the OpenSynd one is changed or removed, with the tests,
+   saves and balance updated to match. This covers mechanics only: principles
+   1-7 still apply, so values, names, art, audio and text stay our own.
 
 ## Game objectives and creative direction
 
