@@ -57,7 +57,8 @@ You need a computer with a recent web browser and Node.js installed.
 2. Serve the `web/dist` folder with any simple web server (for example `python3 -m http.server -d dist 8080`).
 3. Open `http://localhost:8080` in your browser.
 
-The full list of controls, and anything more technical, is in **[web/TECHNICAL.md](web/TECHNICAL.md)**.
+Where the game is going next is in [ROADMAP_2.md](ROADMAP_2.md) (more gameplay: smarter enemies, varied operations, a living
+city, a campaign with a shape). The full list of controls, and anything more technical, is in **[web/TECHNICAL.md](web/TECHNICAL.md)**.
 
 A few basics to get going: click one of your operatives to select them, click the ground to walk, click one of their
 weapons to ready it, then **right-click** to fire. **Space** pauses. **A** selects everybody.

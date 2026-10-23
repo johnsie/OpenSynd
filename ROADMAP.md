@@ -14,6 +14,8 @@ This roadmap treats legal provenance, reproducible builds, and user freedom as
 release requirements. It is a project plan, not legal advice; an IP lawyer
 should review the name, clean-room policy, and first public release.
 
+> What comes next, mainly gameplay, is in [ROADMAP_2.md](ROADMAP_2.md).
+
 ## Implementation status
 
 Phase 0 began on 2026-10-22. The repository now has contribution, asset, and
