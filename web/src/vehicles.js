@@ -223,9 +223,9 @@ function driveRoute(vehicle, seconds, roadGrid) {
   moveAlongPath(vehicle, seconds, vehicle.definition.stats.speed);
 }
 
-// Traffic does not drive through itself: an AI-driven car waits when another vehicle is close ahead of it, unless that one
-// has to wait for it. Parked cars are ignored. Wrecks that are still burning and cars the squad drives always have the right of way; between two
-// ordinary cars the one with the lower id goes first, so no queue can lock up.
+// Traffic does not drive through itself: an AI-driven car waits when another vehicle is close ahead of it, unless that
+// one has to wait for it. Parked cars are ignored. Wrecks that are still burning and cars the squad drives always have
+// the right of way; between two ordinary cars the one with the lower id goes first, so no queue can lock up.
 export const FOLLOW_GAP = 1.9;
 export function blockedAhead(vehicle, units) {
   const heading = vehicle.vehicle.heading;
