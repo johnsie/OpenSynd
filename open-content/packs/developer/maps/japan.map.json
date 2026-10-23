@@ -179,17 +179,6 @@
    "color": "#3a4650"
   },
   {
-   "id": "fence-0-0-alley",
-   "x": 15,
-   "y": 6,
-   "width": 2,
-   "height": 1,
-   "surface": "service-fence",
-   "walkable": false,
-   "elevation": 1,
-   "color": "#3a4650"
-  },
-  {
    "id": "block-0-1-a",
    "x": 7,
    "y": 31,
@@ -414,17 +403,6 @@
    "x": 39,
    "y": 6,
    "width": 5,
-   "height": 1,
-   "surface": "service-fence",
-   "walkable": false,
-   "elevation": 1,
-   "color": "#3a4650"
-  },
-  {
-   "id": "fence-1-0-alley",
-   "x": 39,
-   "y": 6,
-   "width": 2,
    "height": 1,
    "surface": "service-fence",
    "walkable": false,
@@ -668,17 +646,6 @@
    "y": 114,
    "width": 1,
    "height": 5,
-   "surface": "service-fence",
-   "walkable": false,
-   "elevation": 1,
-   "color": "#3a4650"
-  },
-  {
-   "id": "fence-1-4-alley",
-   "x": 39,
-   "y": 102,
-   "width": 2,
-   "height": 1,
    "surface": "service-fence",
    "walkable": false,
    "elevation": 1,
@@ -1268,17 +1235,6 @@
    "color": "#3a4650"
   },
   {
-   "id": "fence-3-4-alley",
-   "x": 87,
-   "y": 102,
-   "width": 2,
-   "height": 1,
-   "surface": "service-fence",
-   "walkable": false,
-   "elevation": 1,
-   "color": "#3a4650"
-  },
-  {
    "id": "block-4-0-a",
    "x": 103,
    "y": 7,
@@ -1610,6 +1566,46 @@
   }
  ],
  "objects": [
+  {
+   "id": "door-0-0-alley",
+   "kind": "door",
+   "position": {
+    "x": 15,
+    "y": 6
+   },
+   "width": 2,
+   "height": 1
+  },
+  {
+   "id": "door-1-0-alley",
+   "kind": "door",
+   "position": {
+    "x": 39,
+    "y": 6
+   },
+   "width": 2,
+   "height": 1
+  },
+  {
+   "id": "door-1-4-alley",
+   "kind": "door",
+   "position": {
+    "x": 39,
+    "y": 102
+   },
+   "width": 2,
+   "height": 1
+  },
+  {
+   "id": "door-3-4-alley",
+   "kind": "door",
+   "position": {
+    "x": 87,
+    "y": 102
+   },
+   "width": 2,
+   "height": 1
+  },
   {
    "id": "service-gate",
    "kind": "gate",

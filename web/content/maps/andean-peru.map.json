@@ -157,17 +157,6 @@
    "color": "#3a4650"
   },
   {
-   "id": "fence-0-0-alley",
-   "x": 14,
-   "y": 6,
-   "width": 2,
-   "height": 1,
-   "surface": "service-fence",
-   "walkable": false,
-   "elevation": 1,
-   "color": "#3a4650"
-  },
-  {
    "id": "block-0-1-a",
    "x": 7,
    "y": 29,
@@ -1104,6 +1093,16 @@
   }
  ],
  "objects": [
+  {
+   "id": "door-0-0-alley",
+   "kind": "door",
+   "position": {
+    "x": 14,
+    "y": 6
+   },
+   "width": 2,
+   "height": 1
+  },
   {
    "id": "service-gate",
    "kind": "gate",

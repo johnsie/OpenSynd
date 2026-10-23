@@ -154,6 +154,7 @@ def layout_for(territory: dict, tier: int) -> dict:
         "compound": compound,
         "fences": fences,
         "gate": gate,
+        "doors": tier >= 2,  # alley mouths closed by doors that open for anyone who walks up to them
         "entry": (2, size // 2),
         "zones": [],
         "watch_points": [],

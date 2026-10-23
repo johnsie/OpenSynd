@@ -152,6 +152,7 @@ def build(layout: dict) -> dict:
                                   "signal-grate", True, 1, "#59717a"))
 
     props = random.Random(layout["seed"] + 1)
+    doors = []  # alley mouths closed by a door instead of a fence (layouts with "doors": True)
     compound = layout["compound"]
     cx, cy, cw, ch = compound or (0, 0, 0, 0)
     keep_clear = (cx - 1, cy - 1, cw + 1, ch + 1) if compound else (-10, -10, 0, 0)
@@ -198,6 +199,10 @@ def build(layout: dict) -> dict:
                 if any(rect[0] <= wx < rect[0] + rect[2] and rect[1] <= wy < rect[1] + rect[3]
                        for wx, wy in layout["watch_points"]):
                     continue
+                if name.endswith("-alley") and layout.get("doors"):
+                    doors.append({"id": name.replace("fence-", "door-"), "kind": "door", "position": {"x": rect[0], "y": rect[1]},
+                                  "width": rect[2], "height": rect[3]})
+                    continue
                 regions.append(region(name, *rect, kind, False, 1 if kind == "service-fence" else 2,
                                       FENCE_COLOR if kind == "service-fence" else WALL_COLOR))
 
@@ -211,7 +216,7 @@ def build(layout: dict) -> dict:
         regions.append(region(name, x, y, w, h, "service-fence", False, 1, FENCE_COLOR))
 
     gate = layout["gate"]
-    objects = []
+    objects = list(doors)
     if gate:
         gx, gy, gw, gh = gate
         objects.append({
