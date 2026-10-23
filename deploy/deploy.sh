@@ -8,7 +8,7 @@ set -eu
 
 SOURCE=${1:?usage: deploy.sh <built-folder> <release-name>}
 RELEASE=${2:?usage: deploy.sh <built-folder> <release-name>}
-DOCROOT=${DOCROOT:-/var/www/opensyn.outiva.com}
+DOCROOT=${DOCROOT:-/var/www/opensynd.outiva.com}
 KEEP=${KEEP:-4}
 
 [ -f "$SOURCE/index.html" ] || { echo "no index.html in $SOURCE: was the game built?" >&2; exit 1; }

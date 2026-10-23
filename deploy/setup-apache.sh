@@ -1,7 +1,7 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
-# One-time set-up of the web server for https://opensyn.outiva.com. Run it on the server as root:
+# One-time set-up of the web server for https://opensynd.outiva.com. Run it on the server as root:
 #
 #     sudo sh deploy/setup-apache.sh
 #
@@ -12,7 +12,7 @@
 #   - installs the virtual host from deploy/apache/ and reloads Apache.
 set -eu
 
-HOST=${HOST:-opensyn.outiva.com}
+HOST=${HOST:-opensynd.outiva.com}
 DOCROOT=${DOCROOT:-/var/www/$HOST}
 RUNNER_USER=${RUNNER_USER:-gitlab-runner}
 HERE=$(cd "$(dirname "$0")" && pwd)
@@ -80,15 +80,15 @@ fill() {
       -e "s|@ERROR_LOG@|$LOG_DIR/$HOST-error.log|g" -e "s|@ACCESS_LOG@|$LOG_DIR/$HOST-access.log|g" \
       -e "s|@COMMON@|$CONF_DIR/$HOST-common.inc|g" "$1"
 }
-fill "$HERE/apache/opensyn-common.conf" > "$CONF_DIR/$HOST-common.inc"
+fill "$HERE/apache/opensynd-common.conf" > "$CONF_DIR/$HOST-common.inc"
 if [ "$FLAVOUR" = debian ]; then
-  fill "$HERE/apache/opensyn.outiva.com.conf" > "$CONF_DIR/sites-available/$HOST.conf"
+  fill "$HERE/apache/opensynd.outiva.com.conf" > "$CONF_DIR/sites-available/$HOST.conf"
   a2ensite "$HOST.conf" >/dev/null
   apache2ctl configtest
   systemctl enable apache2 >/dev/null 2>&1 || true
   systemctl reload apache2 || systemctl restart apache2
 else
-  fill "$HERE/apache/opensyn.outiva.com.conf" > "$CONF_DIR/conf.d/$HOST.conf"
+  fill "$HERE/apache/opensynd.outiva.com.conf" > "$CONF_DIR/conf.d/$HOST.conf"
   httpd -t
   systemctl enable httpd >/dev/null 2>&1 || true
   systemctl reload httpd || systemctl restart httpd
