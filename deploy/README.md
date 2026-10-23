@@ -23,9 +23,10 @@ It works on Debian/Ubuntu and Red Hat style systems, can be run again safely, an
 - installs Apache and its TLS module if they are missing and turns on the modules the site uses;
 - creates `/var/www/opensynd.outiva.com` (`releases/` and a `current` link), owned by the GitLab runner's user
   (`gitlab-runner` by default; run it with `RUNNER_USER=someone` if yours is different);
-- makes a self-signed certificate for `opensynd.outiva.com` (ten years) in `/etc/ssl/opensynd.outiva.com/` (Debian) or
-  `/etc/pki/tls/opensynd.outiva.com/` (Red Hat);
-- installs the virtual host from `deploy/apache/` (ports 80 and 443), checks the configuration and reloads Apache.
+- makes a self-signed origin certificate for `opensynd.outiva.com` (ten years): `/etc/ssl/certs/opensynd-origin.crt` and
+  `/etc/ssl/private/opensynd-origin.key` on Ubuntu (the same place the Battle City site keeps its origin certificate);
+- installs the virtual host from `deploy/apache/` (port 80 redirects to https, port 443 serves the game), checks the
+  configuration and reloads Apache.
 
 The Apache settings were tested here with a private Apache on spare ports: the home page, the JavaScript modules (served as
 `text/javascript`), the JSON files and the music load, compression works, and a missing page gives a 404.

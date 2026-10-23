@@ -38,13 +38,15 @@ fi
 
 if [ "$FLAVOUR" = debian ]; then
   CONF_DIR=/etc/apache2
-  CERT_DIR=/etc/ssl/$HOST
+  CERT_FILE=/etc/ssl/certs/opensynd-origin.crt
+  KEY_FILE=/etc/ssl/private/opensynd-origin.key
   LOG_DIR='${APACHE_LOG_DIR}'
   WEB_GROUP=www-data
   a2enmod ssl headers deflate mime >/dev/null
 else
   CONF_DIR=/etc/httpd
-  CERT_DIR=/etc/pki/tls/$HOST
+  CERT_FILE=/etc/pki/tls/certs/opensynd-origin.crt
+  KEY_FILE=/etc/pki/tls/private/opensynd-origin.key
   LOG_DIR=logs
   WEB_GROUP=apache
   rpm -q mod_ssl >/dev/null 2>&1 || dnf install -y mod_ssl
@@ -65,18 +67,22 @@ if command -v restorecon >/dev/null 2>&1; then
   chcon -R -t httpd_sys_content_t "$DOCROOT" 2>/dev/null || true
 fi
 
-# --- self-signed certificate (valid ten years; haproxy does the public TLS)
-mkdir -p "$CERT_DIR"
-if [ ! -s "$CERT_DIR/$HOST.crt" ]; then
+# --- self-signed origin certificate (valid ten years; haproxy does the public TLS and does not verify this one)
+if [ ! -s "$CERT_FILE" ] || [ ! -s "$KEY_FILE" ]; then
   openssl req -x509 -nodes -newkey rsa:2048 -days 3650 \
-    -keyout "$CERT_DIR/$HOST.key" -out "$CERT_DIR/$HOST.crt" \
+    -keyout "$KEY_FILE" -out "$CERT_FILE" \
     -subj "/CN=$HOST" -addext "subjectAltName=DNS:$HOST"
-  chmod 600 "$CERT_DIR/$HOST.key"
+  chmod 644 "$CERT_FILE"
+  if [ "$FLAVOUR" = debian ] && getent group ssl-cert >/dev/null; then
+    chown root:ssl-cert "$KEY_FILE"; chmod 640 "$KEY_FILE"
+  else
+    chmod 600 "$KEY_FILE"
+  fi
 fi
 
 # --- the virtual host
 fill() {
-  sed -e "s|@DOCROOT@|$DOCROOT|g" -e "s|@CERT@|$CERT_DIR/$HOST.crt|g" -e "s|@KEY@|$CERT_DIR/$HOST.key|g" \
+  sed -e "s|@DOCROOT@|$DOCROOT|g" -e "s|@CERT@|$CERT_FILE|g" -e "s|@KEY@|$KEY_FILE|g" \
       -e "s|@ERROR_LOG@|$LOG_DIR/$HOST-error.log|g" -e "s|@ACCESS_LOG@|$LOG_DIR/$HOST-access.log|g" \
       -e "s|@COMMON@|$CONF_DIR/$HOST-common.inc|g" "$1"
 }
