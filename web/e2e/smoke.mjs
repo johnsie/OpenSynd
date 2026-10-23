@@ -646,6 +646,17 @@ for (const [name, type, executablePath] of targets) {
     await queuePage.getByLabel(/Field Operator 1 slot 3:/).first().waitFor({ timeout: 30000 });
     await queuePage.close();
 
+    // Clicking an item that has nothing left in it puts it down.
+    const spentPage = await browser.newPage();
+    await spentPage.goto(`${url}?e2e`);
+    await spentPage.waitForSelector(".roster-select");
+    await spentPage.click("#begin-button");
+    await spentPage.evaluate(() => window.opensyndTest.giveItem("operator-one", "developer.heavy-pulse-emitter", 0));
+    await spentPage.getByLabel(/Field Operator 1 slot 3: Heavy Pulse Emitter/).click();
+    assert.equal(await spentPage.getByLabel("Field Operator 1 slot 3: empty").count(), 1, "the spent item left the slot");
+    assert.equal((await spentPage.evaluate(() => window.opensyndTest.drops())).length, 1);
+    await spentPage.close();
+
     // Shift+right-click a slot while walking queues the drop for the end of the route.
     const later = await browser.newPage();
     await later.goto(`${url}?e2e`);

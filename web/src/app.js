@@ -4542,10 +4542,10 @@ if (new URLSearchParams(location.search).has("e2e")) {
     advanceMusic(seconds) {
       music.advance(seconds);
     },
-    giveItem(id, itemId) {
+    giveItem(id, itemId, charges) {
       const unit = state.units.find((item) => item.id === id);
       const definition = state.catalog.find((item) => item.id === itemId);
-      unit.equipment.push({ definition, charges: definition.charges });
+      unit.equipment.push({ definition, charges: charges ?? definition.charges });
       renderInterface();
     },
     brokenWindows() {
@@ -4639,7 +4639,7 @@ function slotRow(unit, label) {
     const detail = active ? onLabel : spent ? "used up" : slotHint(definition);
     square.setAttribute("aria-label", `${label} slot ${slot + 1}: ${definition.name}, ${detail}`);
     square.setAttribute("aria-pressed", String(active));
-    square.title = `${definition.name}: ${definition.description} Right-click to drop it.`;
+    square.title = `${definition.name}: ${definition.description} Right-click to drop it (or click it once it is used up).`;
     square.disabled = unit.disabled;
     square.addEventListener("click", () => pressSlot(unit, slot));
     square.addEventListener("contextmenu", (event) => {
@@ -4677,6 +4677,11 @@ function pressSlot(unit, slot) {
   const entry = unit.equipment[slot];
   if (!entry || unit.disabled) return;
   const definition = entry.definition;
+  // An item with nothing left in it is dead weight: clicking it puts it down, freeing the slot.
+  if (entry.charges === 0) {
+    dropFromSlot(unit, slot);
+    return;
+  }
   if (definition.action === "disable-pulse") {
     // With several operatives selected (and this one among them), the choice applies to all of
     // them: each takes up their own copy of the same weapon, or puts it away together.
