@@ -462,7 +462,7 @@ export function sellValue(item) {
   return Math.floor((item?.price ?? 0) * SELL_SHARE);
 }
 
-function slotItem(campaign, operatorId, slot, catalog, defaults) {
+export function slotItem(campaign, operatorId, slot, catalog, defaults) {
   const id = loadoutFor(campaign, operatorId, defaults)[slot];
   return id === undefined ? null : catalog.find((entry) => entry.id === id) ?? null;
 }

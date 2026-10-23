@@ -453,7 +453,6 @@ for (const [name, type, executablePath] of targets) {
     // Two tabs: Squad (roster, body parts, loadout) and Research. The operative picker belongs to the squad tab.
     assert.equal(await page.locator("#roster-list").isVisible(), true);
     assert.equal(await page.locator("#research-items").isVisible(), false);
-    assert.equal(await page.locator("#lab-operators").isVisible(), true);
     assert.equal(await page.locator("#research-tracks").isVisible(), true, "body parts are on the squad tab");
     await page.locator("#research-tracks button").first().click();
     assert.match(await page.locator("#research-tracks").innerText(), /Legs · tier 1 of 3/);
@@ -473,7 +472,7 @@ for (const [name, type, executablePath] of targets) {
     await page.click("#tab-lab-squad");
     const squads = page.locator(".armoury-card");
     assert.equal(await squads.count(), 1, "the chosen operative's slots");
-    assert.equal(await page.locator("#lab-operators .tab").count(), 4);
+    assert.equal(await page.locator("#roster-list .roster-pick:not(:disabled)").count(), 4);
     assert.equal(await squads.first().locator(".slot").count(), 8);
     assert.equal(await squads.first().locator(".slot:not(.empty)").count(), 4);
     assert.equal(await squads.first().locator(".slot svg").count(), 4, "each filled slot shows a picture");
@@ -502,11 +501,26 @@ for (const [name, type, executablePath] of targets) {
     const deployBoxes = page.getByLabel(/^Deploy /);
     assert.equal(await deployBoxes.count(), 4);
     await deployBoxes.nth(3).uncheck();
-    assert.equal(await page.locator("#lab-operators .tab").count(), 3);
+    assert.equal(await page.locator("#roster-list .roster-pick:not(:disabled)").count(), 3);
     assert.match(await page.locator("#roster-note").innerText(), /3 of 4 deploying/);
     await deployBoxes.nth(3).check();
-    assert.equal(await page.locator("#lab-operators .tab").count(), 4);
+    assert.equal(await page.locator("#roster-list .roster-pick:not(:disabled)").count(), 4);
     assert.equal(await page.getByLabel("Fallen operatives are lost for good").isChecked(), true);
+
+    // Pick two operatives in the roster: one purchase is made for both, in the chosen slot.
+    await page.locator("#roster-list .roster-pick").nth(1).click();
+    await page.locator("#roster-list .roster-pick").nth(2).click();
+    assert.equal(await page.locator("#roster-list .roster-card.picked").count(), 2);
+    await page.getByLabel("Operator 3 slot 4: empty", { exact: true }).click();
+    await page.getByRole("button", { name: /^Buy Civic Pulse Emitter for 2 operators/ }).click();
+    assert.match(await page.locator("#lab-message").innerText(), /bought for 2 of 2 operators/);
+    const afterGroup = await page.evaluate(() => JSON.parse(localStorage.getItem("opensynd.campaign.v1")));
+    assert.equal(afterGroup.loadouts["operator-two"].at(-1), "developer.civic-pulse-emitter");
+    assert.equal(afterGroup.loadouts["operator-three"].at(-1), "developer.civic-pulse-emitter");
+    assert.equal(afterGroup.loadouts["operator-four"], undefined, "an operative who was not picked is untouched");
+    // Clicking a picked card un-picks it again.
+    await page.locator("#roster-list .roster-pick").nth(2).click();
+    assert.equal(await page.locator("#roster-list .roster-card.picked").count(), 1);
 
     const campaignRecord = await page.evaluate(() => JSON.parse(localStorage.getItem("opensynd.campaign.v1")));
     assert.equal(campaignRecord.upgrades["operator-one"].legs, 1);

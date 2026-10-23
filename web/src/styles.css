@@ -763,7 +763,11 @@ main { grid-template-columns: minmax(0, 1fr) minmax(250px, 300px); gap: 0.6rem; 
   min-width: 9rem;
 }
 .roster-card.fallen { opacity: 0.5; }
-.roster-card strong { letter-spacing: 0.04em; }
+.roster-card strong, .roster-pick { letter-spacing: 0.04em; font-weight: 700; }
+.roster-pick { padding: 0; text-align: left; background: transparent; border: 0; color: inherit; cursor: pointer; }
+.roster-pick:disabled { cursor: default; opacity: 0.7; }
+.roster-card.picked { border-color: var(--public); background: rgba(66, 214, 208, 0.1); }
+.lab-roster .roster-card { cursor: pointer; }
 .roster-card label { display: flex; gap: 0.4rem; align-items: center; }
 
 /* Territory tax panel and the research funding dial. */
@@ -824,9 +828,6 @@ main { grid-template-columns: minmax(0, 1fr) minmax(250px, 300px); gap: 0.6rem; 
 .research { width: min(84rem, 97vw); }
 .lab-tabs { margin: 0.5rem 0 0.6rem; }
 .lab-tabs .tab { padding: 0.45rem 1.1rem; font-size: 0.95rem; }
-.lab-operators { display: flex; gap: 0.4rem; margin-bottom: 0.6rem; }
-.lab-operators .tab { border: 1px solid var(--line); border-radius: 4px; padding: 0.25rem 0.8rem; font-size: 0.85rem; }
-.lab-operators .tab.on { color: var(--ink); border-color: var(--public); }
 .research .tab-panel { min-height: 22rem; }
 .lab-squad-grid { display: grid; grid-template-columns: 15rem minmax(0, 1fr); gap: 1rem; align-items: start; }
 .lab-roster { padding-right: 1rem; border-right: 1px solid var(--line); }

@@ -98,6 +98,7 @@ import {
   netCost,
   parseCampaign,
   sellFromSlot,
+  slotItem,
   sellValue,
   sanitizeLoadouts,
   serializeCampaign,
@@ -424,7 +425,7 @@ async function loadSprites() {
 }
 
 const state = {
-  armoury: { operator: 0, slot: 0 },
+  armoury: { operator: 0, slot: 0, selected: [] },
   campaign: emptyCampaign(),
   catalog: [],
   opStats: newStats(0),
@@ -873,8 +874,24 @@ function renderRoster() {
     const card = document.createElement("div");
     card.className = "roster-card";
     card.classList.toggle("fallen", !member.alive);
-    const name = document.createElement("strong");
+    const name = document.createElement("button");
+    name.type = "button";
+    name.className = "roster-pick";
     name.textContent = member.name;
+    const deployed = member.alive && campaign.squad.includes(member.id);
+    const team = squadTeam(state.rawTeam ?? state.mission.team);
+    const lone = state.armoury.selected.length === 0 && team[state.armoury.operator]?.id === member.id;
+    const picked = deployed && (state.armoury.selected.includes(member.id) || lone);
+    name.setAttribute("aria-pressed", String(picked));
+    name.title = deployed
+      ? "Click to pick or unpick for buying; several can be picked at once."
+      : "Only deploying operatives can be picked.";
+    name.disabled = !deployed;
+    card.classList.toggle("picked", picked);
+    name.addEventListener("click", () => toggleLabPick(member));
+    card.addEventListener("click", (event) => {
+      if (!event.target.closest("label, button")) toggleLabPick(member);
+    });
     card.append(name);
     if (!member.alive) {
       const lost = document.createElement("span");
@@ -930,26 +947,31 @@ function renderRoster() {
     (state.squadChanged ? " Squad changes apply when the operation is restarted." : "");
 }
 
-// Which operative the Body parts and Loadout tabs are about: one button per member of the squad.
-function renderOperatorPicker(team) {
-  const picker = document.querySelector("#lab-operators");
-  picker.replaceChildren(
-    ...team.map((placement, index) => {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "tab";
-      button.textContent = `Operator ${index + 1}`;
-      button.title = placement.callsign ?? placement.id;
-      const on = state.armoury.operator === index;
-      button.setAttribute("aria-pressed", String(on));
-      button.classList.toggle("on", on);
-      button.addEventListener("click", () => {
-        state.armoury = { operator: index, slot: state.armoury.slot };
-        renderResearch();
-      });
-      return button;
-    }),
-  );
+// The operatives a purchase is for: everyone picked in the roster, or just the chosen operative.
+function labTargets(team) {
+  const picked = team.filter((placement) => state.armoury.selected.includes(placement.id));
+  return picked.length > 0 ? picked : [team[state.armoury.operator]];
+}
+
+// Pick or unpick a roster member for the Squad tab; the one just picked becomes the chosen operative.
+function toggleLabPick(member) {
+  const team = squadTeam(state.rawTeam ?? state.mission.team);
+  const index = team.findIndex((placement) => placement.id === member.id);
+  if (index < 0) return; // benched or lost: nothing to buy for
+  const selected = new Set(state.armoury.selected.filter((id) => team.some((placement) => placement.id === id)));
+  let operator = state.armoury.operator;
+  if (selected.has(member.id)) {
+    selected.delete(member.id);
+    if (operator === index) {
+      const rest = team.findIndex((placement) => selected.has(placement.id));
+      if (rest >= 0) operator = rest;
+    }
+  } else {
+    selected.add(member.id);
+    operator = index;
+  }
+  state.armoury = { ...state.armoury, operator, selected: [...selected] };
+  renderResearch();
 }
 
 // The Armoury: each operative's eight slots as pictures, and a shop that buys into the chosen slot.
@@ -961,7 +983,6 @@ function renderArmoury() {
   const loadouts = team.map((placement) => loadoutFor(campaign, placement.id, startingLoadout(placement)));
   const byId = new Map(state.catalog.map((item) => [item.id, item]));
 
-  renderOperatorPicker(team);
   document.querySelector("#armoury-squad").replaceChildren(
     ...team.map((placement, index) => {
       if (index !== choice.operator) return null;
@@ -1000,7 +1021,7 @@ function renderArmoury() {
           }
         }
         square.addEventListener("click", () => {
-          state.armoury = { operator: index, slot };
+          state.armoury = { ...state.armoury, operator: index, slot };
           renderArmoury();
         });
         grid.append(square);
@@ -1014,8 +1035,11 @@ function renderArmoury() {
   const defaults = startingLoadout(placement);
   const current = byId.get(loadouts[choice.operator][choice.slot]);
   const shop = document.querySelector("#armoury-shop");
+  const targets = labTargets(team);
   const heading = document.createElement("h4");
-  heading.textContent = `Operator ${choice.operator + 1} · slot ${choice.slot + 1}: ${current ? current.name : "empty"}`;
+  heading.textContent =
+    `Operator ${choice.operator + 1}${targets.length > 1 ? ` and ${targets.length - 1} more` : ""} · ` +
+    `slot ${choice.slot + 1}: ${current ? current.name : "empty"}`;
   const sell = document.createElement("button");
   sell.type = "button";
   sell.textContent = current ? `Sell ${current.name} · +${sellValue(current)} funds` : "Nothing to sell";
@@ -1050,15 +1074,40 @@ function renderArmoury() {
     text.append(name, note, figures);
     const buy = document.createElement("button");
     buy.type = "button";
-    const net = netCost(campaign, placement.id, choice.slot, item, state.catalog, defaults);
-    buy.textContent = net < 0 ? `Swap · +${-net} funds` : `Buy · ${net} funds`;
-    buy.setAttribute(
-      "aria-label",
-      `Buy ${item.name} for Operator ${choice.operator + 1} slot ${choice.slot + 1}, ${net} funds`,
+    const defaultsFor = (target) => startingLoadout(target);
+    const buyable = targets.filter(
+      (target) => canBuy(campaign, target.id, choice.slot, item, state.catalog, defaultsFor(target)) &&
+        slotItem(campaign, target.id, choice.slot, state.catalog, defaultsFor(target))?.id !== item.id,
     );
-    buy.disabled = !available || current?.id === item.id || !canBuy(campaign, placement.id, choice.slot, item, state.catalog, defaults);
+    const net = netCost(campaign, placement.id, choice.slot, item, state.catalog, defaults);
+    if (targets.length > 1) {
+      const total = buyable.reduce(
+        (sum, target) => sum + netCost(campaign, target.id, choice.slot, item, state.catalog, defaultsFor(target)),
+        0,
+      );
+      buy.textContent = `Buy for ${targets.length} · ${total} funds`;
+      buy.setAttribute("aria-label", `Buy ${item.name} for ${targets.length} operators, ${total} funds`);
+    } else {
+      buy.textContent = net < 0 ? `Swap · +${-net} funds` : `Buy · ${net} funds`;
+      buy.setAttribute(
+        "aria-label",
+        `Buy ${item.name} for Operator ${choice.operator + 1} slot ${choice.slot + 1}, ${net} funds`,
+      );
+    }
+    buy.disabled = !available || buyable.length === 0;
     buy.addEventListener("click", () => {
-      state.campaign = buyIntoSlot(state.campaign, placement.id, choice.slot, item, state.catalog, defaults);
+      // Each picked operative gets it, in the chosen slot; those who cannot afford it are left out.
+      let bought = 0;
+      for (const target of targets) {
+        const before = state.campaign;
+        state.campaign = buyIntoSlot(state.campaign, target.id, choice.slot, item, state.catalog, defaultsFor(target));
+        if (state.campaign !== before) bought += 1;
+      }
+      document.querySelector("#lab-message").textContent =
+        targets.length > 1
+          ? `${item.name} bought for ${bought} of ${targets.length} operators` +
+            `${bought < targets.length ? " (the rest could not take it)" : ""}.`
+          : "";
       persistCampaign();
       updateFundsReadout();
       renderResearch();
