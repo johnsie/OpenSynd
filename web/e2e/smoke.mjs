@@ -904,7 +904,7 @@ for (const [name, type, executablePath] of targets) {
     await street.waitForTimeout(300);
     const officer = await street.evaluate(() => window.opensyndTest.screenPoint("police-15"));
     await street.mouse.move(officer.x + 40, officer.y + 60);
-    await street.mouse.move(officer.x + 14, officer.y - 55);
+    await street.mouse.move(officer.x + 10, officer.y - 38);
     await street.waitForFunction(() => document.querySelector("#game-canvas").className.includes("cursor-attack"));
     await street.close();
 

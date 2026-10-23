@@ -128,7 +128,7 @@ def rail_for(size: int, period: int, block: int, first: int, blocks: int, compou
     # middle carriage stands on (whichever way it arrives) within its segment, with a stair in the middle of it.
     def station_at(stop_x: int) -> dict:
         x0, width = next((x, w) for x, w in segments if x <= stop_x < x + w)
-        low, high = max(x0, stop_x - 5), min(x0 + width - 1, stop_x + 5)
+        low, high = max(x0, stop_x - 8), min(x0 + width - 1, stop_x + 8)
         return {"from": low, "to": high, "stair": (low + high) // 2}
     stops = rail_stops(segments)
     return {"y": 2, "elevation": RAIL_HEIGHT, "segments": segments, "stops": stops, "stations": [station_at(x) for x in stops]}

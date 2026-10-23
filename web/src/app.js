@@ -2467,6 +2467,9 @@ function drawScorch(center, size) {
   context.fill();
 }
 
+// How large a person is drawn against the tile (and against vehicles and buildings): the sprites are scaled down from their frames.
+const UNIT_SCALE = 0.72;
+
 function drawUnit(unit, viewport) {
   if (unit.escaped) return;
   if (unit.inVehicle) return;
@@ -2508,6 +2511,10 @@ function drawUnit(unit, viewport) {
   const kick = recoilOffset(state.elapsed, unit.firedAt, unit.facing, 3.5, reduceMotion);
   const thrown = knockbackOffset(state.elapsed, unit.hitAt, unit.hitDirection, size * 0.9, reduceMotion);
   context.translate(center.x + kick.x + thrown.x + runOffset.x, center.y - size * 0.8 + bob + kick.y + thrown.y + runOffset.y);
+  // People are drawn smaller than the 128 pixel sprite frames suggest, shrunk about their feet with everything that goes with them.
+  context.translate(0, size * 1.05);
+  context.scale(UNIT_SCALE, UNIT_SCALE);
+  context.translate(0, -size * 1.05);
   context.fillStyle = "rgba(0, 0, 0, .35)";
   context.beginPath();
   context.ellipse(0, size * 1.05, size * 0.9, size * 0.35, 0, 0, Math.PI * 2);
@@ -2582,7 +2589,7 @@ function drawUnit(unit, viewport) {
 
   if (unit.number) {
     // The operative's number in gold above their head (dimmer once they are down).
-    context.font = `800 ${Math.max(14, size * 1.5)}px ui-sans-serif, sans-serif`;
+    context.font = `800 ${Math.max(14, size * 1.5) / UNIT_SCALE}px ui-sans-serif, sans-serif`;
     context.textAlign = "center";
     context.textBaseline = "alphabetic";
     context.lineWidth = 4;
@@ -2635,7 +2642,7 @@ function drawUnit(unit, viewport) {
     // An alert marker over a watcher that has noticed the squad and is giving chase.
     const pulse = reduceMotion ? 1 : 0.8 + 0.2 * Math.sin(state.elapsed * 8);
     context.fillStyle = `rgba(255, 107, 98, ${pulse})`;
-    context.font = `800 ${Math.max(20, size * 2.2)}px ui-sans-serif, sans-serif`;
+    context.font = `800 ${Math.max(20, size * 2.2) / UNIT_SCALE}px ui-sans-serif, sans-serif`;
     context.textAlign = "center";
     context.textBaseline = "alphabetic";
     context.strokeStyle = "rgba(0, 0, 0, 0.8)";
@@ -2663,7 +2670,7 @@ function drawUnit(unit, viewport) {
     context.lineTo(-size * 0.55, top + size * 0.35);
     context.closePath();
     context.fill();
-    context.font = `700 ${Math.max(9, size * 0.7)}px ui-sans-serif, sans-serif`;
+    context.font = `700 ${Math.max(9, size * 0.7) / UNIT_SCALE}px ui-sans-serif, sans-serif`;
     context.textAlign = "center";
     context.textBaseline = "alphabetic";
     context.strokeStyle = "rgba(0, 0, 0, 0.85)";
@@ -4182,8 +4189,8 @@ function dropQueued(unit, step) {
 function hitUnit(position) {
   if (!state.viewport) return null;
   const { cellSize, origin } = state.viewport;
-  const halfWidth = Math.max(18, cellSize.height * 0.8);
-  const above = Math.max(46, cellSize.height * 2.3);
+  const halfWidth = Math.max(18, cellSize.height * 0.8) * UNIT_SCALE;
+  const above = Math.max(46, cellSize.height * 2.3) * UNIT_SCALE;
   const below = Math.max(12, cellSize.height * 0.4);
   let closest = null;
   let closestDistance = Infinity;
