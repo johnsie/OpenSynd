@@ -209,3 +209,38 @@ test("a policeman's sidearm, which is not in their hands in play, drops with the
   assert.deepEqual(cop.sidearm, []);
   assert.equal(drops[0].equipment[0].charges, 60);
 });
+
+import { dropItem } from "../src/inventory.js";
+
+test("dropping an item frees its slot and leaves it on the ground beside the operative, to be picked up again", () => {
+  const unit = { ...carrier("a", [gun("pistol", 20), gun("rifle", 5), gun("flamer", 3)]), activeSlot: 2, position: { x: 10, y: 10 } };
+  const drops = [];
+  const dropped = dropItem(unit, 1, drops, grassGrid);
+  assert.equal(unit.equipment.length, 2);
+  assert.deepEqual(unit.equipment.map((entry) => entry.definition.id), ["pistol", "flamer"]);
+  assert.equal(unit.activeSlot, 1, "the selected weapon moves down with its slot");
+  assert.equal(drops.length, 1);
+  assert.equal(dropped.equipment[0].definition.id, "rifle");
+  assert.equal(dropped.equipment[0].charges, 5, "its rounds go with it");
+  assert.ok(Math.hypot(dropped.position.x - 10, dropped.position.y - 10) < 2);
+  assert.equal(lootableBody(dropped), true);
+  // Dropping the selected weapon puts it away.
+  dropItem(unit, 1, drops, grassGrid);
+  assert.equal(unit.activeSlot, null);
+  // Two drops do not land on the same spot.
+  assert.ok(Math.hypot(drops[0].position.x - drops[1].position.x, drops[0].position.y - drops[1].position.y) > 0.4);
+  // Picking it up again fills a slot, and is not counted as loot.
+  const { taken } = lootBody(unit, drops[0]);
+  assert.equal(taken.length, 1);
+  assert.deepEqual(unit.looted ?? [], []);
+  const other = carrier("b", []);
+  lootBody(other, drops[1]);
+  assert.deepEqual(other.looted, ["flamer"], "someone else's pick-up is loot");
+});
+
+test("nothing is dropped from an empty slot or by someone who is down", () => {
+  const unit = { ...carrier("a", [gun("pistol")]), position: { x: 5, y: 5 } };
+  assert.equal(dropItem(unit, 3, [], grassGrid), null);
+  assert.equal(dropItem({ ...unit, disabled: true }, 0, [], grassGrid), null);
+  assert.equal(unit.equipment.length, 1);
+});

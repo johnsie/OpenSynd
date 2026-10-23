@@ -51,7 +51,8 @@ directly will not work reliably because browsers restrict local `fetch()` calls.
 
 - Click an operator on the map or in the squad panel to select; Shift-click or Ctrl-click adds one, **A** selects
   all. Keys **1-4** pick an operator, **Shift+number** toggles one, **0** swaps between one and everyone, and
-  **Alt+1-8** press an inventory slot.
+  **Alt+1-8** press an inventory slot. **Right-click** a slot (or **Alt+Shift+1-8**) drops that item on the ground
+  beside the operative to be picked up again.
 - Click ground to walk (squad in formation); **Shift+click** adds a leg to the route. Click a vehicle to get in
   (**V** also takes or leaves one) and click a road to drive. Click an enemy to close in and fight.
 - Nobody fires without a weapon selected: click one in the operator's inventory. **Right-click** fires; hold the

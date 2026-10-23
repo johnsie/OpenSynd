@@ -1130,6 +1130,8 @@ Ordered by what each adds per unit of work given what exists. Items in the same 
   chest, loses it all. Operatives drop theirs too; police, guards and criminals carry a weapon (`carries` in their unit
   file: a machine pistol, a heavy emitter, a civic emitter) that drops with them, and each item shows its own icon on the
   ground.
+- **Dropping items:** right-click a weapon or item slot (or Alt+Shift+1-8) and it lies on the ground beside the operative,
+  freeing the slot, to be picked up again by anyone.
 - **Chest regeneration:** tier 2 and 3 chests heal a sixteenth of the operative's health every four seconds after a hit.
 - **No run-overs by the city:** only vehicles driven by operatives knock people down; the city's own cars wait for people on
   foot to get out of the way.

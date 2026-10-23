@@ -34,6 +34,42 @@ const SCATTER = [
   [0.4, 0.95], [-0.2, 1.0], [1.2, 0.6], [-1.2, 0.7], [0.0, -1.3], [1.3, -0.2],
 ];
 
+// A bit of open floor near a point where nothing else lies: the SCATTER offsets in turn from `start`, then further out.
+function freeSpot(position, grid, drops, start = 0) {
+  for (let ring = 1; ring <= 3; ring += 1) {
+    for (let attempt = 0; attempt < SCATTER.length; attempt += 1) {
+      const [dx, dy] = SCATTER[(start + attempt) % SCATTER.length];
+      const at = { x: position.x + dx * ring, y: position.y + dy * ring };
+      const floor = grid?.[Math.round(at.y)]?.[Math.round(at.x)];
+      const clear = !grid || (floor && floor.walkable);
+      if (clear && drops.every((other) => Math.hypot(other.position.x - at.x, other.position.y - at.y) > 0.4)) return at;
+    }
+  }
+  return { x: position.x, y: position.y };
+}
+
+let dropSerial = 0;
+
+/**
+ * FreeSynd lets an agent drop a weapon or item they carry: it leaves the slot and lies on the ground beside them, free
+ * for anyone to pick up (even them again). Returns the drop, or null if the slot is empty or the operative is down.
+ */
+export function dropItem(unit, slot, drops, grid = null) {
+  const entry = unit.equipment?.[slot];
+  if (!entry || unit.disabled) return null;
+  unit.equipment = unit.equipment.filter((_, index) => index !== slot);
+  if (Number.isInteger(unit.activeSlot)) {
+    if (unit.activeSlot === slot) unit.activeSlot = null;
+    else if (unit.activeSlot > slot) unit.activeSlot -= 1;
+  }
+  if (entry.definition.action === "persuade") unit.persuading = false;
+  dropSerial += 1;
+  const drop = makeDrop(`dropped-${unit.id}-${dropSerial}`, entry, freeSpot(unit.position, grid, drops));
+  drop.droppedBy = unit.id;
+  drops.push(drop);
+  return drop;
+}
+
 /**
  * FreeSynd's death rule: a person shot down drops everything they carry (`dropAllWeapons`); one killed by a beam, or by
  * fire or a blast without the second-version chest to survive it, loses it all. Every disabled person with gear is dealt
@@ -56,16 +92,7 @@ export function collectFallen(units, drops, grid = null) {
       continue;
     }
     items.forEach((item, index) => {
-      const ring = 1 + Math.floor(index / SCATTER.length);
-      let chosen = null;
-      for (let attempt = 0; attempt < SCATTER.length && !chosen; attempt += 1) {
-        const [dx, dy] = SCATTER[(index + attempt) % SCATTER.length];
-        const at = { x: unit.position.x + dx * ring, y: unit.position.y + dy * ring };
-        const floor = grid?.[Math.round(at.y)]?.[Math.round(at.x)];
-        const clear = !grid || (floor && floor.walkable);
-        if (clear && drops.every((other) => Math.hypot(other.position.x - at.x, other.position.y - at.y) > 0.4)) chosen = at;
-      }
-      drops.push(makeDrop(`drop-${unit.id}-${index}`, item, chosen ?? unit.position));
+      drops.push(makeDrop(`drop-${unit.id}-${index}`, item, freeSpot(unit.position, grid, drops, index)));
     });
     events.push({ type: "dropped", unitId: unit.id, items: items.map((item) => item.definition.name) });
   }
@@ -87,7 +114,8 @@ export function lootBody(operator, body, capacity = SLOTS_PER_OPERATIVE) {
   const taken = body.equipment.slice(0, room);
   body.equipment = body.equipment.slice(room);
   operator.equipment = [...(operator.equipment ?? []), ...taken];
-  operator.looted = [...(operator.looted ?? []), ...taken.map((item) => item.definition.id)];
+  // Gear someone put down themselves is not loot (it does not count for discoveries).
+  if (body.droppedBy !== operator.id) operator.looted = [...(operator.looted ?? []), ...taken.map((item) => item.definition.id)];
   return { taken, left: body.equipment.length };
 }
 

@@ -147,6 +147,7 @@ import {
   distanceBetween,
   clearWeaponForAll,
   collectFallen,
+  dropItem,
   findLoot,
   freeSlots,
   makeDrop,
@@ -4004,7 +4005,10 @@ function numberKeyShortcut(event) {
   const operators = state.units.filter((unit) => unit.side === "team");
   if (event.altKey) {
     const leader = selectedUnit();
-    if (digit >= 1 && digit <= SLOTS_PER_OPERATIVE && leader && leader.side === "team") pressSlot(leader, digit - 1);
+    if (digit >= 1 && digit <= SLOTS_PER_OPERATIVE && leader && leader.side === "team") {
+      if (event.shiftKey) dropFromSlot(leader, digit - 1);
+      else pressSlot(leader, digit - 1);
+    }
     return true;
   }
   if (digit === 0) {
@@ -4315,6 +4319,9 @@ if (new URLSearchParams(location.search).has("e2e")) {
       unit.equipment.push({ definition, charges: definition.charges });
       renderInterface();
     },
+    drops() {
+      return state.drops.map((drop) => ({ id: drop.id, item: drop.equipment[0].definition.id, x: drop.position.x, y: drop.position.y }));
+    },
     riders() {
       return state.units.filter((unit) => unit.side === "team" && unit.inVehicle).map((unit) => unit.id);
     },
@@ -4347,6 +4354,18 @@ document.querySelector("#about-button").addEventListener("click", () => aboutDia
 document.querySelector("#close-about").addEventListener("click", () => aboutDialog.close());
 
 // The eight item squares: a picture per item, and a click selects or uses it.
+// Right-click a slot (or Alt+Shift+1-8): the item leaves the slot and lies on the ground beside the operative, where it can
+// be picked up again (FreeSynd).
+function dropFromSlot(unit, slot) {
+  const name = unit.equipment[slot]?.definition.name;
+  if (state.armedBomb?.unitId === unit.id) state.armedBomb = null;
+  const drop = dropItem(unit, slot, state.drops, state.grid);
+  if (!drop) return;
+  audio.play("select");
+  setStatus(`${unit.definition.name} dropped the ${name}. Press F or click it to pick it up.`);
+  renderInterface();
+}
+
 function slotRow(unit, label) {
   const row = document.createElement("div");
   row.className = "slots";
@@ -4384,9 +4403,13 @@ function slotRow(unit, label) {
     const detail = active ? onLabel : spent ? "used up" : slotHint(definition);
     square.setAttribute("aria-label", `${label} slot ${slot + 1}: ${definition.name}, ${detail}`);
     square.setAttribute("aria-pressed", String(active));
-    square.title = `${definition.name}: ${definition.description}`;
+    square.title = `${definition.name}: ${definition.description} Right-click to drop it.`;
     square.disabled = unit.disabled;
     square.addEventListener("click", () => pressSlot(unit, slot));
+    square.addEventListener("contextmenu", (event) => {
+      event.preventDefault();
+      dropFromSlot(unit, slot);
+    });
     row.append(square);
   }
   return row;

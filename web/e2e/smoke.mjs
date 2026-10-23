@@ -611,6 +611,25 @@ for (const [name, type, executablePath] of targets) {
     await queuePage.getByLabel(/Field Operator 1 slot 3:/).first().waitFor({ timeout: 30000 });
     await queuePage.close();
 
+    // Right-clicking a slot drops that item beside the operative; F picks it up again.
+    const dropper = await browser.newPage();
+    await dropper.goto(`${url}?e2e`);
+    await dropper.waitForSelector(".roster-select");
+    await dropper.click("#begin-button");
+    await dropper.evaluate(() => window.opensyndTest.giveItem("operator-one", "developer.heavy-pulse-emitter"));
+    const heavySlot = dropper.getByLabel(/Field Operator 1 slot 3: Heavy Pulse Emitter/);
+    await heavySlot.click({ button: "right" });
+    assert.equal(await dropper.getByLabel("Field Operator 1 slot 3: empty").count(), 1, "the slot is free again");
+    const dropsNow = await dropper.evaluate(() => window.opensyndTest.drops());
+    assert.equal(dropsNow.length, 1);
+    assert.equal(dropsNow[0].item, "developer.heavy-pulse-emitter");
+    assert.match(await dropper.locator("#status-message").innerText(), /dropped the Heavy Pulse Emitter/);
+    await dropper.locator("#game-canvas").focus();
+    await dropper.keyboard.press("f");
+    await dropper.getByLabel(/Field Operator 1 slot 3: Heavy Pulse Emitter/).waitFor({ timeout: 5000 });
+    assert.equal((await dropper.evaluate(() => window.opensyndTest.drops())).length, 0);
+    await dropper.close();
+
     // A charge is armed by its slot, thrown by clicking the ground, and the Escape key puts it away.
     const bombPage = await browser.newPage();
     await bombPage.goto(`${url}?e2e`);
