@@ -654,8 +654,8 @@ for (const [name, type, executablePath] of targets) {
     await later.evaluate(() => window.opensyndTest.giveItem("operator-one", "developer.heavy-pulse-emitter"));
     await later.waitForTimeout(500);
     const here = await later.evaluate(() => window.opensyndTest.positionOf("operator-one"));
-    const ahead = { x: Math.round(here.x), y: Math.round(here.y) - 3 };
-    await later.evaluate((point) => window.opensyndTest.moveSelected(point.x, point.y), ahead);
+    const walkTo = { x: Math.round(here.x), y: Math.round(here.y) - 3 };
+    await later.evaluate((point) => window.opensyndTest.moveSelected(point.x, point.y), walkTo);
     await later
       .getByLabel(/Field Operator 1 slot 3: Heavy Pulse Emitter/)
       .evaluate((slot) => slot.dispatchEvent(new MouseEvent("contextmenu", { shiftKey: true, bubbles: true, cancelable: true })));
