@@ -8,6 +8,7 @@ import {
   IMPROVE_DAYS,
   MOODS,
   MOOD_START,
+  RESEARCH_FUNDING,
   RESEARCH_RATES,
   SECONDS_PER_DAY,
   TAX_DEFAULT,
@@ -36,7 +37,7 @@ test("only territories you hold pay, in proportion to people and rate, and none 
   const territory = held();
   assert.equal(dailyTax(newTerritory("t")), 0, "not yet won");
   assert.equal(dailyTax({ ...territory, status: "rebel" }), 0);
-  assert.equal(dailyTax(territory), 9.9, "(3 + 1) x 1375 x 30% / 1000 x 6");
+  assert.equal(dailyTax(territory), 165, "FreeSynd: (3 + 1) x 1375 x 30 / 1000");
   assert.ok(dailyTax(held({ tax: 60 })) > dailyTax(territory));
   assert.ok(dailyTax(held({ population: 5_000_000 })) > dailyTax(territory));
   assert.equal(dailyTax(held({ tax: 0 })), 0);
@@ -123,18 +124,20 @@ const catalog = [
 test("research costs rise with the funding level, and so does the pace", () => {
   assert.equal(RESEARCH_RATES.length, 10);
   assert.ok(RESEARCH_RATES.every((rate, index) => index === 0 || rate > RESEARCH_RATES[index - 1]));
-  assert.equal(researchHourlyCost(catalog[0], 1), 1.5);
+  assert.deepEqual([...RESEARCH_FUNDING], [1, 2, 4, 6, 10, 15, 30, 50, 75, 100], "FreeSynd's funding multiples");
+  assert.equal(researchHourlyCost(catalog[0], 1), 100 / 24, "a day's minimum funding spread over 24 hours");
+  assert.equal(researchHourlyCost(catalog[0], 10), 10000 / 24);
   assert.ok(researchHourlyCost(catalog[0], 10) > researchHourlyCost(catalog[0], 1) * 12, "speed is paid for");
-  assert.equal(researchHoursLeft(0, 1), 67);
-  assert.equal(researchHoursLeft(0, 10), 6);
-  assert.equal(researchHoursLeft(94, 10), 1);
+  assert.equal(researchHoursLeft(0, 1), 240, "ten days at the lowest level");
+  assert.equal(researchHoursLeft(0, 10), 24);
+  assert.equal(researchHoursLeft(95, 10), 1);
 });
 
 test("an hour of research pays the hourly cost and moves the active item along", () => {
   const start = { active: [{ id: "a", level: 4 }], level: 4, progress: {} };
   const { research, funds, finished } = researchHour(start, 100, catalog);
   assert.deepEqual(finished, []);
-  assert.equal(research.progress.a, 4);
+  assert.equal(research.progress.a, 1.666);
   assert.ok(Math.abs(funds - (100 - researchHourlyCost(catalog[0], 4))) < 0.01);
   assert.equal(start.progress.a, undefined, "the input is not changed");
 });
@@ -142,7 +145,7 @@ test("an hour of research pays the hourly cost and moves the active item along",
 test("with too little money research slows to what can be paid, and with none it waits", () => {
   const cost = researchHourlyCost(catalog[0], 4);
   const half = researchHour({ active: [{ id: "a", level: 4 }], level: 4, progress: {} }, cost / 2, catalog);
-  assert.equal(half.research.progress.a, 2);
+  assert.equal(half.research.progress.a, 0.833);
   assert.equal(half.funds, 0);
   const broke = researchHour({ active: [{ id: "a", level: 4 }], level: 4, progress: { a: 10 } }, 0, catalog);
   assert.equal(broke.research.progress.a, 10);
@@ -150,8 +153,8 @@ test("with too little money research slows to what can be paid, and with none it
 });
 
 test("research finishes at 100 percent, clears the active slot, and other items keep their progress", () => {
-  const state = { active: [{ id: "a", level: 10 }], level: 10, progress: { a: 90, b: 33 } };
-  const done = researchHour(state, 500, catalog);
+  const state = { active: [{ id: "a", level: 10 }], level: 10, progress: { a: 97, b: 33 } };
+  const done = researchHour(state, 5000, catalog);
   assert.deepEqual(done.finished, ["a"]);
   assert.deepEqual(done.research.active, []);
   assert.equal(done.research.progress.a, 100);
@@ -181,12 +184,12 @@ test("several researches run at once, each at its own level, paid in the order t
     researchHourlyCost(catalog[0], 4),
     catalog,
   );
-  assert.equal(tight.research.progress.a, 4);
+  assert.equal(tight.research.progress.a, 1.666);
   assert.equal(tight.research.progress.c ?? 0, 0, "nothing left for the second");
   assert.equal(tight.funds, 0);
   // Two can finish in the same hour.
-  const nearly = { active: [{ id: "a", level: 10 }, { id: "c", level: 10 }], level: 10, progress: { a: 95, c: 95 } };
-  const twice = researchHour(nearly, 1000, catalog);
+  const nearly = { active: [{ id: "a", level: 10 }, { id: "c", level: 10 }], level: 10, progress: { a: 97, c: 97 } };
+  const twice = researchHour(nearly, 10000, catalog);
   assert.deepEqual(twice.finished, ["a", "c"]);
   assert.deepEqual(twice.research.active, []);
 });

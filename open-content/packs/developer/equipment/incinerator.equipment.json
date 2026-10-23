@@ -7,7 +7,7 @@
   "type": "tool",
   "action": "disable-pulse",
   "charges": 16,
-  "researchCost": 40,
+  "researchCost": 240,
   "effect": {
     "attack": 4,
     "range": 4.5,
@@ -19,12 +19,13 @@
     },
     "damageType": "burn"
   },
-  "price": 120,
+  "price": 1000,
   "weight": 8,
   "icon": "flame",
   "carry": "rifle",
   "sound": "flame",
   "requires": [
     "developer.scatter-emitter"
-  ]
+  ],
+  "ammoPrice": 1
 }

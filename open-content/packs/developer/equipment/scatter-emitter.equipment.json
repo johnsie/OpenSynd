@@ -7,7 +7,6 @@
   "type": "tool",
   "action": "disable-pulse",
   "charges": 8,
-  "researchCost": 22,
   "effect": {
     "attack": 6,
     "range": 6.0,
@@ -16,12 +15,13 @@
     "spread": 36,
     "damageType": "bullet"
   },
-  "price": 70,
+  "price": 250,
   "weight": 6,
   "icon": "scatter",
   "carry": "rifle",
   "sound": "scatter",
   "requires": [
     "developer.machine-pistol"
-  ]
+  ],
+  "ammoPrice": 2
 }

@@ -7,7 +7,7 @@
   "type": "tool",
   "action": "disable-pulse",
   "charges": 10,
-  "researchCost": 55,
+  "researchCost": 7992,
   "effect": {
     "attack": 34,
     "range": 11.0,
@@ -15,12 +15,13 @@
     "pierce": true,
     "damageType": "beam"
   },
-  "price": 160,
+  "price": 35000,
   "weight": 7,
   "icon": "beam",
   "carry": "rifle",
   "sound": "beam",
   "requires": [
     "developer.coil-gun"
-  ]
+  ],
+  "ammoPrice": 2000
 }

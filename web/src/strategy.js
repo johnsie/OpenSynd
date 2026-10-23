@@ -14,8 +14,7 @@ export const MOOD_START = 2;
 export const TAX_DEFAULT = 30;
 export const TAX_STEP = 10;
 export const IMPROVE_DAYS = 15;
-// Tax revenue: ((population in millions + 1) x 1375 x rate) / 1000 funds a day, scaled to this game's prices.
-export const TAX_SCALE = 6;
+// Tax revenue, as FreeSynd has it: ((whole millions of people + 1) x 1375 x rate) / 1000 funds a day.
 export const DEFAULT_POPULATION = 3_000_000;
 
 // A cheap integer hash, so "random" population drift is the same every time for the same day and place.
@@ -49,7 +48,7 @@ export function sanitizeTerritory(id, value) {
 /** Funds a territory pays each day: only territories you hold, and none while they are in revolt. */
 export function dailyTax(territory) {
   if (territory.status !== "finished") return 0;
-  return Math.round(((((territory.population / 1_000_000) + 1) * 1375 * territory.tax) / 100 / 1000) * TAX_SCALE * 100) / 100;
+  return Math.floor(((Math.floor(territory.population / 1_000_000) + 1) * 1375 * territory.tax) / 1000);
 }
 
 /** Days between mood changes at this tax rate, and which way the mood is heading. */
@@ -97,24 +96,20 @@ export function advanceTerritoryDay(territory, day) {
 
 // ---------------------------------------------------------------- research
 
-// How fast research runs at each of ten funding levels (percent of the research done per game hour), and what
-// speeding it up costs: level 1 pays the item's price, each level above that a seventh more.
-export const RESEARCH_RATES = Object.freeze([1.5, 2, 3, 4, 5.5, 7, 9, 11, 14, 18]);
+// FreeSynd's research funding: ten levels. Each research has a minimum funding (a day's cost at level 1); the funding level
+// multiplies it, and the percent of the research done per game hour grows with it, a little less than in proportion.
+export const RESEARCH_RATES = Object.freeze([0.416, 0.83, 1.25, 1.666, 2.083, 2.5, 2.941, 3.333, 3.846, 4.166]);
+export const RESEARCH_FUNDING = Object.freeze([1, 2, 4, 6, 10, 15, 30, 50, 75, 100]);
 export const RESEARCH_LEVELS = RESEARCH_RATES.length;
-export const RESEARCH_PREMIUM = 0.15;
 
-export function researchPremium(level) {
-  return 1 + RESEARCH_PREMIUM * (level - 1);
-}
-
-/** Funds spent per game hour on an item at a funding level. */
+/** Funds spent per game hour on an item at a funding level: its minimum funding times the level's multiple, over 24. */
 export function researchHourlyCost(item, level) {
-  return (item.researchCost * RESEARCH_RATES[level - 1] * researchPremium(level)) / 100;
+  return (item.researchCost * RESEARCH_FUNDING[level - 1]) / HOURS_PER_DAY;
 }
 
 /** Hours the research would take from this progress at this level, if funds hold out. */
 export function researchHoursLeft(progress, level) {
-  return Math.ceil((100 - progress) / RESEARCH_RATES[level - 1]);
+  return Math.floor((100 - progress) / RESEARCH_RATES[level - 1] + 1e-9);
 }
 
 /** What an item still needs before it can be researched: the ids of unfinished items it requires. */
@@ -154,9 +149,11 @@ export function researchHour(research, funds, catalog) {
       active.push(entry);
       continue;
     }
-    const reached = Math.min(100, (progress[item.id] ?? 0) + RESEARCH_RATES[level - 1] * affordable);
+    const rate = RESEARCH_RATES[level - 1];
+    const reached = Math.min(100, (progress[item.id] ?? 0) + rate * affordable);
     money -= cost * affordable;
-    if (reached >= 100 - 1e-9) {
+    // FreeSynd works the finishing hour out as a whole number, so the last fraction of an hour's progress is not waited for.
+    if (reached >= 100 - 1e-9 || reached > 100 - rate + 1e-9) {
       progress[item.id] = 100;
       finished.push(item.id);
     } else {

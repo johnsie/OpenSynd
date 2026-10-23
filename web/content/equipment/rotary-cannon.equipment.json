@@ -7,18 +7,19 @@
   "type": "tool",
   "action": "disable-pulse",
   "charges": 90,
-  "researchCost": 35,
+  "researchCost": 1992,
   "effect": {
     "attack": 6,
     "range": 5.0,
     "cooldown": 0.12
   },
-  "price": 110,
+  "price": 10000,
   "icon": "rotary",
   "carry": "rifle",
   "sound": "rotary",
   "weight": 9,
   "requires": [
     "developer.machine-pistol"
-  ]
+  ],
+  "ammoPrice": 10
 }

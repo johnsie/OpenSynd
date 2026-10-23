@@ -56,8 +56,8 @@ export function initialRoster() {
   return roster;
 }
 
-// What a new campaign starts with (FreeSynd gives 30000 against weapon prices from 250 to 50000; these are our prices).
-export const STARTING_FUNDS = 500;
+// What a new campaign starts with (FreeSynd's 30000).
+export const STARTING_FUNDS = 30000;
 
 export function emptyCampaign() {
   return {
@@ -265,25 +265,15 @@ export function serializeCampaign(campaign) {
 }
 
 // What harming bystanders costs. Funds never go below zero.
-export const CIVILIAN_PENALTY = 10;
-export const POLICE_PENALTY = 20;
+// FreeSynd takes no money for bystanders (only the mood of a territory would suffer), so these cost nothing.
+export const CIVILIAN_PENALTY = 0;
+export const POLICE_PENALTY = 0;
 
 export function penalise(campaign, amount) {
   return { ...campaign, funds: Math.max(0, campaign.funds - Math.max(0, amount)) };
 }
 
-// FreeSynd left a note to pay for every persuaded person who is not an agent (it never did). We pay a little for each one
-// still following the squad when an operation is won: enemy agents are recruited instead.
-export const PERSUADED_BONUS = 15;
-
-export function persuadedBonus(units) {
-  const count = units.filter(
-    (unit) => unit.persuaded && !unit.disabled && !unit.escaped && unit.side !== "team" && unit.definition?.role !== "enemy-agent",
-  ).length;
-  return { count, amount: count * PERSUADED_BONUS };
-}
-
-// An achievement pays its reward once, ever.
+// An achievement is recorded once, ever. (FreeSynd has no achievements; any reward they carry is paid once.)
 export function earnAchievement(campaign, achievement) {
   if (campaign.achievements.includes(achievement.id)) return campaign;
   return {
@@ -530,7 +520,7 @@ export function captureItems(campaign, operatorId, itemIds, catalog, defaults) {
 
 // Buying and selling in the Armoury. Items cost their price; a replaced or sold item is
 // bought back at half price, so swapping a weapon costs the difference.
-export const SELL_SHARE = 0.5;
+export const SELL_SHARE = 1;
 
 export function sellValue(item) {
   return Math.floor((item?.price ?? 0) * SELL_SHARE);
@@ -578,14 +568,11 @@ export function sellFromSlot(campaign, operatorId, slot, catalog, defaults) {
   };
 }
 
-// Reloading costs money (FreeSynd charges for every round). A used round costs a quarter of the item's price
-// spread over its full load, so an emptied magazine is a quarter of what the weapon cost. Items with unlimited
-// charges cost nothing.
-export const RELOAD_SHARE = 0.25;
-
+// Reloading costs money (FreeSynd charges its ammunition price for every round used). Items without an ammunition price
+// reload for nothing.
 export function roundPrice(definition) {
   if (!definition.charges) return 0;
-  return ((definition.price ?? 0) * RELOAD_SHARE) / definition.charges;
+  return definition.ammoPrice ?? 0;
 }
 
 // The bill for refilling these equipment entries ({ definition, charges }) to full.
@@ -641,7 +628,7 @@ export function describeStats(item) {
   if (item.charges) {
     const each = roundPrice(item);
     parts.push(`${item.charges} ${item.action === "disable-pulse" ? "rounds" : "uses"}`);
-    if (each > 0) parts.push(`${each.toFixed(2)} funds each to refill`);
+    if (each > 0) parts.push(`${+each.toFixed(2)} funds each to refill`);
   }
   if (item.weight) parts.push(`Weight ${item.weight}`);
   return parts;

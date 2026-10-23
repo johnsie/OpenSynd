@@ -7,14 +7,15 @@
   "type": "tool",
   "action": "shield",
   "charges": 2,
-  "researchCost": 22,
+  "researchCost": 3000,
   "effect": {
     "duration": 8
   },
-  "price": 80,
+  "price": 8000,
   "icon": "shield",
   "weight": 4,
   "requires": [
     "developer.scanner"
-  ]
+  ],
+  "ammoPrice": 15
 }

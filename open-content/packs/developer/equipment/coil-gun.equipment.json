@@ -7,19 +7,20 @@
   "type": "tool",
   "action": "disable-pulse",
   "charges": 6,
-  "researchCost": 40,
+  "researchCost": 15000,
   "effect": {
     "attack": 40,
     "range": 9.0,
     "cooldown": 2.4,
     "pierce": true
   },
-  "price": 120,
+  "price": 50000,
   "icon": "coil",
   "carry": "rifle",
   "sound": "coil",
   "weight": 7,
   "requires": [
     "developer.longshot-rifle"
-  ]
+  ],
+  "ammoPrice": 15000
 }

@@ -7,18 +7,19 @@
   "type": "tool",
   "action": "disable-pulse",
   "charges": 12,
-  "researchCost": 28,
+  "researchCost": 144,
   "effect": {
     "attack": 24,
     "range": 15.0,
     "cooldown": 1.8
   },
-  "price": 85,
+  "price": 1000,
   "icon": "longshot",
   "carry": "rifle",
   "sound": "longshot",
   "weight": 5,
   "requires": [
     "developer.heavy-pulse-emitter"
-  ]
+  ],
+  "ammoPrice": 2
 }

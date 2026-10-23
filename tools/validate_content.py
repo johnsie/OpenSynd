@@ -310,8 +310,11 @@ class Validation:
         if not isinstance(weight, int) or isinstance(weight, bool) or not 0 <= weight <= 30:
             self.error(path, "weight must be an integer from 0 to 30")
         price = value.get("price")
-        if not isinstance(price, int) or isinstance(price, bool) or not 0 <= price <= 1000:
-            self.error(path, "price must be an integer from 0 to 1000")
+        if not isinstance(price, int) or isinstance(price, bool) or not 0 <= price <= 100000:
+            self.error(path, "price must be an integer from 0 to 100000")
+        ammo_price = value.get("ammoPrice", 0)
+        if not isinstance(ammo_price, int) or isinstance(ammo_price, bool) or not 0 <= ammo_price <= 100000:
+            self.error(path, "ammoPrice must be an integer from 0 to 100000")
         if value.get("icon") not in ICONS:
             self.error(path, f"icon must be one of {', '.join(sorted(ICONS))}")
         if value.get("sound") not in {None, "pistol", "smg", "rotary", "rifle", "coil", "longshot", "scatter", "flame", "beam"}:
@@ -322,8 +325,8 @@ class Validation:
         if not isinstance(requires, list) or not all(isinstance(entry, str) for entry in requires):
             self.error(path, "requires must be a list of equipment ids")
         cost = value.get("researchCost", 0)
-        if not isinstance(cost, int) or isinstance(cost, bool) or not 0 <= cost <= 500:
-            self.error(path, "researchCost must be an integer from 0 to 500")
+        if not isinstance(cost, int) or isinstance(cost, bool) or not 0 <= cost <= 100000:
+            self.error(path, "researchCost must be an integer from 0 to 100000")
 
     def validate_mission(
         self, path: Path, value: dict[str, Any], pack_root: Path,

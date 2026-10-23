@@ -7,11 +7,11 @@
   "type": "tool",
   "action": "stealth",
   "charges": null,
-  "researchCost": 12,
+  "researchCost": 1992,
   "effect": {
     "sightFactor": 0.6
   },
-  "price": 30,
+  "price": 1000,
   "icon": "cloak",
   "weight": 2
 }

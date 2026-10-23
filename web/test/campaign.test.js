@@ -77,28 +77,28 @@ test("an achievement pays its reward once", () => {
 });
 
 test("body parts are fitted per operative in three tiers priced 1x, 5x and 10x", () => {
-  let campaign = { ...emptyCampaign(), funds: 100 };
+  let campaign = { ...emptyCampaign(), funds: 100000 };
   assert.deepEqual(upgradesOf(campaign, "op1"), { legs: 0, arms: 0, chest: 0, heart: 0, eyes: 0, brain: 0 });
   campaign = fitUpgrade(campaign, "op1", "legs");
-  assert.deepEqual([campaign.funds, upgradesOf(campaign, "op1").legs], [94, 1], "tier 1 costs the base price of 6");
+  assert.deepEqual([campaign.funds, upgradesOf(campaign, "op1").legs], [94000, 1], "tier 1 costs FreeSynd's 6000 for legs");
   campaign = fitUpgrade(campaign, "op1", "legs");
-  assert.deepEqual([campaign.funds, upgradesOf(campaign, "op1").legs], [64, 2], "tier 2 costs 30");
+  assert.deepEqual([campaign.funds, upgradesOf(campaign, "op1").legs], [64000, 2], "tier 2 costs 30000");
   assert.equal(canFit(campaign, "op1", "legs"), true);
   campaign = fitUpgrade(campaign, "op1", "legs");
-  assert.deepEqual([campaign.funds, upgradesOf(campaign, "op1").legs], [4, 3], "tier 3 costs 60");
+  assert.deepEqual([campaign.funds, upgradesOf(campaign, "op1").legs], [4000, 3], "tier 3 costs 60000");
   assert.equal(canFit(campaign, "op1", "legs"), false, "nothing above tier 3");
   assert.equal(fitUpgrade(campaign, "op1", "legs"), campaign);
-  assert.equal(fitUpgrade(campaign, "op1", "brain"), campaign, "cannot afford the brain (8)");
+  assert.equal(fitUpgrade(campaign, "op1", "brain"), campaign, "cannot afford the brain (4500)");
   assert.equal(upgradesOf(campaign, "op2").legs, 0, "other operatives are untouched");
   assert.equal(fitUpgrade(campaign, "op1", "tail"), campaign, "no such part");
 });
 
 test("taking a part off returns what its top tier cost", () => {
-  let campaign = { ...emptyCampaign(), funds: 100 };
+  let campaign = { ...emptyCampaign(), funds: 100000 };
   campaign = fitUpgrade(fitUpgrade(campaign, "op1", "chest"), "op1", "chest");
-  assert.equal(campaign.funds, 100 - 8 - 40);
+  assert.equal(campaign.funds, 100000 - 8000 - 40000);
   campaign = removeUpgrade(campaign, "op1", "chest");
-  assert.deepEqual([campaign.funds, upgradesOf(campaign, "op1").chest], [100 - 8, 1]);
+  assert.deepEqual([campaign.funds, upgradesOf(campaign, "op1").chest], [100000 - 8000, 1]);
   assert.equal(removeUpgrade({ ...emptyCampaign(), funds: 0 }, "op1", "chest").funds, 0);
 });
 
@@ -109,7 +109,7 @@ test("old heart and brain research is refunded when a saved campaign is read", (
 });
 
 test("new items must be researched before they can be used, and research runs on game hours", () => {
-  let campaign = { ...emptyCampaign(), funds: 100 };
+  let campaign = { ...emptyCampaign(), funds: 10000 };
   const [pulse, kit, heavy, stim] = catalog;
   assert.equal(isItemAvailable(campaign, pulse), true);
   assert.equal(isItemAvailable(campaign, kit), true);
@@ -118,11 +118,11 @@ test("new items must be researched before they can be used, and research runs on
   assert.equal(canResearchItem(campaign, stim, catalog), true);
   campaign = startResearch(campaign, stim, catalog, 10);
   assert.deepEqual([campaign.research.active, campaign.research.level], [[{ id: "stim", level: 10 }], 10]);
-  assert.equal(campaign.funds, 100, "nothing is paid until time passes");
-  const result = advanceCampaign(campaign, 6, catalog);
-  assert.equal(result.campaign.hours, 6);
-  assert.ok(result.campaign.funds < 100, "paid by the hour");
-  assert.equal(result.campaign.research.progress.stim, 100, "eighteen percent an hour at the top level finishes in six hours");
+  assert.equal(campaign.funds, 10000, "nothing is paid until time passes");
+  const result = advanceCampaign(campaign, 24, catalog);
+  assert.equal(result.campaign.hours, 24);
+  assert.ok(result.campaign.funds < 10000, "paid by the hour");
+  assert.equal(result.campaign.research.progress.stim, 100, "the top level finishes in a day");
   assert.deepEqual(result.events.filter((event) => event.type === "researched"), [{ type: "researched", itemId: "stim" }]);
   assert.deepEqual(result.campaign.items, ["stim"]);
   assert.deepEqual(result.campaign.research.active, []);
@@ -329,13 +329,13 @@ test("buying an item costs its price and fills the slot", () => {
   assert.deepEqual(loadoutFor(packed, "op1", defaults), ["pulse", "kit", "stim"]);
 });
 
-test("replacing an item refunds half of its price", () => {
+test("replacing an item refunds its full price, as FreeSynd sells at cost", () => {
   const defaults = ["pulse", "kit"];
   const funds = { ...emptyCampaign(), funds: 20, items: ["stim"] };
-  assert.equal(sellValue(shop[1]), 5);
-  assert.equal(netCost(funds, "op1", 1, shop[3], shop, defaults), 15, "stim 20 minus half of the kit's 10");
+  assert.equal(sellValue(shop[1]), 10);
+  assert.equal(netCost(funds, "op1", 1, shop[3], shop, defaults), 10, "stim 20 minus the kit's 10");
   const swapped = buyIntoSlot(funds, "op1", 1, shop[3], shop, defaults);
-  assert.equal(swapped.funds, 5);
+  assert.equal(swapped.funds, 10);
   assert.deepEqual(loadoutFor(swapped, "op1", defaults), ["pulse", "stim"]);
 });
 
@@ -353,34 +353,36 @@ test("purchases need funds and a researched item", () => {
   assert.equal(canBuy(rich, "op1", -1, shop[1], shop, defaults), false);
 });
 
-test("selling an item returns half its price and packs the loadout", () => {
+test("selling an item returns its full price and packs the loadout", () => {
   const defaults = ["pulse", "kit"];
   const campaign = { ...emptyCampaign(), funds: 0 };
   const sold = sellFromSlot(campaign, "op1", 0, shop, defaults);
-  assert.equal(sold.funds, 7, "half of the pulse emitter's 15");
+  assert.equal(sold.funds, 15, "the pulse emitter's 15");
   assert.deepEqual(loadoutFor(sold, "op1", defaults), ["kit"]);
   assert.equal(sellFromSlot(campaign, "op1", 5, shop, defaults), campaign, "nothing in that slot");
 });
 
-test("harming bystanders costs funds, but never below zero", () => {
+test("penalising takes funds but never below zero, and bystanders cost nothing (FreeSynd charges nothing for them)", () => {
   const campaign = { ...emptyCampaign(), funds: 100 };
-  assert.equal(penalise(campaign, CIVILIAN_PENALTY).funds, 100 - CIVILIAN_PENALTY);
-  assert.ok(POLICE_PENALTY > CIVILIAN_PENALTY, "police cost more");
+  assert.equal(CIVILIAN_PENALTY, 0);
+  assert.equal(POLICE_PENALTY, 0);
+  assert.equal(penalise(campaign, 30).funds, 70);
   assert.equal(penalise(campaign, 500).funds, 0);
   assert.equal(penalise(campaign, -5).funds, 100, "a negative penalty never pays");
 });
 
-test("refilling spent rounds costs a quarter of the item's price spread over its load", () => {
-  const rifle = { price: 120, charges: 12 };
-  assert.equal(roundPrice(rifle), 2.5);
-  assert.equal(roundPrice({ price: 50, charges: null }), 0, "unlimited items never need refilling");
+test("refilling spent rounds costs the item's ammunition price for each round, as in FreeSynd", () => {
+  const rifle = { price: 1000, charges: 12, ammoPrice: 2 };
+  assert.equal(roundPrice(rifle), 2);
+  assert.equal(roundPrice({ price: 50, charges: null, ammoPrice: 3 }), 0, "unlimited items never need refilling");
+  assert.equal(roundPrice({ price: 50, charges: 5 }), 0, "no ammunition price, no charge");
   const entries = [
     { definition: rifle, charges: 4 },
-    { definition: { price: 15, charges: 24 }, charges: 24 },
+    { definition: { price: 0, charges: 24 }, charges: 24 },
     { definition: { price: 40, charges: null }, charges: null },
-    { definition: { price: 10, charges: 1 }, charges: 0 },
+    { definition: { price: 500, charges: 1, ammoPrice: 1 }, charges: 0 },
   ];
-  assert.equal(resupplyCost(entries), Math.round(8 * 2.5 + 0 + 0 + 2.5));
+  assert.equal(resupplyCost(entries), 8 * 2 + 1);
   assert.equal(resupplyCost([]), 0);
 });
 
@@ -476,8 +478,10 @@ test("survey intelligence is bought a level at a time, priced by the enemies, an
 });
 
 test("the shop lists an item's figures", () => {
-  const rifle = { action: "disable-pulse", effect: { attack: 24, range: 15, cooldown: 1.8 }, charges: 12, price: 85, weight: 5 };
-  assert.deepEqual(describeStats(rifle), ["Damage 24", "Range 15", "Recharge 1.8 s", "12 rounds", "1.77 funds each to refill", "Weight 5"]);
+  const rifle = {
+    action: "disable-pulse", effect: { attack: 24, range: 15, cooldown: 1.8 }, charges: 12, price: 1000, ammoPrice: 2, weight: 5,
+  };
+  assert.deepEqual(describeStats(rifle), ["Damage 24", "Range 15", "Recharge 1.8 s", "12 rounds", "2 funds each to refill", "Weight 5"]);
   const scatter = { action: "disable-pulse", effect: { attack: 6, range: 6, cooldown: 1.1, pellets: 5 }, charges: 8, price: 70, weight: 6 };
   assert.ok(describeStats(scatter).includes("Damage 6 x5"));
   const flame = { action: "disable-pulse", effect: { attack: 4, range: 4.5, cooldown: 0.25, pierce: true, burn: { dps: 8, seconds: 4 } } };
@@ -550,22 +554,6 @@ test("a repair kit that restores to full says so, and one with a fixed amount sh
   assert.ok(describeStats(medikit).includes("Restores to full"));
   const small = { action: "restore-vitality", effect: { restoreVitality: 30 }, charges: 1, price: 10, weight: 2 };
   assert.ok(describeStats(small).includes("Restores 30"));
-});
-
-test("each persuaded person still following the squad pays a bonus when an operation is won; recruits and the fallen do not", async () => {
-  const { persuadedBonus, PERSUADED_BONUS } = await import("../src/campaign.js");
-  const person = (side, role, extra = {}) => ({ side, persuaded: true, definition: { role }, ...extra });
-  const units = [
-    person("civilian", "civilian"),
-    person("opposition", "guard"),
-    person("police", "police"),
-    person("opposition", "enemy-agent"),
-    person("civilian", "civilian", { disabled: true }),
-    { side: "civilian", persuaded: false, definition: { role: "civilian" } },
-    { side: "team", persuaded: false, definition: { role: "operator" } },
-  ];
-  assert.deepEqual(persuadedBonus(units), { count: 3, amount: 3 * PERSUADED_BONUS });
-  assert.deepEqual(persuadedBonus([]), { count: 0, amount: 0 });
 });
 
 test("a new campaign starts with funds, enough for a few weapons from the Armoury", async () => {

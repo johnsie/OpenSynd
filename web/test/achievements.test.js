@@ -44,11 +44,11 @@ test("finish-line achievements need a successful outcome", () => {
   assert.deepEqual(ids(newlyEarned(failed, [])), []);
 });
 
-test("every achievement has a name, description and a positive reward", () => {
+test("every achievement has a name and description (FreeSynd pays nothing for them)", () => {
   assert.ok(ACHIEVEMENTS.length >= 6);
   for (const achievement of ACHIEVEMENTS) {
     assert.ok(achievement.name && achievement.description);
-    assert.ok(achievement.reward > 0);
+    assert.equal(achievement.reward, 0);
   }
   assert.equal(new Set(ACHIEVEMENTS.map((achievement) => achievement.id)).size, ACHIEVEMENTS.length);
 });

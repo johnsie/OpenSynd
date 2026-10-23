@@ -76,7 +76,6 @@ import {
   canBuy,
   campaignEnding,
   captureItems,
-  persuadedBonus,
   discoverItems,
   earnAchievement,
   INTEL_LABELS,
@@ -2870,12 +2869,14 @@ function countDisabled(down) {
   else state.opStats.operatorsDisabled += 1;
 }
 
-// A civilian or police officer has been killed: it costs funds and goes on the record.
+// A civilian or police officer has been killed: it goes on the record (FreeSynd charges nothing for it).
 function harmBystander(unit, cost, counter) {
   state.opStats[counter] += 1;
-  state.campaign = penalise(state.campaign, cost);
-  updateFundsReadout();
-  persistCampaign();
+  if (cost > 0) {
+    state.campaign = penalise(state.campaign, cost);
+    updateFundsReadout();
+    persistCampaign();
+  }
 }
 
 // Scenery that caught fire or broke: a puff of debris and a line in the status.
@@ -2960,8 +2961,7 @@ function handleCombatEvents(combatEvents) {
     audio.play("disabled");
     const unit = state.units.find((item) => item.id === latest.unitId);
     if (unit.side === "civilian" || unit.side === "police") {
-      const cost = unit.side === "police" ? POLICE_PENALTY : CIVILIAN_PENALTY;
-      setStatus(`${unit.definition.name} killed. The city notices: -${cost} funds.`);
+      setStatus(`${unit.definition.name} killed. The city notices.`);
     } else {
       setStatus(
         unit.side === "opposition"
@@ -3203,7 +3203,7 @@ function showOutcome(outcome) {
       : "The team has gone dark";
   const earned = state.earnedThisRun;
   document.querySelector("#outcome-awards").textContent = earned.length
-    ? `Achievements: ${earned.map((item) => `${item.name} +${item.reward}`).join(", ")}.`
+    ? `Achievements: ${earned.map((item) => item.name).join(", ")}.`
     : "";
   document.querySelector("#outcome-text").textContent = finale
     ? `${debrief?.success ?? ""} That was the last of the ${state.missionList.length} territories: ` +
@@ -3245,9 +3245,6 @@ function showOutcome(outcome) {
         ]
       : []),
     ...(state.opStats.discovered?.length > 0 ? [["Discovered", state.opStats.discovered.join(", ")]] : []),
-    ...(state.opStats.persuadedPaid?.amount > 0
-      ? [["Persuaded bonus", `${state.opStats.persuadedPaid.amount} funds for ${state.opStats.persuadedPaid.count} followers`]]
-      : []),
     ...(state.opStats.resupply > 0 ? [["Resupply bill", `${state.opStats.resupply} funds`]] : []),
     ["Funds", fundsChange(state.fundsAtStart ?? state.campaign.funds, state.campaign.funds)],
     ...(state.opStats.civiliansHarmed + state.opStats.policeHarmed > 0
@@ -3305,7 +3302,7 @@ function checkAchievements() {
     state.campaign = earnAchievement(state.campaign, achievement);
     state.earnedThisRun.push(achievement);
     document.querySelector("#achievement-toast").textContent =
-      `Achievement: ${achievement.name} (+${achievement.reward} funds). ${achievement.description}`;
+      `Achievement: ${achievement.name}. ${achievement.description}`;
     audio.play("objective");
     persistCampaign();
   }
@@ -3351,9 +3348,6 @@ function settleRoster() {
   state.opStats.lost = state.campaign.permadeath ? fallen.map(nameOf) : [];
   state.campaign = loseOperatives(state.campaign, fallen);
   state.opStats.recruited = [];
-  const bonus = persuadedBonus(state.units);
-  state.opStats.persuadedPaid = bonus;
-  if (bonus.amount > 0) state.campaign = { ...state.campaign, funds: state.campaign.funds + bonus.amount };
   const captives = state.units.filter(
     (unit) => unit.persuaded && !unit.disabled && unit.side === "opposition" && unit.definition.role === "enemy-agent",
   );

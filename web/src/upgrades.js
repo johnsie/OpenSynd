@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 // Body upgrades. Each operative has six fitted parts, each upgradeable through three tiers; the tier prices
-// are 1x, 5x and 10x the part's base price. The effects are small, steady edges, not new abilities.
+// are 1x, 5x and 10x the part's base price. The base prices are FreeSynd's: legs 6000, arms 5000, chest 8000, others 4500.
+// The effects are small, steady edges, not new abilities.
 export const MAX_TIER = 3;
 export const TIER_PRICE_MULTIPLIER = Object.freeze([1, 5, 10]);
 
@@ -9,37 +10,37 @@ export const TIER_PRICE_MULTIPLIER = Object.freeze([1, 5, 10]);
 export const PARTS = Object.freeze({
   legs: {
     label: "Legs",
-    base: 6,
+    base: 6000,
     tiers: Object.freeze([1, 1.15, 1.3, 1.5]),
     effect: "Walk faster: 15, 30 and 50 percent quicker.",
   },
   arms: {
     label: "Arms",
-    base: 6,
+    base: 5000,
     tiers: Object.freeze([1, 0.9, 0.8, 0.7]),
     effect: "Weapons recharge 10, 20 and 30 percent faster, and the operative carries 4, 8 and 12 more weight freely.",
   },
   chest: {
     label: "Chest",
-    base: 8,
+    base: 8000,
     tiers: Object.freeze([0, 20, 40, 70]),
     effect: "More integrity: 20, 40 and 70 extra. From tier 2, wounds heal on their own.",
   },
   heart: {
     label: "Heart",
-    base: 5,
+    base: 4500,
     tiers: Object.freeze([0, 1, 2, 3]),
     effect: "A steadier aim: shots land closer to where they are pointed.",
   },
   eyes: {
     label: "Eyes",
-    base: 6,
+    base: 4500,
     tiers: Object.freeze([1, 1.1, 1.2, 1.3]),
     effect: "Weapons reach 10, 20 and 30 percent further.",
   },
   brain: {
     label: "Brain",
-    base: 8,
+    base: 4500,
     tiers: Object.freeze([0, 1, 2, 3]),
     effect: "Persuading guards, police and enemy agents takes fewer points, and the aim is a little steadier.",
   },

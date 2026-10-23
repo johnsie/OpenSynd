@@ -379,18 +379,21 @@ test("Dead Drop mixes objective types and every target and zone it names exists"
   }
 });
 
-test("at the start only the pistol is available; every other weapon, the bomb and the shield need research", async () => {
+test("at the start FreeSynd's weapons are available (pistol, shotgun, persuader, scanner, medikit); the rest need research", async () => {
   const pack = await read("pack.json");
   const items = await Promise.all(pack.equipment.map((path) => read(path)));
   const free = items.filter((item) => !(item.researchCost > 0));
-  const freeWeapons = free.filter((item) => item.action === "disable-pulse").map((item) => item.name);
-  assert.deepEqual(freeWeapons, ["Civic Pulse Emitter"], "the pistol alone is free");
-  for (const action of ["time-bomb", "shield", "persuade"]) {
+  const freeWeapons = free.filter((item) => item.action === "disable-pulse").map((item) => item.name).sort();
+  assert.deepEqual(freeWeapons, ["Civic Pulse Emitter", "Heavy Pulse Emitter", "Scatter Emitter"]);
+  assert.ok(free.some((item) => item.action === "persuade"), "the persuader is a starting item");
+  assert.ok(free.some((item) => item.action === "scan"), "the scanner is a starting item");
+  assert.ok(free.some((item) => item.action === "restore-vitality"), "the medikit is a starting item");
+  for (const action of ["time-bomb", "shield"]) {
     const found = items.filter((item) => item.action === action);
     assert.ok(found.length > 0, `the pack has a ${action} item`);
     assert.ok(found.every((item) => item.researchCost > 0), `${action} needs research`);
   }
-  const names = items.filter((item) => item.action === "disable-pulse").map((item) => item.name);
+const names = items.filter((item) => item.action === "disable-pulse").map((item) => item.name);
   for (const wanted of ["Machine Pistol", "Rotary Cannon", "Coil Gun", "Longshot Rifle"]) {
     assert.ok(names.includes(wanted), wanted);
   }

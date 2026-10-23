@@ -14,7 +14,8 @@
     "license": { "enum": ["CC0-1.0", "CC-BY-4.0"] },
     "type": { "enum": ["tool", "consumable"] },
     "action": { "enum": ["disable-pulse", "restore-vitality", "stealth", "persuade", "time-bomb", "shield", "scan", "key"] },
-    "price": { "type": "integer", "minimum": 0, "maximum": 1000, "description": "Funds to buy one copy for an operative in the Armoury." },
+    "price": { "type": "integer", "minimum": 0, "maximum": 100000, "description": "Funds to buy one copy for an operative in the Armoury." },
+    "ammoPrice": { "type": "integer", "minimum": 0, "maximum": 100000, "description": "Funds to refill one used round, charge or dose." },
     "icon": { "enum": ["pulse", "heavy-pulse", "medkit", "syringe", "cloak", "persuader", "smg", "rotary", "coil", "longshot", "bomb", "shield", "scatter", "flame", "beam", "scanner", "key"], "description": "Which drawn icon represents the item." },
     "sound": { "enum": ["pistol", "smg", "rotary", "rifle", "coil", "longshot", "scatter", "flame", "beam"], "description": "What the weapon sounds like when it fires." },
     "carry": { "enum": ["pistol", "rifle"], "description": "How a weapon is held in the character art: one-handed pistol grip or two-handed rifle grip." },
@@ -24,7 +25,7 @@
       "type": "array", "uniqueItems": true, "maxItems": 4, "items": { "$ref": "#/$defs/id" },
       "description": "Equipment that must be researched first (a research chain)."
     },
-    "researchCost": { "type": "integer", "minimum": 0, "maximum": 500, "description": "Funds needed to research this item; 0 or absent means it is available from the start." },
+    "researchCost": { "type": "integer", "minimum": 0, "maximum": 100000, "description": "Funds needed to research this item; 0 or absent means it is available from the start." },
     "charges": { "type": ["integer", "null"], "minimum": 1, "maximum": 99, "description": "Uses per operation: rounds for a weapon, doses for a consumable; null means unlimited." },
     "effect": {
       "type": "object",

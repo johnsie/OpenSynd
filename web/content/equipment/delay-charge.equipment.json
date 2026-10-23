@@ -7,13 +7,14 @@
   "type": "tool",
   "action": "time-bomb",
   "charges": 3,
-  "researchCost": 25,
+  "researchCost": 9000,
   "effect": {
     "attack": 55,
     "radius": 3.2,
     "fuse": 6
   },
-  "price": 70,
+  "price": 25000,
   "icon": "bomb",
-  "weight": 3
+  "weight": 3,
+  "ammoPrice": 7500
 }

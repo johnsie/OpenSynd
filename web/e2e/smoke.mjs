@@ -391,8 +391,8 @@ for (const [name, type, executablePath] of targets) {
     // Achievements pay funds. This run lost no operator and was quick, but a watcher spotted
     // one earlier, so Ghost is not awarded.
     const awards = await page.locator("#outcome-awards").innerText();
-    assert.match(awards, /Whole squad \+30/);
-    assert.match(awards, /Quick work \+30/);
+    assert.match(awards, /Whole squad/);
+    assert.match(awards, /Quick work/);
     assert.doesNotMatch(awards, /Ghost/);
     const funds = Number((await page.locator("#funds-readout").innerText()).replace(/\D/g, ""));
     assert.ok(funds >= 60, `funds were ${funds}`);
@@ -472,24 +472,24 @@ for (const [name, type, executablePath] of targets) {
     await page.getByRole("button", { name: "Lower tax on First Light" }).click();
 
     // The Research & Armoury screen: research, then buy weapons into specific slots.
-    await page.evaluate(() => window.opensyndTest.setFunds(300));
+    await page.evaluate(() => window.opensyndTest.setFunds(100000));
     await page.click("#open-research");
     await page.waitForSelector("#research-dialog[open]");
     const labFunds = async () =>
       Number((await page.locator("#research-funds").innerText()).replace(/\D/g, ""));
-    assert.equal(await labFunds(), 300);
+    assert.equal(await labFunds(), 100000);
     // Two tabs: Squad (roster, body parts, loadout) and Research. The operative picker belongs to the squad tab.
     assert.equal(await page.locator("#roster-list").isVisible(), true);
     assert.equal(await page.locator("#research-items").isVisible(), false);
     assert.equal(await page.locator("#research-tracks").isVisible(), true, "body parts are on the squad tab");
     await page.locator("#research-tracks button").first().click();
     assert.match(await page.locator("#research-tracks").innerText(), /Legs · tier 1 of 3/);
-    assert.equal(await labFunds(), 294);
+    assert.equal(await labFunds(), 94000, "legs tier 1 costs FreeSynd's 6000");
     await page.click("#tab-lab-research");
     // Research runs on game time: pick an item and a funding level, then hours pass and it is paid for by the hour.
     assert.match(await page.locator("#research-dial").innerText(), /Nothing is being researched/);
-    await page.getByRole("button", { name: /^Research Scanner/ }).click();
-    assert.match(await page.locator("#research-dial").innerText(), /Funding for Scanner/);
+    await page.getByRole("button", { name: /^Research Machine Pistol/ }).click();
+    assert.match(await page.locator("#research-dial").innerText(), /Funding for Machine Pistol/);
     assert.equal(await page.getByRole("button", { name: /^Research Rotary Cannon/ }).count(), 0, "needs the machine pistol first");
     // Several researches run at once: a second one joins the first, each with its own funding dial.
     await page.getByRole("button", { name: /^Research Delay Charge/ }).click();
@@ -497,9 +497,9 @@ for (const [name, type, executablePath] of targets) {
     await page.getByRole("button", { name: "Pause research on Delay Charge" }).click();
     assert.equal(await page.locator("#research-dial .dial-row").count(), 1);
     await page.evaluate(() => window.opensyndTest.advanceHours(70));
-    assert.match(await page.locator("#research-items").innerText(), /Scanner\s+RESEARCHED/);
+    assert.match(await page.locator("#research-items").innerText(), /Machine Pistol\s+RESEARCHED/);
     const base = await labFunds();
-    assert.ok(base >= 220, `research cost about 60 funds, tax came in: ${base}`);
+    assert.ok(base >= 92000 && base <= 99000, `research cost about 1500 funds, tax came in: ${base}`);
 
     // Eight picture slots per operative: two are filled (the starting kit; unresearched loot is not kept).
     await page.click("#tab-lab-squad");
@@ -507,27 +507,27 @@ for (const [name, type, executablePath] of targets) {
     assert.equal(await squads.count(), 1, "the chosen operative's slots");
     assert.equal(await page.locator("#roster-list .roster-pick:not(:disabled)").count(), 4);
     assert.equal(await squads.first().locator(".slot").count(), 8);
-    assert.equal(await squads.first().locator(".slot:not(.empty)").count(), 2);
-    assert.equal(await squads.first().locator(".slot svg").count(), 2, "each filled slot shows a picture");
+    assert.equal(await squads.first().locator(".slot:not(.empty)").count(), 3);
+    assert.equal(await squads.first().locator(".slot svg").count(), 3, "each filled slot shows a picture");
 
-    // Buy a scanner into slot 3, then two pulse emitters: an operative can carry several of the same weapon.
-    await page.getByLabel("Operator 1 slot 3: empty", { exact: true }).click();
-    await page.getByRole("button", { name: "Buy Scanner for Operator 1 slot 3, 40 funds" }).click();
-    assert.equal(await labFunds(), base - 40);
+    // Buy a scanner into slot 4, then two pulse emitters: an operative can carry several of the same weapon.
     await page.getByLabel("Operator 1 slot 4: empty", { exact: true }).click();
-    await page.getByRole("button", { name: "Buy Civic Pulse Emitter for Operator 1 slot 4, 15 funds" }).click();
+    await page.getByRole("button", { name: "Buy Scanner for Operator 1 slot 4, 500 funds" }).click();
+    assert.equal(await labFunds(), base - 500);
     await page.getByLabel("Operator 1 slot 5: empty", { exact: true }).click();
-    await page.getByRole("button", { name: "Buy Civic Pulse Emitter for Operator 1 slot 5, 15 funds" }).click();
-    assert.equal(await labFunds(), base - 70);
+    await page.getByRole("button", { name: "Buy Civic Pulse Emitter for Operator 1 slot 5, 0 funds" }).click();
+    await page.getByLabel("Operator 1 slot 6: empty", { exact: true }).click();
+    await page.getByRole("button", { name: "Buy Civic Pulse Emitter for Operator 1 slot 6, 0 funds" }).click();
+    assert.equal(await labFunds(), base - 500);
+    assert.equal(await squads.first().locator(".slot:not(.empty)").count(), 6);
+    // Swapping refunds the full price of what it replaces (FreeSynd sells at cost).
+    await page.getByLabel("Operator 1 slot 6: Civic Pulse Emitter", { exact: true }).click();
+    await page.getByRole("button", { name: "Buy Field Repair Kit for Operator 1 slot 6, 500 funds" }).click();
+    assert.equal(await labFunds(), base - 1000);
+    // Selling returns the whole price again.
+    await page.getByRole("button", { name: /Sell Field Repair Kit · \+500 funds/ }).click();
+    assert.equal(await labFunds(), base - 500);
     assert.equal(await squads.first().locator(".slot:not(.empty)").count(), 5);
-    // Swapping refunds half the price of what it replaces: the spare emitter (7 back) pays toward a repair kit (10).
-    await page.getByLabel("Operator 1 slot 5: Civic Pulse Emitter", { exact: true }).click();
-    await page.getByRole("button", { name: "Buy Field Repair Kit for Operator 1 slot 5, 3 funds" }).click();
-    assert.equal(await labFunds(), base - 73);
-    // Selling returns half the price again.
-    await page.getByRole("button", { name: /Sell Field Repair Kit · \+5 funds/ }).click();
-    assert.equal(await labFunds(), base - 68);
-    assert.equal(await squads.first().locator(".slot:not(.empty)").count(), 4);
 
     // The roster: four operatives deploy; benching one takes them out of the Armoury until they are put back.
     assert.equal(await page.locator("#roster-list .roster-card").count(), 4);
@@ -560,6 +560,7 @@ for (const [name, type, executablePath] of targets) {
     assert.deepEqual(campaignRecord.loadouts["operator-one"], [
       "developer.civic-pulse-emitter",
       "developer.field-repair-kit",
+      "developer.heavy-pulse-emitter",
       "developer.scanner",
       "developer.civic-pulse-emitter",
     ]);
@@ -574,10 +575,10 @@ for (const [name, type, executablePath] of targets) {
     await page.waitForFunction(() =>
       document.querySelector("#status-message").textContent.includes("Local map established"),
     );
-    // The purchases are in operator 1's squares when the operation starts: four items, two of them pulse emitters.
-    assert.equal(await page.locator(".roster-item").first().locator(".slot:not(.empty)").count(), 4);
-    assert.equal(await page.getByLabel("Field Operator 1 slot 3: Scanner", { exact: false }).count(), 1);
-    assert.equal(await page.getByLabel("Field Operator 1 slot 4: Civic Pulse Emitter", { exact: false }).count(), 1);
+    // The purchases are in operator 1's squares when the operation starts: five items.
+    assert.equal(await page.locator(".roster-item").first().locator(".slot:not(.empty)").count(), 5);
+    assert.equal(await page.getByLabel("Field Operator 1 slot 4: Scanner", { exact: false }).count(), 1);
+    assert.equal(await page.getByLabel("Field Operator 1 slot 5: Civic Pulse Emitter", { exact: false }).count(), 1);
 
 
     // New game: wipes the campaign and what was won, keeps the settings, and asks first.

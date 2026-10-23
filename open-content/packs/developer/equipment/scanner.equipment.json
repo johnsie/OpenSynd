@@ -7,12 +7,11 @@
   "type": "tool",
   "action": "scan",
   "charges": 3,
-  "researchCost": 15,
   "effect": {
     "radius": 20,
     "duration": 20
   },
-  "price": 40,
+  "price": 500,
   "weight": 2,
   "icon": "scanner"
 }

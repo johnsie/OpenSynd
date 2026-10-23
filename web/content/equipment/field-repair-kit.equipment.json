@@ -10,7 +10,8 @@
   "effect": {
     "restoreFull": true
   },
-  "price": 10,
+  "price": 500,
   "icon": "medkit",
-  "weight": 2
+  "weight": 2,
+  "ammoPrice": 1
 }
