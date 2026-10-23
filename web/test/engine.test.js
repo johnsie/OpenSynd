@@ -1013,7 +1013,10 @@ test("police ignore an operator with no weapon out, but act on one who draws it"
   assert.equal(gunOut(operator, 10), true);
   assert.equal(gunOut(operator, null), false, "without a clock police cannot react");
   const events = advancePatrols([cop, operator], 1, grid, 10);
-  assert.deepEqual(events, [{ type: "spotted", unitId: "cop", targetId: "op" }]);
+  assert.deepEqual(events, [
+    { type: "warning", unitId: "cop", targetId: "op" },
+    { type: "spotted", unitId: "cop", targetId: "op" },
+  ]);
   assert.equal(cop.alertedBy, "op");
 });
 

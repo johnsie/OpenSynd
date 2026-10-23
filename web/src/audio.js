@@ -214,6 +214,13 @@ export const CUES = Object.freeze({
   objective: { caption: "Objective complete", notes: [[523, 0.1], [659, 0.1], [784, 0.16]] },
   alert: { caption: "Enemy agent alerted", notes: [[740, 0.07], [740, 0.07], [988, 0.12]] },
   disabled: { caption: "Unit disabled", notes: [[220, 0.14], [147, 0.2]] },
+  "police-warning": {
+    caption: "Police: put down your weapon",
+    notes: [[880, 0.14], [660, 0.14], [880, 0.14], [660, 0.14]],
+  },
+  scan: { caption: "Scanner ping", notes: [[1320, 0.05], [1760, 0.14]] },
+  complete: { caption: "Operation complete", notes: [[523, 0.12], [659, 0.12], [784, 0.12], [1047, 0.32]] },
+  failed: { caption: "Operation lost", notes: [[392, 0.2], [311, 0.2], [247, 0.45]] },
   ...Object.fromEntries(Object.entries(SYNTH).map(([name, cue]) => [name, { caption: cue.caption }])),
 });
 

@@ -191,7 +191,8 @@ const CIVILIAN_SCOUT_PERIOD = 0.5;
 const CIVILIAN_RUN_FACTOR = 1.8;
 export const POLICE_SCOUT = 8;
 const POLICE_SCOUT_PERIOD = 0.2;
-export const POLICE_WARNING = 0.8;
+// Police shout their warning for two seconds before they shoot (FreeSynd's warning time).
+export const POLICE_WARNING = 2;
 export const POLICE_PENDING = 1.5;
 // How long an enemy waits, after it first sees the squad, before it opens fire.
 export const REACTION_SECONDS = Object.freeze({ "enemy-agent": 0.4, guard: 0.3, criminal: 0.4 });
@@ -437,6 +438,7 @@ function advancePolice(unit, units, armed, deltaSeconds, grid, events) {
     police.warnLeft = POLICE_WARNING;
     police.targetId = target.id;
     unit.path = [];
+    if (target.side === "team") events.push({ type: "warning", unitId: unit.id, targetId: target.id });
     if (!unit.alertedBy && target.side === "team") events.push({ type: "spotted", unitId: unit.id, targetId: target.id });
     unit.alertedBy = target.id;
   };

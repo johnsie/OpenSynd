@@ -223,6 +223,37 @@ function driveRoute(vehicle, seconds, roadGrid) {
   moveAlongPath(vehicle, seconds, vehicle.definition.stats.speed);
 }
 
+// A moving vehicle hurts anyone on foot it runs into: damage grows with its speed, and a person hit is thrown aside and
+// flinches. Nobody is hit twice in under a second.
+export const RUNOVER_RADIUS = 0.9;
+export const RUNOVER_COOLDOWN = 1;
+export function runOverDamage(speed) {
+  return Math.round(speed * 5);
+}
+
+function runOver(vehicle, units, seconds) {
+  const events = [];
+  if (vehicle.path.length === 0) return events;
+  const amount = runOverDamage(vehicle.definition.stats.speed);
+  for (const unit of units) {
+    if (unit === vehicle || isVehicle(unit) || unit.disabled || unit.inVehicle) continue;
+    unit.runOverLeft = Math.max(0, (unit.runOverLeft ?? 0) - seconds);
+    if (unit.runOverLeft > 0) continue;
+    if (Math.hypot(unit.position.x - vehicle.position.x, unit.position.y - vehicle.position.y) > RUNOVER_RADIUS) continue;
+    unit.runOverLeft = RUNOVER_COOLDOWN;
+    unit.health = Math.max(0, unit.health - amount);
+    unit.hitStun = 0.4;
+    const down = unit.health === 0;
+    if (down) {
+      unit.disabled = true;
+      unit.path = [];
+      unit.targetId = null;
+    }
+    events.push({ type: "runover", vehicleId: vehicle.id, unitId: unit.id, amount, remaining: unit.health, disabled: down });
+  }
+  return events;
+}
+
 /**
  * Move every vehicle: driven ones along the player's orders or their AI route, occupants carried with them.
  * A vehicle that has just been destroyed drops its occupants and explodes, hurting everyone near it (and setting
@@ -275,6 +306,7 @@ export function advanceVehicles(units, seconds, roadGrid, grid) {
       const unit = units.find((other) => other.id === id);
       if (unit) unit.position = { ...vehicle.position };
     }
+    events.push(...runOver(vehicle, units, seconds));
   }
   return events;
 }

@@ -6,6 +6,8 @@ import test from "node:test";
 import { createTileGrid } from "../src/engine.js";
 import {
   ENTER_RANGE,
+  RUNOVER_COOLDOWN,
+  runOverDamage,
   WRECK_SECONDS,
   advanceVehicles,
   canEnter,
@@ -189,4 +191,25 @@ test("a blast can destroy a neighbouring car, which then explodes in turn", () =
 
 test("ENTER_RANGE is a short walk", () => {
   assert.ok(ENTER_RANGE >= 1.5 && ENTER_RANGE <= 4);
+});
+
+test("a moving car runs over people on foot: harder when faster, never twice in a second, never someone riding", () => {
+  assert.equal(runOverDamage(6.5), 33);
+  assert.ok(runOverDamage(8) > runOverDamage(4));
+    const lorry = car("car", 10, 5, null, { path: [{ x: 30, y: 5 }] });
+  const walker = person("walker", 10.3, 5);
+  const rider = person("rider", 10.2, 5, { inVehicle: "car" });
+  const events = advanceVehicles([lorry, walker, rider], 1 / 30, roads, grid);
+  const hits = events.filter((event) => event.type === "runover");
+  assert.equal(hits.length, 1);
+  assert.equal(hits[0].unitId, "walker");
+  assert.equal(walker.health, walker.definition.stats.vitality - runOverDamage(lorry.definition.stats.speed));
+  assert.ok(walker.hitStun > 0);
+  const again = advanceVehicles([lorry, walker, rider], 1 / 30, roads, grid).filter((event) => event.type === "runover");
+  assert.equal(again.length, 0, "not hit twice at once");
+  assert.ok(RUNOVER_COOLDOWN >= 1);
+  lorry.path = [];
+  walker.runOverLeft = 0;
+  const parked = advanceVehicles([lorry, walker], 1 / 30, roads, grid).filter((event) => event.type === "runover");
+  assert.equal(parked.length, 0, "a parked car hurts nobody");
 });

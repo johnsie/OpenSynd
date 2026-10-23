@@ -2642,6 +2642,12 @@ function simulationStep(deltaSeconds) {
       interfaceChanged = true;
       continue;
     }
+    if (event.type === "warning") {
+      setStatus(`${watcher.definition.name}: "Put down your weapon!" Holster it, or they open fire in two seconds.`);
+      audio.play("police-warning");
+      interfaceChanged = true;
+      continue;
+    }
     const spotted = state.units.find((unit) => unit.id === event.targetId);
     setStatus(`${watcher.definition.name} spotted ${spotted.definition.name}! It is closing in.`);
     audio.play("alert");
@@ -2658,8 +2664,23 @@ function simulationStep(deltaSeconds) {
       audio.play("tick");
     }
   }
+  const vehicleEvents = advanceVehicles(state.units, deltaSeconds, state.roadGrid, state.grid);
+  for (const hit of vehicleEvents.filter((event) => event.type === "runover")) {
+    const victim = state.units.find((unit) => unit.id === hit.unitId);
+    const car = state.units.find((unit) => unit.id === hit.vehicleId);
+    addEffect(state.effects, "impact", { unitId: hit.unitId, spin: Math.random() * 3 });
+    audio.play("hit");
+    knockBack(victim, car);
+    if (hit.disabled) {
+      // The city does not bill the squad for a stranger's bad driving: only the squad's own car counts against it.
+      const bystander = victim.side === "civilian" || victim.side === "police";
+      if (!bystander || car.vehicle.controlledBy) countDisabled(victim);
+      pruneSelection();
+      interfaceChanged = true;
+    }
+  }
   const blasts = [
-    ...advanceVehicles(state.units, deltaSeconds, state.roadGrid, state.grid),
+    ...vehicleEvents.filter((event) => event.type === "blast"),
     ...advanceBombs(state.bombs, state.units, deltaSeconds),
   ];
   for (const blast of blasts) {
@@ -2728,6 +2749,7 @@ function formatDuration(seconds) {
 
 function showOutcome(outcome) {
   const won = outcome === "success";
+  audio.play(won ? "complete" : "failed");
   document.querySelector("#outcome-eyebrow").textContent = won ? "OPERATION COMPLETE" : "OPERATION LOST";
   const debrief = state.mission.debrief;
   const reason = won ? null : failureReason(state.objectives, state.units);
@@ -3996,7 +4018,7 @@ function pressSlot(unit, slot) {
       setStatus(entry.charges === 0 ? "That scanner is spent." : `${unit.definition.name} is already scanning.`);
       return;
     }
-    audio.play("select");
+    audio.play("scan");
     setStatus(
       `${unit.definition.name}: ${definition.name} on for ${definition.effect.duration} seconds. ` +
         "Everyone nearby shows on the map.",
