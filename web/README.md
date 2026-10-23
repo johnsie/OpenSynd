@@ -18,19 +18,22 @@ not work reliably because browsers restrict local `fetch()` calls.
 
 ## Current controls
 
-- Select either operator from the canvas or roster.
-- Click a walkable tile to calculate and follow a route.
-- Focus the canvas, move the targeting cursor with the arrow keys, and press
-  Enter to issue a movement order.
-- Move within range of a watcher, then select it on the map or from the
-  keyboard-accessible Threats panel to engage a deterministic disabling pulse.
-- Press Space while the canvas is focused to pause or resume.
-- Use <kbd>E</kbd> or the Restore button while standing on a relay to reconnect
-  it; restore both relays, then reach the extraction zone.
-- Use the on-screen direction pad, Move button, and Restore button as a touch
-  and pointer control alternative.
-- Save to a private browser-local slot, or export and import a readable,
-  versioned JSON save file.
+- Click an operator on the map or in the squad panel to select; Shift-click or Ctrl-click adds one, **A** selects
+  all. Keys **1-4** pick an operator, **Shift+number** toggles one, **0** swaps between one and everyone, and
+  **Alt+1-8** press an inventory slot.
+- Click ground to walk (squad in formation); **Shift+click** adds a leg to the route. Click a vehicle to get in
+  (**V** also takes or leaves one) and click a road to drive. Click an enemy to close in and fight.
+- Nobody fires without a weapon selected: click one in the operator's inventory. **Right-click** fires; hold the
+  button to keep firing. Weapons: pulse, machine pistol, scatter, flame, beam, rotary, coil, long rifle; items:
+  repair kit, stim, cloak, Persuader, scanner, shield, delay charge.
+- Sliders under each operator set Adrenaline, Perception and Intelligence doses; Legs and Brain are training bars.
+- **E** interacts, **F** loots, **R** repairs, **T** uses a stim, **Space** pauses; every key can be rebound in Settings.
+- Between operations (Operations, then Research & Armoury): fit body parts, buy and sell gear, choose the squad
+  from the roster, fund research, set tax and buy a survey for each territory. Fallen operatives are lost for good
+  unless you switch that off; persuade enemy agents and get them out alive to recruit them.
+- Save to a private browser-local slot, or export and import a readable, versioned JSON save file.
+- `editor.html` is a mission editor: move, add and delete units and vehicles, edit objectives, check the draft and
+  download the mission JSON.
 
 The renderer uses Canvas 2D and procedural shapes. Simulation helpers live in
 `src/engine.js` and have dependency-free Node tests.
