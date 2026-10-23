@@ -3558,7 +3558,7 @@ function groupDestinations(operators, destination) {
 }
 
 // Orders for operators who are in a vehicle drive it: it goes to the nearest road to the point clicked.
-function driveOrder(destination) {
+function driveOrder(destination, queue = false) {
   const driver = selectedOperators().find((unit) => unit.inVehicle);
   if (!driver) return false;
   const car = state.units.find((unit) => unit.id === driver.inVehicle);
@@ -3566,6 +3566,11 @@ function driveOrder(destination) {
     setStatus("Only the driver can steer. Leave the vehicle with V.");
     return true;
   }
+  if (queue && isBusy(driver)) {
+    queueAction(driver, { type: "drive", to: { ...destination } }, "drive on to the next point");
+    return true;
+  }
+  driver.pending = [];
   if (!driveTo(car, destination, state.roadGrid)) {
     setStatus("No road to drive there.");
     return true;
@@ -3578,7 +3583,7 @@ function driveOrder(destination) {
 }
 
 function issueMove(destination, queue = false) {
-  if (driveOrder(destination)) return;
+  if (driveOrder(destination, queue)) return;
   const squad = selectedOperators();
   if (squad.length > 1) {
     const assignments = groupDestinations(squad, destination);
@@ -3786,6 +3791,8 @@ function sendLoot(unit, body, keepPending = false) {
 // Orders queued after the current route (Shift+click): walk on, pick up gear, get into a vehicle, in the order given.
 // An operator is busy while they still have somewhere to go or something to do.
 function isBusy(unit) {
+  const car = unit.inVehicle ? state.units.find((item) => item.id === unit.inVehicle) : null;
+  if (car) return car.path.length > 0 || (unit.pending?.length ?? 0) > 0;
   return unit.path.length > 0 || Boolean(unit.lootTargetId) || Boolean(unit.enterTargetId) || (unit.pending?.length ?? 0) > 0;
 }
 
@@ -3800,10 +3807,24 @@ function queueAction(unit, action, description) {
 // done (the body is gone, the vehicle is wrecked, no route) is skipped with a message.
 function runPendingOrders() {
   for (const unit of state.units) {
-    if (unit.side !== "team" || unit.disabled || unit.inVehicle || !unit.pending?.length) continue;
+    if (unit.side !== "team" || unit.disabled || !unit.pending?.length) continue;
+    if (unit.inVehicle) {
+      // A driver waits for the car to stop, then drives on or gets out.
+      const car = state.units.find((item) => item.id === unit.inVehicle);
+      if (!car || car.path.length > 0) continue;
+      const step = unit.pending.shift();
+      if (step.type === "drive") {
+        if (!driveTo(car, step.to, state.roadGrid)) setStatus(`${unit.definition.name}: no road to the next point, skipped.`);
+      } else if (step.type === "leave") {
+        const out = leaveVehicle(car, state.units, state.grid);
+        setStatus(`${out.length} left the ${car.definition.name}.`);
+      } else if (step.type === "drop") dropQueued(unit, step);
+      continue;
+    }
     if (unit.path.length > 0 || unit.lootTargetId || unit.enterTargetId) continue;
     const next = unit.pending.shift();
-    if (next.type === "move") {
+    if (next.type === "drop") dropQueued(unit, next);
+    else if (next.type === "move") {
       if (orderMove(unit, next.to, false, true) === 0) setStatus(`${unit.definition.name}: no route to the next point, skipped.`);
     } else if (next.type === "loot") {
       const body = state.drops.find((item) => item.id === next.id);
@@ -3815,6 +3836,13 @@ function runPendingOrders() {
       else setStatus(`${unit.definition.name}: the vehicle is gone, skipped.`);
     }
   }
+}
+
+// A queued drop: the first thing the operative carries that matches what was chosen, if they still have it.
+function dropQueued(unit, step) {
+  const slot = unit.equipment.findIndex((item) => item.definition.id === step.item);
+  if (slot === -1) setStatus(`${unit.definition.name}: no ${step.name} left to drop, skipped.`);
+  else dropFromSlot(unit, slot);
 }
 
 // The unit under a screen point. Characters are tall, so the target is a generous box around the
@@ -4093,7 +4121,7 @@ function numberKeyShortcut(event) {
   if (event.altKey) {
     const leader = selectedUnit();
     if (digit >= 1 && digit <= SLOTS_PER_OPERATIVE && leader && leader.side === "team") {
-      if (event.shiftKey) dropFromSlot(leader, digit - 1);
+      if (event.shiftKey) dropFromSlot(leader, digit - 1, true);
       else pressSlot(leader, digit - 1);
     }
     return true;
@@ -4163,7 +4191,7 @@ canvas.addEventListener("keydown", (event) => {
     lootAction();
   } else if (action === "vehicle") {
     event.preventDefault();
-    toggleVehicle();
+    toggleVehicle(event.shiftKey);
   } else if (action === "selectAll") {
     event.preventDefault();
     selectAll();
@@ -4460,8 +4488,12 @@ document.querySelector("#close-about").addEventListener("click", () => aboutDial
 // The eight item squares: a picture per item, and a click selects or uses it.
 // Right-click a slot (or Alt+Shift+1-8): the item leaves the slot and lies on the ground beside the operative, where it can
 // be picked up again (FreeSynd).
-function dropFromSlot(unit, slot) {
+function dropFromSlot(unit, slot, queue = false) {
   const name = unit.equipment[slot]?.definition.name;
+  if (queue && name && isBusy(unit)) {
+    queueAction(unit, { type: "drop", item: unit.equipment[slot].definition.id, name }, `drop the ${name}`);
+    return;
+  }
   if (state.armedBomb?.unitId === unit.id) state.armedBomb = null;
   const drop = dropItem(unit, slot, state.drops, state.grid);
   if (!drop) return;
@@ -4512,7 +4544,7 @@ function slotRow(unit, label) {
     square.addEventListener("click", () => pressSlot(unit, slot));
     square.addEventListener("contextmenu", (event) => {
       event.preventDefault();
-      dropFromSlot(unit, slot);
+      dropFromSlot(unit, slot, event.shiftKey);
     });
     row.append(square);
   }
@@ -4754,13 +4786,20 @@ function boardWaitingOperators() {
   }
 }
 
-function toggleVehicle() {
+function toggleVehicle(queue = false) {
   const candidate = vehicleCandidate();
   if (!candidate) {
     setStatus("No vehicle within reach. Walk up to one and press V.");
     return;
   }
   const { vehicle, leaving } = candidate;
+  if (leaving && queue) {
+    const driver = state.units.find((unit) => unit.id === vehicle.vehicle.controlledBy) ?? selectedOperators().find((u) => u.inVehicle);
+    if (driver && isBusy(driver)) {
+      queueAction(driver, { type: "leave" }, `get out of the ${vehicle.definition.name}`);
+      return;
+    }
+  }
   if (leaving) {
     const out = leaveVehicle(vehicle, state.units, state.grid);
     setStatus(`${out.length} left the ${vehicle.definition.name}.`);

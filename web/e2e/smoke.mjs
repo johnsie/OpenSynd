@@ -646,6 +646,24 @@ for (const [name, type, executablePath] of targets) {
     await queuePage.getByLabel(/Field Operator 1 slot 3:/).first().waitFor({ timeout: 30000 });
     await queuePage.close();
 
+    // Shift+right-click a slot while walking queues the drop for the end of the route.
+    const later = await browser.newPage();
+    await later.goto(`${url}?e2e`);
+    await later.waitForSelector(".roster-select");
+    await later.click("#begin-button");
+    await later.evaluate(() => window.opensyndTest.giveItem("operator-one", "developer.heavy-pulse-emitter"));
+    await later.waitForTimeout(500);
+    const here = await later.evaluate(() => window.opensyndTest.positionOf("operator-one"));
+    const ahead = { x: Math.round(here.x), y: Math.round(here.y) - 3 };
+    await later.evaluate((point) => window.opensyndTest.moveSelected(point.x, point.y), ahead);
+    await later
+      .getByLabel(/Field Operator 1 slot 3: Heavy Pulse Emitter/)
+      .evaluate((slot) => slot.dispatchEvent(new MouseEvent("contextmenu", { shiftKey: true, bubbles: true, cancelable: true })));
+    assert.equal((await later.evaluate(() => window.opensyndTest.queue("operator-one"))).pending, 1, "the drop waits for the walk");
+    assert.equal((await later.evaluate(() => window.opensyndTest.drops())).length, 0, "nothing on the ground yet");
+    await later.waitForFunction(() => window.opensyndTest.drops().length === 1, null, { timeout: 30000 });
+    await later.close();
+
     // Right-clicking a slot drops that item beside the operative; F picks it up again.
     const dropper = await browser.newPage();
     await dropper.goto(`${url}?e2e`);
