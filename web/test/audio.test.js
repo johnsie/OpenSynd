@@ -103,3 +103,18 @@ test("weapon cues have captions and respect muting", () => {
   assert.deepEqual(captions, ["Explosion"]);
   assert.equal(made.sources + made.oscillators, 0, "muted: captioned but silent");
 });
+
+test("the victory theme has drums, a bass line, chord stabs and a fanfare, and ends on a crash", async () => {
+  const { buildVictory, VICTORY_BARS, CUES } = await import("../src/audio.js");
+  const events = buildVictory();
+  const kinds = new Set(events.map((event) => event.kind));
+  for (const kind of ["kick", "snare", "hat", "open-hat", "tom", "crash", "bass", "stab", "lead"]) {
+    assert.ok(kinds.has(kind), `has ${kind}`);
+  }
+  assert.ok(events.filter((event) => event.kind === "kick").length >= VICTORY_BARS * 4, "a four-on-the-floor kick");
+  assert.deepEqual(events.map((event) => event.step), [...events.map((event) => event.step)].sort((a, b) => a - b));
+  const last = events.at(-1);
+  assert.equal(last.step, VICTORY_BARS * 16, "the final hit lands on the downbeat after the last bar");
+  assert.ok(events.some((event) => event.kind === "crash" && event.step === last.step));
+  assert.match(CUES.victory.caption, /drums/);
+});

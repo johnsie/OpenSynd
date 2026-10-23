@@ -3013,7 +3013,8 @@ function fundsChange(before, after) {
 
 function showOutcome(outcome) {
   const won = outcome === "success";
-  audio.play(won ? "complete" : "failed");
+  audio.play(won ? "victory" : "failed");
+  if (won) music.duck(11); // the drums and fanfare play over a quiet score
   document.querySelector("#outcome-eyebrow").textContent = won ? "OPERATION COMPLETE" : "OPERATION LOST";
   const debrief = state.mission.debrief;
   const reason = won ? null : failureReason(state.objectives, state.units);

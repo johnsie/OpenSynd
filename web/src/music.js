@@ -41,6 +41,8 @@ export function buildPattern(bars = PROGRESSION.length) {
 }
 
 export const FADE_SECONDS = 1.2;
+// While the victory theme plays the score drops to this share of its volume.
+export const DUCK_LEVEL = 0.15;
 
 export function createMusic({
   getSettings,
@@ -65,6 +67,8 @@ export function createMusic({
   let alertOn = false;
   let mix = 0; // 0 = all calm, 1 = all intense
   let fadeTimer = null;
+  let duckLeft = 0;
+  let duckTimer = null;
 
   function createTrack(name, url) {
     if (!url || !AudioElementClass) return;
@@ -83,7 +87,7 @@ export function createMusic({
   function trackVolume(gain) {
     const settings = getSettings();
     const audible = settings.music && !settings.muted;
-    return audible ? Math.min(1, Math.max(0, settings.musicVolume)) * gain : 0;
+    return audible ? Math.min(1, Math.max(0, settings.musicVolume)) * gain * (duckLeft > 0 ? DUCK_LEVEL : 1) : 0;
   }
 
   // Set each element's volume from the mix, starting one that has come in and pausing one that is gone.
@@ -104,6 +108,13 @@ export function createMusic({
 
   // Move the crossfade along by `seconds`; also called on a timer.
   function advance(seconds) {
+    if (duckLeft > 0) {
+      duckLeft = Math.max(0, duckLeft - seconds);
+      if (duckLeft === 0) {
+        applyMix();
+        refresh();
+      }
+    }
     const target = alertOn ? 1 : 0;
     if (mix === target) return;
     const step = seconds / FADE_SECONDS;
@@ -176,7 +187,7 @@ export function createMusic({
     if (!context) return;
     const settings = getSettings();
     const audible = settings.music && !settings.muted;
-    master.gain.value = audible ? settings.musicVolume : 0;
+    master.gain.value = audible ? settings.musicVolume * (duckLeft > 0 ? DUCK_LEVEL : 1) : 0;
   }
 
   const api = {
@@ -190,6 +201,14 @@ export function createMusic({
         mix,
         volume: calm?.volume ?? 0,
       };
+    },
+    // Turn the score down for `seconds` (the victory theme plays over it), then back up.
+    duck(seconds) {
+      duckLeft = Math.max(0, seconds);
+      applyMix();
+      refresh();
+      if (duckTimer !== null) clearTimeout(duckTimer);
+      duckTimer = setTimeout(() => api.advance(duckLeft), seconds * 1000);
     },
     // Switch to the intense score while an enemy has seen the squad, and back to calm when it is over.
     setAlert(value) {
@@ -221,6 +240,8 @@ export function createMusic({
       if (fadeTimer !== null) clearInterval(fadeTimer);
       fadeTimer = null;
       trackStarted = false;
+      if (duckTimer !== null) clearTimeout(duckTimer);
+      duckTimer = null;
     },
     refresh() {
       const settings = getSettings();

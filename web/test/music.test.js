@@ -119,3 +119,15 @@ test("the generated score is still a four-bar loop", () => {
   assert.ok(pattern.every((note) => note.step < STEPS_PER_BAR * 4));
   assert.equal(Math.round(midiToFrequency(69)), 440);
 });
+
+test("the score ducks while the victory theme plays and comes back after", (t) => {
+  const { music, calm } = setup(t);
+  music.start();
+  assert.equal(calm().volume, 0.5);
+  music.duck(10);
+  assert.ok(calm().volume < 0.1, "turned right down");
+  music.advance(5);
+  assert.ok(calm().volume < 0.1, "still quiet halfway");
+  music.advance(5.1);
+  assert.equal(calm().volume, 0.5, "back to normal afterwards");
+});
