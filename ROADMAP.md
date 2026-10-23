@@ -1122,6 +1122,13 @@ Ordered by what each adds per unit of work given what exists. Items in the same 
 9. **The mission editor** (F44), once the mission format has stabilised.
 10. **Campaign scale** (F45): 50 territories and 50 main missions, built on the editor, the generator and the graph.
 
+## Art direction
+
+The world is a **pressured, gritty one**: ordinary people (civilians, and so police and guards) wear worn, muted clothes in
+grey, olive, brown and faded teal, with faint trim; bright neon belongs to the squad, enemy agents' tech and the interface, not
+to bystanders. Women and men are drawn as adults (adult proportions, a small head, long legs). Intense music is for enemy
+agents only: guards, police and criminals seeing the squad do not bring it in.
+
 ## Non-negotiable principles
 
 1. **No original game data.** Development, tests, demos, releases, screenshots,

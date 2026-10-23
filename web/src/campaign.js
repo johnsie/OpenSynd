@@ -69,6 +69,7 @@ export function emptyCampaign() {
     territories: {},
     research: { active: null, level: 4, progress: {}, discovered: [] },
     intel: {},
+    ended: false,
   };
 }
 
@@ -140,6 +141,7 @@ export function parseCampaign(text) {
     territories,
     research: parseResearch(value.research),
     intel,
+    ended: value.ended === true,
   };
 }
 
@@ -631,4 +633,24 @@ export function enemyArmament(enemyIds, campaign, catalog) {
     if (index % 2 === 1) arms.set(id, researched[Math.floor(index / 2) % researched.length]);
   });
   return arms;
+}
+
+/**
+ * The end of the campaign: once every main mission is won, the world is held. Returns the summary the ending shows
+ * (days played, funds, operatives lost, territories held) and whether it has been shown already.
+ */
+export function campaignEnding(campaign, completedIds, missionIds) {
+  const won = missionIds.length > 0 && missionIds.every((id) => completedIds.includes(id));
+  return {
+    won,
+    shown: campaign.ended === true,
+    days: dayOf(campaign),
+    funds: Math.floor(campaign.funds),
+    lost: campaign.roster.filter((member) => !member.alive).length,
+    held: Object.values(campaign.territories).filter((territory) => territory.status !== "rebel").length,
+  };
+}
+
+export function markEnded(campaign) {
+  return campaign.ended === true ? campaign : { ...campaign, ended: true };
 }

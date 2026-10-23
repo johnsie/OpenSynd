@@ -72,6 +72,7 @@ import {
   canResearchItem,
   buyIntoSlot,
   canBuy,
+  campaignEnding,
   captureItems,
   discoverItems,
   earnAchievement,
@@ -98,6 +99,7 @@ import {
   isItemAvailable,
   penalise,
   loadoutFor,
+  markEnded,
   netCost,
   parseCampaign,
   sellFromSlot,
@@ -2809,10 +2811,12 @@ function handleCombatEvents(combatEvents) {
 }
 
 // The intense score plays only while an enemy agent (a watcher) has seen the squad, and for a few
-// seconds after the last one loses it. Police on alert do not bring it in.
+// seconds after the last one loses it. Guards and police on alert do not bring it in.
 const ALERT_MUSIC_HOLD_SECONDS = 6;
 function updateAlertMusic(deltaSeconds) {
-  const seen = state.units.some((unit) => unit.side === "opposition" && unit.alertedBy && !unit.disabled && !unit.persuaded);
+  const seen = state.units.some(
+    (unit) => unit.definition.role === "enemy-agent" && unit.alertedBy && !unit.disabled && !unit.persuaded,
+  );
   state.alertHold = seen ? ALERT_MUSIC_HOLD_SECONDS : Math.max(0, (state.alertHold ?? 0) - deltaSeconds);
   const intense = state.outcome === "active" && state.alertHold > 0;
   if (intense !== state.alertMusic) {
@@ -2989,7 +2993,17 @@ function showOutcome(outcome) {
   document.querySelector("#outcome-eyebrow").textContent = won ? "OPERATION COMPLETE" : "OPERATION LOST";
   const debrief = state.mission.debrief;
   const reason = won ? null : failureReason(state.objectives, state.units);
-  document.querySelector("#outcome-heading").textContent = won
+  // Winning the last of the 50 main missions ends the campaign (once).
+  const ending = won ? campaignEnding(state.campaign, state.progress.completed, state.missionList.map((entry) => entry.id)) : null;
+  const finale = Boolean(ending?.won && !ending.shown);
+  if (finale) {
+    state.campaign = markEnded(state.campaign);
+    persistCampaign();
+    document.querySelector("#outcome-eyebrow").textContent = "CAMPAIGN COMPLETE";
+  }
+  document.querySelector("#outcome-heading").textContent = finale
+    ? "The whole world is yours"
+    : won
     ? state.mission.title ?? "Operation complete"
     : reason
       ? "The operation is lost"
@@ -2998,7 +3012,9 @@ function showOutcome(outcome) {
   document.querySelector("#outcome-awards").textContent = earned.length
     ? `Achievements: ${earned.map((item) => `${item.name} +${item.reward}`).join(", ")}.`
     : "";
-  document.querySelector("#outcome-text").textContent = won
+  document.querySelector("#outcome-text").textContent = finale
+    ? `${debrief?.success ?? ""} That was the last of the ${state.missionList.length} territories: no syndicate holds a district any more.`.trim()
+    : won
     ? debrief?.success ?? "The operation is complete."
     : reason ?? debrief?.failure ?? "Every operator has been disabled. Regroup and try a different approach.";
   const hasNext = won && nextOperation() !== -1;
@@ -3026,6 +3042,14 @@ function showOutcome(outcome) {
       }),
     ...(state.opStats.lost?.length > 0 ? [["Operatives lost", state.opStats.lost.join(", ")]] : []),
     ...(state.opStats.recruited?.length > 0 ? [["Recruited", state.opStats.recruited.join(", ")]] : []),
+    ...(finale
+      ? [
+          ["Campaign length", `${ending.days} days`],
+          ["Territories held", `${ending.held} of ${state.missionList.length}`],
+          ["Operatives lost", String(ending.lost)],
+          ["Funds in hand", String(ending.funds)],
+        ]
+      : []),
     ...(state.opStats.discovered?.length > 0 ? [["Discovered", state.opStats.discovered.join(", ")]] : []),
     ...(state.opStats.resupply > 0 ? [["Resupply bill", `${state.opStats.resupply} funds`]] : []),
     ...(state.opStats.civiliansHarmed + state.opStats.policeHarmed > 0
@@ -4261,6 +4285,9 @@ if (new URLSearchParams(location.search).has("e2e")) {
     },
     markInProgress() {
       state.missionSeconds = 30;
+    },
+    completeAllOtherOperations() {
+      state.progress = { completed: state.missionList.map((entry) => entry.id).filter((id) => id !== state.mission.id) };
     },
     completeObjectives() {
       for (const objective of state.objectives) objective.complete = true;

@@ -21,8 +21,10 @@ import {
   brainEffect,
   buyIntoSlot,
   canBuy,
+  campaignEnding,
   captureItems,
   discoverItems,
+  markEnded,
   netCost,
   sellFromSlot,
   sellValue,
@@ -273,7 +275,7 @@ test("the campaign round-trips and damaged data is repaired or ignored", () => {
     },
     items: ["a"], loadouts: { op: ["x", "y"] }, achievements: [],
     roster: emptyCampaign().roster, squad: emptyCampaign().squad, permadeath: true,
-    hours: 0, territories: {}, research: { active: null, level: 4, progress: {}, discovered: [] }, intel: {},
+    hours: 0, territories: {}, research: { active: null, level: 4, progress: {}, discovered: [] }, intel: {}, ended: false,
   });
   assert.equal(parseCampaign(JSON.stringify({ loadouts: { o: Array(20).fill("kit") } })).loadouts.o.length, 8);
 });
@@ -503,4 +505,24 @@ test("enemy agents are fitted with the best of every part the living squad has",
     },
   };
   assert.deepEqual(enemyUpgrades(campaign), { legs: 2, arms: 3, chest: 1, heart: 0, eyes: 2, brain: 0 }, "the fallen do not count");
+});
+
+test("the campaign ends when every main mission is won, and the ending is only shown once", () => {
+  const ids = ["a", "b", "c"];
+  const campaign = {
+    ...emptyCampaign(),
+    hours: 24 * 40 + 5,
+    funds: 123.9,
+    roster: [{ id: "x", name: "X", alive: true }, { id: "y", name: "Y", alive: false }],
+    territories: { a: { status: "held" }, b: { status: "rebel" }, c: { status: "held" } },
+  };
+  assert.equal(campaignEnding(campaign, ["a", "b"], ids).won, false, "one still to go");
+  assert.equal(campaignEnding(campaign, [], []).won, false, "no missions is not a win");
+  const ending = campaignEnding(campaign, ["c", "b", "a"], ids);
+  assert.deepEqual(ending, { won: true, shown: false, days: 40, funds: 123, lost: 1, held: 2 });
+  const after = markEnded(campaign);
+  assert.equal(campaignEnding(after, ids, ids).shown, true);
+  assert.equal(markEnded(after), after);
+  assert.equal(parseCampaign(JSON.stringify(after)).ended, true);
+  assert.equal(parseCampaign(JSON.stringify(campaign)).ended, false);
 });

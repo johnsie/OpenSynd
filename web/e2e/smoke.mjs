@@ -559,6 +559,20 @@ for (const [name, type, executablePath] of targets) {
     assert.equal(await page.getByLabel("Field Operator 1 slot 4: Civic Pulse Emitter", { exact: false }).count(), 1);
 
 
+    // Winning the last of the 50 main missions ends the campaign, once.
+    const finale = await browser.newPage();
+    await finale.goto(`${url}?e2e`);
+    await finale.waitForSelector(".roster-select");
+    await finale.click("#begin-button");
+    await finale.evaluate(() => {
+      window.opensyndTest.completeAllOtherOperations();
+      window.opensyndTest.completeObjectives();
+    });
+    await finale.waitForSelector("#outcome-dialog[open]");
+    assert.match(await finale.locator("#outcome-heading").innerText(), /whole world is yours/);
+    assert.match(await finale.locator("#outcome-stats").innerText(), /Territories held\s+\d+ of 50/);
+    await finale.close();
+
     // Queued orders: walk a route, then pick up a body's gear (Shift+click), all in one sweep; Esc clears the queue.
     const queuePage = await browser.newPage();
     await queuePage.goto(`${url}?e2e`);

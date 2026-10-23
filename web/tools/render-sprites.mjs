@@ -107,17 +107,17 @@ const street = {
 };
 const bystanderJobs = [
   // Women: dark clothes, black tights (the trousers colour) and a short skirt.
-  ["civilian-woman-1", [255, 209, 159], [48, 30, 70], [150, 70, 170], [84, 82, 92],
-    { style: "woman", skirt: [70, 36, 96], top: [150, 70, 170], hair: [48, 30, 70], glow: [232, 107, 214] }],
-  ["civilian-woman-2", [196, 146, 104], [150, 56, 40], [34, 130, 140], [62, 60, 70],
-    { style: "woman", skirt: [24, 80, 96], top: [34, 130, 140], hair: [150, 56, 40], glow: [66, 214, 208] }],
-  // Men: cyberpunk street fashion in loud jackets and neon accents.
-  ["civilian-man-1", [233, 186, 140], [20, 16, 14], [74, 44, 118], [30, 32, 42],
-    { style: "man", collar: [58, 34, 94], crest: [232, 107, 214], glow: [232, 107, 214] }],
-  ["civilian-man-2", [156, 114, 72], [18, 18, 22], [22, 84, 96], [26, 30, 38],
-    { style: "man", collar: [18, 66, 76], crest: [66, 214, 208], glow: [66, 214, 208], headgear: "cap" }],
-  ["civilian-man-3", [255, 209, 159], [40, 30, 18], [110, 56, 38], [32, 30, 36],
-    { style: "man", collar: [84, 42, 30], crest: [245, 195, 90], glow: [245, 195, 90], headgear: "bare" }],
+  ["civilian-woman-1", [255, 209, 159], [40, 32, 44], [92, 72, 98], [84, 82, 92],
+    { style: "woman", skirt: [52, 44, 60], top: [92, 72, 98], hair: [40, 32, 44], glow: [120, 84, 120] }],
+  ["civilian-woman-2", [196, 146, 104], [88, 56, 44], [60, 92, 96], [62, 60, 70],
+    { style: "woman", skirt: [38, 52, 56], top: [60, 92, 96], hair: [88, 56, 44], glow: [80, 120, 120] }],
+  // Men: worn street clothes in dull, muted colours with a faint trim: a pressured world, not a bright one.
+  ["civilian-man-1", [233, 186, 140], [20, 16, 14], [66, 56, 76], [30, 32, 42],
+    { style: "man", collar: [52, 46, 62], crest: [110, 84, 120], glow: [110, 84, 120] }],
+  ["civilian-man-2", [156, 114, 72], [18, 18, 22], [48, 70, 72], [26, 30, 38],
+    { style: "man", collar: [40, 58, 60], crest: [70, 100, 100], glow: [70, 100, 100], headgear: "cap" }],
+  ["civilian-man-3", [255, 209, 159], [40, 30, 18], [96, 70, 56], [32, 30, 36],
+    { style: "man", collar: [78, 56, 44], crest: [150, 120, 70], glow: [150, 120, 70], headgear: "bare" }],
   // Police: navy armour, a visored helmet and a red and blue light bar.
   ["police-1", [233, 186, 140], [20, 16, 14], [22, 34, 64], [16, 20, 34],
     { style: "police", armour: [34, 48, 84], helmet: [24, 34, 60], glow: [74, 163, 255] }],
@@ -168,12 +168,12 @@ try {
   await page.waitForFunction(() => window.ready === true, null, { timeout: 30000 });
   await mkdir(output, { recursive: true });
   // ONLY=street renders just the civilians and police, leaving the existing sheets untouched.
-  const onlyStreet = ["street", "police", "hostile", "women"].includes(process.env.ONLY ?? "");
+  const onlyStreet = ["street", "police", "hostile", "women", "civilians"].includes(process.env.ONLY ?? "");
   let manifest = { source: "Quaternius Animated Human (CC0-1.0)", sheets: {} };
   if (onlyStreet) manifest = JSON.parse(await readFile(join(output, "sprites.json"), "utf8"));
   for (const { name, options } of jobs) {
     if (onlyStreet) {
-      const wanted = { police: ["police-"], hostile: ["guard-", "criminal-"], women: ["civilian-woman"] }[process.env.ONLY];
+      const wanted = { police: ["police-"], hostile: ["guard-", "criminal-"], women: ["civilian-woman"], civilians: ["civilian-"] }[process.env.ONLY];
       if (wanted ? !wanted.some((prefix) => name.startsWith(prefix)) : !isOnlyNew(name)) continue;
     }
     const result = await page.evaluate((job) => window.renderSheet(job), options);
