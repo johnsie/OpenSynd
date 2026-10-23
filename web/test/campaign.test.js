@@ -117,7 +117,7 @@ test("new items must be researched before they can be used, and research runs on
   assert.equal(canResearchItem(campaign, pulse, catalog), false, "a starting item needs no research");
   assert.equal(canResearchItem(campaign, stim, catalog), true);
   campaign = startResearch(campaign, stim, catalog, 10);
-  assert.deepEqual([campaign.research.active, campaign.research.level], ["stim", 10]);
+  assert.deepEqual([campaign.research.active, campaign.research.level], [[{ id: "stim", level: 10 }], 10]);
   assert.equal(campaign.funds, 100, "nothing is paid until time passes");
   const result = advanceCampaign(campaign, 6, catalog);
   assert.equal(result.campaign.hours, 6);
@@ -125,28 +125,45 @@ test("new items must be researched before they can be used, and research runs on
   assert.equal(result.campaign.research.progress.stim, 100, "eighteen percent an hour at the top level finishes in six hours");
   assert.deepEqual(result.events.filter((event) => event.type === "researched"), [{ type: "researched", itemId: "stim" }]);
   assert.deepEqual(result.campaign.items, ["stim"]);
-  assert.equal(result.campaign.research.active, null);
+  assert.deepEqual(result.campaign.research.active, []);
   assert.equal(isItemAvailable(result.campaign, stim), true);
   assert.equal(startResearch(result.campaign, stim, catalog), result.campaign, "already researched");
 });
 
-test("only one item is researched at a time; switching keeps the progress made", () => {
+test("several items are researched at once and pausing one keeps its progress", () => {
   let campaign = { ...emptyCampaign(), funds: 500 };
   const [, , heavy, stim] = catalog;
   campaign = startResearch(campaign, heavy, catalog, 5);
-  campaign = advanceCampaign(campaign, 4, catalog).campaign;
-  const progress = campaign.research.progress.heavy;
-  assert.ok(progress > 0 && progress < 100);
-  campaign = startResearch(campaign, stim, catalog, 5);
-  assert.equal(campaign.research.active, "stim");
+  campaign = startResearch(campaign, stim, catalog, 8);
+  assert.deepEqual(campaign.research.active.map((entry) => [entry.id, entry.level]), [["heavy", 5], ["stim", 8]]);
   campaign = advanceCampaign(campaign, 2, catalog).campaign;
-  assert.equal(campaign.research.progress.heavy, progress, "the suspended research is untouched");
-  campaign = startResearch(campaign, heavy, catalog, 5);
+  const heavyProgress = campaign.research.progress.heavy;
+  assert.ok(heavyProgress > 0 && campaign.research.progress.stim > 0, "both moved");
+  // Pausing one leaves the other going and keeps what was done.
+  campaign = suspendResearch(campaign, "heavy");
+  assert.deepEqual(campaign.research.active.map((entry) => entry.id), ["stim"]);
   campaign = advanceCampaign(campaign, 1, catalog).campaign;
-  assert.ok(campaign.research.progress.heavy > progress, "and picks up where it stopped");
-  assert.equal(suspendResearch(campaign).research.active, null);
+  assert.equal(campaign.research.progress.heavy, heavyProgress);
+  // Starting it again resumes; starting an active one again changes its level instead of adding it twice.
+  campaign = startResearch(campaign, heavy, catalog, 5);
+  campaign = startResearch(campaign, heavy, catalog, 9);
+  assert.equal(campaign.research.active.filter((entry) => entry.id === "heavy").length, 1);
+  assert.equal(campaign.research.active.find((entry) => entry.id === "heavy").level, 9);
+  campaign = advanceCampaign(campaign, 1, catalog).campaign;
+  assert.ok(campaign.research.progress.heavy > heavyProgress, "picks up where it stopped");
+  assert.deepEqual(suspendResearch(campaign).research.active, [], "no id pauses everything");
   assert.equal(setResearchLevel(campaign, 99).research.level, 10);
   assert.equal(setResearchLevel(campaign, 0).research.level, 1);
+  assert.equal(setResearchLevel(campaign, 3, "stim").research.active.find((entry) => entry.id === "stim").level, 3);
+  assert.equal(setResearchLevel(campaign, 3, "nope"), campaign, "an unknown research is left alone");
+});
+
+test("an old save with one research under way reads as a list", () => {
+  const old = parseCampaign(JSON.stringify({ research: { active: "stim", level: 6, progress: { stim: 20 } } }));
+  assert.deepEqual(old.research.active, [{ id: "stim", level: 6 }]);
+  const again = parseCampaign(JSON.stringify(old));
+  assert.deepEqual(again.research.active, old.research.active);
+  assert.deepEqual(parseCampaign(JSON.stringify({ research: { active: null } })).research.active, []);
 });
 
 test("research follows its chain: an item waits for the ones it builds on", () => {
@@ -156,7 +173,7 @@ test("research follows its chain: an item waits for the ones it builds on", () =
   assert.equal(startResearch(campaign, chain[1], chain), campaign);
   campaign = { ...campaign, items: ["base"] };
   assert.deepEqual(researchBlockers(campaign, chain[1], chain), []);
-  assert.equal(startResearch(campaign, chain[1], chain).research.active, "next");
+  assert.deepEqual(startResearch(campaign, chain[1], chain).research.active.map((entry) => entry.id), ["next"]);
 });
 
 test("bringing home the item being researched boosts it by a quarter, once", () => {
@@ -164,7 +181,7 @@ test("bringing home the item being researched boosts it by a quarter, once", () 
   const found = discoverItems(campaign, ["stim"], catalog);
   assert.deepEqual(found.events, [{ type: "discovered", itemId: "stim", finished: false }]);
   assert.equal(found.campaign.research.progress.stim, 25);
-  assert.equal(found.campaign.research.active, "stim");
+  assert.deepEqual(found.campaign.research.active.map((entry) => entry.id), ["stim"]);
   assert.deepEqual(found.campaign.items, [], "not unlocked yet");
   const again = discoverItems(found.campaign, ["stim"], catalog);
   assert.deepEqual(again.events, [], "an item boosts its research only once");
@@ -176,7 +193,7 @@ test("bringing home the item being researched boosts it by a quarter, once", () 
   const done = discoverItems(campaign, ["stim"], catalog);
   assert.deepEqual(done.events, [{ type: "discovered", itemId: "stim", finished: true }]);
   assert.deepEqual(done.campaign.items, ["stim"]);
-  assert.equal(done.campaign.research.active, null);
+  assert.deepEqual(done.campaign.research.active, []);
 });
 
 test("every 24 hours a day passes: tax is collected from held territories and moods move", () => {
@@ -275,7 +292,7 @@ test("the campaign round-trips and damaged data is repaired or ignored", () => {
     },
     items: ["a"], loadouts: { op: ["x", "y"] }, achievements: [],
     roster: emptyCampaign().roster, squad: emptyCampaign().squad, permadeath: true,
-    hours: 0, territories: {}, research: { active: null, level: 4, progress: {}, discovered: [] }, intel: {}, ended: false,
+    hours: 0, territories: {}, research: { active: [], level: 4, progress: {}, discovered: [] }, intel: {}, ended: false,
   });
   assert.equal(parseCampaign(JSON.stringify({ loadouts: { o: Array(20).fill("kit") } })).loadouts.o.length, 8);
 });

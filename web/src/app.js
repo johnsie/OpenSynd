@@ -827,7 +827,7 @@ function renderResearch() {
       if (researching) {
         const blockers = researchBlockers(campaign, item, state.catalog);
         const percent = Math.round(campaign.research.progress[item.id] ?? 0);
-        const active = campaign.research.active === item.id;
+        const active = campaign.research.active.some((entry) => entry.id === item.id);
         if (percent > 0) {
           const bar = document.createElement("progress");
           bar.max = 100;
@@ -845,7 +845,7 @@ function renderResearch() {
           button.textContent = "Researching · pause";
           button.setAttribute("aria-label", `Pause research on ${item.name}`);
           button.addEventListener("click", () => {
-            state.campaign = suspendResearch(state.campaign);
+            state.campaign = suspendResearch(state.campaign, item.id);
             persistCampaign();
             renderResearch();
           });
@@ -873,42 +873,50 @@ function renderResearch() {
   renderArmoury();
 }
 
-// The funding dial for the research under way: ten levels, each faster and dearer, with the projected finish.
+// The funding dials for the research under way: several can run at once, each with ten levels (faster and dearer) and its
+// own projected finish.
 function renderResearchDial() {
   const dial = document.querySelector("#research-dial");
-  const { active, level, progress } = state.campaign.research;
-  const item = state.catalog.find((entry) => entry.id === active);
-  if (!item) {
-    dial.textContent = "Nothing is being researched. Choose an item below; it runs while operations are under way.";
+  const { active, progress } = state.campaign.research;
+  const rows = active
+    .map((entry) => ({ entry, item: state.catalog.find((candidate) => candidate.id === entry.id) }))
+    .filter(({ item }) => item);
+  if (rows.length === 0) {
+    dial.textContent =
+      "Nothing is being researched. Choose items below (several at once if you like); it runs while operations are under way.";
     return;
   }
-  const row = document.createElement("div");
-  row.className = "dial-row";
-  const label = document.createElement("label");
-  label.textContent = `Funding for ${item.name}: level `;
-  const range = document.createElement("input");
-  range.type = "range";
-  range.min = "1";
-  range.max = String(RESEARCH_LEVELS);
-  range.value = String(level);
-  range.setAttribute("aria-label", `Research funding level, 1 to ${RESEARCH_LEVELS}`);
-  const summary = document.createElement("span");
-  const describe = (chosen) => {
-    const hours = researchHoursLeft(progress[item.id] ?? 0, chosen);
-    summary.textContent =
-      ` ${chosen} · ${RESEARCH_RATES[chosen - 1]}% an hour · ${researchHourlyCost(item, chosen).toFixed(1)} funds an hour · ` +
-      `about ${hours} game hours (${(hours / 24).toFixed(1)} days) to go`;
-  };
-  describe(level);
-  range.addEventListener("input", () => describe(Number(range.value)));
-  range.addEventListener("change", () => {
-    state.campaign = setResearchLevel(state.campaign, Number(range.value));
-    persistCampaign();
-    renderResearch();
-  });
-  label.append(range);
-  row.append(label, summary);
-  dial.replaceChildren(row);
+  dial.replaceChildren(
+    ...rows.map(({ entry, item }) => {
+      const row = document.createElement("div");
+      row.className = "dial-row";
+      const label = document.createElement("label");
+      label.textContent = `Funding for ${item.name}: level `;
+      const range = document.createElement("input");
+      range.type = "range";
+      range.min = "1";
+      range.max = String(RESEARCH_LEVELS);
+      range.value = String(entry.level);
+      range.setAttribute("aria-label", `Research funding level for ${item.name}, 1 to ${RESEARCH_LEVELS}`);
+      const summary = document.createElement("span");
+      const describe = (chosen) => {
+        const hours = researchHoursLeft(progress[item.id] ?? 0, chosen);
+        summary.textContent =
+          ` ${chosen} · ${RESEARCH_RATES[chosen - 1]}% an hour · ${researchHourlyCost(item, chosen).toFixed(1)} funds an hour · ` +
+          `about ${hours} game hours (${(hours / 24).toFixed(1)} days) to go`;
+      };
+      describe(entry.level);
+      range.addEventListener("input", () => describe(Number(range.value)));
+      range.addEventListener("change", () => {
+        state.campaign = setResearchLevel(state.campaign, Number(range.value), item.id);
+        persistCampaign();
+        renderResearch();
+      });
+      label.append(range);
+      row.append(label, summary);
+      return row;
+    }),
+  );
 }
 
 // The roster: who is alive, who deploys (up to four), and hiring a replacement. Fallen operatives are listed as lost.

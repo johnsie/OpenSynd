@@ -125,24 +125,44 @@ export function missingRequirements(item, researchedIds, catalog) {
   });
 }
 
+/** The most items that can be researched at once. */
+export const MAX_ACTIVE_RESEARCH = 6;
+
+/** What is being researched as a list of { id, level } (older saves held a single id and one level). */
+export function activeResearch(research) {
+  if (Array.isArray(research.active)) return research.active;
+  return typeof research.active === "string" ? [{ id: research.active, level: research.level }] : [];
+}
+
 /**
- * One game hour of research. Only the chosen item moves; if funds fall short the progress made is in proportion to
- * what could be paid. Returns the new research record, the funds left, and the item finished this hour, if any.
+ * One game hour of research. Everything under way moves along at once (FreeSynd lets several researches run together), each
+ * at its own funding level, paid from the funds in the order they were started; if funds fall short the progress made is in
+ * proportion to what could be paid. Returns the new research record, the funds left, and the ids finished this hour.
  */
 export function researchHour(research, funds, catalog) {
-  const item = catalog.find((entry) => entry.id === research.active);
-  if (!item) return { research, funds, finished: null };
-  const level = Math.min(RESEARCH_LEVELS, Math.max(1, research.level));
-  const cost = researchHourlyCost(item, level);
-  const affordable = cost <= 0 ? 1 : Math.min(1, funds / cost);
-  if (affordable <= 0) return { research, funds, finished: null };
-  const progress = Math.min(100, (research.progress[item.id] ?? 0) + RESEARCH_RATES[level - 1] * affordable);
-  const spent = cost * affordable;
-  const finished = progress >= 100 - 1e-9 ? item.id : null;
-  const next = {
-    ...research,
-    active: finished ? null : research.active,
-    progress: { ...research.progress, [item.id]: finished ? 100 : Math.round(progress * 1000) / 1000 },
-  };
-  return { research: next, funds: Math.max(0, Math.round((funds - spent) * 1000) / 1000), finished };
+  let money = funds;
+  const progress = { ...research.progress };
+  const finished = [];
+  const active = [];
+  for (const entry of activeResearch(research)) {
+    const item = catalog.find((candidate) => candidate.id === entry.id);
+    if (!item) continue;
+    const level = Math.min(RESEARCH_LEVELS, Math.max(1, entry.level));
+    const cost = researchHourlyCost(item, level);
+    const affordable = cost <= 0 ? 1 : Math.min(1, money / cost);
+    if (affordable <= 0) {
+      active.push(entry);
+      continue;
+    }
+    const reached = Math.min(100, (progress[item.id] ?? 0) + RESEARCH_RATES[level - 1] * affordable);
+    money -= cost * affordable;
+    if (reached >= 100 - 1e-9) {
+      progress[item.id] = 100;
+      finished.push(item.id);
+    } else {
+      progress[item.id] = Math.round(reached * 1000) / 1000;
+      active.push(entry);
+    }
+  }
+  return { research: { ...research, active, progress }, funds: Math.max(0, Math.round(money * 1000) / 1000), finished };
 }

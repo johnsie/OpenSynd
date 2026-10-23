@@ -73,6 +73,78 @@ export function addItem(mission, group, { kind, stem, position, equipment = [], 
   return next;
 }
 
+const find = (mission, group, id) => (mission[group] ?? []).find((entry) => entry.id === id);
+
+/** Add a waypoint to a placement's patrol route (the route starts from where it stands). */
+export function addPatrolPoint(mission, group, id, point) {
+  if (!find(mission, group, id)) return mission;
+  const next = clone(mission);
+  const item = find(next, group, id);
+  const at = { x: Math.round(point.x), y: Math.round(point.y) };
+  item.patrol = [...(item.patrol ?? []), at];
+  return next;
+}
+
+/** Take a placement's patrol route away. */
+export function clearPatrol(mission, group, id) {
+  if (!find(mission, group, id)?.patrol) return mission;
+  const next = clone(mission);
+  delete find(next, group, id).patrol;
+  return next;
+}
+
+const SCRIPT_TYPES = ["walk", "wait", "trigger", "escape", "say"];
+const isPoint = (value) => Number.isInteger(value?.x) && Number.isInteger(value?.y);
+
+/**
+ * Read script text typed into the editor: a JSON list of steps (walk and escape need `to`, wait needs `seconds`,
+ * trigger needs `at` and may have `radius`, say needs `text`). Returns { steps } or { error } in plain words.
+ */
+export function parseScript(text) {
+  if (text.trim() === "") return { steps: [] };
+  let value;
+  try {
+    value = JSON.parse(text);
+  } catch {
+    return { error: "That is not valid JSON: check the commas and quotes." };
+  }
+  if (!Array.isArray(value)) return { error: "A script is a list of steps, written between [ and ]." };
+  if (value.length > 40) return { error: "A script can have at most 40 steps." };
+  for (const [index, step] of value.entries()) {
+    const label = `Step ${index + 1}`;
+    if (step === null || typeof step !== "object" || !SCRIPT_TYPES.includes(step.type)) {
+      return { error: `${label} needs a type: ${SCRIPT_TYPES.join(", ")}.` };
+    }
+    if ((step.type === "walk" || step.type === "escape") && !isPoint(step.to)) {
+      return { error: `${label} (${step.type}) needs "to": {"x": 1, "y": 2}.` };
+    }
+    if (step.type === "wait" && !(step.seconds > 0 && step.seconds <= 600)) {
+      return { error: `${label} (wait) needs "seconds" between 0 and 600.` };
+    }
+    if (step.type === "trigger" && !isPoint(step.at)) return { error: `${label} (trigger) needs "at": {"x": 1, "y": 2}.` };
+    if (step.type === "trigger" && step.radius !== undefined && !(step.radius > 0 && step.radius <= 60)) {
+      return { error: `${label} (trigger) has a radius outside 0 to 60.` };
+    }
+    if (step.type === "say" && !(typeof step.text === "string" && step.text.length > 0 && step.text.length <= 200)) {
+      return { error: `${label} (say) needs "text" of up to 200 characters.` };
+    }
+    const allowed = { walk: ["to"], escape: ["to"], wait: ["seconds"], trigger: ["at", "radius"], say: ["text"] }[step.type];
+    const extra = Object.keys(step).filter((key) => key !== "type" && !allowed.includes(key));
+    if (extra.length > 0) return { error: `${label} has "${extra[0]}", which a ${step.type} step does not use.` };
+  }
+  return { steps: value };
+}
+
+/** Give a unit placement a script (an empty list removes it). */
+export function setScript(mission, group, id, steps) {
+  if (!find(mission, group, id) || group === "vehicles") return mission;
+  const next = clone(mission);
+  const item = find(next, group, id);
+  if (steps.length === 0) delete item.script;
+  else item.script = clone(steps);
+  return next;
+}
+
 /** Change an objective's text or whether it is required. */
 export function editObjective(mission, id, changes) {
   const next = clone(mission);

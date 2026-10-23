@@ -491,6 +491,11 @@ for (const [name, type, executablePath] of targets) {
     await page.getByRole("button", { name: /^Research Scanner/ }).click();
     assert.match(await page.locator("#research-dial").innerText(), /Funding for Scanner/);
     assert.equal(await page.getByRole("button", { name: /^Research Rotary Cannon/ }).count(), 0, "needs the machine pistol first");
+    // Several researches run at once: a second one joins the first, each with its own funding dial.
+    await page.getByRole("button", { name: /^Research Delay Charge/ }).click();
+    assert.equal(await page.locator("#research-dial .dial-row").count(), 2);
+    await page.getByRole("button", { name: "Pause research on Delay Charge" }).click();
+    assert.equal(await page.locator("#research-dial .dial-row").count(), 1);
     await page.evaluate(() => window.opensyndTest.advanceHours(70));
     assert.match(await page.locator("#research-items").innerText(), /Scanner\s+RESEARCHED/);
     const base = await labFunds();
@@ -797,6 +802,21 @@ for (const [name, type, executablePath] of targets) {
     const editorBox = await editorPage.locator("#editor-canvas").boundingBox();
     await editorPage.mouse.click(editorBox.x + editorBox.width * 0.3, editorBox.y + editorBox.height * 0.45);
     assert.match(await editorPage.locator("#editor-hint").innerText(), /^Added at \d+, \d+\./);
+    // Route and script: choose the new guard, add a route point, then give it a script (and get told when it is wrong).
+    await editorPage.getByLabel("Edit route and script").check();
+    await editorPage.mouse.click(editorBox.x + editorBox.width * 0.3, editorBox.y + editorBox.height * 0.45);
+    assert.equal(await editorPage.locator("#route-editor").isVisible(), true);
+    assert.match(await editorPage.locator("#route-title").innerText(), /guard-\d+: 0 route points/);
+    await editorPage.mouse.click(editorBox.x + editorBox.width * 0.3, editorBox.y + editorBox.height * 0.5);
+    assert.match(await editorPage.locator("#route-title").innerText(), /1 route points/);
+    await editorPage.locator("#script-text").fill("[oops");
+    await editorPage.click("#script-apply");
+    assert.match(await editorPage.locator("#script-message").innerText(), /not valid JSON/);
+    await editorPage.locator("#script-text").fill('[{"type":"wait","seconds":4}]');
+    await editorPage.click("#script-apply");
+    assert.match(await editorPage.locator("#script-message").innerText(), /Script of 1 steps saved/);
+    await editorPage.click("#route-clear");
+    assert.match(await editorPage.locator("#route-title").innerText(), /0 route points/);
     await editorPage.close();
 
     // Permadeath and recruiting: a fallen operative is lost after a win, and a persuaded enemy agent joins.

@@ -27,6 +27,16 @@
           <legend>Tool</legend>
           <div id="tool-list" class="tool-list"></div>
         </fieldset>
+        <section id="route-editor" aria-label="Route and script" hidden>
+          <h2 id="route-title">Route</h2>
+          <button id="route-clear" type="button">Clear the route</button>
+          <label>Script (a list of steps: walk, wait, trigger, say, escape)
+            <textarea id="script-text" rows="8" spellcheck="false"
+              placeholder='[{"type": "walk", "to": {"x": 10, "y": 10}}, {"type": "wait", "seconds": 5}]'></textarea>
+          </label>
+          <button id="script-apply" type="button">Apply the script</button>
+          <p id="script-message" class="hint" role="status"></p>
+        </section>
         <section aria-label="Objectives">
           <h2>Objectives</h2>
           <div id="objective-editor"></div>

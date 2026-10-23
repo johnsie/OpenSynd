@@ -3,12 +3,16 @@
 import { createTileGrid } from "./engine.js";
 import {
   addItem,
+  addPatrolPoint,
+  clearPatrol,
   editObjective,
   exportMission,
   moveItem,
+  parseScript,
   pickPlacement,
   placements,
   removeItem,
+  setScript,
   validateDraft,
 } from "./editor-core.js";
 
@@ -21,6 +25,7 @@ const hint = document.querySelector("#editor-hint");
 const TOOLS = [
   { id: "move", label: "Move or select" },
   { id: "delete", label: "Delete" },
+  { id: "route", label: "Edit route and script" },
   { id: "enemy", label: "Add enemy agent", group: "opponents", kind: "units/enemy-agent.unit.json", stem: "enemy-agent" },
   { id: "guard", label: "Add guard", group: "opponents", kind: "units/guard.unit.json", stem: "guard" },
   { id: "criminal", label: "Add criminal", group: "bystanders", kind: "units/criminal.unit.json", stem: "criminal" },
@@ -38,7 +43,7 @@ const TOOLS = [
 ];
 const COLOURS = { team: "#42d6d0", opponents: "#ff6b62", bystanders: "#8d9aa3", vehicles: "#e1b35a" };
 
-const editor = { pack: null, mission: null, map: null, grid: null, tool: "move", holding: null, scale: 1 };
+const editor = { pack: null, mission: null, map: null, grid: null, tool: "move", holding: null, scale: 1, chosen: null };
 
 async function readJson(path) {
   const response = await fetch(path);
@@ -64,6 +69,7 @@ function change(next) {
 function refresh() {
   draw();
   renderObjectives();
+  renderRoute();
   const problems = validateDraft(editor.mission, editor.map);
   const list = document.querySelector("#problem-list");
   list.replaceChildren(
@@ -112,6 +118,23 @@ function draw() {
       context.lineWidth = 2;
       context.stroke();
     }
+    const route = entry.item.patrol ?? [];
+    if (route.length > 0) {
+      context.strokeStyle = "rgba(66, 214, 208, 0.7)";
+      context.lineWidth = 1.5;
+      context.beginPath();
+      context.moveTo((entry.position.x + 0.5) * scale, (entry.position.y + 0.5) * scale);
+      for (const point of route) context.lineTo((point.x + 0.5) * scale, (point.y + 0.5) * scale);
+      context.stroke();
+      for (const point of route) context.fillRect((point.x + 0.5) * scale - 2, (point.y + 0.5) * scale - 2, 4, 4);
+    }
+    if (editor.chosen && editor.chosen.id === entry.id) {
+      context.strokeStyle = "#fff";
+      context.lineWidth = 2;
+      context.beginPath();
+      context.arc((entry.position.x + 0.5) * scale, (entry.position.y + 0.5) * scale, 9, 0, Math.PI * 2);
+      context.stroke();
+    }
     for (const step of entry.item.script ?? []) {
       const point = step.to ?? step.at;
       if (!point) continue;
@@ -147,6 +170,19 @@ function renderObjectives() {
   );
 }
 
+// The route and script box for the placement picked with the "Edit route and script" tool.
+function renderRoute() {
+  const panel = document.querySelector("#route-editor");
+  const chosen = editor.chosen && placements(editor.mission).find((entry) => entry.id === editor.chosen.id);
+  panel.hidden = !chosen;
+  if (!chosen) return;
+  document.querySelector("#route-title").textContent = `${chosen.id}: ${(chosen.item.patrol ?? []).length} route points`;
+  const box = document.querySelector("#script-text");
+  if (document.activeElement !== box) box.value = chosen.item.script ? JSON.stringify(chosen.item.script, null, 1) : "";
+  box.disabled = chosen.group === "vehicles";
+  document.querySelector("#script-apply").disabled = chosen.group === "vehicles";
+}
+
 function tilePoint(event) {
   const bounds = canvas.getBoundingClientRect();
   const x = ((event.clientX - bounds.left) / bounds.width) * canvas.width;
@@ -170,6 +206,19 @@ canvas.addEventListener("click", (event) => {
       hint.textContent = found ? `Holding ${found.id}: click where it should go.` : "Nobody there.";
       draw();
     }
+  } else if (tool.id === "route") {
+    // Click a placement to choose it, then click the ground to add route points.
+    const found = pickPlacement(editor.mission, point);
+    if (found) {
+      editor.chosen = { group: found.group, id: found.id };
+      hint.textContent = `Chosen ${found.id}: click the ground to add a route point, or edit its script on the right.`;
+      refresh();
+    } else if (editor.chosen) {
+      change(addPatrolPoint(editor.mission, editor.chosen.group, editor.chosen.id, point));
+      hint.textContent = `Route point added at ${point.x}, ${point.y}.`;
+    } else {
+      hint.textContent = "Click someone first.";
+    }
   } else if (tool.id === "delete") {
     const found = pickPlacement(editor.mission, point);
     if (found) change(removeItem(editor.mission, found.group, found.id));
@@ -177,6 +226,22 @@ canvas.addEventListener("click", (event) => {
     change(addItem(editor.mission, tool.group, { kind: tool.kind, stem: tool.stem, position: point, driver: tool.driver }));
     hint.textContent = `Added at ${point.x}, ${point.y}.`;
   }
+});
+
+document.querySelector("#route-clear").addEventListener("click", () => {
+  if (editor.chosen) change(clearPatrol(editor.mission, editor.chosen.group, editor.chosen.id));
+});
+document.querySelector("#script-apply").addEventListener("click", () => {
+  if (!editor.chosen) return;
+  const result = parseScript(document.querySelector("#script-text").value);
+  const message = document.querySelector("#script-message");
+  if (result.error) {
+    message.textContent = result.error;
+    return;
+  }
+  message.textContent = result.steps.length === 0 ? "Script removed." : `Script of ${result.steps.length} steps saved.`;
+  change(setScript(editor.mission, editor.chosen.group, editor.chosen.id, result.steps));
+  renderRoute();
 });
 
 document.querySelector("#export-button").addEventListener("click", () => {
@@ -200,6 +265,7 @@ for (const tool of TOOLS) {
   radio.addEventListener("change", () => {
     editor.tool = tool.id;
     editor.holding = null;
+    if (tool.id !== "route") editor.chosen = null;
     hint.textContent = tool.id === "move" ? "Click someone to pick them up, then click where they should go." : tool.label;
   });
   label.append(radio, tool.label);

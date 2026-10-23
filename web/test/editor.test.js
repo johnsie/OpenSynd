@@ -112,3 +112,42 @@ test("objectives can be reworded and made optional, and a mission exports as JSO
   assert.ok(text.endsWith("}\n"));
   assert.deepEqual(JSON.parse(text), edited);
 });
+
+import { addPatrolPoint, clearPatrol, parseScript, setScript } from "../src/editor-core.js";
+
+test("route points are added after the placement's own and can be cleared", async () => {
+  const { mission } = await draft();
+  const before = JSON.stringify(mission);
+  const guard = mission.opponents.find((unit) => unit.id.startsWith("guard"));
+  const start = (guard.patrol ?? []).length;
+  const longer = addPatrolPoint(mission, "opponents", guard.id, { x: 30.4, y: 40.6 });
+  assert.equal(longer.opponents.find((unit) => unit.id === guard.id).patrol.length, start + 1);
+  assert.deepEqual(longer.opponents.find((unit) => unit.id === guard.id).patrol.at(-1), { x: 30, y: 41 });
+  assert.equal(JSON.stringify(mission), before, "the old mission is untouched");
+  assert.equal(addPatrolPoint(mission, "opponents", "nobody", { x: 1, y: 1 }), mission);
+  const cleared = clearPatrol(longer, "opponents", guard.id);
+  assert.equal(cleared.opponents.find((unit) => unit.id === guard.id).patrol, undefined);
+  assert.equal(clearPatrol(cleared, "opponents", guard.id), cleared, "nothing to clear");
+});
+
+test("a typed script is checked and explained, and sets or removes a unit's script", async () => {
+  const good = '[{"type":"walk","to":{"x":3,"y":4}},{"type":"wait","seconds":5},{"type":"say","text":"Hello."},' +
+    '{"type":"trigger","at":{"x":1,"y":2},"radius":4},{"type":"escape","to":{"x":9,"y":9}}]';
+  assert.equal(parseScript(good).steps.length, 5);
+  assert.deepEqual(parseScript("  ").steps, []);
+  assert.match(parseScript("[{").error, /not valid JSON/);
+  assert.match(parseScript("{}").error, /list of steps/);
+  assert.match(parseScript('[{"type":"dance"}]').error, /Step 1 needs a type/);
+  assert.match(parseScript('[{"type":"walk"}]').error, /needs "to"/);
+  assert.match(parseScript('[{"type":"wait","seconds":0}]').error, /seconds/);
+  assert.match(parseScript('[{"type":"trigger","at":{"x":1,"y":2},"radius":99}]').error, /radius/);
+  assert.match(parseScript('[{"type":"say","text":""}]').error, /text/);
+  assert.match(parseScript('[{"type":"wait","seconds":3,"to":{"x":1,"y":1}}]').error, /does not use/);
+
+  const { mission } = await draft();
+  const person = mission.bystanders[0];
+  const scripted = setScript(mission, "bystanders", person.id, parseScript(good).steps);
+  assert.equal(scripted.bystanders[0].script.length, 5);
+  assert.equal(setScript(scripted, "bystanders", person.id, []).bystanders[0].script, undefined);
+  assert.equal(setScript(mission, "vehicles", mission.vehicles[0]?.id ?? "x", parseScript(good).steps), mission, "vehicles take no script");
+});

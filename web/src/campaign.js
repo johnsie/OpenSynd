@@ -5,6 +5,7 @@
 // operative's loadout of up to eight items.
 import {
   HOURS_PER_DAY,
+  MAX_ACTIVE_RESEARCH,
   RESEARCH_LEVELS,
   advanceTerritoryDay,
   holdTerritory,
@@ -67,7 +68,7 @@ export function emptyCampaign() {
     permadeath: true,
     hours: 0,
     territories: {},
-    research: { active: null, level: 4, progress: {}, discovered: [] },
+    research: { active: [], level: 4, progress: {}, discovered: [] },
     intel: {},
     ended: false,
   };
@@ -153,7 +154,20 @@ function parseResearch(value) {
     }
   }
   const level = Number.isInteger(value?.level) ? Math.min(RESEARCH_LEVELS, Math.max(1, value.level)) : 4;
-  const active = typeof value?.active === "string" && value.active.length < 120 ? value.active : null;
+  const clean = (id, entryLevel) => ({
+    id,
+    level: Number.isInteger(entryLevel) ? Math.min(RESEARCH_LEVELS, Math.max(1, entryLevel)) : level,
+  });
+  let active = [];
+  if (Array.isArray(value?.active)) {
+    active = value.active
+      .filter((entry) => typeof entry?.id === "string" && entry.id.length < 120)
+      .map((entry) => clean(entry.id, entry.level))
+      .filter((entry, index, all) => all.findIndex((other) => other.id === entry.id) === index)
+      .slice(0, MAX_ACTIVE_RESEARCH);
+  } else if (typeof value?.active === "string" && value.active.length < 120) {
+    active = [clean(value.active, level)]; // older saves researched one item at a time
+  }
   const discovered = Array.isArray(value?.discovered)
     ? [...new Set(value.discovered.filter((id) => typeof id === "string" && id.length < 120))].slice(0, 200)
     : [];
@@ -304,7 +318,7 @@ export function isItemAvailable(campaign, item) {
 }
 
 // Research is not a purchase: pick an item and a funding level, and it runs on game time (see strategy.js), paid for
-// by the hour. Only one item is researched at a time; choosing another suspends the first with its progress kept.
+// by the hour. Several items can be researched at once (up to MAX_ACTIVE_RESEARCH), each at its own funding level.
 export function researchBlockers(campaign, item, catalog) {
   return missingRequirements(item, campaign.items, catalog);
 }
@@ -316,16 +330,30 @@ export function canResearchItem(campaign, item, catalog = []) {
 export function startResearch(campaign, item, catalog = [], level = campaign.research.level) {
   if (!canResearchItem(campaign, item, catalog)) return campaign;
   const chosen = Math.min(RESEARCH_LEVELS, Math.max(1, level));
-  return { ...campaign, research: { ...campaign.research, active: item.id, level: chosen } };
+  const active = campaign.research.active;
+  const existing = active.find((entry) => entry.id === item.id);
+  if (!existing && active.length >= MAX_ACTIVE_RESEARCH) return campaign;
+  const next = existing
+    ? active.map((entry) => (entry.id === item.id ? { ...entry, level: chosen } : entry))
+    : [...active, { id: item.id, level: chosen }];
+  return { ...campaign, research: { ...campaign.research, active: next, level: chosen } };
 }
 
-export function setResearchLevel(campaign, level) {
+/** Set the funding level of one research under way (by id), or the level new research starts at (no id). */
+export function setResearchLevel(campaign, level, id = null) {
   const chosen = Math.min(RESEARCH_LEVELS, Math.max(1, Math.round(level)));
-  return chosen === campaign.research.level ? campaign : { ...campaign, research: { ...campaign.research, level: chosen } };
+  if (id === null) {
+    return chosen === campaign.research.level ? campaign : { ...campaign, research: { ...campaign.research, level: chosen } };
+  }
+  if (!campaign.research.active.some((entry) => entry.id === id)) return campaign;
+  const active = campaign.research.active.map((entry) => (entry.id === id ? { ...entry, level: chosen } : entry));
+  return { ...campaign, research: { ...campaign.research, active, level: chosen } };
 }
 
-export function suspendResearch(campaign) {
-  return campaign.research.active === null ? campaign : { ...campaign, research: { ...campaign.research, active: null } };
+/** Pause one research (its progress is kept), or all of them with no id. */
+export function suspendResearch(campaign, id = null) {
+  const active = id === null ? [] : campaign.research.active.filter((entry) => entry.id !== id);
+  return active.length === campaign.research.active.length ? campaign : { ...campaign, research: { ...campaign.research, active } };
 }
 
 // Territories: one per operation, created when the operations are known.
@@ -369,9 +397,9 @@ export function advanceCampaign(campaign, hours, catalog) {
     research = done.research;
     funds = done.funds;
     let items = next.items;
-    if (done.finished) {
-      items = [...items, done.finished];
-      events.push({ type: "researched", itemId: done.finished });
+    for (const itemId of done.finished) {
+      items = [...items, itemId];
+      events.push({ type: "researched", itemId });
     }
     let territories = next.territories;
     if (hour % HOURS_PER_DAY === 0) {
@@ -451,7 +479,9 @@ export function discoverItems(campaign, itemIds, catalog) {
   for (const id of itemIds) {
     const item = catalog.find((entry) => entry.id === id);
     const research = next.research;
-    if (!item || isItemAvailable(next, item) || research.active !== id || research.discovered.includes(id)) continue;
+    if (!item || isItemAvailable(next, item) || !research.active.some((entry) => entry.id === id) || research.discovered.includes(id)) {
+      continue;
+    }
     const progress = Math.min(100, (research.progress[id] ?? 0) + DISCOVERY_BOOST);
     const finished = progress >= 100 - 1e-9;
     next = {
@@ -459,7 +489,7 @@ export function discoverItems(campaign, itemIds, catalog) {
       items: finished ? [...next.items, id] : next.items,
       research: {
         ...research,
-        active: finished ? null : id,
+        active: finished ? research.active.filter((entry) => entry.id !== id) : research.active,
         progress: { ...research.progress, [id]: finished ? 100 : progress },
         discovered: [...research.discovered, id],
       },
