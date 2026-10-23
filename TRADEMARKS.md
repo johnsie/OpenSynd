@@ -2,9 +2,9 @@
 
 # OpenSynd Name and Marks
 
-OpenSynd is a working project name. It has not yet completed formal trademark
-clearance. Do not imply that the name is registered or cleared for commercial
-release.
+OpenSynd is the project's final name, decided by the project owner. It has not
+completed formal trademark clearance, and it is not registered. Do not imply that
+the name is registered or cleared for commercial release.
 
 The project is independent and is not affiliated with, endorsed by, or
 sponsored by the creators, publishers, or rightsholders of *Syndicate*.

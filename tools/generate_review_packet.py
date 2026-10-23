@@ -62,8 +62,9 @@ def render() -> str:
         "separate audio file?",
         "2. **Licence expression.** The inherited FreeSynd tree is audited as GPL-2.0-or-later; the web code is new work under the same "
         "terms. Is any inherited file GPL-2.0-only? (`docs/legal/IP_AUDIT.md`, \"Open questions\".)",
-        "3. **Name.** \"OpenSynd\" is a working name. Do the trademark register searches and a confusion analysis against *Syndicate* "
-        "and FreeSynd clear it for the intended markets? (`TRADEMARKS.md`.)",
+        "3. **Name.** \"OpenSynd\" is the final name (the project owner's decision). No formal trademark search has been done and the "
+        "project claims the name is neither registered nor cleared. Is that posture acceptable for a free hobby game, and what would a "
+        "search against *Syndicate* and FreeSynd be needed for? (`TRADEMARKS.md`.)",
         "4. **Fan-game posture.** The game takes rules and values from the FreeSynd source (GPL) but no art, sound, text or maps from "
         "the original game. Is the public statement of that in the README and About box sufficient?",
         "5. **Unresolved source files** (not part of the web build): see section 3.",

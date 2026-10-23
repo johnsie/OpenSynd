@@ -23,7 +23,7 @@ treated as a blocker rather than assumed permission.
 | `data/ref` | Encodes compatibility data for the original game, including expected-file checksums. | Excluded from OpenSynd | Define new schemas and independently authored data. Do not ship original-data validation in the web client. |
 | `data/music`, cursor, and icons | No reliable license or authorship metadata was found in the repository files inspected. | Quarantine | Find documentary provenance or replace with original assets. |
 | Original-data loaders | Runtime configuration and engine code explicitly load and validate the original game's `DATA` files. | Legacy-only | Keep outside the OpenSynd build; document behaviour, then replace with open formats. |
-| Name `OpenSynd` | An initial exact-name general web search found no obvious collision. | Provisional | Complete register searches and legal confusion analysis before public branding. |
+| Name `OpenSynd` | An initial exact-name general web search found no obvious collision. | Final name (owner's decision); not cleared | Complete register searches and legal confusion analysis if the project ever goes beyond a hobby; until then make no claim of registration or clearance. |
 
 The automated source audit recognizes explicit GPL-2.0-or-later SPDX notices,
 the legacy GPL v2-or-later boilerplate, MIT notices, and the Boost Software
@@ -67,7 +67,7 @@ material; it controls whether that material may enter an OpenSynd artifact.
 - No quarantined or excluded file may enter an OpenSynd web artifact.
 - The legacy license expression must be resolved before derived web code is
   publicly released.
-- OpenSynd naming clearance must be completed before final branding.
+- OpenSynd is the final name; make no claim that it is registered or cleared, and do the formal search if the project goes commercial.
 - The first public release requires review by a qualified IP lawyer.
 
 ## Decision log
@@ -75,7 +75,7 @@ material; it controls whether that material may enter an OpenSynd artifact.
 | Date | Decision | Evidence | Reviewer |
 | --- | --- | --- | --- |
 | 2026-10-22 | Treat all existing non-code assets as quarantined or excluded until provenance is established. | Repository inspection; no per-asset metadata found. | Pending maintainer review |
-| 2026-10-22 | Use OpenSynd only as a working name. | Preliminary exact-name web search; formal register search not completed. | Pending legal review |
+| 2026-10-22 | Use OpenSynd as the final name (owner's decision, 2026-10-23); make no claim that it is registered or cleared. | Preliminary exact-name web search; formal register search not completed. | Pending legal review |
 | 2026-10-22 | Replace the NetworkDLS CRC32 files rather than rely on an unclear notice. | Independent CRC-32/ISO-HDLC implementation and standard-vector regression test. | Engineering review pending |
 | 2026-10-22 | Replace the unlicensed `embed` and `copy_but` build helpers. | New GPL-2.0-or-later implementations preserving their command-line contracts. | Engineering review pending |
 

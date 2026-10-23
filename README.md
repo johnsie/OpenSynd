@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: GPL-2.0-or-later -->
 
-# OpenSynd (working name)
+# OpenSynd
 
 **A small squad-tactics game that runs in your web browser.** You lead four cybernetic operatives through the streets of
 a dark, pressured, near-future world, taking one district at a time from the people who run it.
@@ -73,8 +73,8 @@ Roland Haeder and Luboš Novák. The full list is in the [AUTHORS](AUTHORS) file
 Lis (level files), Paul Chavent ("libsyndicate"), Richard J. Wagner (the config reader) and Nemanja Trifunovic (UTF8-CPP).
 
 **To be clear: this is not FreeSynd, it is not "OpenSynd" as any official project, and the FreeSynd team has nothing to do
-with it and has not seen or approved any of it.** "OpenSynd" is only my own working name for this personal browser game,
-and any mistakes in it are mine, not theirs.
+with it and has not seen or approved any of it.** "OpenSynd" is the final name of this personal browser game, chosen by me
+(it is not a name used by the FreeSynd project), and any mistakes in it are mine, not theirs.
 
 What I took from FreeSynd:
 

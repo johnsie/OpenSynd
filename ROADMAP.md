@@ -6,9 +6,9 @@ Create **OpenSynd**, a browser-native, community-maintainable game derived from
 the FreeSynd codebase while removing every runtime dependency on proprietary
 *Syndicate* data and avoiding use of protected branding or creative expression.
 
-OpenSynd is the working project name. An initial exact-name web search found no
-obvious collision, but that is not trademark clearance. The name remains
-provisional until the searches and legal review in Phase 0 are complete.
+OpenSynd is the project's final name, decided by the project owner. An initial exact-name web
+search found no obvious collision, but no formal trademark search or legal review has been done, and the
+project does not claim the name is registered or cleared.
 
 This roadmap treats legal provenance, reproducible builds, and user freedom as
 release requirements. It is a project plan, not legal advice; an IP lawyer
@@ -17,7 +17,7 @@ should review the name, clean-room policy, and first public release.
 ## Implementation status
 
 Phase 0 began on 2026-10-22. The repository now has contribution, asset, and
-working-name policies; an initial IP audit; a machine-readable asset provenance
+name and trademark policies; an initial IP audit; a machine-readable asset provenance
 registry; automated CI checks for unregistered assets and unknown source
 licenses; and regression coverage for the independently replaced CRC-32 code.
 
@@ -27,7 +27,7 @@ replacement. No legacy asset is currently approved for an OpenSynd release.
 
 The remaining Phase 0 gates are the complete file-by-file source audit,
 resolution or replacement of third-party components with unclear notices,
-formal name clearance, and qualified legal review.
+an optional formal trademark search, and qualified legal review.
 
 The current source audit classifies 203 source and test files: 194 as
 GPL-2.0-or-later, four as BSL-1.0, two as MIT, and three as unresolved. The
@@ -1284,9 +1284,9 @@ Every accepted asset record should contain:
 - Produce an “original-IP exclusion list” covering names, logos, characters,
   factions, mission text, map layouts, sprites, sounds, music, cinematics, and
   other recognizable expression.
-- Use OpenSynd as the working name. Search relevant trademark registers and the
-  web, assess possible confusion with *Syndicate* and FreeSynd, and obtain legal
-  review for the intended markets before adopting it as the permanent name.
+- OpenSynd is the final name (the owner's decision). If the project ever grows beyond a hobby, search relevant trademark
+  registers and the web, assess possible confusion with *Syndicate* and FreeSynd, and obtain legal review for the intended
+  markets; until then the project does not claim the name is registered or cleared.
 - Adopt the repository controls above and publish the decision-making and
   security-reporting processes.
 - Create a clean-room rule: contributors implementing replacement formats and
