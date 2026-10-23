@@ -81,7 +81,7 @@ What I took from FreeSynd:
   plain, open files, comes straight from that project.
 
 What I did **not** take: none of the original game's graphics, sounds, music, maps, missions, writing, names or data
-files. All of that here is made again (the source of every picture and sound is listed in [provenance/assets.json](provenance/assets.json)), and the numbers are my own or re-used under the terms of the GPL.
+files. All of that here is made again (the source of every picture and sound is listed in [PROVENANCE.md](PROVENANCE.md) and [provenance/assets.json](provenance/assets.json)), and the numbers are my own or re-used under the terms of the GPL.
 
 Other things I'm grateful for: the human model that all the characters are drawn from is by **Quaternius** (CC0), and
 the music is **"Electric Stream"** by Alexander Ehlers (CC0) and **"The Core"** by p0ss. Everything else I made myself.
@@ -94,7 +94,8 @@ makers or owners of that game.
 - [web/TECHNICAL.md](web/TECHNICAL.md): how to build, test and change the game, and how the pieces fit together.
 - [ROADMAP.md](ROADMAP.md): the long plan, feature by feature, and how far each one has got.
 - [docs/design/GAME_VISION.md](docs/design/GAME_VISION.md): what the game is trying to be.
-- [provenance/assets.json](provenance/assets.json): where every picture, sound and model came from, with its licence.
+- [PROVENANCE.md](PROVENANCE.md): where every picture, sound and model came from, with its licence, in plain words; the exact
+  machine-checked record is [provenance/assets.json](provenance/assets.json).
 - [ASSET_POLICY.md](ASSET_POLICY.md) and [TRADEMARKS.md](TRADEMARKS.md): the rules for art and names.
 - The older file called `README` is the original FreeSynd engine's, kept for reference.
 
