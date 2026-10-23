@@ -2132,6 +2132,48 @@ function drawZones(viewport) {
   }
 }
 
+// A label over the square an open "hold" objective is played in, drawn over everything so it can always be found: how long is
+// left, a progress bar, and whether to step in.
+function drawHoldLabels(viewport) {
+  const { cellSize, origin } = viewport;
+  for (const objective of state.objectives) {
+    if (objective.type !== "hold" || objective.complete) continue;
+    const zone = state.map.zones.find((item) => item.id === objective.targetZone);
+    if (!zone) continue;
+    const progress = objective.progress ?? 0;
+    const tile = state.grid[zone.position.y]?.[zone.position.x];
+    const centre = gridToScreen(
+      { x: zone.position.x + (zone.width - 1) / 2, y: zone.position.y + (zone.height - 1) / 2 },
+      cellSize,
+      origin,
+      tile?.elevation ?? 0,
+    );
+    const width = Math.max(110, cellSize.width * 1.8);
+    const top = centre.y - cellSize.height * 2.2;
+    const pulse = reduceMotion ? 1 : 0.75 + 0.25 * Math.sin(state.elapsed * 5);
+    context.fillStyle = `rgba(10, 18, 22, ${0.85})`;
+    context.fillRect(centre.x - width / 2, top - 22, width, 36);
+    context.strokeStyle = `rgba(225, 179, 90, ${pulse})`;
+    context.lineWidth = 2;
+    context.strokeRect(centre.x - width / 2, top - 22, width, 36);
+    context.font = "700 12px ui-sans-serif, sans-serif";
+    context.textAlign = "center";
+    context.textBaseline = "alphabetic";
+    context.fillStyle = "#f3d9a0";
+    context.fillText(progress > 0 ? `HOLD  ${Math.floor(progress)} / ${objective.holdSeconds} s` : "HOLD THIS SQUARE", centre.x, top - 7);
+    context.fillStyle = "rgba(255, 255, 255, .15)";
+    context.fillRect(centre.x - width / 2 + 6, top, width - 12, 6);
+    context.fillStyle = "#79d59b";
+    context.fillRect(centre.x - width / 2 + 6, top, (width - 12) * Math.min(1, progress / objective.holdSeconds), 6);
+    // A line down to the square itself.
+    context.strokeStyle = `rgba(225, 179, 90, .6)`;
+    context.beginPath();
+    context.moveTo(centre.x, top + 14);
+    context.lineTo(centre.x, centre.y);
+    context.stroke();
+  }
+}
+
 function drawCursor(viewport) {
   const { x, y } = state.cursor;
   const tile = state.grid[y]?.[x];
@@ -2542,7 +2584,6 @@ function draw() {
   drawQueuedRoutes(viewport);
   drawCursor(viewport);
 
-  drawPickups(viewport);
   drawBombs(viewport);
   const boxes = new Map();
   const order = drawOrder([...(state.buildings ?? []), ...(state.structures ?? [])], state.units);
@@ -2552,7 +2593,9 @@ function draw() {
     else boxes.set(entry.item, drawBuilding(entry.item, viewport, size));
   }
   drawHiddenOperatives(order, boxes, viewport);
+  drawPickups(viewport); // over the figures, so gear lying beside someone is never hidden behind them
   drawEffects(viewport);
+  drawHoldLabels(viewport);
   drawMinimap(viewport);
 }
 
@@ -2725,7 +2768,7 @@ function drawPickups(viewport) {
     context.stroke();
     // The item itself: its own icon on a dark plate, in the same amber as the squad's item squares.
     const icon = pickupIcon(body.equipment[0].definition.icon);
-    const side = Math.max(14, cellSize.width * 0.3);
+    const side = Math.max(20, cellSize.width * 0.4);
     context.fillStyle = "rgba(8, 14, 18, 0.82)";
     context.beginPath();
     context.ellipse(0, -side * 0.35, side * 0.62, side * 0.62, 0, 0, Math.PI * 2);
@@ -3190,7 +3233,27 @@ function simulationStep(deltaSeconds) {
     setStatus(`${event.objective.description} Commitment fulfilled.`);
     interfaceChanged = true;
   }
+  announceHolds();
   if (interfaceChanged) renderInterface();
+}
+
+// Tell the player when they start and stop holding a position (progress building or draining).
+function announceHolds() {
+  state.holdWas ??= {};
+  for (const objective of state.objectives) {
+    if (objective.type !== "hold" || objective.complete) continue;
+    const before = state.holdWas[objective.id] ?? 0;
+    const now = objective.progress ?? 0;
+    if (now > before + 1e-9 && before === 0) {
+      setStatus(`Holding the position: stay inside the marked square for ${objective.holdSeconds} seconds.`);
+    } else if (now < before - 1e-9 && before >= objective.holdSeconds * 0.1 && !state.holdWarned?.[objective.id]) {
+      setStatus("Nobody is inside the marked square: the hold is slipping away. Get back in.");
+      (state.holdWarned ??= {})[objective.id] = true;
+    } else if (now > before + 1e-9 && state.holdWarned?.[objective.id]) {
+      state.holdWarned[objective.id] = false;
+    }
+    state.holdWas[objective.id] = now;
+  }
 }
 
 function formatDuration(seconds) {
