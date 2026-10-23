@@ -301,7 +301,34 @@ def place_props(layout: dict, regions: list[dict]) -> list[dict]:
         taken.append((x, y))
         counts[kind] += 1
         found.append({"id": f"{kind}-{counts[kind]}", "kind": kind, "position": {"x": x, "y": y}})
-    return found
+    return found + place_wrecks(layout, surface, reserved, [(f["position"]["x"], f["position"]["y"]) for f in found])
+
+
+def place_wrecks(layout: dict, surface: dict, reserved: set, others: list[tuple[int, int]]) -> list[dict]:
+    """A few burnt-out cars left on the pavement, lying along the street they stand beside."""
+    size = layout["size"]
+    rng = random.Random(layout["seed"] + 11)
+    wrecks: list[dict] = []
+    candidates = sorted(surface.items())
+    rng.shuffle(candidates)
+    for (x, y), (name, walkable) in candidates:
+        if len(wrecks) >= 4:
+            break
+        if name != "service-concrete" or not walkable or (x, y) in reserved or not (2 < x < size - 3 and 2 < y < size - 3):
+            continue
+        street_ns = any(surface.get((x, y + dy), ("", False))[0] == "street" for dy in (-1, 1))
+        street_ew = any(surface.get((x + dx, y), ("", False))[0] == "street" for dx in (-1, 1))
+        if street_ns == street_ew:
+            continue  # not beside one straight street
+        along = (1, 0) if street_ns else (0, 1)
+        # The pavement must be clear for the car's length (it lies over two tiles).
+        if any(surface.get((x + along[0] * k, y + along[1] * k), ("", False))[0] != "service-concrete" for k in (-1, 0, 1)):
+            continue
+        if any(abs(x - ox) + abs(y - oy) < 9 for ox, oy in others + [(w["position"]["x"], w["position"]["y"]) for w in wrecks]):
+            continue
+        wrecks.append({"id": f"wreck-{len(wrecks) + 1}", "kind": "wreck", "facing": "east-west" if street_ns else "north-south",
+                       "position": {"x": x, "y": y}})
+    return wrecks
 
 
 def walkable_grid(map_value: dict, layout: dict, gate_open: bool) -> list[list[bool]]:

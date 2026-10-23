@@ -2664,6 +2664,42 @@
     "x": 109,
     "y": 49
    }
+  },
+  {
+   "id": "wreck-1",
+   "kind": "wreck",
+   "facing": "north-south",
+   "position": {
+    "x": 25,
+    "y": 36
+   }
+  },
+  {
+   "id": "wreck-2",
+   "kind": "wreck",
+   "facing": "east-west",
+   "position": {
+    "x": 7,
+    "y": 30
+   }
+  },
+  {
+   "id": "wreck-3",
+   "kind": "wreck",
+   "facing": "east-west",
+   "position": {
+    "x": 13,
+    "y": 73
+   }
+  },
+  {
+   "id": "wreck-4",
+   "kind": "wreck",
+   "facing": "east-west",
+   "position": {
+    "x": 90,
+    "y": 78
+   }
   }
  ]
 }

@@ -16,7 +16,7 @@ function stubContext() {
     {
       get(_, name) {
         if (name in calls) return () => (calls[name] += 1);
-        return () => {};
+        return () => ({ addColorStop() {} });
       },
       set() {
         return true;
@@ -52,10 +52,11 @@ test("every shipped vehicle kind draws, standing, driven and wrecked, along eith
 });
 
 test("every kind of scenery draws in each state, and a signal in both colours", () => {
-  for (const kind of ["tree", "streetlight", "bin", "billboard"]) {
+  for (const kind of ["tree", "streetlight", "bin", "billboard", "wreck"]) {
     for (const state of ["standing", "burning", "destroyed"]) {
       const { context, calls } = stubContext();
-      const prop = { ...newProp({ id: "p", kind, position: { x: 5, y: 5 } }), state };
+      const facing = state === "burning" ? "north-south" : "east-west";
+      const prop = { ...newProp({ id: "p", kind, facing, position: { x: 5, y: 5 } }), state };
       drawScenery(context, project, prop, 40, 900);
       assert.ok(calls.fill + calls.stroke + calls.fillRect > 0, `${kind} ${state} paints something`);
     }

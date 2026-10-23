@@ -395,6 +395,186 @@ function shadeHex(hex, amount) {
   return `rgb(${clamp((value >> 16) + amount)}, ${clamp(((value >> 8) & 255) + amount)}, ${clamp((value & 255) + amount)})`;
 }
 
+// A burnt-out car: the shell is charred to black with flecks of its old paint, the nose is a gutted engine bay, the glass is
+// gone so the cabin is a dark cage of pillars under a roof that has sagged in, a door hangs open, and the ground is scorched
+// around it. `flames` is true while it is still burning; afterwards it only smoulders. Used for destroyed vehicles and for the
+// "wreck" scenery left at the kerb. (After FreeSynd's damaged large armored car, which is a black hulk.)
+function drawBurntOut(context, p, { x, y, alongX, front, kind, colour, cellHeight, time, flames }) {
+  const base = VEHICLE_SHAPES[kind] ?? VEHICLE_SHAPES["city-car"];
+  const hx = ((alongX ? base.length : base.width) * CAR_SCALE) / 2;
+  const hy = ((alongX ? base.width : base.length) * CAR_SCALE) / 2;
+  const noise = (salt) => {
+    const value = Math.sin((x + 1.7 * salt) * 12.9898 + (y + 0.3 * salt) * 78.233) * 43758.5453;
+    return value - Math.floor(value);
+  };
+  // Soot over what is left of the paint: nearly black, with a trace of the old colour and a warm cast.
+  const charred = (hex, lift = 0) => {
+    const value = Number.parseInt(hex.slice(1), 16);
+    const red = (value >> 16) & 255;
+    const green = (value >> 8) & 255;
+    const blue = value & 255;
+    const grey = 0.3 * red + 0.59 * green + 0.11 * blue;
+    return `rgb(${Math.round(grey * 0.16 + red * 0.08 + 14 + lift)}, ${Math.round(grey * 0.16 + green * 0.06 + 12 + lift)}, ${Math.round(
+      grey * 0.15 + blue * 0.06 + 12 + lift)})`;
+  };
+  const pt = (wx, wy, z) => {
+    const at = p(wx, wy, 0);
+    return { x: at.x, y: at.y - z * cellHeight };
+  };
+  // A rectangle in car terms: u along its length (+1 is the nose), v across it. Returns the world box it covers.
+  const box = (u0, u1, v0, v1) => {
+    const a = [x + (alongX ? u0 * front * hx : v0 * hx), x + (alongX ? u1 * front * hx : v1 * hx)].sort((m, n) => m - n);
+    const b = [y + (alongX ? v0 * hy : u0 * front * hy), y + (alongX ? v1 * hy : u1 * front * hy)].sort((m, n) => m - n);
+    return { x0: a[0], x1: a[1], y0: b[0], y1: b[1] };
+  };
+  const fill = (points, colour) => {
+    context.fillStyle = colour;
+    polygon(context, points);
+    context.fill();
+  };
+  // The two sides the camera sees (+y and +x) and the top of a block, lit a little more on the south-west.
+  const block = (rect, z0, z1, side, top) => {
+    fill([pt(rect.x0, rect.y1, z1), pt(rect.x1, rect.y1, z1), pt(rect.x1, rect.y1, z0), pt(rect.x0, rect.y1, z0)], side);
+    fill([pt(rect.x1, rect.y0, z1), pt(rect.x1, rect.y1, z1), pt(rect.x1, rect.y1, z0), pt(rect.x1, rect.y0, z0)], shadeNamed(side, -9));
+    if (top) fill([pt(rect.x0, rect.y0, z1), pt(rect.x1, rect.y0, z1), pt(rect.x1, rect.y1, z1), pt(rect.x0, rect.y1, z1)], top);
+  };
+  const shadeNamed = (css, amount) => {
+    const parts = css.match(/\d+/g).map(Number);
+    return `rgb(${parts.map((part) => Math.max(0, Math.min(255, part + amount))).join(", ")})`;
+  };
+  const ground = p(x, y, 0);
+
+  // Scorched ground: a soot-black stain, wider than the car and darker at its middle, with a streak thrown to one side.
+  const stain = context.createRadialGradient(ground.x, ground.y, 2, ground.x, ground.y, (hx + hy) * 44);
+  stain.addColorStop(0, "rgba(6, 6, 7, .78)");
+  stain.addColorStop(0.7, "rgba(10, 10, 11, .42)");
+  stain.addColorStop(1, "rgba(10, 10, 11, 0)");
+  context.fillStyle = stain;
+  context.beginPath();
+  context.ellipse(ground.x + 6, ground.y + 3, (hx + hy) * 44, (hx + hy) * 20, 0, 0, Math.PI * 2);
+  context.fill();
+
+  const bodyColour = charred(colour);
+  const metal = charred(colour, 14);
+  const zb = 0.36;
+  const roofZ = zb + 0.3;
+  // Underbody and the hull, with the nose burnt down to a gutted engine bay.
+  block(box(-1, 1, -0.9, 0.9), 0.03, 0.2, "rgb(13, 14, 15)", null);
+  block(box(-1, 0.5, -0.94, 0.94), 0.2, zb, bodyColour, shadeNamed(bodyColour, 14));
+  const nose = box(0.5, 1, -0.94, 0.94);
+  block(nose, 0.2, zb - 0.08, shadeNamed(bodyColour, -4), "rgb(9, 9, 10)");
+  // Ribs and a buckled hood edge across the empty bay.
+  context.strokeStyle = metal;
+  context.lineWidth = 1.5;
+  context.beginPath();
+  for (const t of [0.15, 0.45, 0.75]) {
+    const mx = nose.x0 + (nose.x1 - nose.x0) * t;
+    const my = nose.y0 + (nose.y1 - nose.y0) * t;
+    const a = alongX ? pt(mx, nose.y0, zb - 0.08) : pt(nose.x0, my, zb - 0.08);
+    const b = alongX ? pt(mx, nose.y1, zb - 0.08) : pt(nose.x1, my, zb - 0.08);
+    context.moveTo(a.x, a.y);
+    context.lineTo(b.x, b.y);
+  }
+  context.stroke();
+
+  // The cabin: a dark hollow with the glass gone, held up by pillars.
+  const cabin = box(-0.6, 0.32, -0.8, 0.8);
+  block(cabin, zb, roofZ, "rgb(8, 8, 9)", null);
+  const pillar = (t, face) => {
+    const width = 0.05;
+    const points = face === "south"
+      ? [[cabin.x0 + (cabin.x1 - cabin.x0) * t, cabin.y1], [cabin.x0 + (cabin.x1 - cabin.x0) * (t + width), cabin.y1]]
+      : [[cabin.x1, cabin.y0 + (cabin.y1 - cabin.y0) * t], [cabin.x1, cabin.y0 + (cabin.y1 - cabin.y0) * (t + width)]];
+    fill([pt(points[0][0], points[0][1], roofZ), pt(points[1][0], points[1][1], roofZ), pt(points[1][0], points[1][1], zb),
+      pt(points[0][0], points[0][1], zb)], metal);
+  };
+  const missing = Math.floor(noise(3) * 4); // one pillar has burnt through and the roof leans on that side
+  for (const [index, t] of [0, 0.3, 0.62, 0.95].entries()) {
+    if (index !== missing) pillar(t, "south");
+    if (index !== (missing + 2) % 4) pillar(t, "east");
+  }
+  // The roof, sagged in: its rim, then a darker dished middle with creases.
+  const rim = [pt(cabin.x0, cabin.y0, roofZ - 0.02), pt(cabin.x1, cabin.y0, roofZ - 0.03), pt(cabin.x1, cabin.y1, roofZ - 0.02),
+    pt(cabin.x0, cabin.y1, roofZ - 0.04)];
+  fill(rim, charred(colour, 8));
+  const inset = 0.2;
+  const dish = [pt(cabin.x0 + (cabin.x1 - cabin.x0) * inset, cabin.y0 + (cabin.y1 - cabin.y0) * inset, roofZ - 0.1),
+    pt(cabin.x1 - (cabin.x1 - cabin.x0) * inset, cabin.y0 + (cabin.y1 - cabin.y0) * (inset + 0.06), roofZ - 0.12),
+    pt(cabin.x1 - (cabin.x1 - cabin.x0) * inset, cabin.y1 - (cabin.y1 - cabin.y0) * inset, roofZ - 0.1),
+    pt(cabin.x0 + (cabin.x1 - cabin.x0) * inset, cabin.y1 - (cabin.y1 - cabin.y0) * (inset + 0.04), roofZ - 0.13)];
+  fill(dish, "rgb(14, 14, 15)");
+  context.strokeStyle = "rgba(0, 0, 0, .6)";
+  context.lineWidth = 1;
+  context.beginPath();
+  context.moveTo(rim[0].x, rim[0].y);
+  context.lineTo(dish[0].x, dish[0].y);
+  context.moveTo(rim[2].x, rim[2].y);
+  context.lineTo(dish[2].x, dish[2].y);
+  context.stroke();
+
+  // Blistered paint and rust on the two visible sides: a few flaking patches of the old colour among orange-brown streaks.
+  const side = box(-1, 1, -0.94, 0.94);
+  for (let patch = 0; patch < 9; patch += 1) {
+    const t = 0.08 + noise(10 + patch) * 0.84;
+    const onSouth = patch % 2 === 0;
+    const height = 0.1 + noise(20 + patch) * 0.2;
+    const at = onSouth ? pt(side.x0 + (side.x1 - side.x0) * t, side.y1, height) : pt(side.x1, side.y0 + (side.y1 - side.y0) * t, height);
+    context.fillStyle = patch % 3 === 0 ? `rgba(${70 + Math.round(noise(35 + patch) * 30)}, 50, 40, .55)`
+      : `rgba(${95 + Math.round(noise(30 + patch) * 40)}, 48, 20, .38)`;
+    context.beginPath();
+    context.ellipse(at.x, at.y, 2 + noise(40 + patch) * 3.5, 0.8 + noise(50 + patch) * 1.2, onSouth ? -0.45 : 0.45, 0, Math.PI * 2);
+    context.fill();
+  }
+
+  // A door torn half off and hanging open on the long side the camera sees.
+  const hinge = alongX
+    ? [side.x0 + (side.x1 - side.x0) * 0.4, side.y1, side.x0 + (side.x1 - side.x0) * 0.4 + 0.12, side.y1 + 0.42]
+    : [side.x1, side.y0 + (side.y1 - side.y0) * 0.4, side.x1 + 0.42, side.y0 + (side.y1 - side.y0) * 0.4 + 0.12];
+  fill([pt(hinge[0], hinge[1], zb - 0.02), pt(hinge[2], hinge[3], zb - 0.1), pt(hinge[2], hinge[3], 0.08), pt(hinge[0], hinge[1], 0.08)],
+    metal);
+  context.strokeStyle = "rgba(255, 120, 40, .35)";
+  context.lineWidth = 1;
+  context.beginPath();
+  const edgeA = pt(hinge[2], hinge[3], zb - 0.1);
+  const edgeB = pt(hinge[2], hinge[3], 0.08);
+  context.moveTo(edgeA.x, edgeA.y);
+  context.lineTo(edgeB.x, edgeB.y);
+  context.stroke();
+
+  // Embers glowing in the engine bay and the cabin.
+  for (let ember = 0; ember < 5; ember += 1) {
+    const glow = 0.3 + 0.35 * Math.sin(time / 260 + ember * 2.1 + x);
+    const at = pt(nose.x0 + (nose.x1 - nose.x0) * (0.2 + noise(60 + ember) * 0.6),
+      nose.y0 + (nose.y1 - nose.y0) * (0.2 + noise(70 + ember) * 0.6), zb - 0.06);
+    context.fillStyle = `rgba(255, ${100 + Math.round(noise(80 + ember) * 60)}, 30, ${Math.max(0.1, glow)})`;
+    context.beginPath();
+    context.arc(at.x, at.y, 1.6 + noise(90 + ember), 0, Math.PI * 2);
+    context.fill();
+  }
+
+  // Flames while it burns; always a few wisps of smoke after.
+  const top = pt(x, y, zb);
+  if (flames) {
+    for (let flame = 0; flame < 6; flame += 1) {
+      const phase = (time / 420 + flame * 0.31) % 1;
+      const spread = (flame - 2.5) * 6;
+      context.fillStyle = `rgba(255, ${Math.round(150 - phase * 90)}, 40, ${0.85 * (1 - phase)})`;
+      context.beginPath();
+      context.ellipse(top.x + spread, top.y - phase * cellHeight * 1.2, 6 * (1 - phase * 0.5), 9 * (1 - phase * 0.4), 0, 0, Math.PI * 2);
+      context.fill();
+    }
+  }
+  const puffs = flames ? 4 : 2;
+  for (let puff = 0; puff < puffs; puff += 1) {
+    const phase = (time / (flames ? 900 : 1700) + puff / puffs + noise(5)) % 1;
+    context.fillStyle = `rgba(52, 55, 60, ${(flames ? 0.42 : 0.24) * (1 - phase)})`;
+    context.beginPath();
+    const drift = Math.sin(phase * 6 + puff) * 3;
+    context.arc(top.x + puff * 4 - 4 + drift, top.y - cellHeight * (0.7 + phase * 1.9), 6 + phase * 11, 0, Math.PI * 2);
+    context.fill();
+  }
+}
+
 export function drawVehicle(context, p, vehicle, cellHeight, time, { controlled = false } = {}) {
   const base = VEHICLE_SHAPES[vehicle.definition.kind] ?? VEHICLE_SHAPES["city-car"];
   const shape = {
@@ -411,7 +591,13 @@ export function drawVehicle(context, p, vehicle, cellHeight, time, { controlled 
   const halfY = (alongX ? shape.width : shape.length) / 2;
   const { x, y } = vehicle.position;
   const { primaryColor, accentColor } = vehicle.definition.appearance;
-  const bodyColour = wrecked ? "#26282b" : primaryColor;
+  if (wrecked) {
+    const front = alongX ? Math.sign(state.heading.x || 1) : Math.sign(state.heading.y || 1);
+    drawBurntOut(context, p, { x, y, alongX, front, kind: vehicle.definition.kind, colour: primaryColor, cellHeight, time,
+      flames: state.wreckLeft > 0 });
+    return;
+  }
+  const bodyColour = primaryColor;
   const lift = (point, z) => ({ x: point.x, y: point.y - z });
   const ground = p(x, y, 0);
   // A soft shadow and, when the squad is inside, a cyan ring.
@@ -594,24 +780,6 @@ export function drawVehicle(context, p, vehicle, cellHeight, time, { controlled 
       context.stroke();
       context.globalAlpha = 1;
     }
-  } else if (state.wreckLeft > 0) {
-    // Flames and smoke while the wreck burns.
-    const top = lift(ground, bodyTop);
-    for (let flame = 0; flame < 5; flame += 1) {
-      const phase = (time / 420 + flame * 0.37) % 1;
-      const spread = (flame - 2) * 6;
-      context.fillStyle = `rgba(255, ${Math.round(150 - phase * 90)}, 40, ${0.85 * (1 - phase)})`;
-      context.beginPath();
-      context.ellipse(top.x + spread, top.y - phase * cellHeight * 1.2, 6 * (1 - phase * 0.5), 9 * (1 - phase * 0.4), 0, 0, Math.PI * 2);
-      context.fill();
-    }
-    for (let puff = 0; puff < 3; puff += 1) {
-      const phase = (time / 900 + puff / 3) % 1;
-      context.fillStyle = `rgba(60, 64, 70, ${0.4 * (1 - phase)})`;
-      context.beginPath();
-      context.arc(top.x + puff * 4 - 4, top.y - cellHeight * (0.8 + phase * 1.8), 7 + phase * 10, 0, Math.PI * 2);
-      context.fill();
-    }
   }
 }
 
@@ -643,6 +811,13 @@ export function drawScenery(context, p, prop, cellHeight, time) {
   context.beginPath();
   context.ellipse(base.x, base.y, unit * 0.34, unit * 0.16, 0, 0, Math.PI * 2);
   context.fill();
+  if (prop.kind === "wreck") {
+    const alongX = prop.facing !== "north-south";
+    drawBurntOut(context, p, { x, y, alongX, front: 1 - 2 * Math.floor(Math.abs(Math.sin(x * 7.1 + y * 3.3)) * 2), kind: "city-car",
+      colour: ["#3d6fa8", "#a8923d", "#8a4a4a", "#4a7a62"][Math.floor(Math.abs(Math.sin(x * 3.7 + y * 5.9)) * 4)], cellHeight: unit, time,
+      flames: false });
+    return;
+  }
   if (prop.kind === "tree") {
     if (prop.state === "destroyed") {
       ellipse(base.x, base.y - unit * 0.1, unit * 0.22, unit * 0.1, "#2a2420");

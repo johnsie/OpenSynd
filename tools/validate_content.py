@@ -146,8 +146,10 @@ class Validation:
                 self.error(path, f"invalid or duplicate prop id: {prop_id!r}")
                 continue
             prop_ids.add(prop_id)
-            if item.get("kind") not in {"tree", "streetlight", "bin", "billboard"}:
+            if item.get("kind") not in {"tree", "streetlight", "bin", "billboard", "wreck"}:
                 self.error(path, f"prop {prop_id} has an unsupported kind")
+            if item.get("facing", "east-west") not in {"east-west", "north-south"}:
+                self.error(path, f"prop {prop_id} has an unsupported facing")
             position = item.get("position")
             rectangle = dict(position) if isinstance(position, dict) else {}
             rectangle.update({"width": 1, "height": 1})

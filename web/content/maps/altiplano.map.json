@@ -2618,6 +2618,42 @@
     "x": 94,
     "y": 85
    }
+  },
+  {
+   "id": "wreck-1",
+   "kind": "wreck",
+   "facing": "east-west",
+   "position": {
+    "x": 19,
+    "y": 50
+   }
+  },
+  {
+   "id": "wreck-2",
+   "kind": "wreck",
+   "facing": "east-west",
+   "position": {
+    "x": 6,
+    "y": 72
+   }
+  },
+  {
+   "id": "wreck-3",
+   "kind": "wreck",
+   "facing": "east-west",
+   "position": {
+    "x": 6,
+    "y": 23
+   }
+  },
+  {
+   "id": "wreck-4",
+   "kind": "wreck",
+   "facing": "east-west",
+   "position": {
+    "x": 86,
+    "y": 23
+   }
   }
  ]
 }

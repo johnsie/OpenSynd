@@ -6,6 +6,7 @@
 //   streetlight  any weapon brings it down
 //   bin          any weapon dents it
 //   billboard    fire, beams and blasts; it burns like a tree
+//   wreck        a burnt-out car left at the kerb; nothing hurts it any more (after FreeSynd's damaged large armored car)
 // Pure rules; drawing lives in the app.
 export const FIRE_SECONDS = 10;
 export const FIRE_SPREAD_RADIUS = 1.6;
@@ -17,6 +18,7 @@ export const PROP_KINDS = Object.freeze({
   streetlight: { health: 12, hurtBy: ["bullet", "burn", "beam", "explosion"], flammable: false },
   bin: { health: 10, hurtBy: ["bullet", "burn", "beam", "explosion"], flammable: false },
   billboard: { health: 40, hurtBy: ["burn", "beam", "explosion"], flammable: true },
+  wreck: { health: 1, hurtBy: [], flammable: false },
 });
 
 export function newProp(definition) {
@@ -25,6 +27,7 @@ export function newProp(definition) {
     id: definition.id,
     kind: definition.kind,
     position: { x: definition.position.x, y: definition.position.y },
+    facing: definition.facing ?? "east-west", // which way a wreck lies: along the street's east-west or north-south run
     health: kind.health,
     state: "standing", // standing, burning, destroyed
     burnLeft: 0,

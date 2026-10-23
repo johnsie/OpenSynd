@@ -104,7 +104,8 @@
       "required": ["id", "kind", "position"],
       "properties": {
         "id": { "$ref": "#/$defs/id" },
-        "kind": { "enum": ["tree", "streetlight", "bin", "billboard"] },
+        "kind": { "enum": ["tree", "streetlight", "bin", "billboard", "wreck"] },
+        "facing": { "enum": ["east-west", "north-south"], "description": "Which way a wreck lies." },
         "position": { "$ref": "#/$defs/position" }
       }
     },

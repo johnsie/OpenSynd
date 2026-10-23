@@ -10,7 +10,7 @@ const prop = (kind, x = 5, y = 5, id = `${kind}-${x}-${y}`) => newProp({ id, kin
 test("a prop starts standing with its kind's health", () => {
   const tree = prop("tree");
   assert.deepEqual([tree.state, tree.health, tree.burnLeft], ["standing", PROP_KINDS.tree.health, 0]);
-  assert.equal(Object.keys(PROP_KINDS).length, 4);
+  assert.equal(Object.keys(PROP_KINDS).length, 5);
 });
 
 test("a tree shrugs off bullets and is set alight by fire", () => {
@@ -113,4 +113,12 @@ test("a shot fired by hand damages the scenery it passes, by the weapon's damage
   props = make();
   result = fireManual(shooter(weapon({ attack: 4, range: 6, cooldown: 0.25 })), { x: 20, y: 4 }, [], grid, props);
   assert.equal(props[1].health, PROP_KINDS.streetlight.health, "out of range of the short weapon");
+});
+
+test("a burnt-out wreck is scenery that nothing hurts, and it remembers which way it lies", () => {
+  const wreck = newProp({ id: "wreck-1", kind: "wreck", facing: "north-south", position: { x: 4, y: 6 } });
+  assert.equal(wreck.facing, "north-south");
+  assert.equal(prop("wreck").facing, "east-west", "east-west is the default");
+  for (const type of ["bullet", "burn", "beam", "explosion"]) assert.equal(damageProp(wreck, 999, type), null, type);
+  assert.deepEqual([wreck.state, wreck.health], ["standing", PROP_KINDS.wreck.health]);
 });
