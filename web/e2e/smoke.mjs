@@ -912,7 +912,7 @@ for (const [name, type, executablePath] of targets) {
     await defection.waitForSelector(".roster-select");
     await defection.click("#filter-all");
     await defection.locator("#mission-list button", { hasText: defectionName }).first().click();
-    await defection.waitForFunction((name) => document.querySelector("#title-heading").textContent.length > 0 && name.length > 0, defectionName);
+    await defection.waitForFunction(() => document.querySelector("#title-heading").textContent.length > 0);
     await defection.click("#begin-button");
     await defection.waitForFunction(() => document.querySelector("#status-message").textContent.includes("Local map established"));
     assert.match(await defection.locator("#objective-list").innerText(), /Win the defector over/);
