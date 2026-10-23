@@ -888,9 +888,11 @@ function renderRoster() {
       : "Only deploying operatives can be picked.";
     name.disabled = !deployed;
     card.classList.toggle("picked", picked);
-    name.addEventListener("click", () => toggleLabPick(member));
+    // Anywhere on the card picks the operative; only the Deploy checkbox itself does something else.
     card.addEventListener("click", (event) => {
-      if (!event.target.closest("label, button")) toggleLabPick(member);
+      if (event.target.closest("input")) return;
+      event.preventDefault(); // the Deploy label's text must not tick the box
+      toggleLabPick(member);
     });
     card.append(name);
     if (!member.alive) {
