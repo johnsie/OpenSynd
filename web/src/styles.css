@@ -828,8 +828,14 @@ main { grid-template-columns: minmax(0, 1fr) minmax(250px, 300px); gap: 0.6rem; 
 .lab-operators .tab { border: 1px solid var(--line); border-radius: 4px; padding: 0.25rem 0.8rem; font-size: 0.85rem; }
 .lab-operators .tab.on { color: var(--ink); border-color: var(--public); }
 .research .tab-panel { min-height: 22rem; }
-.lab-roster .roster-card { padding: 0.25rem 0.5rem; }
-.lab-roster { margin-bottom: 0.6rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--line); }
+.lab-squad-grid { display: grid; grid-template-columns: 15rem minmax(0, 1fr); gap: 1rem; align-items: start; }
+.lab-roster { padding-right: 1rem; border-right: 1px solid var(--line); }
+.lab-roster .roster-list { flex-direction: column; flex-wrap: nowrap; }
+.lab-roster .roster-card { padding: 0.3rem 0.6rem; }
+@media (max-width: 800px) {
+  .lab-squad-grid { grid-template-columns: 1fr; }
+  .lab-roster { padding-right: 0; border-right: 0; }
+}
 .lab-loadout {
   display: grid;
   grid-template-columns: minmax(15rem, 1fr) minmax(16rem, 1fr) minmax(18rem, 1.2fr);
