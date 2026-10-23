@@ -4,10 +4,14 @@
 #
 # It expects the GitLab runner that lives on the web server, using the shell executor, with Node.js 20+ and Python 3
 # installed there and write access to the site folder (deploy/setup-apache.sh sets that up). The game needs no
-# `npm install` to build or to run its unit tests. If your runner is tagged, add `tags: [your-tag]` under `default:`.
+# `npm install` to build or to run its unit tests. The runner only takes jobs tagged `ubuntu-server`.
 #
 # Pushes to the default branch deploy by themselves; other branches can be deployed from the pipeline page with the
 # manual "deploy" button.
+
+default:
+  tags:
+    - ubuntu-server
 
 stages:
   - check

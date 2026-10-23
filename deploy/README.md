@@ -57,7 +57,8 @@ button on its pipeline.
 
 The runner needs: the **shell executor**, Node.js 20 or newer, Python 3, and the right to write in
 `/var/www/opensyn.outiva.com` (the set-up script gives that to the runner's user). Nothing else is installed: the game has no
-build dependencies. If your runner uses tags, add `tags: [the-tag]` under a `default:` block in `.gitlab-ci.yml`.
+build dependencies. The runner only picks up jobs tagged `ubuntu-server`, so every job in `.gitlab-ci.yml` carries that tag
+(set once under `default:`).
 
 ## Notes
 
