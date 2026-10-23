@@ -1,0 +1,18 @@
+{
+  "formatVersion": 1,
+  "id": "developer.ambulance",
+  "name": "Ambulance",
+  "license": "CC0-1.0",
+  "kind": "ambulance",
+  "stats": {
+    "health": 110,
+    "speed": 7.0,
+    "seats": 4,
+    "blastRadius": 2.4,
+    "blastDamage": 45
+  },
+  "appearance": {
+    "primaryColor": "#d8dde2",
+    "accentColor": "#ff6b62"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "formatVersion": 1,
+  "id": "developer.patrol-car",
+  "name": "Patrol Car",
+  "license": "CC0-1.0",
+  "kind": "patrol-car",
+  "stats": {
+    "health": 130,
+    "speed": 7.5,
+    "seats": 4,
+    "blastRadius": 2.6,
+    "blastDamage": 48
+  },
+  "appearance": {
+    "primaryColor": "#1d2a44",
+    "accentColor": "#4aa3ff"
+  }
+}

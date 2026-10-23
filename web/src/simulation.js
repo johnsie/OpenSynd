@@ -2,6 +2,7 @@
 
 import { findPath } from "./engine.js";
 import { LOOT_RANGE, lootBody, lootableBody } from "./inventory.js";
+import { VEHICLE_HIT_RADIUS, ejectDriver, isSquadVehicle, isVehicle } from "./vehicles.js";
 import { cooldownMultiplier, effectiveLevels, nextFocus, nextStamina, speedMultiplier } from "./stats.js";
 
 export const FIXED_STEP_SECONDS = 1 / 30;
@@ -79,7 +80,7 @@ export function advanceUnits(units, deltaSeconds) {
   const arrivals = [];
 
   for (const unit of units) {
-    if (unit.side !== "team") continue;
+    if (unit.side !== "team" || unit.inVehicle) continue;
     // Walking drains stamina; standing still recovers it.
     const walking = unit.path.length > 0 && !unit.disabled;
     unit.stamina = nextStamina(unit.stamina, unit.levels, walking, deltaSeconds, unit.research);
@@ -217,7 +218,8 @@ function nearestVisibleOperator(unit, units, sight, grid = null, accept = null) 
   let best = null;
   let bestDistance = Infinity;
   for (const candidate of units) {
-    if (candidate.side !== "team" || candidate.disabled) continue;
+    const asSquad = candidate.side === "team" ? !candidate.inVehicle : isSquadVehicle(candidate);
+    if (!asSquad || candidate.disabled) continue;
     if (accept && !accept(candidate)) continue;
     const distance = distanceBetween(unit, candidate);
     const holdsTrack = unit.alertedBy === candidate.id && distance <= LOST_TRACK_CLOSE;
@@ -235,7 +237,8 @@ function nearestVisibleOperator(unit, units, sight, grid = null, accept = null) 
 
 /** Whether a unit has its weapon out: what civilians run from and police react to. */
 export function armedOut(unit, now, byId = null) {
-  if (unit.disabled || now === null || now === undefined) return false;
+  if (unit.disabled || unit.inVehicle || now === null || now === undefined) return false;
+  if (isVehicle(unit)) return false;
   if (unit.side === "team") return gunOut(unit, now);
   if (unit.persuaded) {
     const owner = byId?.get(unit.persuadedBy);
@@ -321,6 +324,11 @@ function nearestOf(unit, candidates, within, grid = null, needSight = false) {
 // if there is one, run the other way for a short stretch, then look again. Persuaded civilians do not panic.
 function advanceCivilian(unit, armed, deltaSeconds, grid) {
   const panic = (unit.panic ??= { fleeing: false, scoutLeft: 0 });
+  if (unit.fleeFrom && grid) {
+    // Thrown out of a car: run from it, like any armed person (FreeSynd treats ejection as a panic trigger).
+    panic.fleeing = runAwayFrom(unit, unit.fleeFrom, grid, [CIVILIAN_RUN * 1.5, CIVILIAN_RUN]);
+    unit.fleeFrom = null;
+  }
   if (panic.fleeing && unit.path.length > 0) {
     followPath(unit, deltaSeconds, CIVILIAN_RUN_FACTOR);
     return;
@@ -506,7 +514,7 @@ export function advancePatrols(units, deltaSeconds, grid = null, now = null) {
   const byId = new Map(units.map((unit) => [unit.id, unit]));
   const armed = now === null ? [] : units.filter((unit) => armedOut(unit, now, byId));
   for (const unit of units) {
-    if (unit.side === "team" || unit.disabled) continue;
+    if (unit.side === "team" || unit.disabled || unit.inVehicle || isVehicle(unit)) continue;
     if (unit.persuaded) {
       if (grid) advanceFollower(unit, byId, units, grid, deltaSeconds, now, events);
       continue;
@@ -539,7 +547,10 @@ function isHostileTo(attacker, candidate) {
     return (candidate.side === "criminal" && Boolean(candidate.hostileTo)) || (candidate.side === "police" && Boolean(candidate.alertedBy));
   }
   if (attacker.side === "criminal") return Boolean(attacker.hostileTo) && candidate.id === attacker.hostileTo;
-  if (attacker.side === "opposition") return candidate.side === "team" || Boolean(candidate.persuaded);
+  if (attacker.side === "opposition") {
+    const onFoot = !candidate.inVehicle && (candidate.side === "team" || Boolean(candidate.persuaded));
+    return onFoot || isSquadVehicle(candidate);
+  }
   return false;
 }
 
@@ -643,8 +654,9 @@ export function advanceCombat(units, deltaSeconds, grid = null, now = null) {
   const events = [];
   const byId = new Map(units.map((unit) => [unit.id, unit]));
 
+  const context = { units, grid };
   for (const attacker of units) {
-    if (attacker.disabled) continue;
+    if (attacker.disabled || attacker.inVehicle || isVehicle(attacker)) continue;
     attacker.cooldownRemaining = Math.max(
       0,
       attacker.cooldownRemaining - deltaSeconds,
@@ -679,7 +691,7 @@ export function advanceCombat(units, deltaSeconds, grid = null, now = null) {
     if (weapon && weapon.charges !== null) weapon.charges -= 1;
 
     startCooldown(attacker, stats);
-    strike(attacker, target, weapon, stats, events);
+    strike(attacker, target, weapon, stats, events, context);
   }
 
   return events;
@@ -692,7 +704,7 @@ function startCooldown(unit, stats) {
 }
 
 // Apply a hit and report it; a unit reduced to zero health is disabled.
-function strike(attacker, target, weapon, stats, events) {
+function strike(attacker, target, weapon, stats, events, context = null) {
   // A criminal who is attacked goes after whoever did it (a persuaded follower's owner, if it was a follower).
   if (target.side === "criminal" && (attacker.side === "team" || attacker.persuaded)) {
     target.hostileTo = attacker.persuaded ? attacker.persuadedBy : attacker.id;
@@ -715,6 +727,10 @@ function strike(attacker, target, weapon, stats, events) {
     target.path = [];
     target.targetId = null;
     events.push({ type: "disabled", unitId: target.id });
+  } else if (context && isVehicle(target) && (attacker.side === "team" || attacker.persuaded)) {
+    // Shoot at a car and its driver is thrown out (FreeSynd ejects the driver of a car the player shoots).
+    const driver = ejectDriver(target, context.units, context.grid);
+    if (driver) events.push({ type: "ejected", unitId: driver.id, vehicleId: target.id });
   }
 }
 
@@ -733,7 +749,9 @@ export function castShot(shooter, aim, units, grid, range, pierce = false) {
   const length = Math.hypot(dx, dy);
   if (length < 1e-6) return { target: null, hits: [], end: { ...shooter.position } };
   const direction = { x: dx / length, y: dy / length };
-  const enemies = units.filter((unit) => unit.side !== shooter.side && !unit.disabled && !unit.persuaded);
+  const enemies = units.filter(
+    (unit) => unit.side !== shooter.side && !unit.disabled && !unit.persuaded && !unit.inVehicle,
+  );
   const hits = [];
   let last = { ...shooter.position };
   for (let travelled = RAY_STEP * 2; travelled <= range + 1e-9; travelled += RAY_STEP) {
@@ -744,7 +762,9 @@ export function castShot(shooter, aim, units, grid, range, pierce = false) {
     const tile = grid[Math.round(point.y)]?.[Math.round(point.x)];
     if (!tile || !tile.walkable) break;
     const struck = enemies.find(
-      (enemy) => !hits.includes(enemy) && Math.hypot(enemy.position.x - point.x, enemy.position.y - point.y) <= HIT_RADIUS,
+      (enemy) =>
+        !hits.includes(enemy) &&
+        Math.hypot(enemy.position.x - point.x, enemy.position.y - point.y) <= (isVehicle(enemy) ? VEHICLE_HIT_RADIUS : HIT_RADIUS),
     );
     if (struck) {
       hits.push(struck);
@@ -775,7 +795,7 @@ export function fireManual(shooter, aim, units, grid) {
   shooter.aimAt = { ...aim };
   const events = [];
   if (shot.hits.length > 0) {
-    for (const target of shot.hits) strike(shooter, target, weapon, stats, events);
+    for (const target of shot.hits) strike(shooter, target, weapon, stats, events, { units, grid });
   } else {
     events.push({
       type: "shot",
@@ -918,8 +938,10 @@ export function advancePersuasion(units, deltaSeconds, grid = null) {
         (other) =>
           other !== agent &&
           other.side !== "team" &&
+          Boolean(persuadeKind(other)) &&
           !other.disabled &&
           !other.persuaded &&
+          !other.inVehicle &&
           distanceBetween(agent, other) <= reach &&
           hasLineOfSight(grid, agent.position, other.position),
       )

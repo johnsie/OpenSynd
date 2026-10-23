@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://opensynd.example/schema/vehicle-v1.json",
+  "$comment": "SPDX-License-Identifier: GPL-2.0-or-later",
+  "title": "OpenSynd vehicle",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion",
+    "id",
+    "name",
+    "license",
+    "kind",
+    "stats",
+    "appearance"
+  ],
+  "properties": {
+    "formatVersion": {
+      "const": 1
+    },
+    "id": {
+      "$ref": "#/$defs/id"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "license": {
+      "enum": [
+        "CC0-1.0",
+        "CC-BY-4.0"
+      ]
+    },
+    "kind": {
+      "enum": [
+        "city-car",
+        "patrol-car",
+        "armored-car",
+        "ambulance"
+      ],
+      "description": "Which kind of vehicle it is: a regular car, a police car, a large armored car or a medical van."
+    },
+    "stats": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "health",
+        "speed",
+        "seats",
+        "blastRadius",
+        "blastDamage"
+      ],
+      "properties": {
+        "health": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 2000,
+          "description": "Damage it takes before it blows up."
+        },
+        "speed": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 30,
+          "description": "Tiles per second when driven."
+        },
+        "seats": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 8
+        },
+        "blastRadius": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 20,
+          "description": "How far its explosion reaches, in tiles."
+        },
+        "blastDamage": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000,
+          "description": "Damage at the centre of its explosion."
+        }
+      }
+    },
+    "appearance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "primaryColor",
+        "accentColor"
+      ],
+      "properties": {
+        "primaryColor": {
+          "$ref": "#/$defs/color"
+        },
+        "accentColor": {
+          "$ref": "#/$defs/color"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$"
+    },
+    "color": {
+      "type": "string",
+      "pattern": "^#[0-9a-fA-F]{6}$"
+    }
+  }
+}

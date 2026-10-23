@@ -369,3 +369,169 @@ export function drawBeacon(context, p, { x, y }, cellHeight, complete, time, pro
     context.fillRect(top.x - 3, top.y - cellHeight * 6, 6, cellHeight * 6);
   }
 }
+
+// A road vehicle: body, cabin with dark windows, wheels, head and tail lights, and what makes its kind its own
+// (a flashing light bar on a patrol car, a red cross on an ambulance, heavy plating on an armored car). It lies
+// along the way it is heading (snapped to a grid axis). Destroyed, it is a charred wreck that burns for a while.
+const VEHICLE_SHAPES = Object.freeze({
+  "city-car": { length: 2.1, width: 0.95, body: 0.5, cabin: 0.42, cabinInset: 0.5 },
+  "patrol-car": { length: 2.2, width: 1.0, body: 0.5, cabin: 0.42, cabinInset: 0.5 },
+  "armored-car": { length: 2.5, width: 1.15, body: 0.78, cabin: 0.5, cabinInset: 0.35 },
+  ambulance: { length: 2.4, width: 1.05, body: 0.62, cabin: 0.55, cabinInset: 0.3 },
+});
+
+function shadeHex(hex, amount) {
+  const value = Number.parseInt(hex.slice(1), 16);
+  const clamp = (part) => Math.max(0, Math.min(255, part));
+  return `rgb(${clamp((value >> 16) + amount)}, ${clamp(((value >> 8) & 255) + amount)}, ${clamp((value & 255) + amount)})`;
+}
+
+export function drawVehicle(context, p, vehicle, cellHeight, time, { controlled = false } = {}) {
+  const shape = VEHICLE_SHAPES[vehicle.definition.kind] ?? VEHICLE_SHAPES["city-car"];
+  const state = vehicle.vehicle;
+  const wrecked = vehicle.disabled;
+  const alongX = Math.abs(state.heading.x) >= Math.abs(state.heading.y);
+  const halfX = (alongX ? shape.length : shape.width) / 2;
+  const halfY = (alongX ? shape.width : shape.length) / 2;
+  const { x, y } = vehicle.position;
+  const { primaryColor, accentColor } = vehicle.definition.appearance;
+  const bodyColour = wrecked ? "#26282b" : primaryColor;
+  const lift = (point, z) => ({ x: point.x, y: point.y - z });
+  const ground = p(x, y, 0);
+  // A soft shadow and, when the squad is inside, a cyan ring.
+  context.fillStyle = "rgba(0, 0, 0, .35)";
+  context.beginPath();
+  context.ellipse(ground.x, ground.y + 2, halfX * 40 + halfY * 28, (halfX + halfY) * 12, 0, 0, Math.PI * 2);
+  context.fill();
+  if (controlled) {
+    context.strokeStyle = "rgba(66, 214, 208, .9)";
+    context.lineWidth = 2;
+    context.beginPath();
+    context.ellipse(ground.x, ground.y + 2, (halfX + halfY) * 30, (halfX + halfY) * 14, 0, 0, Math.PI * 2);
+    context.stroke();
+  }
+
+  const wheelHeight = cellHeight * 0.2;
+  const bodyTop = wheelHeight + cellHeight * shape.body;
+  // Wheels: four dark blocks at the corners.
+  for (const [sx, sy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+    const wx = x + sx * (alongX ? halfX * 0.6 : halfX * 0.9);
+    const wy = y + sy * (alongX ? halfY * 0.9 : halfY * 0.6);
+    drawBox(context, p, wx, wy, 0.2, 0.2, 0, wheelHeight, "#14171a", "#262a2e");
+  }
+  const { west, south, lift: up } = drawBox(context, p, x, y, halfX, halfY, wheelHeight, bodyTop, bodyColour, shadeHex(bodyColour, 22));
+
+  if (!wrecked) {
+    // Cabin: shorter, set back, with dark glass on the two visible sides.
+    const inset = shape.cabinInset;
+    const cabinHalfX = alongX ? halfX * (1 - inset) : halfX * 0.86;
+    const cabinHalfY = alongX ? halfY * 0.86 : halfY * (1 - inset);
+    const cabinTop = bodyTop + cellHeight * shape.cabin;
+    const cabin = drawBox(context, p, x, y, cabinHalfX, cabinHalfY, bodyTop, cabinTop, shadeHex(bodyColour, -8), shadeHex(bodyColour, 30));
+    const glass = (from, to, z0, z1) => {
+      polygon(context, [
+        { x: from.x + (to.x - from.x) * 0.1, y: from.y - z1 + (to.y - from.y) * 0.1 },
+        { x: from.x + (to.x - from.x) * 0.9, y: from.y - z1 + (to.y - from.y) * 0.9 },
+        { x: from.x + (to.x - from.x) * 0.9, y: from.y - z0 + (to.y - from.y) * 0.9 },
+        { x: from.x + (to.x - from.x) * 0.1, y: from.y - z0 + (to.y - from.y) * 0.1 },
+      ]);
+      context.fill();
+    };
+    context.fillStyle = "#15232d";
+    const glassLow = bodyTop + cellHeight * 0.07;
+    const glassHigh = cabinTop - cellHeight * 0.06;
+    glass(cabin.west, cabin.south, glassLow, glassHigh);
+    context.fillStyle = "#101c25";
+    // The other visible face runs from south to east.
+    const cabinEast = p(x + cabinHalfX, y - cabinHalfY, 0);
+    glass(cabin.south, cabinEast, glassLow, glassHigh);
+
+    // Head and tail lights at the two ends.
+    const front = alongX ? Math.sign(state.heading.x || 1) : Math.sign(state.heading.y || 1);
+    const end = (sign) => (alongX ? [x + sign * halfX, y] : [x, y + sign * halfY]);
+    for (const [sign, colour] of [[front, "#ffeeb0"], [-front, "#ff4d5e"]]) {
+      const [ex, ey] = end(sign);
+      for (const side of [-0.55, 0.55]) {
+        const at = p(alongX ? ex : ex + side * halfX, alongX ? ey + side * halfY : ey, wheelHeight + cellHeight * shape.body * 0.6);
+        context.fillStyle = colour;
+        context.globalAlpha = 0.9;
+        context.beginPath();
+        context.arc(at.x, at.y, 2.2, 0, Math.PI * 2);
+        context.fill();
+        context.globalAlpha = 1;
+      }
+    }
+    // What makes each kind its own.
+    const roof = lift(p(x, y, 0), cabinTop);
+    if (vehicle.definition.kind === "patrol-car") {
+      const flip = Math.floor(time / 220) % 2 === 0;
+      for (const [offset, colour, on] of [[-0.35, "#ff3b4a", flip], [0.35, "#4a8dff", !flip]]) {
+        const at = p(alongX ? x : x + offset * halfX, alongX ? y + offset * halfY : y, cabinTop + cellHeight * 0.08);
+        context.fillStyle = colour;
+        context.globalAlpha = on ? 1 : 0.35;
+        context.fillRect(at.x - 5, at.y - 3, 10, 5);
+        if (on) {
+          context.globalAlpha = 0.25;
+          context.beginPath();
+          context.arc(at.x, at.y, 14, 0, Math.PI * 2);
+          context.fill();
+        }
+        context.globalAlpha = 1;
+      }
+      context.fillStyle = shadeHex(accentColor, 0);
+      const stripeTop = bodyTop - cellHeight * 0.08;
+      const stripeBottom = bodyTop - cellHeight * 0.16;
+      polygon(context, [up(west, stripeTop), up(south, stripeTop), up(south, stripeBottom), up(west, stripeBottom)]);
+      context.fill();
+    } else if (vehicle.definition.kind === "ambulance") {
+      context.fillStyle = accentColor;
+      const mid = { x: (west.x + south.x) / 2, y: (west.y + south.y) / 2 };
+      const centre = up(mid, wheelHeight + cellHeight * shape.body * 0.55);
+      context.fillRect(centre.x - 6, centre.y - 2, 12, 4);
+      context.fillRect(centre.x - 2, centre.y - 6, 4, 12);
+      const on = Math.floor(time / 300) % 2 === 0;
+      context.fillStyle = on ? "#ff4d5e" : "#7a2530";
+      context.fillRect(roof.x - 6, roof.y - 3, 12, 4);
+    } else if (vehicle.definition.kind === "armored-car") {
+      context.strokeStyle = accentColor;
+      context.lineWidth = 1.5;
+      context.beginPath();
+      for (const z of [0.3, 0.62]) {
+        const a = up(west, wheelHeight + cellHeight * shape.body * z);
+        const b = up(south, wheelHeight + cellHeight * shape.body * z);
+        context.moveTo(a.x, a.y);
+        context.lineTo(b.x, b.y);
+      }
+      context.stroke();
+    } else {
+      context.strokeStyle = accentColor;
+      context.globalAlpha = 0.8;
+      context.lineWidth = 1.5;
+      const a = up(west, wheelHeight + cellHeight * shape.body * 0.35);
+      const b = up(south, wheelHeight + cellHeight * shape.body * 0.35);
+      context.beginPath();
+      context.moveTo(a.x, a.y);
+      context.lineTo(b.x, b.y);
+      context.stroke();
+      context.globalAlpha = 1;
+    }
+  } else if (state.wreckLeft > 0) {
+    // Flames and smoke while the wreck burns.
+    const top = lift(ground, bodyTop);
+    for (let flame = 0; flame < 5; flame += 1) {
+      const phase = (time / 420 + flame * 0.37) % 1;
+      const spread = (flame - 2) * 6;
+      context.fillStyle = `rgba(255, ${Math.round(150 - phase * 90)}, 40, ${0.85 * (1 - phase)})`;
+      context.beginPath();
+      context.ellipse(top.x + spread, top.y - phase * cellHeight * 1.2, 6 * (1 - phase * 0.5), 9 * (1 - phase * 0.4), 0, 0, Math.PI * 2);
+      context.fill();
+    }
+    for (let puff = 0; puff < 3; puff += 1) {
+      const phase = (time / 900 + puff / 3) % 1;
+      context.fillStyle = `rgba(60, 64, 70, ${0.4 * (1 - phase)})`;
+      context.beginPath();
+      context.arc(top.x + puff * 4 - 4, top.y - cellHeight * (0.8 + phase * 1.8), 7 + phase * 10, 0, Math.PI * 2);
+      context.fill();
+    }
+  }
+}

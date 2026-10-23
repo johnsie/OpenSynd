@@ -211,6 +211,28 @@ class Validation:
             if COLOR_PATTERN.fullmatch(str(appearance.get(field))) is None:
                 self.error(path, f"appearance.{field} must be a six-digit hex color")
 
+    def validate_vehicle(self, path: Path, value: dict[str, Any]) -> None:
+        required = {"formatVersion", "id", "name", "license", "kind", "stats", "appearance"}
+        if not self.require(path, value, required):
+            return
+        self.validate_identity(path, value)
+        if value["kind"] not in {"city-car", "patrol-car", "armored-car", "ambulance"}:
+            self.error(path, f"unsupported vehicle kind: {value['kind']!r}")
+        stats = value["stats"]
+        names = {"health", "speed", "seats", "blastRadius", "blastDamage"}
+        if not isinstance(stats, dict) or not names <= stats.keys() or not all(
+            isinstance(stats[name], (int, float)) and not isinstance(stats[name], bool) and stats[name] > 0
+            for name in names if isinstance(stats, dict) and name in stats
+        ):
+            self.error(path, "vehicle stats must define positive health, speed, seats, blastRadius and blastDamage")
+        appearance = value["appearance"]
+        if not isinstance(appearance, dict):
+            self.error(path, "appearance must be an object")
+            return
+        for field in ("primaryColor", "accentColor"):
+            if COLOR_PATTERN.fullmatch(str(appearance.get(field))) is None:
+                self.error(path, f"appearance.{field} must be a six-digit hex color")
+
     def validate_equipment(self, path: Path, value: dict[str, Any]) -> None:
         required = {
             "formatVersion", "id", "name", "description", "license", "type",
@@ -273,6 +295,7 @@ class Validation:
         self, path: Path, value: dict[str, Any], pack_root: Path,
         maps: dict[Path, tuple[dict[str, Any], set[str]]], unit_paths: set[Path],
         equipment_paths: set[Path],
+        vehicle_paths: set[Path] | None = None,
     ) -> None:
         required = {
             "formatVersion", "id", "name", "license", "briefing", "map",
@@ -355,6 +378,33 @@ class Validation:
                                 f"patrol waypoint of {placement_id}",
                             )
 
+        for placement in value.get("vehicles", []):
+            if not isinstance(placement, dict):
+                self.error(path, "vehicles must be objects")
+                continue
+            vehicle_id = placement.get("id")
+            if vehicle_id in placement_ids:
+                self.error(path, f"duplicate placement id: {vehicle_id}")
+            placement_ids.add(vehicle_id)
+            vehicle_path = self.resolve_reference(pack_root, path, placement.get("vehicle"))
+            if vehicle_paths is None or vehicle_path not in vehicle_paths:
+                self.error(path, f"vehicle is not declared by its pack: {placement.get('vehicle')}")
+            driver = placement.get("driver")
+            if driver is not None:
+                driver_path = self.resolve_reference(pack_root, path, driver)
+                if driver_path not in unit_paths:
+                    self.error(path, f"driver unit is not declared by its pack: {driver}")
+            position = placement.get("position")
+            rectangle = dict(position) if isinstance(position, dict) else {}
+            rectangle.update({"width": 1, "height": 1})
+            self.validate_rectangle(path, rectangle, dimensions["width"], dimensions["height"], f"vehicle {vehicle_id}")
+            for waypoint in placement.get("patrol", []):
+                point = dict(waypoint) if isinstance(waypoint, dict) else {}
+                point.update({"width": 1, "height": 1})
+                self.validate_rectangle(
+                    path, point, dimensions["width"], dimensions["height"], f"route waypoint of {vehicle_id}"
+                )
+
         objective_ids: set[str] = set()
         objectives = value["objectives"]
         if not isinstance(objectives, list) or not objectives:
@@ -408,10 +458,11 @@ class Validation:
         maps: dict[Path, tuple[dict[str, Any], set[str]]] = {}
         units: set[Path] = set()
         equipment: set[Path] = set()
+        vehicles: set[Path] = set()
         missions: list[tuple[Path, dict[str, Any]]] = []
 
-        for category in ("maps", "units", "equipment", "missions"):
-            references = pack[category]
+        for category in ("maps", "units", "equipment", "vehicles", "missions"):
+            references = pack.get(category, [])
             if not isinstance(references, list):
                 self.error(pack_path, f"{category} must be an array")
                 continue
@@ -433,12 +484,15 @@ class Validation:
                 elif category == "equipment":
                     equipment.add(content_path)
                     self.validate_equipment(content_path, content)
+                elif category == "vehicles":
+                    vehicles.add(content_path)
+                    self.validate_vehicle(content_path, content)
                 else:
                     missions.append((content_path, content))
 
         for mission_path, mission in missions:
             self.validate_mission(
-                mission_path, mission, pack_root, maps, units, equipment
+                mission_path, mission, pack_root, maps, units, equipment, vehicles
             )
 
         actual = {path.resolve() for path in pack_root.rglob("*.json")}

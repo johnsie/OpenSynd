@@ -865,5 +865,137 @@
     "name": "Southern Brazil",
     "lon": -50,
     "lat": -22
-  }
+  },
+  "vehicles": [
+    {
+      "id": "city-car-1",
+      "vehicle": "vehicles/city-car.vehicle.json",
+      "position": {
+        "x": 74,
+        "y": 68
+      },
+      "driver": "units/civilian-woman.unit.json",
+      "patrol": [
+        {
+          "x": 74,
+          "y": 68
+        },
+        {
+          "x": 93,
+          "y": 68
+        }
+      ]
+    },
+    {
+      "id": "city-car-2",
+      "vehicle": "vehicles/city-car.vehicle.json",
+      "position": {
+        "x": 22,
+        "y": 69
+      },
+      "driver": "units/civilian-man.unit.json",
+      "patrol": [
+        {
+          "x": 22,
+          "y": 69
+        },
+        {
+          "x": 57,
+          "y": 69
+        }
+      ]
+    },
+    {
+      "id": "city-car-3",
+      "vehicle": "vehicles/city-car.vehicle.json",
+      "position": {
+        "x": 8,
+        "y": 69
+      },
+      "driver": "units/criminal.unit.json",
+      "patrol": [
+        {
+          "x": 8,
+          "y": 69
+        },
+        {
+          "x": 39,
+          "y": 69
+        }
+      ]
+    },
+    {
+      "id": "ambulance-4",
+      "vehicle": "vehicles/ambulance.vehicle.json",
+      "position": {
+        "x": 22,
+        "y": 47
+      },
+      "driver": "units/civilian-woman.unit.json",
+      "patrol": [
+        {
+          "x": 22,
+          "y": 47
+        },
+        {
+          "x": 48,
+          "y": 47
+        }
+      ]
+    },
+    {
+      "id": "patrol-car-5",
+      "vehicle": "vehicles/patrol-car.vehicle.json",
+      "position": {
+        "x": 61,
+        "y": 47
+      },
+      "driver": "units/city-police.unit.json",
+      "patrol": [
+        {
+          "x": 61,
+          "y": 47
+        },
+        {
+          "x": 93,
+          "y": 47
+        }
+      ]
+    },
+    {
+      "id": "armored-car-6",
+      "vehicle": "vehicles/armored-car.vehicle.json",
+      "position": {
+        "x": 37,
+        "y": 47
+      },
+      "driver": "units/guard.unit.json",
+      "patrol": [
+        {
+          "x": 37,
+          "y": 47
+        },
+        {
+          "x": 66,
+          "y": 47
+        }
+      ]
+    },
+    {
+      "id": "parked-city-car-1",
+      "vehicle": "vehicles/city-car.vehicle.json",
+      "position": {
+        "x": 8,
+        "y": 47
+      }
+    },
+    {
+      "id": "parked-ambulance-2",
+      "vehicle": "vehicles/ambulance.vehicle.json",
+      "position": {
+        "x": 14,
+        "y": 47
+      }
+    }
+  ]
 }

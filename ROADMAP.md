@@ -621,6 +621,21 @@ guard needs three persuaded civilians, police six, enemy agents four police (cri
 Differences from FreeSynd: shots are not randomised by accuracy (fixed damage instead), distances are scaled to our
 tiles, and "weapon out" is a selected, loaded weapon for operators and an engaged enemy for the rest.
 
+**Vehicles** (`web/src/vehicles.js`, mapped from FreeSynd's vehicle model: types, drivers and passengers, hit and
+explode, ejected drivers, enter and drive). A vehicle is a unit with the role "vehicle", so it can be shot, caught in
+a blast, drawn in depth order and saved like anyone else. Four kinds are in the pack: City Car, Patrol Car (flashing
+light bar), Armored Car (300 health, big blast) and Ambulance (FreeSynd's fire engine, small armored car, medic
+van and trains are not built yet). Cars drive their route along the road tiles (streets and bridges) at 5 to 7.5
+tiles a second with an AI driver (a civilian, police officer, guard or criminal) riding inside; civilians in a car
+do not panic. Shooting a car throws its driver out (a civilian runs from the car); when a car's health runs out it
+drops everyone inside, explodes for up to 45 to 60 damage within 2.4 to 3.2 tiles (hurting friend and foe, and
+setting off neighbouring cars), and burns as a wreck for 12 seconds. The squad can take any car: stand next to it
+and press V (or "Take vehicle"); the first operator in drives, an AI driver is thrown out, other operators and
+their persuaded followers near enough get in as passengers while there are seats. While inside, clicking a road
+drives it there, enemies see and shoot at the car instead of the hidden operators, and V gets everyone out.
+Two parked cars wait near each operation's start. Not saved: who is inside which car (a loaded game starts the
+squad on foot).
+
 The Persuader is a shop item (research 80, price 90, 30 charges, range 3.5 tiles). Click it in
 an operator's inventory to switch it on (with several operators selected, it switches on for
 every one who carries it); magenta waves roll out from an operator who has it on. Each second

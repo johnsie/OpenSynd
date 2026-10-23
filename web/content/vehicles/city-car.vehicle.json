@@ -1,0 +1,18 @@
+{
+  "formatVersion": 1,
+  "id": "developer.city-car",
+  "name": "City Car",
+  "license": "CC0-1.0",
+  "kind": "city-car",
+  "stats": {
+    "health": 90,
+    "speed": 6.5,
+    "seats": 4,
+    "blastRadius": 2.4,
+    "blastDamage": 45
+  },
+  "appearance": {
+    "primaryColor": "#7a8a96",
+    "accentColor": "#42d6d0"
+  }
+}

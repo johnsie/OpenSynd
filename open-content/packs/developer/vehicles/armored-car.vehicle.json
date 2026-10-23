@@ -1,0 +1,18 @@
+{
+  "formatVersion": 1,
+  "id": "developer.armored-car",
+  "name": "Armored Car",
+  "license": "CC0-1.0",
+  "kind": "armored-car",
+  "stats": {
+    "health": 300,
+    "speed": 5.0,
+    "seats": 6,
+    "blastRadius": 3.2,
+    "blastDamage": 60
+  },
+  "appearance": {
+    "primaryColor": "#3a463a",
+    "accentColor": "#e1b35a"
+  }
+}

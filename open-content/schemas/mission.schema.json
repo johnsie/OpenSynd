@@ -38,6 +38,11 @@
     "map": { "$ref": "#/$defs/path" },
     "team": { "type": "array", "minItems": 1, "maxItems": 4, "items": { "$ref": "#/$defs/placement" } },
     "opponents": { "type": "array", "items": { "$ref": "#/$defs/placement" } },
+    "vehicles": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/vehiclePlacement" },
+      "description": "Cars and vans on the roads. Each may have a driver who drives it along its route."
+    },
     "bystanders": {
       "type": "array",
       "items": { "$ref": "#/$defs/placement" },
@@ -78,6 +83,23 @@
       "type": "array",
       "items": { "$ref": "#/$defs/path" },
       "uniqueItems": true
+    },
+    "vehiclePlacement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "vehicle", "position"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "vehicle": { "$ref": "#/$defs/path" },
+        "position": { "$ref": "#/$defs/position" },
+        "driver": { "$ref": "#/$defs/path", "description": "The unit definition of the person at the wheel, if any." },
+        "patrol": {
+          "type": "array",
+          "description": "Waypoints along the roads the driver follows, returning to the start and repeating.",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/position" }
+        }
+      }
     },
     "objective": {
       "type": "object",

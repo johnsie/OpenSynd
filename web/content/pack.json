@@ -46,5 +46,11 @@
     "missions/restore-relay.mission.json",
     "missions/quiet-hours.mission.json",
     "missions/dead-drop.mission.json"
+  ],
+  "vehicles": [
+    "vehicles/city-car.vehicle.json",
+    "vehicles/patrol-car.vehicle.json",
+    "vehicles/armored-car.vehicle.json",
+    "vehicles/ambulance.vehicle.json"
   ]
 }

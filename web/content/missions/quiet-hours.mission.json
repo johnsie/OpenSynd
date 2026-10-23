@@ -768,5 +768,137 @@
     "name": "Eastern North America",
     "lon": -77,
     "lat": 40.5
-  }
+  },
+  "vehicles": [
+    {
+      "id": "city-car-1",
+      "vehicle": "vehicles/city-car.vehicle.json",
+      "position": {
+        "x": 3,
+        "y": 25
+      },
+      "driver": "units/civilian-man.unit.json",
+      "patrol": [
+        {
+          "x": 3,
+          "y": 25
+        },
+        {
+          "x": 22,
+          "y": 25
+        }
+      ]
+    },
+    {
+      "id": "city-car-2",
+      "vehicle": "vehicles/city-car.vehicle.json",
+      "position": {
+        "x": 21,
+        "y": 69
+      },
+      "driver": "units/civilian-woman.unit.json",
+      "patrol": [
+        {
+          "x": 21,
+          "y": 69
+        },
+        {
+          "x": 44,
+          "y": 69
+        }
+      ]
+    },
+    {
+      "id": "city-car-3",
+      "vehicle": "vehicles/city-car.vehicle.json",
+      "position": {
+        "x": 62,
+        "y": 68
+      },
+      "driver": "units/civilian-man.unit.json",
+      "patrol": [
+        {
+          "x": 62,
+          "y": 68
+        },
+        {
+          "x": 93,
+          "y": 68
+        }
+      ]
+    },
+    {
+      "id": "ambulance-4",
+      "vehicle": "vehicles/ambulance.vehicle.json",
+      "position": {
+        "x": 79,
+        "y": 68
+      },
+      "driver": "units/civilian-man.unit.json",
+      "patrol": [
+        {
+          "x": 79,
+          "y": 68
+        },
+        {
+          "x": 93,
+          "y": 68
+        }
+      ]
+    },
+    {
+      "id": "patrol-car-5",
+      "vehicle": "vehicles/patrol-car.vehicle.json",
+      "position": {
+        "x": 25,
+        "y": 6
+      },
+      "driver": "units/city-police.unit.json",
+      "patrol": [
+        {
+          "x": 25,
+          "y": 6
+        },
+        {
+          "x": 25,
+          "y": 22
+        }
+      ]
+    },
+    {
+      "id": "armored-car-6",
+      "vehicle": "vehicles/armored-car.vehicle.json",
+      "position": {
+        "x": 91,
+        "y": 66
+      },
+      "driver": "units/guard.unit.json",
+      "patrol": [
+        {
+          "x": 91,
+          "y": 66
+        },
+        {
+          "x": 91,
+          "y": 93
+        }
+      ]
+    },
+    {
+      "id": "parked-city-car-1",
+      "vehicle": "vehicles/city-car.vehicle.json",
+      "position": {
+        "x": 8,
+        "y": 47
+      }
+    },
+    {
+      "id": "parked-ambulance-2",
+      "vehicle": "vehicles/ambulance.vehicle.json",
+      "position": {
+        "x": 14,
+        "y": 47
+      }
+    }
+  ]
 }

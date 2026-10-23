@@ -1,6 +1,18 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 import { advanceBombs, plantBomb } from "./bombs.js";
+import {
+  advanceVehicles,
+  canEnter,
+  createRoadGrid,
+  driveTo,
+  enterVehicle,
+  isSquadVehicle,
+  isVehicle,
+  leaveVehicle,
+  newVehicleState,
+  vehicleDefinition,
+} from "./vehicles.js";
 import { createOverlay, createTileSprites } from "./textures.js";
 import { renderWorldMap } from "./worldmap.js";
 import {
@@ -11,6 +23,7 @@ import {
   drawFenceTile,
   drawGateTile,
   drawRelay,
+  drawVehicle,
   drawServer,
   drawWallTile,
 } from "./structures.js";
@@ -429,6 +442,10 @@ async function loadGame(index = state.missionIndex) {
     pack.units.map(async (path) => [path, await readJson(`content/${path}`)]),
   );
   const unitDefinitions = new Map(unitEntries);
+  const vehicleEntries = await Promise.all(
+    (pack.vehicles ?? []).map(async (path) => [path, await readJson(`content/${path}`)]),
+  );
+  const vehicleDefinitions = new Map(vehicleEntries);
   const equipmentEntries = await Promise.all(
     pack.equipment.map(async (path) => [path, await readJson(`content/${path}`)]),
   );
@@ -469,37 +486,58 @@ async function loadGame(index = state.missionIndex) {
     complete: false,
   }));
   syncGates();
-  state.units = [...mission.team, ...mission.opponents, ...(mission.bystanders ?? [])].map((placement) => {
-    const definition = unitDefinitions.get(placement.unit);
-    return {
-      ...placement,
-      definition,
-      side: SIDE_BY_ROLE[definition.role] ?? "opposition",
-      position: { ...placement.position },
-      initialPosition: { ...placement.position },
-      alertedBy: null,
-      levels: defaultLevels(),
-      stamina: 1,
-      focus: 1,
-      walkPhase: 0,
-      patrol: placement.patrol
-        ? { route: buildPatrolRoute(state.grid, placement.position, placement.patrol), index: 0 }
-        : null,
-      path: [],
-      research: definition.role === "operator" ? { heart: state.campaign.heart, brain: state.campaign.brain } : null,
-      looted: [],
-      activeSlot: null,
-      initialEquipment: [],
-      equipment: startingEquipment(placement, definition, equipmentDefinitions, definitionsById).map((item) => ({
-        definition: item,
-        charges: item.charges,
-      })),
-      health: definition.stats.vitality,
-      cooldownRemaining: 0,
-      targetId: null,
-      disabled: false,
-    };
+  const buildUnit = (placement, definition) => ({
+    ...placement,
+    definition,
+    side: SIDE_BY_ROLE[definition.role] ?? "opposition",
+    position: { ...placement.position },
+    initialPosition: { ...placement.position },
+    alertedBy: null,
+    levels: defaultLevels(),
+    stamina: 1,
+    focus: 1,
+    walkPhase: 0,
+    patrol: placement.patrol
+      ? { route: buildPatrolRoute(state.grid, placement.position, placement.patrol), index: 0 }
+      : null,
+    path: [],
+    research: definition.role === "operator" ? { heart: state.campaign.heart, brain: state.campaign.brain } : null,
+    looted: [],
+    activeSlot: null,
+    initialEquipment: [],
+    equipment: startingEquipment(placement, definition, equipmentDefinitions, definitionsById).map((item) => ({
+      definition: item,
+      charges: item.charges,
+    })),
+    health: definition.stats.vitality,
+    cooldownRemaining: 0,
+    targetId: null,
+    disabled: false,
   });
+  state.units = [...mission.team, ...mission.opponents, ...(mission.bystanders ?? [])].map((placement) =>
+    buildUnit(placement, unitDefinitions.get(placement.unit)),
+  );
+  // Vehicles are units too (side "vehicle"), with an AI driver who is a unit riding inside.
+  state.roadGrid = createRoadGrid(state.grid);
+  for (const placement of mission.vehicles ?? []) {
+    const definition = vehicleDefinition(vehicleDefinitions.get(placement.vehicle));
+    const driverDefinition = placement.driver ? unitDefinitions.get(placement.driver) : null;
+    const driverId = driverDefinition ? `${placement.id}-driver` : null;
+    const vehicle = buildUnit({ id: placement.id, position: placement.position, equipment: [] }, definition);
+    vehicle.side = "vehicle";
+    vehicle.patrol = null;
+    vehicle.vehicle = newVehicleState(driverId);
+    if (placement.patrol) {
+      vehicle.vehicle.route = { route: buildPatrolRoute(state.roadGrid, placement.position, placement.patrol), index: 0 };
+    }
+    state.units.push(vehicle);
+    if (driverDefinition) {
+      const driver = buildUnit({ id: driverId, position: placement.position, equipment: [] }, driverDefinition);
+      driver.inVehicle = placement.id;
+      driver.patrol = null;
+      state.units.push(driver);
+    }
+  }
   // Each operative's number, shown in gold above their head and matching their place in the squad list.
   state.units.filter((unit) => unit.side === "team").forEach((unit, index) => {
     unit.number = index + 1;
@@ -899,6 +937,13 @@ function applySaveSnapshot(snapshot) {
       charges: item.charges,
     }));
     unit.looted = [...saved.looted];
+    // Who is inside which car is not kept in a save: operators start the loaded game on foot, and a wreck stays one.
+    unit.inVehicle = unit.definition.role === "operator" ? null : unit.inVehicle;
+    if (isVehicle(unit)) {
+      unit.vehicle.controlledBy = null;
+      unit.vehicle.exploded = unit.disabled;
+      unit.vehicle.occupantIds = unit.vehicle.occupantIds.filter((id) => id === unit.vehicle.driverId);
+    }
     unit.persuadedBy = saved.persuadedBy;
     unit.persuaded = saved.persuadedBy !== null;
     unit.persuasions = { ...saved.persuasions };
@@ -1630,6 +1675,12 @@ function drawSprite(unit, sheet, viewport, size) {
 }
 
 function drawUnit(unit, viewport) {
+  if (unit.inVehicle) return;
+  if (isVehicle(unit)) {
+    const controlled = Boolean(unit.vehicle.controlledBy) && state.selectedIds.includes(unit.vehicle.controlledBy);
+    drawVehicle(context, propProjector(viewport, 0), unit, viewport.cellSize.height, performance.now(), { controlled });
+    return;
+  }
   const tile = state.grid[Math.round(unit.position.y)]?.[Math.round(unit.position.x)];
   const center = gridToScreen(
     unit.position,
@@ -1826,6 +1877,7 @@ const MINI_UNIT_COLOURS = {
   police: "#4aa3ff",
   civilian: "#8d9aa3",
   criminal: "#ff9a4a",
+  vehicle: "#b0bcc6",
 };
 const MINI_COLORS = {
   "runoff-channel": "#1f5568",
@@ -1875,10 +1927,11 @@ function drawMinimap(viewport) {
     }
   }
   for (const unit of state.units) {
-    if (unit.disabled) continue;
+    if (unit.disabled || unit.inVehicle) continue;
     const point = miniProject(unit.position, state.map);
     miniContext.fillStyle = unit.persuaded ? "#79d59b" : (MINI_UNIT_COLOURS[unit.side] ?? "#ff6b62");
-    miniContext.fillRect(Math.round(point.x) - 1, Math.round(point.y) - 1, 3, 3);
+    const size = isVehicle(unit) ? 5 : 3;
+    miniContext.fillRect(Math.round(point.x) - Math.floor(size / 2), Math.round(point.y) - Math.floor(size / 2), size, size);
   }
   // The area the main view currently shows.
   const corners = [
@@ -2094,6 +2147,7 @@ function knockBack(victim, shooter) {
 
 // Keep the record of who has been put out of action, and charge for bystanders.
 function countDisabled(down) {
+  if (down.side === "vehicle") return;
   if (down.side === "opposition") state.opStats.enemiesDisabled += 1;
   else if (down.side === "civilian") harmBystander(down, CIVILIAN_PENALTY, "civiliansHarmed");
   else if (down.side === "police") harmBystander(down, POLICE_PENALTY, "policeHarmed");
@@ -2139,6 +2193,10 @@ function handleCombatEvents(combatEvents) {
       }
     } else if (event.type === "disabled") {
       countDisabled(state.units.find((item) => item.id === event.unitId));
+    } else if (event.type === "ejected") {
+      const out = state.units.find((item) => item.id === event.unitId);
+      const car = state.units.find((item) => item.id === event.vehicleId);
+      setStatus(`${out.definition.name} is thrown out of the ${car.definition.name}.`);
     }
   }
   const latest = combatEvents.at(-1);
@@ -2237,7 +2295,11 @@ function simulationStep(deltaSeconds) {
       audio.play("tick");
     }
   }
-  for (const blast of advanceBombs(state.bombs, state.units, deltaSeconds)) {
+  const blasts = [
+    ...advanceVehicles(state.units, deltaSeconds, state.roadGrid, state.grid),
+    ...advanceBombs(state.bombs, state.units, deltaSeconds),
+  ];
+  for (const blast of blasts) {
     addEffect(state.effects, "blast", { at: blast.at, radius: blast.radius });
     audio.play("blast");
     startPanic(state.units, blast.at, state.grid);
@@ -2248,8 +2310,11 @@ function simulationStep(deltaSeconds) {
       if (hit.disabled) countDisabled(victim);
     }
     const harmed = blast.hits.filter((hit) => hit.disabled).length;
+    const source = blast.source ? state.units.find((unit) => unit.id === blast.source) : null;
     setStatus(
-      `The Delay Charge goes off: ${blast.hits.length} caught in the blast` + (harmed > 0 ? `, ${harmed} down.` : "."),
+      `${source ? `The ${source.definition.name} explodes` : "The Delay Charge goes off"}: ` +
+        `${blast.hits.length} caught in the blast` +
+        (harmed > 0 ? `, ${harmed} down.` : "."),
     );
     pruneSelection();
     interfaceChanged = true;
@@ -2420,6 +2485,7 @@ function update(deltaSeconds) {
   if (state.meterClock >= 0.2) {
     state.meterClock = 0;
     updateMeters();
+    if (state.mission) updateVehicleButton();
     if (state.objectives.some((objective) => objective.type === "hold" && !objective.complete && objective.progress > 0)) {
       renderInterface();
     }
@@ -2628,7 +2694,28 @@ function groupDestinations(operators, destination) {
   return assignments;
 }
 
+// Orders for operators who are in a vehicle drive it: it goes to the nearest road to the point clicked.
+function driveOrder(destination) {
+  const driver = selectedOperators().find((unit) => unit.inVehicle);
+  if (!driver) return false;
+  const car = state.units.find((unit) => unit.id === driver.inVehicle);
+  if (!car || car.vehicle.controlledBy !== driver.id) {
+    setStatus("Only the driver can steer. Leave the vehicle with V.");
+    return true;
+  }
+  if (!driveTo(car, destination, state.roadGrid)) {
+    setStatus("No road to drive there.");
+    return true;
+  }
+  state.cursor = { ...destination };
+  audio.play("move");
+  setStatus(`${car.definition.name} driving off.`);
+  renderInterface();
+  return true;
+}
+
 function issueMove(destination) {
+  if (driveOrder(destination)) return;
   const squad = selectedOperators();
   if (squad.length > 1) {
     const assignments = groupDestinations(squad, destination);
@@ -2825,11 +2912,15 @@ function hitUnit(position) {
   let closest = null;
   let closestDistance = Infinity;
   for (const unit of state.units) {
+    if (unit.inVehicle) continue;
     const tile = state.grid[Math.round(unit.position.y)]?.[Math.round(unit.position.x)];
     const center = gridToScreen(unit.position, cellSize, origin, tile?.elevation ?? 0);
     const dx = position.x - center.x;
     const dy = position.y - center.y;
-    if (Math.abs(dx) > halfWidth || dy < -above || dy > below) continue;
+    // A car is wide and low: a different box from a standing figure.
+    const reachX = isVehicle(unit) ? cellSize.width * 0.75 : halfWidth;
+    const reachUp = isVehicle(unit) ? cellSize.height * 1.5 : above;
+    if (Math.abs(dx) > reachX || dy < -reachUp || dy > below) continue;
     // Nearest to the middle of the figure, counting height a little less than width.
     // (a body on the ground only counts when no one standing is under the pointer)
     const distance = Math.hypot(dx, (dy + above * 0.3) * 0.7) + (unit.disabled ? 1000 : 0);
@@ -2913,6 +3004,7 @@ function setPointerCursor(kind) {
 
 // Anyone the squad could fire on: watchers, civilians and police, but not people it has persuaded.
 function isAttackable(unit) {
+  if (isVehicle(unit)) return !isSquadVehicle(unit);
   return ["opposition", "civilian", "police", "criminal"].includes(unit.side) && !unit.persuaded;
 }
 
@@ -3052,6 +3144,9 @@ canvas.addEventListener("keydown", (event) => {
   } else if (action === "loot") {
     event.preventDefault();
     lootAction();
+  } else if (action === "vehicle") {
+    event.preventDefault();
+    toggleVehicle();
   } else if (action === "selectAll") {
     event.preventDefault();
     selectAll();
@@ -3105,6 +3200,7 @@ actionButton.addEventListener("click", performInteraction);
 repairButton.addEventListener("click", useRepairKit);
 document.querySelector("#stim-button").addEventListener("click", useStim);
 document.querySelector("#loot-button").addEventListener("click", lootAction);
+document.querySelector("#vehicle-button").addEventListener("click", toggleVehicle);
 saveButton.addEventListener("click", saveLocally);
 loadButton.addEventListener("click", loadLocally);
 exportButton.addEventListener("click", exportSave);
@@ -3223,6 +3319,9 @@ if (new URLSearchParams(location.search).has("e2e")) {
     },
     musicStatus() {
       return music.status();
+    },
+    moveSelected(x, y) {
+      issueMove({ x, y });
     },
     advanceMusic(seconds) {
       music.advance(seconds);
@@ -3502,6 +3601,57 @@ function changeBar(reference, bar, delta, group, subject) {
   renderInterface();
 }
 
+// The vehicle the selected squad could use right now: the one they are in (to leave), or the nearest one a
+// selected operator is next to (to enter).
+function vehicleCandidate() {
+  const squad = selectedOperators();
+  const riding = squad.find((unit) => unit.inVehicle);
+  if (riding) return { vehicle: state.units.find((unit) => unit.id === riding.inVehicle), leaving: true };
+  let best = null;
+  for (const unit of state.units) {
+    if (!isVehicle(unit)) continue;
+    for (const operator of squad) {
+      if (!canEnter(operator, unit)) continue;
+      const distance = Math.hypot(operator.position.x - unit.position.x, operator.position.y - unit.position.y);
+      if (!best || distance < best.distance) best = { vehicle: unit, leaving: false, distance };
+    }
+  }
+  return best;
+}
+
+function toggleVehicle() {
+  const candidate = vehicleCandidate();
+  if (!candidate) {
+    setStatus("No vehicle within reach. Walk up to one and press V.");
+    return;
+  }
+  const { vehicle, leaving } = candidate;
+  if (leaving) {
+    const out = leaveVehicle(vehicle, state.units, state.grid);
+    setStatus(`${out.length} left the ${vehicle.definition.name}.`);
+    audio.play("select");
+  } else {
+    const { entered, thrownOut } = enterVehicle(vehicle, selectedOperators(), state.units, state.grid);
+    if (entered.length === 0) {
+      setStatus(`No room in the ${vehicle.definition.name}.`);
+      return;
+    }
+    setStatus(
+      `${entered.length} got into the ${vehicle.definition.name}` +
+        (thrownOut ? `; ${thrownOut.definition.name} was thrown out.` : ". Click a road to drive, V to get out."),
+    );
+    audio.play("move");
+  }
+  renderInterface();
+}
+
+// The Enter/Leave vehicle button follows what is within reach (refreshed a few times a second).
+function updateVehicleButton() {
+  const ride = vehicleCandidate();
+  document.querySelector("#vehicle-button").disabled = !ride;
+  document.querySelector("#vehicle-label").textContent = ride?.leaving ? "Leave vehicle" : ride ? "Take vehicle" : "Enter vehicle";
+}
+
 // The operatives a change on this operative's own controls applies to: everyone selected when this
 // one is among several selected, otherwise just this one.
 function levelGroup(unit) {
@@ -3711,6 +3861,7 @@ function renderInterface() {
   const lootButton = document.querySelector("#loot-button");
   const nearBody = findLoot(selectedOperators(), state.units);
   const bodies = state.units.filter(lootableBody).length;
+  updateVehicleButton();
   lootButton.disabled = !nearBody && bodies === 0;
   document.querySelector("#loot-label").textContent = nearBody
     ? `Pick up ${nearBody.body.equipment.length} item${nearBody.body.equipment.length > 1 ? "s" : ""}`

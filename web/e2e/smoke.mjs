@@ -520,6 +520,51 @@ for (const [name, type, executablePath] of targets) {
     await street.waitForFunction(() => document.querySelector("#game-canvas").className.includes("cursor-attack"));
     await street.close();
 
+    // Vehicles: take a parked car and drive it, leave it, and shoot at a moving one to throw its driver out.
+    const garage = await browser.newPage();
+    // A fresh game: earlier pages in this browser may have left a save behind.
+    await garage.addInitScript(() => {
+      for (const key of Object.keys(localStorage)) if (key.startsWith("opensynd.save")) localStorage.removeItem(key);
+    });
+    await garage.goto(`${url}?e2e`);
+    await garage.waitForSelector(".roster-select");
+    await garage.click("#begin-button");
+    await garage.waitForFunction(() => document.querySelector("#status-message").textContent.includes("Local map established"));
+    await garage.evaluate(() => {
+      window.opensyndTest.placeNear("operator-one", "parked-city-car-1", 1, 1);
+      window.opensyndTest.focusOn("operator-one");
+    });
+    await garage.locator("#game-canvas").focus();
+    await garage.waitForFunction(() => !document.querySelector("#vehicle-button").disabled);
+    assert.match(await garage.locator("#vehicle-label").innerText(), /Take vehicle/);
+    await garage.keyboard.press("v");
+    assert.match(await garage.locator("#status-message").innerText(), /got into the City Car/);
+    assert.match(await garage.locator("#vehicle-label").innerText(), /Leave vehicle/);
+    const carBefore = await garage.evaluate(() => window.opensyndTest.positions()["parked-city-car-1"]);
+    await garage.evaluate(() => window.opensyndTest.moveSelected(33, 60));
+    assert.match(await garage.locator("#status-message").innerText(), /driving off/);
+    await garage.waitForTimeout(1500);
+    const carAfter = await garage.evaluate(() => window.opensyndTest.positions());
+    const parked = carAfter["parked-city-car-1"];
+    assert.ok(Math.hypot(parked.x - carBefore.x, parked.y - carBefore.y) > 1, "the car drove");
+    assert.deepEqual(carAfter["operator-one"], carAfter["parked-city-car-1"], "the operator rides in it");
+    await garage.keyboard.press("v");
+    assert.match(await garage.locator("#status-message").innerText(), /left the City Car/);
+    // Shooting a moving car throws its driver out.
+    await garage.evaluate(() => {
+      const test = window.opensyndTest;
+      test.placeNear("operator-one", "city-car-1", 0, 3);
+      test.focusOn("operator-one");
+    });
+    await garage.getByLabel(/slot \d+: Civic Pulse Emitter/).first().click();
+    await garage.evaluate(() => window.opensyndTest.placeNear("city-car-1", "operator-one", 0, -3));
+    await garage.keyboard.press("Space");
+    await garage.waitForTimeout(300);
+    const target = await garage.evaluate(() => window.opensyndTest.screenPoint("city-car-1"));
+    await garage.mouse.click(target.x, target.y - 10, { button: "right" });
+    assert.match(await garage.locator("#status-message").innerText(), /thrown out of the City Car|integrity/);
+    await garage.close();
+
     // Legs and Brain work like weapons: with everyone selected, one operative's controls set them all.
     const group = await browser.newPage();
     await group.goto(`${url}?e2e`);

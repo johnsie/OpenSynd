@@ -246,3 +246,62 @@ test("when an operator goes down their followers and persuasion counts pass to a
   assert.equal(second.persuasions.police, 1);
   assert.equal(first.persuasions.civilian, 0);
 });
+
+// ---- vehicles in the simulation ----
+import { castShot, fireManual } from "../src/simulation.js";
+import { newVehicleState, vehicleDefinition } from "../src/vehicles.js";
+
+const carDef = vehicleDefinition({
+  id: "developer.city-car",
+  name: "City Car",
+  kind: "city-car",
+  stats: { health: 60, speed: 6, seats: 3, blastRadius: 3, blastDamage: 50 },
+  appearance: { primaryColor: "#888888", accentColor: "#44dddd" },
+});
+const aCar = (x, driverId = null, over = {}) => ({
+  id: "car",
+  side: "vehicle",
+  position: { x, y: 2 },
+  path: [],
+  health: 60,
+  disabled: false,
+  targetId: null,
+  definition: carDef,
+  vehicle: newVehicleState(driverId),
+  equipment: [],
+  ...over,
+});
+
+test("a shot at a car hits it with a generous radius and throws the driver out", () => {
+  const driver = person("drv", "civilian", 14, { inVehicle: "car" });
+  const vehicle = aCar(14, "drv");
+  const gun = operator(10, true);
+  const result = fireManual(gun, { x: 14, y: 2.8 }, [gun, vehicle, driver], street);
+  assert.equal(result.fired, true);
+  assert.equal(result.events[0].targetId, "car", "a car is hit a little off-centre; its driver is not a separate target");
+  assert.ok(vehicle.health < 60);
+  assert.ok(result.events.some((event) => event.type === "ejected" && event.unitId === "drv"), "the driver is thrown out");
+  assert.equal(driver.inVehicle, null);
+  assert.equal(castShot(gun, { x: 14, y: 2 }, [gun, aCar(14, "x", { disabled: true })], street, 6).target, null, "a wreck is not a target");
+});
+
+test("people inside a car are neither armed nor targets, and a car the squad drives is what enemies shoot at", () => {
+  const inside = operator(14, true, { inVehicle: "car" });
+  assert.equal(armedOut(inside, 10), false, "nobody fires from inside a car");
+  const enemy = person("e", "opposition", 20, { definition: { role: "enemy-agent", stats: stats({ range: 6, awareness: 90 }) } });
+  const vehicle = aCar(14, "op", { vehicle: { ...newVehicleState("op"), controlledBy: "op" } });
+  clock([enemy, inside, vehicle], 1.2);
+  assert.equal(enemy.alertedBy, "car", "it sees the car the squad is in, not the hidden operator");
+  const parked = aCar(14);
+  const calm = person("e2", "opposition", 20, { definition: { role: "enemy-agent", stats: stats({ range: 6, awareness: 90 }) } });
+  clock([calm, inside, parked], 1.2);
+  assert.equal(calm.alertedBy, null, "an empty parked car interests no one");
+});
+
+test("a thrown-out civilian runs away from the car", () => {
+  const driver = person("drv", "civilian", 14, { fleeFrom: { x: 13, y: 2 } });
+  clock([driver], 0.5);
+  assert.equal(driver.fleeFrom, null);
+  assert.equal(driver.panic.fleeing, true);
+  assert.ok(driver.position.x > 14, "away from the car");
+});

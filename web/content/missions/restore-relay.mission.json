@@ -710,5 +710,118 @@
     "name": "Northern Europe",
     "lon": 6,
     "lat": 51
-  }
+  },
+  "vehicles": [
+    {
+      "id": "city-car-1",
+      "vehicle": "vehicles/city-car.vehicle.json",
+      "position": {
+        "x": 89,
+        "y": 51
+      },
+      "driver": "units/civilian-man.unit.json",
+      "patrol": [
+        {
+          "x": 89,
+          "y": 51
+        },
+        {
+          "x": 125,
+          "y": 51
+        }
+      ]
+    },
+    {
+      "id": "city-car-2",
+      "vehicle": "vehicles/city-car.vehicle.json",
+      "position": {
+        "x": 51,
+        "y": 66
+      },
+      "driver": "units/civilian-woman.unit.json",
+      "patrol": [
+        {
+          "x": 51,
+          "y": 66
+        },
+        {
+          "x": 51,
+          "y": 104
+        }
+      ]
+    },
+    {
+      "id": "city-car-3",
+      "vehicle": "vehicles/city-car.vehicle.json",
+      "position": {
+        "x": 106,
+        "y": 75
+      },
+      "driver": "units/civilian-man.unit.json",
+      "patrol": [
+        {
+          "x": 106,
+          "y": 75
+        },
+        {
+          "x": 125,
+          "y": 75
+        }
+      ]
+    },
+    {
+      "id": "ambulance-4",
+      "vehicle": "vehicles/ambulance.vehicle.json",
+      "position": {
+        "x": 51,
+        "y": 35
+      },
+      "driver": "units/civilian-woman.unit.json",
+      "patrol": [
+        {
+          "x": 51,
+          "y": 35
+        },
+        {
+          "x": 51,
+          "y": 59
+        }
+      ]
+    },
+    {
+      "id": "patrol-car-5",
+      "vehicle": "vehicles/patrol-car.vehicle.json",
+      "position": {
+        "x": 36,
+        "y": 51
+      },
+      "driver": "units/city-police.unit.json",
+      "patrol": [
+        {
+          "x": 36,
+          "y": 51
+        },
+        {
+          "x": 60,
+          "y": 51
+        }
+      ]
+    },
+    {
+      "id": "parked-city-car-1",
+      "vehicle": "vehicles/city-car.vehicle.json",
+      "position": {
+        "x": 27,
+        "y": 60
+      }
+    },
+    {
+      "id": "parked-ambulance-2",
+      "vehicle": "vehicles/ambulance.vehicle.json",
+      "position": {
+        "x": 28,
+        "y": 67
+      }
+    }
+  ]
 }
