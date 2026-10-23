@@ -1,11 +1,11 @@
 {
   "formatVersion": 1,
   "id": "developer.op-western-siberia",
-  "name": "Western Siberia Vault Job",
+  "name": "Western Siberia Defection",
   "license": "CC0-1.0",
   "title": "Western Siberia is ours",
-  "briefing": "Ironwood Trust holds Western Siberia through its bonded warehouses. Download the records from the vault server, take down the site warden, unlock the service gate, then leave by the exit. Expect 9 enemy agents and 4 guards on the streets.",
-  "story": "Western Siberia Vault Job: Ironwood Trust runs Western Siberia from its bonded warehouses, and the district only notices when the lights go out. Your team has one night to download the records, silence the warden and walk out the exit.",
+  "briefing": "Ironwood Trust holds Western Siberia through its bonded warehouses. Win the defector over with a Persuader and bring them out alive, unlock the service gate, then leave by the exit. Expect 9 enemy agents and 4 guards on the streets.",
+  "story": "Western Siberia Defection: Ironwood Trust runs Western Siberia from its bonded warehouses, and the district only notices when the lights go out. Your team has one night to bring the defector out alive and walk out the exit.",
   "debrief": {
     "success": "Western Siberia wakes up with the bonded warehouses in other hands. Your team is back in the dark before morning.",
     "failure": "The team is down in Western Siberia before the work was done. Regroup and try a different approach."
@@ -21,7 +21,8 @@
       },
       "equipment": [
         "equipment/civic-pulse-emitter.equipment.json",
-        "equipment/field-repair-kit.equipment.json"
+        "equipment/field-repair-kit.equipment.json",
+        "equipment/persuader.equipment.json"
       ]
     },
     {
@@ -322,43 +323,43 @@
       ]
     },
     {
-      "id": "warden",
-      "unit": "units/site-warden.unit.json",
+      "id": "minder-1",
+      "unit": "units/guard.unit.json",
       "position": {
-        "x": 43,
-        "y": 102
+        "x": 95,
+        "y": 11
       },
-      "equipment": [
-        "equipment/scatter-emitter.equipment.json"
-      ],
-      "patrol": [
-        {
-          "x": 43,
-          "y": 102
-        },
-        {
-          "x": 39,
-          "y": 102
-        }
-      ]
+      "equipment": []
+    },
+    {
+      "id": "minder-2",
+      "unit": "units/guard.unit.json",
+      "position": {
+        "x": 85,
+        "y": 9
+      },
+      "equipment": []
     }
   ],
   "objectives": [
     {
-      "id": "download-records",
-      "type": "interact",
-      "targetZone": "vault-server",
-      "required": true,
-      "description": "Download the records from the vault server."
-    },
-    {
-      "id": "disable-warden",
-      "type": "disable",
+      "id": "win-defector",
+      "type": "persuade",
       "targets": [
-        "warden"
+        "defector"
       ],
       "required": true,
-      "description": "Disable the site warden."
+      "description": "Win the defector over with the Persuader: they must follow you."
+    },
+    {
+      "id": "escort-defector",
+      "type": "protect",
+      "targets": [
+        "defector"
+      ],
+      "targetZone": "safe-exit",
+      "required": true,
+      "description": "Bring the defector to the exit alive."
     },
     {
       "id": "open-gate",
@@ -377,6 +378,15 @@
   ],
   "bystanders": [
     {
+      "id": "defector",
+      "unit": "units/civilian-man.unit.json",
+      "position": {
+        "x": 91,
+        "y": 8
+      },
+      "equipment": []
+    },
+    {
       "id": "civilian-1",
       "unit": "units/civilian-woman.unit.json",
       "position": {
@@ -391,7 +401,7 @@
         },
         {
           "x": 51,
-          "y": 38
+          "y": 24
         }
       ]
     },
@@ -409,8 +419,8 @@
           "y": 50
         },
         {
-          "x": 16,
-          "y": 40
+          "x": 8,
+          "y": 50
         }
       ]
     },
@@ -428,7 +438,7 @@
           "y": 52
         },
         {
-          "x": 91,
+          "x": 107,
           "y": 52
         }
       ]
@@ -447,8 +457,8 @@
           "y": 27
         },
         {
-          "x": 87,
-          "y": 27
+          "x": 81,
+          "y": 35
         }
       ]
     },
@@ -466,7 +476,7 @@
           "y": 43
         },
         {
-          "x": 89,
+          "x": 82,
           "y": 43
         }
       ]
@@ -485,8 +495,8 @@
           "y": 51
         },
         {
-          "x": 49,
-          "y": 39
+          "x": 62,
+          "y": 51
         }
       ]
     },
@@ -505,7 +515,7 @@
         },
         {
           "x": 2,
-          "y": 65
+          "y": 62
         }
       ]
     },
@@ -523,8 +533,8 @@
           "y": 89
         },
         {
-          "x": 110,
-          "y": 89
+          "x": 100,
+          "y": 80
         }
       ]
     },
@@ -542,7 +552,7 @@
           "y": 0
         },
         {
-          "x": 84,
+          "x": 60,
           "y": 0
         }
       ]
@@ -561,7 +571,7 @@
           "y": 74
         },
         {
-          "x": 111,
+          "x": 109,
           "y": 74
         }
       ]
@@ -580,8 +590,8 @@
           "y": 33
         },
         {
-          "x": 25,
-          "y": 33
+          "x": 28,
+          "y": 24
         }
       ]
     },
@@ -618,8 +628,8 @@
           "y": 50
         },
         {
-          "x": 64,
-          "y": 50
+          "x": 71,
+          "y": 54
         }
       ]
     },
@@ -646,18 +656,18 @@
       "id": "criminal-2",
       "unit": "units/criminal.unit.json",
       "position": {
-        "x": 91,
-        "y": 8
+        "x": 43,
+        "y": 102
       },
       "equipment": [],
       "patrol": [
         {
-          "x": 91,
-          "y": 8
+          "x": 43,
+          "y": 102
         },
         {
-          "x": 91,
-          "y": 14
+          "x": 43,
+          "y": 97
         }
       ]
     },
@@ -675,8 +685,8 @@
           "y": 96
         },
         {
-          "x": 111,
-          "y": 96
+          "x": 108,
+          "y": 102
         }
       ]
     }
@@ -693,22 +703,60 @@
       "vehicle": "vehicles/city-car.vehicle.json",
       "position": {
         "x": 62,
-        "y": 53
+        "y": 75
       },
       "driver": "units/civilian-man.unit.json",
       "patrol": [
         {
           "x": 62,
-          "y": 53
+          "y": 75
         },
         {
           "x": 109,
-          "y": 53
+          "y": 75
         }
       ]
     },
     {
       "id": "city-car-2",
+      "vehicle": "vehicles/city-car.vehicle.json",
+      "position": {
+        "x": 2,
+        "y": 27
+      },
+      "driver": "units/civilian-woman.unit.json",
+      "patrol": [
+        {
+          "x": 2,
+          "y": 27
+        },
+        {
+          "x": 49,
+          "y": 27
+        }
+      ]
+    },
+    {
+      "id": "city-car-3",
+      "vehicle": "vehicles/city-car.vehicle.json",
+      "position": {
+        "x": 62,
+        "y": 98
+      },
+      "driver": "units/civilian-man.unit.json",
+      "patrol": [
+        {
+          "x": 62,
+          "y": 98
+        },
+        {
+          "x": 109,
+          "y": 98
+        }
+      ]
+    },
+    {
+      "id": "city-car-4",
       "vehicle": "vehicles/city-car.vehicle.json",
       "position": {
         "x": 2,
@@ -727,59 +775,21 @@
       ]
     },
     {
-      "id": "city-car-3",
-      "vehicle": "vehicles/city-car.vehicle.json",
-      "position": {
-        "x": 2,
-        "y": 50
-      },
-      "driver": "units/civilian-man.unit.json",
-      "patrol": [
-        {
-          "x": 2,
-          "y": 50
-        },
-        {
-          "x": 49,
-          "y": 50
-        }
-      ]
-    },
-    {
-      "id": "city-car-4",
-      "vehicle": "vehicles/city-car.vehicle.json",
-      "position": {
-        "x": 62,
-        "y": 98
-      },
-      "driver": "units/civilian-woman.unit.json",
-      "patrol": [
-        {
-          "x": 62,
-          "y": 98
-        },
-        {
-          "x": 109,
-          "y": 98
-        }
-      ]
-    },
-    {
       "id": "city-car-5",
       "vehicle": "vehicles/patrol-car.vehicle.json",
       "position": {
-        "x": 2,
-        "y": 76
+        "x": 62,
+        "y": 99
       },
       "driver": "units/civilian-man.unit.json",
       "patrol": [
         {
-          "x": 2,
-          "y": 76
+          "x": 62,
+          "y": 99
         },
         {
-          "x": 46,
-          "y": 76
+          "x": 109,
+          "y": 99
         }
       ]
     },
@@ -788,17 +798,17 @@
       "vehicle": "vehicles/armored-car.vehicle.json",
       "position": {
         "x": 62,
-        "y": 28
+        "y": 77
       },
       "driver": "units/civilian-woman.unit.json",
       "patrol": [
         {
           "x": 62,
-          "y": 28
+          "y": 77
         },
         {
-          "x": 95,
-          "y": 28
+          "x": 109,
+          "y": 77
         }
       ]
     },
@@ -831,6 +841,6 @@
   "unlocks": [],
   "intel": [
     "Patrol survey: 9 agents and 4 guards cover the district; they move in pairs along the streets.",
-    "Full survey: the warden keeps the only key to the vault, so find him early."
+    "Full survey: the defector waits at a safe house deep in the district with two minders; a Persuader is in the kit."
   ]
 }

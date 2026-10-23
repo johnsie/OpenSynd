@@ -896,6 +896,36 @@ for (const [name, type, executablePath] of targets) {
     assert.equal(await updating.evaluate(() => document.querySelector("#title-dialog").open), false, "straight back into the operation");
     await updating.close();
 
+    // A defection: win the defector over with the Persuader, then they follow the squad and the objective is done.
+    const defection = await browser.newPage({ viewport: { width: 1400, height: 900 } });
+    await defection.goto(`${url}?e2e`);
+    await defection.waitForSelector(".roster-select");
+    const defectionName = await defection.evaluate(async () => {
+      const pack = await (await fetch("content/pack.json")).json();
+      const all = [];
+      for (const path of pack.missions) all.push(await (await fetch(`content/${path}`)).json());
+      const chosen = all.find((mission) => mission.objectives.some((objective) => objective.type === "persuade"));
+      localStorage.setItem("opensynd.progress.v1", JSON.stringify({ completed: all.filter((m) => m !== chosen).map((m) => m.id) }));
+      return chosen.name;
+    });
+    await defection.reload();
+    await defection.waitForSelector(".roster-select");
+    await defection.click("#filter-all");
+    await defection.locator("#mission-list button", { hasText: defectionName }).first().click();
+    await defection.waitForFunction((name) => document.querySelector("#title-heading").textContent.length > 0 && name.length > 0, defectionName);
+    await defection.click("#begin-button");
+    await defection.waitForFunction(() => document.querySelector("#status-message").textContent.includes("Local map established"));
+    assert.match(await defection.locator("#objective-list").innerText(), /Win the defector over/);
+    await defection.evaluate(() => {
+      const test = window.opensyndTest;
+      test.placeNear("operator-one", "defector", 2, 0);
+      test.focusOn("operator-one");
+    });
+    await defection.getByLabel(/Field Operator 1 slot \d+: Persuader/).click();
+    await defection.waitForFunction(() => window.opensyndTest.persuadedBy("defector") !== null, null, { timeout: 30000 });
+    await defection.waitForFunction(() => document.querySelector("#objective-list li.complete")?.textContent.includes("defector"));
+    await defection.close();
+
     // Several operatives selected: they all move up to gear on the ground, and the one with fewest items picks it up.
     const crowd = await browser.newPage({ viewport: { width: 1400, height: 900 } });
     await crowd.goto(`${url}?e2e`);

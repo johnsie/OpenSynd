@@ -305,3 +305,36 @@ test("every placement and scripted destination in every operation stands on grou
     for (const zone of map.zones) reachable(zone.position, `zone ${zone.id}`);
   }
 });
+
+test("some operations are purges (put down every enemy agent) and some are defections (persuade someone and bring them out)", async () => {
+  const pack = await read("pack.json");
+  let purges = 0;
+  let defections = 0;
+  for (const path of pack.missions) {
+    const mission = await read(path);
+    const map = await read(mission.map);
+    const grid = createTileGrid(map);
+    const agents = mission.opponents.filter((placement) => placement.unit.includes("enemy-agent")).map((placement) => placement.id);
+    const purge = mission.objectives.find((objective) => objective.type === "eliminate");
+    if (purge) {
+      purges += 1;
+      assert.deepEqual([...purge.targets].sort(), [...agents].sort(), `${mission.id}: the purge names every enemy agent, and only them`);
+      assert.ok(agents.length >= 5, `${mission.id}: a purge has real work to do`);
+    }
+    const persuade = mission.objectives.find((objective) => objective.type === "persuade");
+    if (persuade) {
+      defections += 1;
+      assert.deepEqual(persuade.targets, ["defector"]);
+      const defector = mission.bystanders.find((placement) => placement.id === "defector");
+      assert.ok(defector, `${mission.id}: the defector is a bystander`);
+      assert.ok(grid[defector.position.y]?.[defector.position.x]?.walkable, `${mission.id}: the defector stands on walkable ground`);
+      const escort = mission.objectives.find((objective) => objective.type === "protect");
+      assert.deepEqual([escort?.targets, escort?.targetZone], [["defector"], "safe-exit"], "and has to reach the exit alive");
+      const carried = mission.team.flatMap((member) => member.equipment);
+      assert.ok(carried.includes("equipment/persuader.equipment.json"), `${mission.id}: the squad starts with a Persuader`);
+      const minders = mission.opponents.filter((placement) => placement.id.startsWith("minder-"));
+      assert.equal(minders.length, 2, "two minders stand by the defector");
+    }
+  }
+  assert.ok(purges >= 8 && defections >= 8, `a good number of each (${purges} purges, ${defections} defections)`);
+});

@@ -55,7 +55,7 @@ killing and stops when nobody saw it.
 
 Fifty operations should not all play the same. The objective types exist; most missions only use three of them.
 
-**B1. Objective variety pass (M).** Re-cut the 44 generated operations so each of the five shapes has real variants:
+**B1. Objective variety pass (M).** Purges (clear every enemy agent) and defections (persuade someone and bring them out) are already in, nine operations each. Re-cut the rest of the generated operations so each of the five shapes has real variants:
 *escort* a persuaded VIP to the exit; *assassinate* a target who moves between safe houses; *steal* a vehicle and drive it out;
 *sabotage* three transformers in a set order; *defend* a position through three waves; *hostage* where a careless shot costs the
 operation. The generator already knows the objective types. *Test:* each variant is winnable by the balance bot at the two

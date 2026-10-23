@@ -1,13 +1,13 @@
 {
   "formatVersion": 1,
   "id": "developer.op-borneo",
-  "name": "Borneo Vault Job",
+  "name": "Borneo Purge",
   "license": "CC0-1.0",
   "title": "Borneo is ours",
-  "briefing": "Corvid Syndicate holds Borneo through its market lanes. Download the records from the vault server, take down the site warden, then leave by the exit. Expect 16 enemy agents and 6 guards on the streets.",
-  "story": "Borneo Vault Job: Corvid Syndicate runs Borneo from its market lanes, and the district only notices when the lights go out. Your team has one night to download the records, silence the warden and walk out the exit.",
+  "briefing": "Corvid Syndicate holds Borneo through its bonded warehouses. Put down every enemy agent in the district, then leave by the exit. Expect 16 enemy agents and 6 guards on the streets.",
+  "story": "Borneo Purge: Corvid Syndicate runs Borneo from its bonded warehouses, and the district only notices when the lights go out. Your team has one night to clear out every enemy agent and walk out the exit.",
   "debrief": {
-    "success": "Borneo wakes up with the market lanes in other hands. Your team is back in the dark before morning.",
+    "success": "Borneo wakes up with the bonded warehouses in other hands. Your team is back in the dark before morning.",
     "failure": "The team is down in Borneo before the work was done. Regroup and try a different approach."
   },
   "map": "maps/borneo.map.json",
@@ -503,45 +503,32 @@
           "y": 13
         }
       ]
-    },
-    {
-      "id": "warden",
-      "unit": "units/site-warden.unit.json",
-      "position": {
-        "x": 106,
-        "y": 78
-      },
-      "equipment": [
-        "equipment/scatter-emitter.equipment.json"
-      ],
-      "patrol": [
-        {
-          "x": 106,
-          "y": 78
-        },
-        {
-          "x": 111,
-          "y": 78
-        }
-      ]
     }
   ],
   "objectives": [
     {
-      "id": "download-records",
-      "type": "interact",
-      "targetZone": "vault-server",
-      "required": true,
-      "description": "Download the records from the vault server."
-    },
-    {
-      "id": "disable-warden",
-      "type": "disable",
+      "id": "purge-agents",
+      "type": "eliminate",
       "targets": [
-        "warden"
+        "enemy-agent-one",
+        "enemy-agent-two",
+        "enemy-agent-three",
+        "enemy-agent-four",
+        "enemy-agent-five",
+        "enemy-agent-six",
+        "enemy-agent-seven",
+        "enemy-agent-eight",
+        "enemy-agent-nine",
+        "enemy-agent-ten",
+        "enemy-agent-eleven",
+        "enemy-agent-twelve",
+        "enemy-agent-thirteen",
+        "enemy-agent-fourteen",
+        "enemy-agent-fifteen",
+        "enemy-agent-sixteen"
       ],
       "required": true,
-      "description": "Disable the site warden."
+      "description": "Put down every enemy agent in the district (16)."
     },
     {
       "id": "leave-district",
@@ -566,8 +553,8 @@
           "y": 39
         },
         {
-          "x": 75,
-          "y": 31
+          "x": 78,
+          "y": 39
         }
       ]
     },
@@ -585,8 +572,8 @@
           "y": 33
         },
         {
-          "x": 49,
-          "y": 33
+          "x": 53,
+          "y": 25
         }
       ]
     },
@@ -604,8 +591,8 @@
           "y": 93
         },
         {
-          "x": 52,
-          "y": 84
+          "x": 49,
+          "y": 93
         }
       ]
     },
@@ -623,8 +610,8 @@
           "y": 125
         },
         {
-          "x": 81,
-          "y": 125
+          "x": 95,
+          "y": 121
         }
       ]
     },
@@ -642,7 +629,7 @@
           "y": 53
         },
         {
-          "x": 99,
+          "x": 96,
           "y": 53
         }
       ]
@@ -661,8 +648,8 @@
           "y": 41
         },
         {
-          "x": 102,
-          "y": 41
+          "x": 98,
+          "y": 50
         }
       ]
     },
@@ -680,7 +667,7 @@
           "y": 122
         },
         {
-          "x": 117,
+          "x": 116,
           "y": 122
         }
       ]
@@ -699,7 +686,7 @@
           "y": 76
         },
         {
-          "x": 120,
+          "x": 100,
           "y": 76
         }
       ]
@@ -718,8 +705,8 @@
           "y": 28
         },
         {
-          "x": 21,
-          "y": 25
+          "x": 31,
+          "y": 28
         }
       ]
     },
@@ -738,7 +725,7 @@
         },
         {
           "x": 101,
-          "y": 52
+          "y": 75
         }
       ]
     },
@@ -756,8 +743,8 @@
           "y": 7
         },
         {
-          "x": 121,
-          "y": 7
+          "x": 124,
+          "y": 0
         }
       ]
     },
@@ -794,8 +781,8 @@
           "y": 127
         },
         {
-          "x": 90,
-          "y": 127
+          "x": 98,
+          "y": 121
         }
       ]
     },
@@ -813,8 +800,8 @@
           "y": 34
         },
         {
-          "x": 124,
-          "y": 44
+          "x": 121,
+          "y": 34
         }
       ]
     },
@@ -833,7 +820,7 @@
         },
         {
           "x": 2,
-          "y": 7
+          "y": 22
         }
       ]
     },
@@ -852,7 +839,7 @@
         },
         {
           "x": 3,
-          "y": 18
+          "y": 15
         }
       ]
     }
@@ -868,10 +855,29 @@
       "id": "city-car-1",
       "vehicle": "vehicles/city-car.vehicle.json",
       "position": {
+        "x": 70,
+        "y": 76
+      },
+      "driver": "units/civilian-man.unit.json",
+      "patrol": [
+        {
+          "x": 70,
+          "y": 76
+        },
+        {
+          "x": 125,
+          "y": 76
+        }
+      ]
+    },
+    {
+      "id": "city-car-2",
+      "vehicle": "vehicles/city-car.vehicle.json",
+      "position": {
         "x": 2,
         "y": 51
       },
-      "driver": "units/civilian-man.unit.json",
+      "driver": "units/civilian-woman.unit.json",
       "patrol": [
         {
           "x": 2,
@@ -880,25 +886,6 @@
         {
           "x": 57,
           "y": 51
-        }
-      ]
-    },
-    {
-      "id": "city-car-2",
-      "vehicle": "vehicles/city-car.vehicle.json",
-      "position": {
-        "x": 70,
-        "y": 75
-      },
-      "driver": "units/civilian-woman.unit.json",
-      "patrol": [
-        {
-          "x": 70,
-          "y": 75
-        },
-        {
-          "x": 125,
-          "y": 75
         }
       ]
     },
@@ -907,17 +894,17 @@
       "vehicle": "vehicles/city-car.vehicle.json",
       "position": {
         "x": 70,
-        "y": 125
+        "y": 123
       },
       "driver": "units/civilian-man.unit.json",
       "patrol": [
         {
           "x": 70,
-          "y": 125
+          "y": 123
         },
         {
           "x": 125,
-          "y": 125
+          "y": 123
         }
       ]
     },
@@ -926,17 +913,17 @@
       "vehicle": "vehicles/city-car.vehicle.json",
       "position": {
         "x": 70,
-        "y": 27
+        "y": 124
       },
       "driver": "units/civilian-woman.unit.json",
       "patrol": [
         {
           "x": 70,
-          "y": 27
+          "y": 124
         },
         {
           "x": 125,
-          "y": 27
+          "y": 124
         }
       ]
     },
@@ -945,17 +932,17 @@
       "vehicle": "vehicles/patrol-car.vehicle.json",
       "position": {
         "x": 2,
-        "y": 100
+        "y": 101
       },
       "driver": "units/civilian-man.unit.json",
       "patrol": [
         {
           "x": 2,
-          "y": 100
+          "y": 101
         },
         {
           "x": 34,
-          "y": 100
+          "y": 101
         }
       ]
     },
@@ -963,18 +950,18 @@
       "id": "city-car-6",
       "vehicle": "vehicles/armored-car.vehicle.json",
       "position": {
-        "x": 46,
-        "y": 75
+        "x": 70,
+        "y": 125
       },
       "driver": "units/civilian-woman.unit.json",
       "patrol": [
         {
-          "x": 46,
-          "y": 75
+          "x": 70,
+          "y": 125
         },
         {
-          "x": 57,
-          "y": 75
+          "x": 125,
+          "y": 125
         }
       ]
     },
@@ -1007,6 +994,6 @@
   "unlocks": [],
   "intel": [
     "Patrol survey: 16 agents and 6 guards cover the district; they move in pairs along the streets.",
-    "Full survey: the warden keeps the only key to the vault, so find him early."
+    "Full survey: every enemy agent counts: the guards and police do not, but they will join the fight."
   ]
 }

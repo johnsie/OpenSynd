@@ -263,6 +263,31 @@ RECIPES = [
     {"key": "audit", "noun": "Audit", "relays": 2, "gate": True, "server": True, "warden": False, "hold": False},
     {"key": "blackout", "noun": "Blackout", "relays": 3, "gate": False, "server": False, "warden": True, "hold": True},
 ]
+# Two further shapes, each given to about a fifth of the generated operations: clear the district of enemy agents, or win a
+# defector over with the Persuader and bring them out alive.
+PURGE = {"key": "purge", "noun": "Purge", "relays": 0, "gate": False, "server": False, "warden": False, "hold": False,
+         "purge": True, "defector": False}
+DEFECTION = {"key": "defection", "noun": "Defection", "relays": 0, "gate": False, "server": False, "warden": False,
+             "hold": False, "purge": False, "defector": True}
+
+
+def special_shapes(generated: list[dict]) -> dict[str, dict]:
+    """Which generated operations are a purge and which a defection: every fifth in alphabetical order for each, so the two are
+    spread evenly (about nine of each across the campaign) whatever the dice would say."""
+    shapes = {}
+    for index, territory in enumerate(sorted(generated, key=lambda item: item["id"])):
+        if index % 5 == 1:
+            shapes[territory["id"]] = PURGE
+        elif index % 5 == 3:
+            shapes[territory["id"]] = DEFECTION
+    return shapes
+
+
+def recipe_for(territory: dict, special: dict[str, dict]) -> dict:
+    """The shape of a territory's operation: a purge, a defection, or one of the five ordinary shapes."""
+    return special.get(territory["id"]) or RECIPES[seed_of(territory["id"] + ":recipe") % len(RECIPES)]
+
+
 PLACES = ["freight sidings", "harbour yard", "records annex", "switching yard", "market lanes", "pump station",
           "tram depot", "bonded warehouses", "signal tower", "water works", "customs hall", "container park"]
 RELAY_WORDS = ["north-west", "southern", "eastern", "central", "western", "river"]
@@ -360,6 +385,16 @@ def make_mission(territory: dict, tier: int, layout: dict, map_value: dict, map_
         seconds = 20 + 4 * tier
         objectives.append({"id": "hold-uplink", "type": "hold", "targetZone": "uplink-hold", "holdSeconds": seconds,
                            "required": True, "description": f"Hold the uplink for {seconds} seconds."})
+    agents = [5, 7, 9, 12, 16][tier - 1]
+    if recipe.get("purge"):
+        targets = [f"enemy-agent-{NUMBERS[number]}" for number in range(agents)]
+        objectives.append({"id": "purge-agents", "type": "eliminate", "targets": targets, "required": True,
+                           "description": f"Put down every enemy agent in the district ({agents})."})
+    if recipe.get("defector"):
+        objectives.append({"id": "win-defector", "type": "persuade", "targets": ["defector"], "required": True,
+                           "description": "Win the defector over with the Persuader: they must follow you."})
+        objectives.append({"id": "escort-defector", "type": "protect", "targets": ["defector"], "targetZone": "safe-exit",
+                           "required": True, "description": "Bring the defector to the exit alive."})
     if layout["gate"]:
         objectives.append({"id": "open-gate", "type": "interact", "targetZone": "gate-panel", "required": True,
                            "description": "Unlock the service gate."})
@@ -369,11 +404,11 @@ def make_mission(territory: dict, tier: int, layout: dict, map_value: dict, map_
     # ---- people
     team = [
         {"id": name, "unit": "units/field-operator.unit.json", "position": {"x": entry[0] + dx, "y": entry[1] + dy},
-         "equipment": ["equipment/civic-pulse-emitter.equipment.json", "equipment/field-repair-kit.equipment.json"]}
+         "equipment": ["equipment/civic-pulse-emitter.equipment.json", "equipment/field-repair-kit.equipment.json"]
+         + (["equipment/persuader.equipment.json"] if recipe.get("defector") and name == "operator-one" else [])}
         for name, (dx, dy) in zip(["operator-one", "operator-two", "operator-three", "operator-four"],
                                   [(0, 0), (1, 0), (0, 1), (1, 1)])
     ]
-    agents = [5, 7, 9, 12, 16][tier - 1]
     guards = [2, 3, 4, 5, 6][tier - 1]
     heavy_share = [0.0, 0.15, 0.3, 0.4, 0.5][tier - 1]
     opponents = []
@@ -414,6 +449,17 @@ def make_mission(territory: dict, tier: int, layout: dict, map_value: dict, map_
             "equipment": ["equipment/scatter-emitter.equipment.json"]}, 4, 6))
 
     bystanders = []
+    if recipe.get("defector"):
+        # The defector waits at a safe house deep in the district, with two guards standing close by.
+        far = [p for p in pool if math.hypot(p[0] - entry[0], p[1] - entry[1]) > 36] or pool
+        house = spot(far)
+        bystanders.append({"id": "defector", "unit": "units/civilian-man.unit.json",
+                           "position": {"x": house[0], "y": house[1]}, "equipment": []})
+        near = [p for p in pool if 3 <= math.hypot(p[0] - house[0], p[1] - house[1]) <= 8]
+        for number in range(2):
+            position = spot(near or pool)
+            opponents.append({"id": f"minder-{number + 1}", "unit": "units/guard.unit.json",
+                              "position": {"x": position[0], "y": position[1]}, "equipment": []})
     kinds = ["units/civilian-woman.unit.json", "units/civilian-man.unit.json"]
     for number in range(10):
         position = spot(street or pool)
@@ -479,14 +525,22 @@ def make_mission(territory: dict, tier: int, layout: dict, map_value: dict, map_
         "unlocks": unlocks,
         "intel": [
             f"Patrol survey: {agents} agents and {guards} guards cover the district; they move in pairs along the streets.",
-            "Full survey: " + ("the warden keeps the only key to the vault, so find him early."
-                               if recipe["warden"] else "the relay plazas are watched most closely; take the quieter ones first."),
+            "Full survey: " + ("the warden keeps the only key to the vault, so find him early." if recipe["warden"]
+                               else "the defector waits at a safe house deep in the district with two minders; a Persuader is in the kit."
+                               if recipe.get("defector")
+                               else "every enemy agent counts: the guards and police do not, but they will join the fight."
+                               if recipe.get("purge")
+                               else "the relay plazas are watched most closely; take the quieter ones first."),
         ],
     }
 
 
 def describe(recipe: dict, layout: dict) -> str:
     parts = []
+    if recipe.get("purge"):
+        parts.append("put down every enemy agent in the district")
+    if recipe.get("defector"):
+        parts.append("win the defector over with a Persuader and bring them out alive")
     if recipe["relays"]:
         parts.append(f"reconnect {recipe['relays']} relays")
     if recipe["server"]:
@@ -504,6 +558,10 @@ def describe(recipe: dict, layout: dict) -> str:
 
 def summarise(recipe: dict) -> str:
     verbs = []
+    if recipe.get("purge"):
+        verbs.append("clear out every enemy agent")
+    if recipe.get("defector"):
+        verbs.append("bring the defector out alive")
     if recipe["relays"]:
         verbs.append("reconnect the relays")
     if recipe["server"]:
@@ -584,12 +642,13 @@ def main() -> None:
     pack = json.loads((PACK / "pack.json").read_text(encoding="utf-8"))
     pack_maps = list(HANDMADE_MAPS)
     pack_missions = [m for m in pack["missions"] if m in HANDMADE]
+    special = special_shapes(generated)
     for t in generated:
         tier = tier_of[t["id"]]
         layout, map_value = make_map(t, tier)
         map_path = f"maps/{layout['file']}"
         (PACK / map_path).write_text(json.dumps(map_value, indent=1) + "\n", encoding="utf-8")
-        recipe = RECIPES[seed_of(t["id"] + ":recipe") % len(RECIPES)]
+        recipe = recipe_for(t, special)
         mission = make_mission(t, tier, layout, map_value, map_path, sorted(children[t["id"]]), recipe)
         mission_path = f"missions/{slug_of(t)}.mission.json"
         (PACK / mission_path).write_text(json.dumps(mission, indent=2) + "\n", encoding="utf-8")
