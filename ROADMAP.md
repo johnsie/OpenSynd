@@ -365,6 +365,7 @@ browser e2e run).
 | F42 | Street lights, traffic lights | done: lights and bins break; signals at every crossing, cars stop on red |
 | F43 | Vehicles: lanes, collisions, kinds, trains | partly: six kinds (fire engine, scout armored car added), run-over damage, queuing, signals; lanes and trains are open |
 | F44 | Mission editor | partly: `editor.html` moves, adds and deletes placements, edits objectives, checks the draft and downloads JSON; scripts and patrols are edited in JSON |
+| F45 | Campaign scale: 50 territories, 50 main missions | open: 5 operations on 5 regions today |
 
 ---
 
@@ -883,8 +884,8 @@ finished and unlocks its neighbours.
 - A comment says civilians and police killed in a territory's mission should make its people unhappier, and
   persuaded civilians should earn money; neither is coded.
 
-*OpenSynd.* *partly:* three operations on a flat world map, locked until the previous one is completed; no income
-except time and achievements. **Design:** give each map region (already positioned by longitude and latitude) a
+*OpenSynd.* *partly:* five operations on a flat world map (the target is **50 territories and 50 main missions**, F45);
+the unlock graph, tax and mood are built. **Design:** give each map region (already positioned by longitude and latitude) a
 `territory` record: population, default population, tax, mood, status, neighbours it unlocks (replacing "locked until
 the one before is done" with a graph), owner (a named rival syndicate). Implement the daily tick,
 the revenue formula (our own constants), the mood ladder and the rebel revolt as a fresh operation on the same map.
@@ -919,6 +920,43 @@ reload costs (F11), body parts (F17), weight (F10), the item stats panel with ev
 captured gear usable but not refillable (F12).
 
 ---
+
+#### F45. Campaign scale: 50 territories and 50 main missions
+
+*Target (decided by the project owner).* **There are 50 territories to conquer, and 50 main missions: generally one per
+territory.** This is the size of the finished campaign, and every system above (the unlock graph F30, tax and mood F30,
+research chains F20, intelligence F31, the roster F26) is built to carry it. FreeSynd's world is likewise 50 territories
+("blocks") with a mission each; the *shape* (a graph of territories on a world map, each opened by winning its
+neighbour) is a mechanic, while the territories, names, maps and missions here are original.
+*OpenSynd.* *open:* five operations on five regions (Northern Europe, and four more). **Design:**
+- **Territory records.** 50 `region` records (own names, longitude and latitude on the existing world map, a default
+  population of a few million, a rival owner from a short list of invented syndicates) in a content file of their own
+  (`territories.json` in the pack), separate from the missions, so the map and the campaign can be checked without
+  loading 50 missions. Validated: exactly 50, unique ids, every one reachable from the start by the `unlocks` graph, no
+  two within a marker's width of each other.
+- **One main mission per territory.** Each territory names its `mission`; the validator reports territories without
+  one and missions that belong to no territory. A few territories may carry a second, optional operation (a revolt
+  after it goes rebel, or a side job), but the campaign is **won by finishing the 50 main missions**; finishing all of
+  them ends the campaign with an ending text, and a campaign summary (days taken, funds earned, operatives lost) is
+  shown.
+- **A difficulty ramp across the 50.** The graph has a few starting territories and widens: roughly 4 easy openers, 12
+  early, 18 middle, 12 late, 4 final, with enemy numbers, armament tiers (F13), body-part tiers (F17), guard and police
+  presence, and objective variety (F21) rising along it. A table in the pack lists, for every mission, its tier,
+  objective types, enemy count and the research it expects the player to have, so balance can be reviewed at a glance.
+- **Producing 50 missions without 50 hand-made maps.** Maps come from the generator (`tools/generate_maps.py`) with
+  per-mission parameters (size, layout seed, compound and gate, channel, number of blocks) plus a small set of
+  authored landmarks, so each territory looks different and plays differently; a mission is a short data file
+  (objectives, placements, scripts, intel levels, briefing and debrief text), which the mission editor (F44) writes
+  and checks. Mission text is original and written to a style sheet kept beside the table.
+- **Saving and progress.** The campaign record already keeps territories, tax and intel per territory; it must keep
+  working for 50 (the record stays small: a few numbers per territory). The title screen's list becomes a world map
+  with all 50 markers (zoom and pan), a filter (available, finished, rebel), and the operations list groups by region.
+- **The balance bot** runs every mission whose objective types it understands and reports a win rate per policy, so
+  a regression anywhere in the 50 shows up in `npm run balance`; the missions it cannot play are listed.
+**Tests:** the content validator's checks above (count is 50, every territory has a mission, graph reachability, unique
+names); a campaign save with all 50 territories round-trips; unlocking follows the graph; finishing the last mission
+shows the ending once. **Done when** a player can play from the first territory to the last, every step opened by the
+previous ones, and the world map shows a 50-territory conquest in progress.
 
 ### F. Controls and interface
 
@@ -1082,6 +1120,7 @@ Ordered by what each adds per unit of work given what exists. Items in the same 
    traffic and run-over damage).
 8. **Queued orders, hotkeys, hold-to-fire** (F33, F34, F36, F37).
 9. **The mission editor** (F44), once the mission format has stabilised.
+10. **Campaign scale** (F45): 50 territories and 50 main missions, built on the editor, the generator and the graph.
 
 ## Non-negotiable principles
 
