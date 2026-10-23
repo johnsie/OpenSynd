@@ -166,6 +166,7 @@ import {
 import {
   advanceCombat,
   advancePursuit,
+  advanceTails,
   advanceRegeneration,
   combatStats,
   fireManual,
@@ -3026,6 +3027,11 @@ function simulationStep(deltaSeconds) {
       interfaceChanged = true;
     }
   }
+  for (const event of advanceTails(state.units, state.grid)) {
+    const unit = state.units.find((item) => item.id === event.unitId);
+    setStatus(`${unit.definition.name} stops following: ${event.reason === "disabled" ? "they are down" : "they are gone"}.`);
+    interfaceChanged = true;
+  }
   const arrivals = advanceUnits(state.units, deltaSeconds);
   advanceRegeneration(state.units, deltaSeconds);
   collectFallenGear();
@@ -3622,6 +3628,7 @@ function orderMove(unit, destination, queue = false, keepPending = false) {
   unit.targetId = null;
   unit.lootTargetId = null;
   unit.followId = null;
+  unit.tailId = null;
   if (!keepPending) unit.pending = [];
   if (queue && unit.pending?.length > 0) {
     // Actions are waiting after the route: the walk joins the queue behind them.
@@ -4063,6 +4070,34 @@ function setPointerCursor(kind) {
   canvas.classList.toggle("cursor-attack", kind === "attack");
   canvas.classList.toggle("cursor-attack-far", kind === "attack-far");
   canvas.classList.toggle("cursor-loot", kind === "loot");
+  canvas.classList.toggle("cursor-follow", kind === "follow");
+}
+
+// People the squad follows when clicked: civilians, police and anyone persuaded (not the watchers, who are engaged).
+function isFollowable(unit) {
+  if (isVehicle(unit) || unit.disabled) return false;
+  return unit.persuaded || unit.side === "civilian" || unit.side === "police";
+}
+
+// Left-click on someone: the selected operatives, not in a vehicle, walk after them and stay beside them (no shooting).
+function issueFollow(targetId) {
+  const target = state.units.find((unit) => unit.id === targetId);
+  const squad = selectedOperators().filter((unit) => !unit.inVehicle);
+  if (!target || squad.length === 0) return;
+  for (const unit of squad) {
+    unit.targetId = null;
+    unit.followId = null;
+    unit.lootTargetId = null;
+    unit.enterTargetId = null;
+    unit.pending = [];
+    unit.path = [];
+    unit.tailId = target.id;
+  }
+  const who = squad.length > 1 ? `${squad.length} operators` : squad[0].definition.name;
+  setStatus(`${who} following ${target.definition.name}.`);
+  audio.play("move");
+  renderInterface();
+  canvas.focus();
 }
 
 // Anyone the squad could fire on: watchers, civilians and police, but not people it has persuaded.
@@ -4075,6 +4110,7 @@ function pointerKindAt(position) {
   const squad = selectedOperators();
   if (squad.length === 0 || !state.viewport) return null;
   const unit = hitUnit(position);
+  if (unit && isFollowable(unit)) return "follow";
   if (unit && isAttackable(unit) && !unit.disabled && !isVehicle(unit)) {
     const reachable = squad.some((operator) => {
       const gap = distanceBetween(operator, unit);
@@ -4192,7 +4228,9 @@ canvas.addEventListener("click", (event) => {
   if (unit) {
     if (isVehicle(unit) && !unit.disabled && !isSquadVehicle(unit)) goEnterVehicle(unit, event.shiftKey);
     else if (unit.side !== "team") {
-      if (isAttackable(unit)) issueAttack(unit.id, event.shiftKey);
+      // FreeSynd: a left click on a person follows them; shooting is the right click. Watchers and criminals are still engaged.
+      if (isFollowable(unit)) issueFollow(unit.id);
+      else if (isAttackable(unit)) issueAttack(unit.id, event.shiftKey);
     }
     else if (event.ctrlKey || event.shiftKey || event.metaKey) toggleSelect(unit.id);
     else selectUnit(unit.id);
@@ -5090,7 +5128,9 @@ function renderInterface() {
     ? `Use repair kit (${repairKit.charges ?? "∞"})`
     : "No repair kit";
   let orders = " · awaiting order";
-  if (unit?.path.length) orders = ` · moving · ${unit.path.length} steps remain`;
+  const followed = unit?.tailId ? state.units.find((item) => item.id === unit.tailId) : null;
+  if (followed) orders = ` · following ${followed.definition.name}`;
+  else if (unit?.path.length) orders = ` · moving · ${unit.path.length} steps remain`;
   else if (unit?.targetId) orders = " · pulse target locked";
   selectedReadout.textContent = unit
     ? `${unit.definition.name} · integrity ${unit.health}/${maxHealth(unit)}` +

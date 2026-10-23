@@ -1069,3 +1069,28 @@ test("a coil gun round passes through everyone along its line, other guns stop a
   assert.equal(off.health, 100);
   assert.equal(coil.charges, 2, "one round, however many it hits");
 });
+
+test("an operative told to follow someone walks after them, stops beside them, and gives up when they fall", async () => {
+  const { advanceTails, TAIL_DISTANCE } = await import("../src/simulation.js");
+  const grid = createTileGrid({
+    dimensions: { width: 20, height: 4 },
+    regions: [{ id: "ground", x: 0, y: 0, width: 20, height: 4, surface: "street", walkable: true, elevation: 0 }],
+    objects: [], zones: [],
+  });
+  const operator = { id: "op", side: "team", position: { x: 1, y: 1 }, path: [], tailId: "walker" };
+  const walker = { id: "walker", side: "civilian", position: { x: 10, y: 1 }, disabled: false };
+  assert.deepEqual(advanceTails([operator, walker], grid), []);
+  assert.ok(operator.path.length > 0, "sets off toward them");
+  assert.equal(operator.targetId, undefined, "following never aims");
+  operator.position = { x: 9.5, y: 1 };
+  advanceTails([operator, walker], grid);
+  assert.ok(Math.hypot(9.5 - 10, 0) <= TAIL_DISTANCE);
+  assert.deepEqual(operator.path, [], "stops beside them");
+  walker.position = { x: 15, y: 1 };
+  advanceTails([operator, walker], grid);
+  assert.ok(operator.path.length > 0, "sets off again when they move");
+  walker.disabled = true;
+  const events = advanceTails([operator, walker], grid);
+  assert.deepEqual(events, [{ type: "ended", unitId: "op", reason: "disabled" }]);
+  assert.equal(operator.tailId, null);
+});

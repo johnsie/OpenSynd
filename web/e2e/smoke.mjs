@@ -661,6 +661,25 @@ for (const [name, type, executablePath] of targets) {
     assert.equal((await spentPage.evaluate(() => window.opensyndTest.drops())).length, 1);
     await spentPage.close();
 
+    // A left click on a civilian follows them (FreeSynd): the operative walks after them and does not shoot.
+    const tail = await browser.newPage();
+    await tail.goto(`${url}?e2e`);
+    await tail.waitForSelector(".roster-select");
+    await tail.click("#begin-button");
+    await tail.waitForFunction(() => document.querySelector("#status-message").textContent.includes("Local map established"));
+    await tail.evaluate(() => {
+      window.opensyndTest.placeNear("operator-one", "civilian-1", 0, 6);
+      window.opensyndTest.focusOn("civilian-1");
+    });
+    await tail.waitForTimeout(700);
+    const walkerPoint = await tail.evaluate(() => window.opensyndTest.screenPoint("civilian-1"));
+    await tail.mouse.move(walkerPoint.x, walkerPoint.y);
+    await tail.waitForFunction(() => document.querySelector("#game-canvas").classList.contains("cursor-follow"));
+    await tail.mouse.click(walkerPoint.x, walkerPoint.y);
+    assert.match(await tail.locator("#status-message").innerText(), /following/i);
+    assert.match(await tail.locator("#selected-readout").innerText(), /following/);
+    await tail.close();
+
     // Gear bought before the operation begins is on the operative when it does (the operation is set up again on closing).
     const buyer = await browser.newPage();
     await buyer.goto(`${url}?e2e`);
@@ -769,8 +788,8 @@ for (const [name, type, executablePath] of targets) {
     const stranger = await street.evaluate(() => window.opensyndTest.screenPoint("civilian-1"));
     await street.mouse.move(stranger.x + 40, stranger.y + 40);
     await street.mouse.move(stranger.x, stranger.y);
-    await street.waitForFunction(() => document.querySelector("#game-canvas").className.includes("cursor-attack"));
-    // Police get the crosshair too, and it is easy to land: a little above and beside the figure still counts.
+    await street.waitForFunction(() => document.querySelector("#game-canvas").className.includes("cursor-follow"));
+    // Police get the follow pointer too, and it is easy to land: a little above and beside the figure still counts.
     await street.evaluate(() => {
       window.opensyndTest.placeNear("police-15", "operator-one", 3, 0);
       window.opensyndTest.focusOn("operator-one");
@@ -780,7 +799,7 @@ for (const [name, type, executablePath] of targets) {
     const officer = await street.evaluate(() => window.opensyndTest.screenPoint("police-15"));
     await street.mouse.move(officer.x + 40, officer.y + 60);
     await street.mouse.move(officer.x + 14, officer.y - 55);
-    await street.waitForFunction(() => document.querySelector("#game-canvas").className.includes("cursor-attack"));
+    await street.waitForFunction(() => document.querySelector("#game-canvas").className.includes("cursor-follow"));
     await street.close();
 
     // With everyone in one car, any selected rider can order it on: the first selected is often a passenger, not the driver.

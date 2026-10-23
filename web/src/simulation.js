@@ -23,6 +23,40 @@ export const MAX_STEPS_PER_FRAME = 8;
 
 const ARRIVAL_EPSILON = 1e-9;
 
+// How close a follower stays to the person they follow (FreeSynd: about three quarters of a tile).
+export const TAIL_DISTANCE = 1.1;
+
+/**
+ * Following (FreeSynd's left click on a person): an operative with a `tailId` walks after that person and stops beside them,
+ * setting off again whenever they move. It never fires. It ends when the person is disabled or gone.
+ * Returns "ended" events so the interface can say so.
+ */
+export function advanceTails(units, grid) {
+  const events = [];
+  const byId = new Map(units.map((unit) => [unit.id, unit]));
+  for (const unit of units) {
+    if (unit.side !== "team" || !unit.tailId) continue;
+    const target = byId.get(unit.tailId);
+    if (unit.disabled || !target || target.disabled) {
+      events.push({ type: "ended", unitId: unit.id, reason: target?.disabled ? "disabled" : "lost" });
+      unit.tailId = null;
+      unit.path = [];
+      continue;
+    }
+    if (unit.inVehicle || target.inVehicle) continue;
+    if (distanceBetween(unit, target) <= TAIL_DISTANCE) {
+      unit.path = [];
+      continue;
+    }
+    const goal = tileOf(target.position);
+    const end = unit.path.at(-1);
+    if (!end || Math.abs(end.x - goal.x) + Math.abs(end.y - goal.y) > 1) {
+      unit.path = findPath(grid, tileOf(unit.position), goal);
+    }
+  }
+  return events;
+}
+
 /**
  * Pursuit: an operative with a `followId` chases that watcher. It walks toward it (re-routing as
  * the watcher moves) until the watcher is within range of the weapon it would fire (the selected
