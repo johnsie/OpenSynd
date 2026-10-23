@@ -451,6 +451,7 @@ async function loadSprites() {
 }
 
 const state = {
+  targeted: {},
   armoury: { operator: 0, slot: 0, selected: [] },
   campaign: emptyCampaign(),
   catalog: [],
@@ -550,6 +551,7 @@ async function loadGame(index = state.missionIndex) {
   state.grid = createTileGrid(map);
   state.buildings = buildingsFromMap(map);
   state.windowsBroken = new Set();
+  state.targeted = {};
   state.deathsSeeded = false;
   state.bombs = [];
   state.drops = [];
@@ -3061,6 +3063,8 @@ function simulationStep(deltaSeconds) {
     if (event.type === "warning") {
       setStatus(`${watcher.definition.name}: "Put down your weapon!" Holster it, or they open fire in two seconds.`);
       audio.play("police-warning");
+      // The portrait of whoever is being warned flashes red for the two seconds before the police shoot.
+      state.targeted[event.targetId] = state.elapsed + 2;
       interfaceChanged = true;
       continue;
     }
@@ -3423,6 +3427,7 @@ function update(deltaSeconds) {
   if (state.meterClock >= 0.2) {
     state.meterClock = 0;
     updateMeters();
+    if (Object.values(state.targeted).some((until) => until > state.elapsed - 0.3 && until < state.elapsed + 0.3)) renderInterface();
     if (state.mission) updateVehicleButton();
     boardWaitingOperators();
     runPendingOrders();
@@ -4968,6 +4973,7 @@ function renderInterface() {
       item.className = "roster-item";
       item.classList.toggle("selected", picked);
       item.classList.toggle("down", unit.disabled);
+      item.classList.toggle("targeted", (state.targeted[unit.id] ?? 0) > state.elapsed && !unit.disabled);
 
       const checkbox = document.createElement("input");
       checkbox.type = "checkbox";

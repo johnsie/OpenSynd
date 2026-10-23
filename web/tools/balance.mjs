@@ -9,7 +9,7 @@ import { readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { ACHIEVEMENTS, newStats, newlyEarned } from "../src/achievements.js";
+import { newStats } from "../src/opstats.js";
 import { buildPatrolRoute, createTileGrid, findPath, formationTiles, zoneContains } from "../src/engine.js";
 import { collectFallen, findLoot, lootBody, nearestLootable } from "../src/inventory.js";
 import {
@@ -95,7 +95,6 @@ function playOnce(world, tactics) {
   const objectives = mission.objectives.map((objective) => ({ ...objective, complete: false }));
   syncGates(grid, map, objectives);
   const stats = newStats(mission.opponents.length);
-  const earned = [];
   let seconds = 0;
   let nextThink = 0;
   const drops = [];
@@ -278,8 +277,7 @@ function playOnce(world, tactics) {
     }
   }
   stats.outcome = outcome === "timeout" ? "failure" : outcome;
-  for (const achievement of newlyEarned(stats, earned)) earned.push(achievement.id);
-  const funds = Math.floor(seconds * 0.1) + earned.reduce((sum, id) => sum + ACHIEVEMENTS.find((a) => a.id === id).reward, 0);
+  const funds = Math.floor(seconds * 0.1);
   return { outcome, seconds, operatorsLost: stats.operatorsDisabled, watchersDown: stats.enemiesDisabled, spotted: stats.spotted, funds };
 }
 
