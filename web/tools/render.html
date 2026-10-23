@@ -160,8 +160,11 @@
   // Adult proportions for the women: a smaller head and longer legs than the base model's stocky build. The animation clips
   // may reset bone scales, so this is applied again every frame.
   function adultProportions(root) {
-    root.getObjectByName("Head").scale.setScalar(0.78);
-    for (const side of ["Left", "Right"]) root.getObjectByName(`${side}UpLeg`).scale.setScalar(1.16);
+    root.getObjectByName("Head").scale.setScalar(0.7);
+    for (const side of ["Left", "Right"]) {
+      root.getObjectByName(`${side}UpLeg`).scale.setScalar(1.26);
+      root.getObjectByName(`${side}Shoulder`).scale.setScalar(0.88);
+    }
   }
 
   // Street clothes for the city's people: no trench coats (those are the squad's). `kit.style` is
