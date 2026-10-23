@@ -324,20 +324,20 @@
       "id": "warden",
       "unit": "units/site-warden.unit.json",
       "position": {
-        "x": 102,
-        "y": 6
+        "x": 40,
+        "y": 2
       },
       "equipment": [
         "equipment/heavy-pulse-emitter.equipment.json"
       ],
       "patrol": [
         {
-          "x": 102,
-          "y": 6
+          "x": 40,
+          "y": 2
         },
         {
-          "x": 102,
-          "y": 14
+          "x": 40,
+          "y": 8
         }
       ]
     }
@@ -648,25 +648,6 @@
       "id": "criminal-1",
       "unit": "units/criminal.unit.json",
       "position": {
-        "x": 40,
-        "y": 2
-      },
-      "equipment": [],
-      "patrol": [
-        {
-          "x": 40,
-          "y": 2
-        },
-        {
-          "x": 28,
-          "y": 2
-        }
-      ]
-    },
-    {
-      "id": "criminal-2",
-      "unit": "units/criminal.unit.json",
-      "position": {
         "x": 91,
         "y": 63
       },
@@ -683,7 +664,7 @@
       ]
     },
     {
-      "id": "criminal-3",
+      "id": "criminal-2",
       "unit": "units/criminal.unit.json",
       "position": {
         "x": 109,
@@ -696,8 +677,27 @@
           "y": 103
         },
         {
-          "x": 100,
+          "x": 97,
           "y": 103
+        }
+      ]
+    },
+    {
+      "id": "criminal-3",
+      "unit": "units/criminal.unit.json",
+      "position": {
+        "x": 62,
+        "y": 4
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 62,
+          "y": 4
+        },
+        {
+          "x": 53,
+          "y": 4
         }
       ]
     }

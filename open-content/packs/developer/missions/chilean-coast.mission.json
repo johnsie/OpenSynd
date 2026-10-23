@@ -4,10 +4,10 @@
   "name": "Chilean Coast Vault Job",
   "license": "CC0-1.0",
   "title": "Chilean Coast is ours",
-  "briefing": "Ironwood Trust holds Chilean Coast through its water works. Download the records from the vault server, take down the site warden, then leave by the exit. Expect 9 enemy agents and 4 guards on the streets.",
-  "story": "Chilean Coast Vault Job: Ironwood Trust runs Chilean Coast from its water works, and the district only notices when the lights go out. Your team has one night to download the records, silence the warden and walk out the exit.",
+  "briefing": "Ironwood Trust holds Chilean Coast through its signal tower. Download the records from the vault server, take down the site warden, then leave by the exit. Expect 9 enemy agents and 4 guards on the streets.",
+  "story": "Chilean Coast Vault Job: Ironwood Trust runs Chilean Coast from its signal tower, and the district only notices when the lights go out. Your team has one night to download the records, silence the warden and walk out the exit.",
   "debrief": {
-    "success": "Chilean Coast wakes up with the water works in other hands. Your team is back in the dark before morning.",
+    "success": "Chilean Coast wakes up with the signal tower in other hands. Your team is back in the dark before morning.",
     "failure": "The team is down in Chilean Coast before the work was done. Regroup and try a different approach."
   },
   "map": "maps/chilean-coast.map.json",
@@ -322,20 +322,20 @@
       "id": "warden",
       "unit": "units/site-warden.unit.json",
       "position": {
-        "x": 65,
-        "y": 98
+        "x": 49,
+        "y": 71
       },
       "equipment": [
         "equipment/heavy-pulse-emitter.equipment.json"
       ],
       "patrol": [
         {
-          "x": 65,
-          "y": 98
+          "x": 49,
+          "y": 71
         },
         {
-          "x": 71,
-          "y": 98
+          "x": 51,
+          "y": 71
         }
       ]
     }
@@ -636,25 +636,6 @@
       "id": "criminal-2",
       "unit": "units/criminal.unit.json",
       "position": {
-        "x": 49,
-        "y": 71
-      },
-      "equipment": [],
-      "patrol": [
-        {
-          "x": 49,
-          "y": 71
-        },
-        {
-          "x": 49,
-          "y": 77
-        }
-      ]
-    },
-    {
-      "id": "criminal-3",
-      "unit": "units/criminal.unit.json",
-      "position": {
         "x": 36,
         "y": 110
       },
@@ -665,8 +646,27 @@
           "y": 110
         },
         {
-          "x": 36,
-          "y": 98
+          "x": 24,
+          "y": 110
+        }
+      ]
+    },
+    {
+      "id": "criminal-3",
+      "unit": "units/criminal.unit.json",
+      "position": {
+        "x": 68,
+        "y": 0
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 68,
+          "y": 0
+        },
+        {
+          "x": 68,
+          "y": 6
         }
       ]
     }
@@ -683,17 +683,17 @@
       "vehicle": "vehicles/city-car.vehicle.json",
       "position": {
         "x": 2,
-        "y": 27
+        "y": 101
       },
       "driver": "units/civilian-man.unit.json",
       "patrol": [
         {
           "x": 2,
-          "y": 27
+          "y": 101
         },
         {
           "x": 49,
-          "y": 27
+          "y": 101
         }
       ]
     },
@@ -702,17 +702,17 @@
       "vehicle": "vehicles/city-car.vehicle.json",
       "position": {
         "x": 2,
-        "y": 53
+        "y": 27
       },
       "driver": "units/civilian-woman.unit.json",
       "patrol": [
         {
           "x": 2,
-          "y": 53
+          "y": 27
         },
         {
           "x": 49,
-          "y": 53
+          "y": 27
         }
       ]
     },
@@ -740,17 +740,17 @@
       "vehicle": "vehicles/city-car.vehicle.json",
       "position": {
         "x": 2,
-        "y": 76
+        "y": 51
       },
       "driver": "units/civilian-woman.unit.json",
       "patrol": [
         {
           "x": 2,
-          "y": 76
+          "y": 51
         },
         {
-          "x": 49,
-          "y": 76
+          "x": 36,
+          "y": 51
         }
       ]
     },
@@ -758,18 +758,18 @@
       "id": "city-car-5",
       "vehicle": "vehicles/patrol-car.vehicle.json",
       "position": {
-        "x": 62,
-        "y": 101
+        "x": 2,
+        "y": 75
       },
       "driver": "units/civilian-man.unit.json",
       "patrol": [
         {
-          "x": 62,
-          "y": 101
+          "x": 2,
+          "y": 75
         },
         {
-          "x": 109,
-          "y": 101
+          "x": 49,
+          "y": 75
         }
       ]
     },
@@ -778,17 +778,17 @@
       "vehicle": "vehicles/armored-car.vehicle.json",
       "position": {
         "x": 62,
-        "y": 53
+        "y": 51
       },
       "driver": "units/civilian-woman.unit.json",
       "patrol": [
         {
           "x": 62,
-          "y": 53
+          "y": 51
         },
         {
           "x": 109,
-          "y": 53
+          "y": 51
         }
       ]
     }

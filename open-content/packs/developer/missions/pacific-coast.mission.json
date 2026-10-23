@@ -501,20 +501,20 @@
       "id": "warden",
       "unit": "units/site-warden.unit.json",
       "position": {
-        "x": 45,
-        "y": 99
+        "x": 127,
+        "y": 47
       },
       "equipment": [
         "equipment/heavy-pulse-emitter.equipment.json"
       ],
       "patrol": [
         {
-          "x": 45,
-          "y": 99
+          "x": 127,
+          "y": 47
         },
         {
-          "x": 39,
-          "y": 99
+          "x": 123,
+          "y": 47
         }
       ]
     }
@@ -803,25 +803,6 @@
       "id": "criminal-1",
       "unit": "units/criminal.unit.json",
       "position": {
-        "x": 127,
-        "y": 47
-      },
-      "equipment": [],
-      "patrol": [
-        {
-          "x": 127,
-          "y": 47
-        },
-        {
-          "x": 121,
-          "y": 47
-        }
-      ]
-    },
-    {
-      "id": "criminal-2",
-      "unit": "units/criminal.unit.json",
-      "position": {
         "x": 124,
         "y": 78
       },
@@ -832,13 +813,13 @@
           "y": 78
         },
         {
-          "x": 124,
-          "y": 71
+          "x": 115,
+          "y": 78
         }
       ]
     },
     {
-      "id": "criminal-3",
+      "id": "criminal-2",
       "unit": "units/criminal.unit.json",
       "position": {
         "x": 64,
@@ -852,7 +833,26 @@
         },
         {
           "x": 64,
-          "y": 50
+          "y": 54
+        }
+      ]
+    },
+    {
+      "id": "criminal-3",
+      "unit": "units/criminal.unit.json",
+      "position": {
+        "x": 20,
+        "y": 125
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 20,
+          "y": 125
+        },
+        {
+          "x": 14,
+          "y": 125
         }
       ]
     }
@@ -869,17 +869,17 @@
       "vehicle": "vehicles/city-car.vehicle.json",
       "position": {
         "x": 2,
-        "y": 76
+        "y": 101
       },
       "driver": "units/civilian-man.unit.json",
       "patrol": [
         {
           "x": 2,
-          "y": 76
+          "y": 101
         },
         {
-          "x": 125,
-          "y": 76
+          "x": 51,
+          "y": 101
         }
       ]
     },
@@ -944,18 +944,18 @@
       "id": "city-car-5",
       "vehicle": "vehicles/patrol-car.vehicle.json",
       "position": {
-        "x": 54,
-        "y": 28
+        "x": 2,
+        "y": 125
       },
       "driver": "units/civilian-man.unit.json",
       "patrol": [
         {
-          "x": 54,
-          "y": 28
+          "x": 2,
+          "y": 125
         },
         {
-          "x": 125,
-          "y": 28
+          "x": 111,
+          "y": 125
         }
       ]
     },

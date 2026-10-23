@@ -262,20 +262,20 @@
       "id": "warden",
       "unit": "units/site-warden.unit.json",
       "position": {
-        "x": 65,
-        "y": 23
+        "x": 88,
+        "y": 3
       },
       "equipment": [
         "equipment/heavy-pulse-emitter.equipment.json"
       ],
       "patrol": [
         {
-          "x": 65,
-          "y": 23
+          "x": 88,
+          "y": 3
         },
         {
-          "x": 65,
-          "y": 28
+          "x": 88,
+          "y": 6
         }
       ]
     }
@@ -624,18 +624,18 @@
       "id": "criminal-3",
       "unit": "units/criminal.unit.json",
       "position": {
-        "x": 88,
-        "y": 3
+        "x": 46,
+        "y": 44
       },
       "equipment": [],
       "patrol": [
         {
-          "x": 88,
-          "y": 3
+          "x": 46,
+          "y": 44
         },
         {
-          "x": 88,
-          "y": 0
+          "x": 46,
+          "y": 38
         }
       ]
     }

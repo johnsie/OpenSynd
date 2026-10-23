@@ -510,20 +510,20 @@
       "id": "warden",
       "unit": "units/site-warden.unit.json",
       "position": {
-        "x": 53,
-        "y": 51
+        "x": 127,
+        "y": 79
       },
       "equipment": [
         "equipment/heavy-pulse-emitter.equipment.json"
       ],
       "patrol": [
         {
-          "x": 53,
-          "y": 51
+          "x": 127,
+          "y": 79
         },
         {
-          "x": 46,
-          "y": 51
+          "x": 122,
+          "y": 79
         }
       ]
     }
@@ -834,25 +834,6 @@
       "id": "criminal-1",
       "unit": "units/criminal.unit.json",
       "position": {
-        "x": 127,
-        "y": 79
-      },
-      "equipment": [],
-      "patrol": [
-        {
-          "x": 127,
-          "y": 79
-        },
-        {
-          "x": 127,
-          "y": 73
-        }
-      ]
-    },
-    {
-      "id": "criminal-2",
-      "unit": "units/criminal.unit.json",
-      "position": {
         "x": 0,
         "y": 29
       },
@@ -863,13 +844,13 @@
           "y": 29
         },
         {
-          "x": 12,
-          "y": 29
+          "x": 0,
+          "y": 23
         }
       ]
     },
     {
-      "id": "criminal-3",
+      "id": "criminal-2",
       "unit": "units/criminal.unit.json",
       "position": {
         "x": 74,
@@ -882,8 +863,27 @@
           "y": 68
         },
         {
-          "x": 74,
-          "y": 78
+          "x": 78,
+          "y": 68
+        }
+      ]
+    },
+    {
+      "id": "criminal-3",
+      "unit": "units/criminal.unit.json",
+      "position": {
+        "x": 53,
+        "y": 110
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 53,
+          "y": 110
+        },
+        {
+          "x": 49,
+          "y": 110
         }
       ]
     }
@@ -994,17 +994,17 @@
       "id": "city-car-6",
       "vehicle": "vehicles/armored-car.vehicle.json",
       "position": {
-        "x": 70,
+        "x": 2,
         "y": 125
       },
       "driver": "units/civilian-woman.unit.json",
       "patrol": [
         {
-          "x": 70,
+          "x": 2,
           "y": 125
         },
         {
-          "x": 125,
+          "x": 57,
           "y": 125
         }
       ]

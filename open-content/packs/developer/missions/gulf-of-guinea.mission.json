@@ -199,20 +199,20 @@
       "id": "warden",
       "unit": "units/site-warden.unit.json",
       "position": {
-        "x": 36,
-        "y": 84
+        "x": 37,
+        "y": 38
       },
       "equipment": [
         "equipment/heavy-pulse-emitter.equipment.json"
       ],
       "patrol": [
         {
-          "x": 36,
-          "y": 84
+          "x": 37,
+          "y": 38
         },
         {
-          "x": 36,
-          "y": 88
+          "x": 37,
+          "y": 43
         }
       ]
     }

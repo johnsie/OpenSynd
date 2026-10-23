@@ -367,12 +367,19 @@ def make_mission(territory: dict, tier: int, layout: dict, map_value: dict, map_
             "id": f"guard-{number + 1}", "unit": "units/guard.unit.json",
             "position": {"x": position[0], "y": position[1]}, "equipment": []}, 6, 12))
     if recipe["warden"] or recipe["server"]:
-        server = zone_by_id["vault-server"]["position"]
-        near = [p for p in pool if 4 <= math.hypot(p[0] - server["x"], p[1] - server["y"]) < 10]
-        position = spot(near or pool)
+        # The warden keeps a post of their own, well away from the vault server and every other objective, on open ground
+        # rather than in the middle of a street (nobody posts a warden at a crossing).
+        marks = [(z["position"]["x"], z["position"]["y"]) for z in layout["zones"]]
+        post = []
+        for distance in (20, 14, 9, 0):
+            post = [p for p in pool
+                    if surface[p[1]][p[0]] != "street" and all(math.hypot(p[0] - m[0], p[1] - m[1]) >= distance for m in marks)]
+            if post:
+                break
+        position = spot(post or pool)
         opponents.append(with_patrol(rng, reach, {
             "id": "warden", "unit": "units/site-warden.unit.json", "position": {"x": position[0], "y": position[1]},
-            "equipment": ["equipment/heavy-pulse-emitter.equipment.json"]}, 6, 8))
+            "equipment": ["equipment/heavy-pulse-emitter.equipment.json"]}, 4, 6))
 
     bystanders = []
     kinds = ["units/civilian-woman.unit.json", "units/civilian-man.unit.json"]
