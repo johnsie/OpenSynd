@@ -358,9 +358,9 @@ browser e2e run).
 | F35 | Squad formation | have |
 | F36 | Selection and hotkeys | done: 1-4, 0, Shift+number, Alt+1-8 |
 | F37 | The HUD | partly: objective highlight, ammo badges and the drug sliders |
-| F38 | Voice and sound cues | partly: police warning, scanner, a drum-driven victory theme when an operation is won, outcome stingers, door; glass breaking is open |
+| F38 | Voice and sound cues | partly: police warning, scanner, a drum-driven victory theme when an operation is won, outcome stingers, door, breaking glass |
 | F39 | Doors | partly: `door` objects open while a living person is beside them, can be locked with a key, block sight and shots when closed and are planned through by routes; from the second tier the generated maps close some alley mouths with doors (63 of them); no opening animation yet |
-| F40 | Windows | open |
+| F40 | Windows | done: shots and blasts break the windows on a building's visible walls (shattered panes drawn dark and cracked, a glass sound); guards and enemy agents within 14 tiles who have not seen the squad go to look. Cosmetic: not saved |
 | F41 | Flammable scenery | done: trees and billboards burn ten seconds and spread; fire ignites people beside it |
 | F42 | Street lights, traffic lights | done: lights and bins break; signals at every crossing, cars stop on red |
 | F43 | Vehicles: lanes, collisions, kinds, trains | partly: six kinds (fire engine, scout armored car added), run-over damage, queuing, signals; lanes and trains are open |

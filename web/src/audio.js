@@ -259,6 +259,17 @@ const SYNTH = Object.freeze({
       tone(audio, out, at + 0.2, { seconds: 0.05, gain: 0.25, type: "square", from: 220, to: 160 });
     },
   },
+  // A window breaking: a sharp crack and falling shards.
+  glass: {
+    caption: "Breaking glass",
+    gap: 0.1,
+    play(audio, out, at) {
+      noise(audio, out, at, { seconds: 0.08, gain: 0.5, filter: "highpass", from: 4000, to: 7000, q: 0.8 });
+      for (let i = 0; i < 5; i += 1) {
+        tone(audio, out, at + 0.06 + i * 0.045, { seconds: 0.05, gain: 0.14, type: "triangle", from: 5200 - i * 380, to: 3000 });
+      }
+    },
+  },
   // The success theme at the end of a won operation: drums, bass, stabs and a fanfare.
   victory: {
     caption: "Victory theme with drums",

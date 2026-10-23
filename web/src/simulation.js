@@ -665,7 +665,30 @@ function advanceHostile(unit, units, byId, deltaSeconds, grid, now, events) {
     return;
   }
   unit.alertedBy = null;
+  if (unit.investigate && grid) {
+    // Heard glass break: go and look, then pick the patrol up again.
+    unit.investigate.left -= deltaSeconds;
+    if (unit.investigate.left <= 0) unit.investigate = null;
+    else {
+      if (unit.path.length === 0 && distanceBetween(unit, { position: unit.investigate }) > 1.5) {
+        unit.path = findPath(grid, tileOf(unit.position), tileOf(unit.investigate));
+      }
+      if (unit.path.length > 0) {
+        followPath(unit, deltaSeconds, 1);
+        return;
+      }
+    }
+  }
   walkPatrol(unit, deltaSeconds, grid);
+}
+
+/** Breaking glass draws the attention of enemy agents and guards within `radius` who have not seen the squad. */
+export function investigateNoise(units, at, radius, seconds = 12) {
+  for (const unit of units) {
+    const role = unit.definition?.role;
+    if (unit.side !== "opposition" || unit.disabled || unit.alertedBy || (role !== "guard" && role !== "enemy-agent")) continue;
+    if (Math.hypot(unit.position.x - at.x, unit.position.y - at.y) <= radius) unit.investigate = { x: at.x, y: at.y, left: seconds };
+  }
 }
 
 /**

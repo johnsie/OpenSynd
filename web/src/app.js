@@ -34,6 +34,7 @@ import {
   drawServer,
   drawWallTile,
 } from "./structures.js";
+import { windowKey, windowShot, windowsInBlast } from "./windows.js";
 import { BUILDING_SURFACE, buildingStyle, buildingsFromMap, drawOrder, seededRandom } from "./buildings.js";
 import {
   buildPatrolRoute,
@@ -181,6 +182,7 @@ import {
   startPanic,
   advanceUnits,
   consumeFixedSteps,
+  investigateNoise,
 } from "./simulation.js";
 import {
   LEGACY_LOCAL_SAVE_KEYS,
@@ -536,6 +538,7 @@ async function loadGame(index = state.missionIndex) {
   state.mission = mission;
   state.grid = createTileGrid(map);
   state.buildings = buildingsFromMap(map);
+  state.windowsBroken = new Set();
   state.bombs = [];
   state.drops = [];
   state.armedBomb = null;
@@ -1829,13 +1832,16 @@ function drawBuilding(building, viewport, size) {
     const bays = Math.max(1, Math.floor(across / 2));
     const glass = [];
     const lit = [];
+    const smashed = [];
     for (let floor = 1; floor < floors; floor += 1) {
       for (let bay = 0; bay < bays; bay += 1) {
         const u0 = (bay + 0.22) / bays;
         const u1 = (bay + 0.78) / bays;
         const z0 = floor * floorHeight + floorHeight * 0.18;
         const z1 = floor * floorHeight + floorHeight * 0.74;
-        (random() < style.lit * 0.6 ? lit : glass).push(strip(wall, u0, u1, z0, z1));
+        const pane = strip(wall, u0, u1, z0, z1);
+        if (state.windowsBroken.has(windowKey(building.id, index, floor, bay))) smashed.push(pane);
+        else (random() < style.lit * 0.6 ? lit : glass).push(pane);
       }
     }
     const fillAll = (list, colour) => {
@@ -1849,6 +1855,19 @@ function drawBuilding(building, viewport, size) {
     };
     fillAll(glass, index === 0 ? "#1b3140" : "#142532");
     fillAll(lit, index === 0 ? "#e6c88a" : "#caa96b");
+    fillAll(smashed, "#07090b");
+    context.strokeStyle = "rgba(200, 220, 230, .55)";
+    context.lineWidth = 1;
+    context.beginPath();
+    for (const [a, b, c, d] of smashed) {
+      context.moveTo(a.x, a.y);
+      context.lineTo((c.x + d.x) / 2, (c.y + d.y) / 2);
+      context.moveTo(b.x, b.y);
+      context.lineTo((a.x + d.x) / 2, (a.y + d.y) / 2);
+      context.moveTo(c.x, c.y);
+      context.lineTo((a.x + b.x) / 2, (a.y + b.y) / 2);
+    }
+    context.stroke();
   }
 
   // Roof: a raised parapet around a flat, lighter roof surface.
@@ -2763,6 +2782,19 @@ function announceProp(event) {
   else audio.play("hit");
 }
 
+// A shot that ends against a building's visible wall breaks a window; the noise draws guards and enemy agents to look.
+function breakWindowAt(from, to) {
+  for (const building of state.buildings ?? []) {
+    const key = windowShot(building, from, { x: to.x + (to.x - from.x) * 0.02, y: to.y + (to.y - from.y) * 0.02 }, Math.random());
+    if (key && !state.windowsBroken.has(key)) {
+      state.windowsBroken.add(key);
+      audio.play("glass");
+      investigateNoise(state.units, to, 14);
+      return;
+    }
+  }
+}
+
 // Effects, counters and messages for shots, from automatic combat and from shots fired by hand.
 function handleCombatEvents(combatEvents) {
   for (const event of combatEvents) {
@@ -2780,6 +2812,7 @@ function handleCombatEvents(combatEvents) {
         const to = struck?.position ?? event.end;
         if (to && shootBombs(state.bombs, shooter.position, to) > 0) setStatus("A shot hit a charge on the ground: it is about to go off.");
       }
+      if (shooter && event.type === "shot" && event.end) breakWindowAt(shooter.position, event.end);
       // Each weapon sounds like itself; fire further from the view is quieter.
       if (shooter) {
         const away = Math.hypot(shooter.position.x - state.camera.x, shooter.position.y - state.camera.y);
@@ -2958,6 +2991,14 @@ function simulationStep(deltaSeconds) {
     }
     addEffect(state.effects, "blast", { at: blast.at, radius: blast.radius });
     audio.play("blast");
+    let glassBroken = 0;
+    for (const building of state.buildings ?? []) {
+      for (const key of windowsInBlast(building, blast.at, blast.radius + 2)) {
+        if (!state.windowsBroken.has(key)) glassBroken += 1;
+        state.windowsBroken.add(key);
+      }
+    }
+    if (glassBroken > 0) audio.play("glass");
     startPanic(state.units, blast.at, state.grid);
     for (const hit of blast.hits) {
       const victim = state.units.find((unit) => unit.id === hit.unitId);
@@ -4369,6 +4410,9 @@ if (new URLSearchParams(location.search).has("e2e")) {
       const definition = state.catalog.find((item) => item.id === itemId);
       unit.equipment.push({ definition, charges: definition.charges });
       renderInterface();
+    },
+    brokenWindows() {
+      return state.windowsBroken.size;
     },
     drops() {
       return state.drops.map((drop) => ({ id: drop.id, item: drop.equipment[0].definition.id, x: drop.position.x, y: drop.position.y }));

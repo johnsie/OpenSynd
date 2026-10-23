@@ -68,7 +68,7 @@ test("gunfire is quieter the further it is, your own fire stays clear, and nothi
 });
 
 test("each cue builds real sound: weapon cues use noise and tones, and none throws", () => {
-  const names = [...Object.values(SHOT_CUES), "blast", "tick", "shield-up", "shield-hit", "hit", "persuade", "door"];
+  const names = [...Object.values(SHOT_CUES), "blast", "tick", "shield-up", "shield-hit", "hit", "persuade", "door", "glass"];
   for (const name of names) {
     const { FakeContext, made } = fakeContext();
     const audio = createAudio({ getSettings: () => settings, AudioContextClass: FakeContext });
