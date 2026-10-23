@@ -34,6 +34,7 @@ import {
   drawServer,
   drawWallTile,
 } from "./structures.js";
+import { deathKind, deathLook } from "./death.js";
 import { windowKey, windowShot, windowsInBlast } from "./windows.js";
 import { BUILDING_SURFACE, buildingStyle, buildingsFromMap, drawOrder, seededRandom } from "./buildings.js";
 import {
@@ -548,6 +549,7 @@ async function loadGame(index = state.missionIndex) {
   state.grid = createTileGrid(map);
   state.buildings = buildingsFromMap(map);
   state.windowsBroken = new Set();
+  state.deathsSeeded = false;
   state.bombs = [];
   state.drops = [];
   state.armedBomb = null;
@@ -2206,7 +2208,7 @@ function drawSprite(unit, sheet, viewport, size) {
   const source = sheet.frameSize;
   const drawSize = viewport.cellSize.height * 3.3;
   context.save();
-  if (unit.disabled) context.globalAlpha = 0.55;
+  context.globalAlpha *= unit.lookAlpha ?? (unit.disabled ? 0.55 : 1);
   // The figure's feet sit about 84% down its frame; anchor them to the tile.
   context.drawImage(
     image,
@@ -2220,6 +2222,45 @@ function drawSprite(unit, sheet, viewport, size) {
     drawSize,
   );
   context.restore();
+}
+
+// Flames while burning (a living unit on fire too), the rising smoke of a smouldering body and the flash of a laser death.
+function drawDeathEffects(unit, dying, size) {
+  const flames = dying ? dying.flames : unit.burning ? 0.8 : 0;
+  if (flames > 0) {
+    const low = dying && dying.fall > 0;
+    for (let tongue = 0; tongue < 4; tongue += 1) {
+      const sway = reduceMotion ? 0 : Math.sin(state.elapsed * 14 + tongue * 1.7);
+      const lift = size * (low ? 0.2 : 0.4 + tongue * 0.45) + (reduceMotion ? 0 : Math.abs(sway) * size * 0.3);
+      context.fillStyle = `rgba(${255 - tongue * 12}, ${130 + tongue * 40}, 50, ${0.8 * flames})`;
+      context.beginPath();
+      context.ellipse((tongue - 1.5) * size * 0.4 + sway * size * 0.15, size * 0.8 - lift, size * 0.28, size * 0.5, 0, 0, Math.PI * 2);
+      context.fill();
+    }
+  }
+  if (dying && dying.smoke > 0) {
+    for (let puff = 0; puff < 3; puff += 1) {
+      const rise = reduceMotion ? 0.5 : (state.elapsed * 0.5 + puff / 3) % 1;
+      context.fillStyle = `rgba(70, 72, 76, ${0.45 * dying.smoke * (1 - rise)})`;
+      context.beginPath();
+      context.arc(Math.sin(puff * 2 + rise * 3) * size * 0.4, size * 0.6 - rise * size * 3, size * (0.3 + rise * 0.5), 0, Math.PI * 2);
+      context.fill();
+    }
+  }
+  if (dying && dying.flash > 0) {
+    context.fillStyle = `rgba(210, 250, 255, ${0.8 * dying.flash})`;
+    context.beginPath();
+    context.ellipse(0, -size * 0.3, size * (0.8 + (1 - dying.flash)), size * 2.2 * dying.flash + size * 0.4, 0, 0, Math.PI * 2);
+    context.fill();
+  }
+}
+
+// What a laser leaves of one of ours: a scorch mark on the ground.
+function drawScorch(center, size) {
+  context.fillStyle = "rgba(10, 10, 12, .55)";
+  context.beginPath();
+  context.ellipse(center.x, center.y, size * 1.1, size * 0.45, 0, 0, Math.PI * 2);
+  context.fill();
 }
 
 function drawUnit(unit, viewport) {
@@ -2239,6 +2280,17 @@ function drawUnit(unit, viewport) {
   );
   const size = Math.max(9, viewport.cellSize.height * 0.34);
   const appearance = unit.definition.appearance;
+  const kind = unit.disabled ? deathKind(unit) : null;
+  const dying = kind ? deathLook(kind, state.elapsed - (unit.diedAt ?? state.elapsed), unit.side === "team") : null;
+  if (dying && !dying.drawn) {
+    if (dying.ash) drawScorch(center, size);
+    return;
+  }
+  // Someone on fire runs about in a direction of their own until they fall.
+  const heading = (unit.id.length * 2.4 + unit.id.charCodeAt(unit.id.length - 1)) % (Math.PI * 2);
+  const runBy = (dying?.run ?? 0) * size;
+  const runOffset = { x: Math.cos(heading) * runBy * 2.4, y: Math.sin(heading) * runBy * 1.2 };
+  unit.lookAlpha = dying ? (dying.fall > 0 || kind === "laser" ? dying.fade * 0.75 : dying.fade) : undefined;
 
   const bob = spriteSheetFor(unit)
     ? 0
@@ -2246,7 +2298,7 @@ function drawUnit(unit, viewport) {
   context.save();
   const kick = recoilOffset(state.elapsed, unit.firedAt, unit.facing, 3.5, reduceMotion);
   const thrown = knockbackOffset(state.elapsed, unit.hitAt, unit.hitDirection, size * 0.9, reduceMotion);
-  context.translate(center.x + kick.x + thrown.x, center.y - size * 0.8 + bob + kick.y + thrown.y);
+  context.translate(center.x + kick.x + thrown.x + runOffset.x, center.y - size * 0.8 + bob + kick.y + thrown.y + runOffset.y);
   context.fillStyle = "rgba(0, 0, 0, .35)";
   context.beginPath();
   context.ellipse(0, size * 1.05, size * 0.9, size * 0.35, 0, 0, Math.PI * 2);
@@ -2262,6 +2314,16 @@ function drawUnit(unit, viewport) {
   }
 
   const sheet = spriteSheetFor(unit);
+  // The body is turned about the feet as it falls, squashed as it is vaporized and darkened once charred.
+  context.save();
+  if (dying) {
+    const feet = size * 1.05;
+    context.translate(0, feet);
+    context.rotate((dying.fall * Math.PI) / 2 * (unit.id.length % 2 ? 1 : -1));
+    context.scale(1, dying.squash);
+    context.translate(0, -feet);
+    if (dying.charred && "filter" in context) context.filter = "brightness(0.3)";
+  }
   if (sheet) drawSprite(unit, sheet, viewport, size);
   context.fillStyle = appearance.primaryColor;
   context.strokeStyle = appearance.accentColor;
@@ -2293,6 +2355,9 @@ function drawUnit(unit, viewport) {
     context.textBaseline = "middle";
     context.fillText(appearance.marker, 0, 1);
   }
+
+  context.restore();
+  drawDeathEffects(unit, dying, size);
 
   if (unit.number) {
     // The operative's number in gold above their head (dimmer once they are down).
@@ -2386,7 +2451,7 @@ function drawUnit(unit, viewport) {
     context.fillStyle = "#f6c6ef";
     context.fillText("TARGET", 0, top - size * 0.4);
   }
-  if (unit.disabled) {
+  if (unit.disabled && unit.side === "team") {
     context.strokeStyle = "#ff6b62";
     context.lineWidth = 2;
     context.beginPath();
@@ -3313,12 +3378,24 @@ function checkOutcome() {
   showOutcome(outcome);
 }
 
+// When each person went down, so their death can be drawn from the start. People already down when the operation is
+// loaded are simply lying there.
+function stampDeaths() {
+  const seeding = !state.deathsSeeded;
+  state.deathsSeeded = true;
+  for (const unit of state.units) {
+    if (!unit.disabled || unit.diedAt !== undefined || unit.kind === "drop" || isVehicle(unit)) continue;
+    unit.diedAt = seeding ? -1000 : state.elapsed;
+  }
+}
+
 function update(deltaSeconds) {
   if (state.paused || state.modal) {
     state.clock.accumulator = 0;
     return;
   }
   state.elapsed += deltaSeconds;
+  stampDeaths();
   if (state.outcome === "active") {
     // The campaign clock runs with the operation: four seconds make a game hour, which pays for research, and a day
     // collects tax. The record is saved every few seconds.

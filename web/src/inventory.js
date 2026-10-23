@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 import { SLOTS_PER_OPERATIVE } from "./campaign.js";
-import { chestTier } from "./upgrades.js";
+import { deathKind } from "./death.js";
 
 // How close an operator must stand to a body to loot it.
 export const LOOT_RANGE = 1.6;
@@ -82,10 +82,8 @@ export function collectFallen(units, drops, grid = null) {
     if (!unit.disabled || unit.escaped || unit.droppedAll || carried.length === 0) continue;
     if (unit.kind === "drop" || unit.definition?.vehicle) continue;
     unit.droppedAll = true;
-    const cause = unit.lastDamageType ?? "bullet";
     // FreeSynd treats a collision like a bullet: the person is thrown down and what they carried falls with them.
-    const survivesFire = (cause === "burn" || cause === "explosion") && chestTier(unit.upgrades) >= 2;
-    const keeps = cause === "bullet" || cause === "collision" || survivesFire;
+    const keeps = deathKind(unit) === "shot";
     const items = carried;
     unit.equipment = [];
     unit.sidearm = [];
