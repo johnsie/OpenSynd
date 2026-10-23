@@ -4,6 +4,7 @@ import { findPath, hasLineOfSight, SIGHT_STEP } from "./engine.js";
 import { LOOT_RANGE, lootBody, lootableBody } from "./inventory.js";
 import { VEHICLE_HIT_RADIUS, ejectDriver, isSquadVehicle, isVehicle } from "./vehicles.js";
 import { damageProp, propsAlong } from "./props.js";
+import { adrenalineAim, adrenalineSpeed, intelligenceRecharge, perceptionReach } from "./drugs.js";
 import { armsCapacity, armsCooldown, chestVitality, eyesRange, legsPace } from "./upgrades.js";
 import { cooldownMultiplier, effectiveLevels, nextFocus, nextStamina, speedMultiplier } from "./stats.js";
 
@@ -89,7 +90,11 @@ export function advanceUnits(units, deltaSeconds) {
     if (!walking) continue;
 
     // Tired legs take levels off the Legs bar, so the pace follows the effective level.
-    const pace = speedMultiplier(effectiveLevels(unit.levels, unit.stamina, unit.focus)) * weightPace(unit) * legsPace(unit.upgrades);
+    const pace =
+      speedMultiplier(effectiveLevels(unit.levels, unit.stamina, unit.focus)) *
+      weightPace(unit) *
+      legsPace(unit.upgrades) *
+      adrenalineSpeed(unit.drugs);
     let remaining = deltaSeconds * unit.definition.stats.speed * pace * 0.7;
     while (remaining > 0 && unit.path.length > 0) {
       const destination = unit.path[0];
@@ -666,8 +671,8 @@ export function hasWeaponSelected(unit) {
 // An operative's Eyes upgrade lengthens the reach of whatever they fire.
 export function pickWeapon(unit, distance = null) {
   const pick = chooseWeapon(unit, distance);
-  const reach = eyesRange(unit.upgrades);
-  if (reach === 1 || !pick.item) return pick;
+  const reach = eyesRange(unit.upgrades) * perceptionReach(unit.drugs) * adrenalineAim(unit.drugs);
+  if (Math.abs(reach - 1) < 1e-9 || !pick.item) return pick;
   return { item: pick.item, stats: { ...pick.stats, range: pick.stats.range * reach } };
 }
 
@@ -832,7 +837,10 @@ export function advanceBurning(units, deltaSeconds) {
 // The recharge before a unit can fire again: the weapon's cooldown, scaled by its effective Brain.
 function startCooldown(unit, stats) {
   unit.cooldownRemaining =
-    stats.cooldown * cooldownMultiplier(effectiveLevels(unit.levels, unit.stamina, unit.focus)) * armsCooldown(unit.upgrades);
+    stats.cooldown *
+    cooldownMultiplier(effectiveLevels(unit.levels, unit.stamina, unit.focus)) *
+    armsCooldown(unit.upgrades) *
+    intelligenceRecharge(unit.drugs);
 }
 
 // Apply a hit and report it; a unit reduced to zero health is disabled.
@@ -1158,7 +1166,7 @@ export function advancePersuasion(units, deltaSeconds, grid = null) {
       target.hostileTo = null;
       target.police = null;
       if (item.charges !== null) item.charges -= 1;
-      agent.persuadeCooldown = item.definition.effect.cooldown;
+      agent.persuadeCooldown = item.definition.effect.cooldown * intelligenceRecharge(agent.drugs);
       agent.persuasions = { ...newPersuasions(), ...(agent.persuasions ?? {}) };
       // Criminals count as civilians toward what guards and police need.
       const counted = check.kind === "criminal" ? "civilian" : check.kind;
@@ -1194,7 +1202,11 @@ const FOLLOW_SPEED_FACTOR = 1.5;
 export const FOLLOW_FAST = 1.5;
 export const FOLLOW_SLOW = 0.6;
 export function followPace(owner) {
-  const pace = speedMultiplier(effectiveLevels(owner.levels, owner.stamina, owner.focus)) * legsPace(owner.upgrades) * weightPace(owner);
+  const pace =
+    speedMultiplier(effectiveLevels(owner.levels, owner.stamina, owner.focus)) *
+    legsPace(owner.upgrades) *
+    weightPace(owner) *
+    adrenalineSpeed(owner.drugs);
   if (pace > 1.05) return FOLLOW_FAST;
   if (pace < 0.95) return FOLLOW_SLOW;
   return 1;

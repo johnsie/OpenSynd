@@ -6,6 +6,7 @@ export const LEVEL_MIN = 1;
 export const LEVEL_MAX = 5;
 export const LEVEL_DEFAULT = 3;
 import { brainEffect, heartEffect } from "./campaign.js";
+import { MAX_DRUG_RECHARGE } from "./drugs.js";
 
 export const BARS = Object.freeze(["speed", "brain"]);
 // The key stays "speed" so saves keep working; the label is "Legs".
@@ -42,7 +43,7 @@ export function cooldownMultiplier(levels) {
 
 // Longest cooldown a unit can have, for validating saved state.
 export function maxCooldownMultiplier() {
-  return cooldownMultiplier({ brain: LEVEL_MIN });
+  return cooldownMultiplier({ brain: LEVEL_MIN }) * MAX_DRUG_RECHARGE;
 }
 
 // Each operator has a limited pool of training points: the sum of their bar levels

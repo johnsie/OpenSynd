@@ -15,6 +15,7 @@ export const LEGACY_LOCAL_SAVE_KEYS = [
   "opensynd.save.v1",
 ];
 
+import { sanitizeDrugs } from "./drugs.js";
 import { BARS, defaultLevels, isValidLevel, isValidMeter, maxCooldownMultiplier } from "./stats.js";
 
 // Mirrors SLOTS_PER_OPERATIVE in campaign.js: no unit may carry more than eight items.
@@ -75,6 +76,7 @@ export function createSaveSnapshot(state, createdAt = new Date().toISOString()) 
       focus: unit.focus ?? 1,
       equipment: (unit.equipment ?? []).map((item) => ({ id: item.definition.id, charges: item.charges })),
       looted: [...(unit.looted ?? [])],
+      drugs: unit.drugs ? structuredClone(unit.drugs) : null,
       escaped: Boolean(unit.escaped),
       scriptIndex: unit.script?.index ?? 0,
       scriptDone: Boolean(unit.script?.done),
@@ -187,6 +189,7 @@ export function validateSaveSnapshot(value, context) {
       focus: unit.focus,
       equipment: unit.equipment.map((item) => ({ id: item.id, charges: item.charges })),
       looted: [...unit.looted],
+      drugs: unit.drugs ? sanitizeDrugs(unit.drugs) : null,
       escaped: unit.escaped === true,
       scriptIndex: Number.isInteger(unit.scriptIndex) && unit.scriptIndex >= 0 ? unit.scriptIndex : 0,
       scriptDone: unit.scriptDone === true,

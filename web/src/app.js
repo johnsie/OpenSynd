@@ -16,6 +16,7 @@ import {
 } from "./vehicles.js";
 import { createOverlay, createTileSprites } from "./textures.js";
 import { renderWorldMap } from "./worldmap.js";
+import { DRUG_HINTS, DRUG_LABELS, DRUG_NAMES, advanceDrugs, drugMultiplier, newDrugs, setDrug } from "./drugs.js";
 import { advanceProps, damageProp, newProp, propsNear } from "./props.js";
 import {
   FENCE_SURFACE,
@@ -591,6 +592,7 @@ async function loadGame(index = state.missionIndex) {
       : null,
     path: [],
     upgrades: definition.role === "operator" ? upgradesOf(state.campaign, placement.id) : null,
+    drugs: definition.role === "operator" ? newDrugs() : null,
     research:
       definition.role === "operator"
         ? {
@@ -1279,6 +1281,7 @@ function applySaveSnapshot(snapshot) {
       unit.vehicle.occupantIds = unit.vehicle.occupantIds.filter((id) => id === unit.vehicle.driverId);
     }
     unit.escaped = saved.escaped;
+    if (unit.drugs && saved.drugs) unit.drugs = saved.drugs;
     if (unit.script) Object.assign(unit.script, { index: saved.scriptIndex, waitLeft: null, done: saved.scriptDone });
     unit.persuadedBy = saved.persuadedBy;
     unit.persuaded = saved.persuadedBy !== null;
@@ -2746,6 +2749,7 @@ function simulationStep(deltaSeconds) {
   updateAlertMusic(deltaSeconds);
   advanceShields(state.units, deltaSeconds);
   advanceScanners(state.units, deltaSeconds);
+  advanceDrugs(state.units, deltaSeconds);
   for (const bomb of state.bombs) {
     const second = Math.ceil(bomb.left);
     if (bomb.tickedAt !== second) {
@@ -3966,6 +3970,9 @@ if (new URLSearchParams(location.search).has("e2e")) {
     moveSelected(x, y) {
       issueMove({ x, y });
     },
+    drugOf(id, name) {
+      return { ...state.units.find((item) => item.id === id).drugs[name] };
+    },
     props() {
       return state.props.map((prop) => ({ id: prop.id, kind: prop.kind, state: prop.state, position: { ...prop.position } }));
     },
@@ -4188,6 +4195,29 @@ function paintMeter(element, unit) {
   element.querySelector("i").style.width = `${percent}%`;
 }
 
+// A drug slider shows the dose set; its tooltip explains what is actually in force and what the body has adapted to.
+function paintDrug(slider, unit) {
+  const name = slider.dataset.drug;
+  const drug = unit.drugs?.[name];
+  if (!drug) return;
+  if (document.activeElement !== slider) slider.value = String(drug.amount);
+  const times = drugMultiplier(unit.drugs, name);
+  slider.title =
+    `${DRUG_LABELS[name]}: ${DRUG_HINTS[name]} Dose ${drug.amount}, in force ${drug.effect}, tolerance ${drug.dependency}: ` +
+    `x${times.toFixed(2)}. A high dose fades as the body adapts.`;
+}
+
+// Moving a slider sets it for every selected operator when this one is among them (like weapons and the bars).
+function setDrugForGroup(unit, name, value) {
+  for (const member of levelGroup(unit)) {
+    if (member.drugs && !member.disabled) member.drugs = setDrug(member.drugs, name, value);
+  }
+  for (const slider of document.querySelectorAll(`.drug input[data-drug="${name}"]`)) {
+    const owner = state.units.find((candidate) => candidate.id === slider.dataset.unit);
+    if (owner && levelGroup(unit).includes(owner) && slider !== document.activeElement) paintDrug(slider, owner);
+  }
+}
+
 function makeMeter(unit, kind, label) {
   const meter = document.createElement("div");
   meter.className = `meter ${kind}`;
@@ -4221,6 +4251,10 @@ function paintBar(element, unit) {
 // Fatigue changes every step, so update the meters and bars in place instead of
 // rebuilding the roster (which would swallow clicks on its buttons).
 function updateMeters() {
+  for (const slider of document.querySelectorAll(".drug input")) {
+    const owner = state.units.find((candidate) => candidate.id === slider.dataset.unit);
+    if (owner) paintDrug(slider, owner);
+  }
   for (const element of document.querySelectorAll(".meter")) {
     const unit = state.units.find((item) => item.id === element.dataset.unit);
     if (unit) paintMeter(element, unit);
@@ -4534,6 +4568,27 @@ function renderInterface() {
         group.append(BAR_LABELS[bar], levelBar(unit, bar, `${BAR_LABELS[bar]} of ${label}`), lower, raise);
         bars.append(group);
       }
+      const chemistry = document.createElement("div");
+      chemistry.className = "drugs";
+      for (const name of DRUG_NAMES) {
+        const row = document.createElement("label");
+        row.className = "drug";
+        const text = document.createElement("span");
+        text.textContent = DRUG_LABELS[name].slice(0, 3);
+        const slider = document.createElement("input");
+        slider.type = "range";
+        slider.min = "0";
+        slider.max = "100";
+        slider.step = "5";
+        slider.dataset.unit = unit.id;
+        slider.dataset.drug = name;
+        slider.disabled = unit.disabled;
+        slider.setAttribute("aria-label", `${DRUG_LABELS[name]} of ${label}`);
+        slider.addEventListener("input", () => setDrugForGroup(unit, name, Number(slider.value)));
+        row.append(text, slider);
+        chemistry.append(row);
+        paintDrug(slider, unit);
+      }
       const meters = document.createElement("div");
       meters.className = "meters";
       meters.append(makeMeter(unit, "stamina", label), makeMeter(unit, "focus", label));
@@ -4544,7 +4599,7 @@ function renderInterface() {
       points.title = `Each operator may spend ${state.trainingBudget} points across Legs and Brain.`;
       points.classList.toggle("none", left <= 0);
       button.insertBefore(points, button.lastChild);
-      item.append(checkbox, button, slotRow(unit, label), bars, meters);
+      item.append(checkbox, button, slotRow(unit, label), bars, chemistry, meters);
       return item;
     }),
   );

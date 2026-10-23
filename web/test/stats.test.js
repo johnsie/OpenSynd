@@ -35,7 +35,7 @@ test("speed and brain scale in the right directions across the range", () => {
   assert.ok(Math.abs(speedMultiplier({ speed: 5 }) - 1.4) < 1e-9);
   assert.ok(Math.abs(cooldownMultiplier({ brain: 5 }) - 0.7) < 1e-9);
   assert.ok(Math.abs(cooldownMultiplier({ brain: 1 }) - 1.3) < 1e-9);
-  assert.ok(Math.abs(maxCooldownMultiplier() - 1.3) < 1e-9);
+  assert.ok(Math.abs(maxCooldownMultiplier() - 1.3 * Math.SQRT2) < 1e-9, "the slowest brain and the lowest Intelligence together");
 });
 
 test("levels are clamped to 1-5 and adjustments stop at the ends", () => {

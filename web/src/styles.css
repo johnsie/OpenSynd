@@ -849,3 +849,15 @@ main { grid-template-columns: minmax(0, 1fr) minmax(250px, 300px); gap: 0.6rem; 
 .research-row progress { width: 6rem; }
 
 .shop-row .stats { display: block; opacity: 0.85; color: var(--amber, #e1b35a); }
+
+/* The three drug sliders under each operator's bars. */
+.drugs {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.25rem 0.6rem;
+  font-size: 0.7rem;
+  color: var(--muted);
+}
+.drug { display: grid; grid-template-columns: auto minmax(2.5rem, 1fr); align-items: center; gap: 0.25rem; }
+.drug input[type="range"] { width: 100%; min-width: 0; margin: 0; accent-color: var(--amber, #e1b35a); }

@@ -142,6 +142,14 @@ for (const [name, type, executablePath] of targets) {
     await page.getByRole("button", { name: "Lower Brain", exact: true }).click();
     assert.match(await page.locator("#status-message").innerText(), /Selected operators: Brain lowered/);
     assert.equal(await page.locator('.roster [aria-label^="Brain of"][aria-label$="2 of 5"]').count(), 4);
+    // Drug sliders: moving one sets it for everyone selected, and the dose takes effect over the next seconds.
+    await page.keyboard.press("a");
+    await page.getByLabel("Adrenaline of Field Operator 1").fill("100");
+    assert.equal((await page.evaluate(() => window.opensyndTest.drugOf("operator-three", "adrenaline"))).amount, 100);
+    await page.waitForTimeout(2200);
+    const dose = await page.evaluate(() => window.opensyndTest.drugOf("operator-three", "adrenaline"));
+    assert.ok(dose.effect > 50, `the effect is building: ${JSON.stringify(dose)}`);
+    await page.getByLabel("Adrenaline of Field Operator 1").fill("50");
     // Number keys pick operators; 0 switches between one and everyone; Shift+number toggles one in or out.
     await page.locator("#game-canvas").focus();
     await page.keyboard.press("2");
@@ -626,7 +634,11 @@ for (const [name, type, executablePath] of targets) {
     await garage.waitForFunction(() => !document.querySelector("#vehicle-button").disabled);
     assert.match(await garage.locator("#vehicle-label").innerText(), /Take vehicle/);
     // Clicking a car sends the selected operator to it, and they get in on arrival.
-    await garage.evaluate(() => window.opensyndTest.placeNear("operator-one", "parked-city-car-1", 4, 0));
+    await garage.evaluate(() => {
+      window.opensyndTest.placeNear("operator-one", "parked-city-car-1", 4, 0);
+      window.opensyndTest.focusOn("parked-city-car-1"); // centred, clear of the squad panel in the corner
+    });
+    await garage.waitForTimeout(700); // the camera glides to its new centre
     const carPoint = await garage.evaluate(() => window.opensyndTest.screenPoint("parked-city-car-1"));
     await garage.mouse.click(carPoint.x, carPoint.y - 12);
     await garage.waitForFunction(

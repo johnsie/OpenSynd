@@ -347,7 +347,7 @@ browser e2e run).
 | F15 | Everything is lethal | have |
 | F16 | Medikit | have |
 | F17 | Six body upgrades, three tiers | done: per operative, 1x/5x/10x prices; enemy upgrades open |
-| F18 | The three IPA drugs | open: Legs and Brain bars with fatigue remain the nearest thing |
+| F18 | The three IPA drugs | done: three sliders with the dose, effect and tolerance drift; Legs and Brain stay as training bars |
 | F19 | Followers move at their owner's pace | done |
 | F20 | Funded, time-based research with chains | done: ten funding levels, one item at a time, chains |
 | F21 | Objective types and sequences | done: seven new types, sequence mode, failure rules |
@@ -366,7 +366,7 @@ browser e2e run).
 | F34 | What a click means | done: click a vehicle to get in, a drop to collect it, hold to fire |
 | F35 | Squad formation | have |
 | F36 | Selection and hotkeys | done: 1-4, 0, Shift+number, Alt+1-8 |
-| F37 | The HUD | partly: objective highlight and ammo badges; drug sliders wait on F18 |
+| F37 | The HUD | partly: objective highlight, ammo badges and the drug sliders |
 | F38 | Voice and sound cues | partly: police warning, scanner, outcome stingers; doors and glass open |
 | F39 | Doors | partly: key gates; doors that open on approach are open |
 | F40 | Windows | open |
