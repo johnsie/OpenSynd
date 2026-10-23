@@ -204,9 +204,9 @@ test("Safe Passage: the accountant waits, walks to the gate, waits for the key, 
   op.position = { x: 70, y: 70 };
   run(240);
   assert.ok(Math.hypot(informant.position.x - 112, informant.position.y - 110) < 1.5, "she reached the gate and waits");
-  assert.equal(informant.script.index, 2);
+  assert.equal(informant.script.index, 4);
   run(10);
-  assert.equal(informant.script.index, 2, "still waiting: the gate is shut");
+  assert.equal(informant.script.index, 4, "still waiting: the gate is shut");
   // The key carrier steps up to the gate: it opens and she crosses to the exit.
   op.equipment.push(key);
   op.position = { x: 115, y: 110 };
@@ -249,4 +249,19 @@ test("Loose Ends and Safe Passage use only objective types the game resolves", a
     assert.equal(new Set(mission.objectives.map((item) => item.id)).size, mission.objectives.length);
     assert.equal(mission.objectives.at(-1).type, "extract", "the last step is always the way out");
   }
+});
+
+test("a scripted person can speak: a say step reports the line once and moves on", () => {
+  const grid = createTileGrid({
+    dimensions: { width: 10, height: 5 },
+    regions: [{ id: "r", x: 0, y: 0, width: 10, height: 5, surface: "street", walkable: true, elevation: 0 }],
+  });
+  const talker = unit("talker", "civilian", 3, 2, {
+    path: [],
+    script: { steps: [{ type: "say", text: "Hello." }, { type: "wait", seconds: 5 }], index: 0, waitLeft: null, loop: false, done: false },
+  });
+  const first = advancePatrols([talker], FIXED_STEP_SECONDS, grid, 0);
+  assert.deepEqual(first, [{ type: "say", unitId: "talker", text: "Hello." }]);
+  assert.equal(talker.script.index, 1);
+  assert.deepEqual(advancePatrols([talker], FIXED_STEP_SECONDS, grid, 1), [], "it does not repeat itself");
 });

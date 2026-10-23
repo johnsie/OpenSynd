@@ -246,11 +246,13 @@ export function armedOut(unit, now, byId = null) {
 //   walk {to}        walk to a tile along the streets
 //   wait {seconds}   stand still
 //   trigger {at, radius}   stand until an operator comes within `radius` tiles of `at`
+//   say {text}       speak a line (shown as a caption and in the status line)
 //   escape {to}      walk to a tile and leave the map: a target that does this has got away
 // The list repeats when the placement says `scriptLoop`. Anyone alerted drops the script and fights or flees as usual.
 const SCRIPT_SPEED_FACTOR = 0.8;
 const SCRIPT_TRIGGER_RADIUS = 8;
 let scriptUnits = [];
+let scriptEvents = [];
 
 export function advanceScript(unit, deltaSeconds, grid, units) {
   const script = unit.script;
@@ -276,6 +278,9 @@ export function advanceScript(unit, deltaSeconds, grid, units) {
         other.side === "team" && !other.disabled && Math.hypot(other.position.x - step.at.x, other.position.y - step.at.y) <= radius,
     );
     if (near) next();
+  } else if (step.type === "say") {
+    scriptEvents.push({ type: "say", unitId: unit.id, text: step.text });
+    next();
   } else if (step.type === "walk" || step.type === "escape") {
     const goal = tileOf(step.to);
     if (unit.path.length === 0) {
@@ -571,6 +576,7 @@ export function advancePatrols(units, deltaSeconds, grid = null, now = null) {
   const byId = new Map(units.map((unit) => [unit.id, unit]));
   const armed = now === null ? [] : units.filter((unit) => armedOut(unit, now, byId));
   scriptUnits = units;
+  scriptEvents = events;
   for (const unit of units) {
     if (unit.side === "team" || unit.disabled || unit.inVehicle || isVehicle(unit) || unit.hitStun > 0) continue;
     if (unit.persuaded) {

@@ -755,11 +755,19 @@
           "radius": 9
         },
         {
+          "type": "say",
+          "text": "You are the ones from the district? I will follow my own road. Keep the shooting away from me."
+        },
+        {
           "type": "walk",
           "to": {
             "x": 112,
             "y": 110
           }
+        },
+        {
+          "type": "say",
+          "text": "The gate is shut. I need whoever has the courier's key."
         },
         {
           "type": "trigger",
@@ -768,6 +776,10 @@
             "y": 110
           },
           "radius": 2.5
+        },
+        {
+          "type": "say",
+          "text": "Thank you. Nearly there."
         },
         {
           "type": "walk",

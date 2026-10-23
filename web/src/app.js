@@ -697,6 +697,8 @@ function renderResearch() {
   // Body upgrades for the operative chosen in the Armoury: six parts, three tiers each.
   const squad = squadTeam(state.rawTeam ?? state.mission.team);
   const fitted = squad[Math.min(state.armoury.operator, squad.length - 1)];
+  document.querySelector("#upgrades-heading").textContent =
+    `Body upgrades · Operator ${Math.min(state.armoury.operator, squad.length - 1) + 1} · ${fitted.callsign ?? fitted.id}`;
   const owned = upgradesOf(campaign, fitted.id);
   document.querySelector("#research-tracks").replaceChildren(
     ...PART_NAMES.map((part) => {
@@ -2667,6 +2669,12 @@ function simulationStep(deltaSeconds) {
     const watcher = state.units.find((unit) => unit.id === event.unitId);
     if (event.type === "pickup") {
       setStatus(`${watcher.definition.name} takes ${event.items.join(" and ")} from the fallen.`);
+      audio.play("select");
+      interfaceChanged = true;
+      continue;
+    }
+    if (event.type === "say") {
+      setStatus(`${watcher.definition.name}: “${event.text}”`);
       audio.play("select");
       interfaceChanged = true;
       continue;

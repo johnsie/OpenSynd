@@ -81,7 +81,7 @@
         },
         "script": {
           "type": "array",
-          "description": "Steps this person follows instead of a patrol: walk, wait, trigger (wait for an operator to come near) and escape (walk off the map).",
+          "description": "Steps this person follows instead of a patrol: walk, wait, trigger (wait for an operator to come near), say (speak a line) and escape (walk off the map).",
           "minItems": 1,
           "maxItems": 40,
           "items": { "$ref": "#/$defs/scriptStep" }
@@ -93,7 +93,8 @@
       "type": "object",
       "required": ["type"],
       "properties": {
-        "type": { "enum": ["walk", "wait", "trigger", "escape"] },
+        "type": { "enum": ["walk", "wait", "trigger", "escape", "say"] },
+        "text": { "type": "string", "minLength": 1, "maxLength": 200 },
         "to": { "$ref": "#/$defs/position" },
         "seconds": { "type": "number", "exclusiveMinimum": 0, "maximum": 600 },
         "at": { "$ref": "#/$defs/position" },
