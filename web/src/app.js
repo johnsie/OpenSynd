@@ -4182,6 +4182,12 @@ function runPendingOrders() {
       const body = state.drops.find((item) => item.id === next.id);
       if (body && lootableBody(body)) sendLoot(unit, body, true);
       else setStatus(`${unit.definition.name}: nothing left to pick up, skipped.`);
+    } else if (next.type === "follow") {
+      const target = state.units.find((item) => item.id === next.id);
+      if (target && !target.disabled) {
+        unit.tailId = target.id;
+        setStatus(`${unit.definition.name} follows ${target.definition.name}.`);
+      } else setStatus(`${unit.definition.name}: nobody left to follow, skipped.`);
     } else if (next.type === "enter") {
       const vehicle = state.units.find((item) => item.id === next.id);
       if (vehicle && !vehicle.disabled) sendEnter(unit, vehicle, true);
@@ -4319,11 +4325,15 @@ function isFollowable(unit) {
 }
 
 // Left-click on someone: the selected operatives, not in a vehicle, walk after them and stay beside them (no shooting).
-function issueFollow(targetId) {
+function issueFollow(targetId, queue = false) {
   const target = state.units.find((unit) => unit.id === targetId);
   const squad = selectedOperators().filter((unit) => !unit.inVehicle);
   if (!target || squad.length === 0) return;
-  for (const unit of squad) {
+  // With Shift held, whoever is busy follows after finishing what they are doing.
+  const waiting = queue ? squad.filter((unit) => isBusy(unit)) : [];
+  for (const unit of waiting) queueAction(unit, { type: "follow", id: target.id }, `follow ${target.definition.name}`);
+  if (waiting.length === squad.length) return;
+  for (const unit of squad.filter((item) => !waiting.includes(item))) {
     unit.targetId = null;
     unit.followId = null;
     unit.lootTargetId = null;
@@ -4488,7 +4498,7 @@ canvas.addEventListener("click", (event) => {
     else if (isVehicle(unit) && !unit.disabled && !isSquadVehicle(unit)) goEnterVehicle(unit, event.shiftKey);
     else if (unit.side !== "team") {
       // FreeSynd: a left click on a person follows them; shooting is the right click. Watchers and criminals are still engaged.
-      if (isFollowable(unit)) issueFollow(unit.id);
+      if (isFollowable(unit)) issueFollow(unit.id, event.shiftKey);
       else if (isAttackable(unit)) issueAttack(unit.id, event.shiftKey);
     }
     else if (event.ctrlKey || event.shiftKey || event.metaKey) toggleSelect(unit.id);

@@ -670,7 +670,7 @@ for (const [name, type, executablePath] of targets) {
     await tail.click("#begin-button");
     await tail.waitForFunction(() => document.querySelector("#status-message").textContent.includes("Local map established"));
     await tail.evaluate(() => {
-      window.opensyndTest.placeNear("operator-one", "civilian-1", 0, 6);
+      window.opensyndTest.placeNear("civilian-1", "operator-one", 0, 4);
       window.opensyndTest.focusOn("civilian-1");
     });
     await tail.waitForTimeout(700);
@@ -680,6 +680,25 @@ for (const [name, type, executablePath] of targets) {
     await tail.mouse.click(walkerPoint.x, walkerPoint.y);
     assert.match(await tail.locator("#status-message").innerText(), /following/i);
     assert.match(await tail.locator("#selected-readout").innerText(), /following/);
+    // With Shift held a follow waits its turn behind a walk that is already under way.
+    const attempts = await tail.evaluate(() => {
+      const test = window.opensyndTest;
+      test.placeNear("civilian-2", "operator-one", 3, 2);
+      const here = test.positionOf("operator-one");
+      const tried = [];
+      for (const [dx, dy] of [[0, -6], [0, 6], [6, 0], [-6, 0], [0, -3], [0, 3]]) {
+        test.moveSelected(Math.round(here.x) + dx, Math.round(here.y) + dy);
+        if (test.queue("operator-one").steps > 0) break;
+      }
+      return tried;
+    });
+    await tail.waitForTimeout(400);
+    const second = await tail.evaluate(() => window.opensyndTest.screenPoint("civilian-2"));
+    await tail.keyboard.down("Shift");
+    await tail.mouse.click(second.x, second.y);
+    await tail.keyboard.up("Shift");
+    assert.equal((await tail.evaluate(() => window.opensyndTest.queue("operator-one"))).pending, 1, "the follow is queued");
+    assert.match(await tail.locator("#status-message").innerText(), /will follow/);
     await tail.close();
 
     // Clicking gear that lies beside a tall figure picks it up rather than selecting the figure.
