@@ -386,6 +386,9 @@ const VEHICLE_SHAPES = Object.freeze({
   "small-armored": { length: 2.2, width: 1.05, body: 0.68, cabin: 0.45, cabinInset: 0.4 },
 });
 
+// Cars are drawn a little smaller than their shape tables say, to sit better beside the people (FreeSynd's are one tile long).
+const CAR_SCALE = 0.88;
+
 function shadeHex(hex, amount) {
   const value = Number.parseInt(hex.slice(1), 16);
   const clamp = (part) => Math.max(0, Math.min(255, part));
@@ -393,7 +396,14 @@ function shadeHex(hex, amount) {
 }
 
 export function drawVehicle(context, p, vehicle, cellHeight, time, { controlled = false } = {}) {
-  const shape = VEHICLE_SHAPES[vehicle.definition.kind] ?? VEHICLE_SHAPES["city-car"];
+  const base = VEHICLE_SHAPES[vehicle.definition.kind] ?? VEHICLE_SHAPES["city-car"];
+  const shape = {
+    ...base,
+    length: base.length * CAR_SCALE,
+    width: base.width * CAR_SCALE,
+    body: base.body * CAR_SCALE,
+    cabin: base.cabin * CAR_SCALE,
+  };
   const state = vehicle.vehicle;
   const wrecked = vehicle.disabled;
   const alongX = Math.abs(state.heading.x) >= Math.abs(state.heading.y);
