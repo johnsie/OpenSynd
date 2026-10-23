@@ -223,6 +223,27 @@ function driveRoute(vehicle, seconds, roadGrid) {
   moveAlongPath(vehicle, seconds, vehicle.definition.stats.speed);
 }
 
+// Traffic does not drive through itself: an AI-driven car waits when another vehicle is close ahead of it, unless that one
+// has to wait for it. Parked cars are ignored. Wrecks that are still burning and cars the squad drives always have the right of way; between two
+// ordinary cars the one with the lower id goes first, so no queue can lock up.
+export const FOLLOW_GAP = 1.9;
+export function blockedAhead(vehicle, units) {
+  const heading = vehicle.vehicle.heading;
+  if (!heading) return false;
+  return units.some((other) => {
+    if (other === vehicle || !isVehicle(other)) return false;
+    if (other.disabled && !(other.vehicle.wreckLeft > 0)) return false;
+    // Parked cars (nobody at the wheel) are driven around rather than queued behind.
+    if (!other.disabled && !other.vehicle.driverId && !other.vehicle.controlledBy) return false;
+    const dx = other.position.x - vehicle.position.x;
+    const dy = other.position.y - vehicle.position.y;
+    const distance = Math.hypot(dx, dy);
+    if (distance === 0 || distance > FOLLOW_GAP) return false;
+    if ((dx * heading.x + dy * heading.y) / distance < 0.75) return false;
+    return other.disabled || Boolean(other.vehicle.controlledBy) || other.id < vehicle.id;
+  });
+}
+
 // A moving vehicle hurts anyone on foot it runs into: damage grows with its speed, and a person hit is thrown aside and
 // flinches. Nobody is hit twice in under a second.
 export const RUNOVER_RADIUS = 0.9;
@@ -301,7 +322,7 @@ export function advanceVehicles(units, seconds, roadGrid, grid) {
     }
     const driver = state.driverId ? units.find((unit) => unit.id === state.driverId) : null;
     if (state.controlledBy) moveAlongPath(vehicle, seconds, vehicle.definition.stats.speed);
-    else if (driver && !driver.disabled) driveRoute(vehicle, seconds, roadGrid);
+    else if (driver && !driver.disabled && !blockedAhead(vehicle, units)) driveRoute(vehicle, seconds, roadGrid);
     for (const id of state.occupantIds) {
       const unit = units.find((other) => other.id === id);
       if (unit) unit.position = { ...vehicle.position };

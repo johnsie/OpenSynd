@@ -213,3 +213,47 @@ test("a moving car runs over people on foot: harder when faster, never twice in 
   const parked = advanceVehicles([lorry, walker], 1 / 30, roads, grid).filter((event) => event.type === "runover");
   assert.equal(parked.length, 0, "a parked car hurts nobody");
 });
+
+import { FOLLOW_GAP, blockedAhead } from "../src/vehicles.js";
+
+test("traffic queues: a car waits for one close ahead that has priority, never locks up, and ignores parked cars", () => {
+  const lead = car("car-1", 10, 5, "d1");
+  const follower = car("car-2", 8.5, 5, "d2");
+  follower.vehicle.heading = { x: 1, y: 0 };
+  lead.vehicle.heading = { x: 1, y: 0 };
+  assert.equal(blockedAhead(follower, [lead, follower]), true, "the lower id goes first and the other waits");
+  assert.equal(blockedAhead(lead, [lead, follower]), false, "the lead is clear (the one behind has no priority)");
+  follower.position = { x: 10 - FOLLOW_GAP - 0.5, y: 5 };
+  assert.equal(blockedAhead(follower, [lead, follower]), false, "far enough back to move");
+  follower.position = { x: 8.5, y: 6.9 };
+  assert.equal(blockedAhead(follower, [lead, follower]), false, "a car beside the way is not in the way");
+  follower.position = { x: 12, y: 5 };
+  assert.equal(blockedAhead(follower, [lead, follower]), false, "a car behind is no obstacle");
+
+  follower.position = { x: 8.5, y: 5 };
+  const parked = car("car-0", 10, 5, null);
+  assert.equal(blockedAhead(follower, [parked, follower]), false, "nobody at its wheel: drive round it");
+  const wreck = car("car-9", 10, 5, "d9", { disabled: true });
+  wreck.vehicle.wreckLeft = 5;
+  assert.equal(blockedAhead(follower, [wreck, follower]), true, "a burning wreck blocks the road");
+  wreck.vehicle.wreckLeft = 0;
+  assert.equal(blockedAhead(follower, [wreck, follower]), false, "a cleared one does not");
+  const driven = car("car-8", 10, 5, "p");
+  driven.vehicle.controlledBy = "operator";
+  assert.equal(blockedAhead(follower, [driven, follower]), true, "a car the squad drives has right of way");
+});
+
+test("a following car actually holds back while the one ahead stays put, then moves on", () => {
+  const roadGrid = createRoadGrid(grid);
+  const lead = car("car-1", 10, 5, "d1", { vehicle: { ...newVehicleState("d1"), controlledBy: "p", heading: { x: 1, y: 0 } } });
+  const follower = car("car-2", 8.6, 5, "d2");
+  follower.vehicle.route = { route: [{ x: 30, y: 5 }], index: 0 };
+  follower.vehicle.heading = { x: 1, y: 0 };
+  const units = [lead, follower, person("d1", 10, 5, { inVehicle: "car-1" }), person("d2", 8.6, 5, { inVehicle: "car-2" })];
+  const before = follower.position.x;
+  for (let step = 0; step < 30; step += 1) advanceVehicles(units, 1 / 30, roadGrid, grid);
+  assert.equal(follower.position.x, before, "held back for a second");
+  lead.position = { x: 20, y: 5 };
+  for (let step = 0; step < 30; step += 1) advanceVehicles(units, 1 / 30, roadGrid, grid);
+  assert.ok(follower.position.x > before + 3, "and off again once the road is clear");
+});
