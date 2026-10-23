@@ -1139,7 +1139,7 @@ Ordered by what each adds per unit of work given what exists. Items in the same 
 - **Dropping items:** right-click a weapon or item slot (or Alt+Shift+1-8) and it lies on the ground beside the operative,
   freeing the slot, to be picked up again by anyone.
 - **Chest regeneration:** tier 2 and 3 chests heal a sixteenth of the operative's health every four seconds after a hit.
-- **No run-overs by the city:** only vehicles driven by operatives knock people down; the city's own cars wait for people on
+- **No run-overs by the city:** only vehicles driven by operatives knock people down (never civilians, guards, police or enemy agents at the wheel), and those they kill drop what they carried, as with a bullet (FreeSynd treats a collision like one); the city's own cars wait for people on
   foot to get out of the way.
 - **No seat limit:** every operative can ride in the same vehicle, and clicking a vehicle sends the whole selection to it.
 - **One weapon for the selection:** choosing a weapon with several operatives selected raises it for each of them, or the

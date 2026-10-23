@@ -353,6 +353,7 @@ function runOver(vehicle, units, seconds) {
     unit.runOverLeft = RUNOVER_COOLDOWN;
     unit.health = Math.max(0, unit.health - amount);
     unit.hitStun = 0.4;
+    unit.lastDamageType = "collision";
     const down = unit.health === 0;
     if (down) {
       unit.disabled = true;

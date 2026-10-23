@@ -222,6 +222,22 @@ test("a moving car runs over people on foot: harder when faster, never twice in 
   const bystander = person("bystander", 10.3, 5);
   const taxiEvents = advanceVehicles([taxi, cabbie, bystander], 1 / 30, roads, grid);
   assert.equal(taxiEvents.filter((event) => event.type === "runover").length, 0);
+  // Nor do guards, police or enemy agents behind the wheel: only a car the squad drives hurts anyone.
+  for (const side of ["opposition", "police", "criminal"]) {
+    const wagon = car(`wagon-${side}`, 10, 5, `driver-${side}`, { path: [{ x: 30, y: 5 }] });
+    const driver = person(`driver-${side}`, 10, 5, { inVehicle: wagon.id, side });
+    const victim = person(`victim-${side}`, 10.3, 5);
+    const outcome = advanceVehicles([wagon, driver, victim], 1 / 30, roads, grid);
+    assert.equal(outcome.filter((event) => event.type === "runover").length, 0, side);
+    assert.equal(victim.health, victim.definition.stats.vitality);
+  }
+  // Someone the squad's car kills drops what they carried, as with a bullet (FreeSynd).
+  const squadCar = car("squad-car", 10, 5, null, { path: [{ x: 30, y: 5 }] });
+  squadCar.vehicle.controlledBy = "op";
+  const guard = person("guard", 10.3, 5, { health: 1, equipment: [{ definition: { name: "Pistol" } }] });
+  advanceVehicles([squadCar, guard], 1 / 30, roads, grid);
+  assert.equal(guard.disabled, true);
+  assert.equal(guard.lastDamageType, "collision");
   assert.equal(bystander.health, bystander.definition.stats.vitality);
   lorry.path = [];
   walker.runOverLeft = 0;
