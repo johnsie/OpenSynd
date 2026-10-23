@@ -1,0 +1,23 @@
+{
+  "formatVersion": 1,
+  "id": "developer.beam-projector",
+  "name": "Beam Projector",
+  "description": "A focused beam that cuts through everything on its line. Slow to recharge, and nothing cover-sized stops it.",
+  "license": "CC0-1.0",
+  "type": "tool",
+  "action": "disable-pulse",
+  "charges": 10,
+  "researchCost": 220,
+  "effect": {
+    "attack": 34,
+    "range": 11.0,
+    "cooldown": 1.4,
+    "pierce": true,
+    "damageType": "beam"
+  },
+  "price": 160,
+  "weight": 7,
+  "icon": "beam",
+  "carry": "rifle",
+  "sound": "beam"
+}

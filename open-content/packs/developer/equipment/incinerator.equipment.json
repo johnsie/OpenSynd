@@ -1,0 +1,27 @@
+{
+  "formatVersion": 1,
+  "id": "developer.incinerator",
+  "name": "Incinerator",
+  "description": "Sprays a burning gel on everything in a short line. Targets keep burning after the flame stops.",
+  "license": "CC0-1.0",
+  "type": "tool",
+  "action": "disable-pulse",
+  "charges": 16,
+  "researchCost": 160,
+  "effect": {
+    "attack": 4,
+    "range": 4.5,
+    "cooldown": 0.25,
+    "pierce": true,
+    "burn": {
+      "dps": 8,
+      "seconds": 4
+    },
+    "damageType": "burn"
+  },
+  "price": 120,
+  "weight": 8,
+  "icon": "flame",
+  "carry": "rifle",
+  "sound": "flame"
+}

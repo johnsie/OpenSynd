@@ -51,7 +51,7 @@ function fakeContext() {
 const settings = { volume: 0.6, muted: false, captions: true };
 
 test("every weapon sound maps to its own cue, and an unknown one falls back to the pistol", () => {
-  assert.equal(new Set(Object.values(SHOT_CUES)).size, 6, "six weapons, six distinct sounds");
+  assert.equal(new Set(Object.values(SHOT_CUES)).size, 9, "nine weapons, nine distinct sounds");
   for (const cue of Object.values(SHOT_CUES)) assert.ok(CUES[cue], `${cue} exists`);
   assert.equal(shotCue("rifle"), "shot-rifle");
   assert.equal(shotCue("coil"), "shot-coil");

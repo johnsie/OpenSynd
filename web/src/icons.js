@@ -36,6 +36,17 @@ const SHAPES = Object.freeze({
     '<path d="M11 21h8M15 17v8" class="cut"/>',
   shield:
     '<path d="M16 3l11 4v8c0 7-5 12-11 14C10 27 5 22 5 15V7z"/><path d="M16 8v15M10 13h12" class="cut"/>',
+  scatter:
+    '<path d="M3 13h14v6H3z"/><path d="M17 11l10-4v18l-10-4z"/><path d="M8 19v6h4v-6"/><circle cx="29" cy="10" r="1"/>' +
+    '<circle cx="29" cy="16" r="1"/><circle cx="29" cy="22" r="1"/>',
+  flame:
+    '<path d="M3 15h13v5H3z"/><path d="M16 16h4"/><path d="M21 17c0-4 3-5 3-9 3 2 6 5 6 9 0 4-3 7-6 7s-3-3-3-7z"/>' +
+    '<path d="M25 22c-2-1-2-3 0-5 2 2 2 4 0 5z" class="cut"/><path d="M7 20v6h4v-6"/>',
+  beam:
+    '<path d="M3 13h15v6H3z"/><path d="M18 15h12v2H18z" class="cut"/><path d="M22 10l-2 5h4l-2 5M26 11l-1 4"/><path d="M7 19v6h4v-6"/>',
+  scanner:
+    '<rect x="9" y="4" width="14" height="24" rx="2"/><circle cx="16" cy="14" r="4"/><path d="M16 14l3-3"/>' +
+    '<path d="M12 22h8M12 25h5"/><path d="M4 9a14 14 0 0 0 0 12M28 9a14 14 0 0 1 0 12"/>',
   box: '<rect x="5" y="8" width="22" height="18" rx="2"/><path d="M5 14h22"/>',
 });
 

@@ -12,6 +12,9 @@ export const SHOT_CUES = Object.freeze({
   rifle: "shot-rifle",
   coil: "shot-coil",
   longshot: "shot-longshot",
+  scatter: "shot-scatter",
+  flame: "shot-flame",
+  beam: "shot-beam",
 });
 
 export function shotCue(sound) {
@@ -116,6 +119,35 @@ const SYNTH = Object.freeze({
       noise(audio, out, at, { seconds: 0.28, gain: 1.0, from: 2400, to: 500, q: 0.6 });
       tone(audio, out, at, { seconds: 0.3, gain: 0.55, from: 760, to: 80 });
       noise(audio, out, at + 0.16, { seconds: 0.3, gain: 0.28, from: 1400, to: 300, q: 0.5 });
+    },
+  },
+  // A heavy, wide thump with a spray of gritty noise: a fan of pulses leaving at once.
+  "shot-scatter": {
+    caption: "Scatter Emitter blast",
+    gap: 0.1,
+    play(audio, out, at) {
+      noise(audio, out, at, { seconds: 0.22, gain: 1.0, filter: "lowpass", from: 3400, to: 320, q: 0.5 });
+      tone(audio, out, at, { seconds: 0.25, gain: 0.8, from: 260, to: 40 });
+      noise(audio, out, at + 0.03, { seconds: 0.12, gain: 0.5, filter: "highpass", from: 3000, to: 1500 });
+    },
+  },
+  // A rushing roar of fire.
+  "shot-flame": {
+    caption: "Incinerator roar",
+    gap: 0.05,
+    play(audio, out, at) {
+      noise(audio, out, at, { seconds: 0.22, gain: 0.55, filter: "bandpass", from: 700, to: 1500, q: 0.4 });
+      tone(audio, out, at, { seconds: 0.22, gain: 0.18, type: "sawtooth", from: 110, to: 70 });
+    },
+  },
+  // A bright electric zap that falls away.
+  "shot-beam": {
+    caption: "Beam Projector discharge",
+    gap: 0.15,
+    play(audio, out, at) {
+      tone(audio, out, at, { seconds: 0.35, gain: 0.45, type: "sawtooth", from: 3200, to: 380 });
+      tone(audio, out, at, { seconds: 0.4, gain: 0.25, type: "square", from: 1600, to: 190 });
+      noise(audio, out, at, { seconds: 0.12, gain: 0.5, from: 6000, to: 2000, q: 0.5 });
     },
   },
   // A big, rolling explosion.

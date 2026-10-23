@@ -1,0 +1,18 @@
+{
+  "formatVersion": 1,
+  "id": "developer.scanner",
+  "name": "Scanner",
+  "description": "Shows every person within its reach on the map for a short time, through walls.",
+  "license": "CC0-1.0",
+  "type": "tool",
+  "action": "scan",
+  "charges": 3,
+  "researchCost": 60,
+  "effect": {
+    "radius": 20,
+    "duration": 20
+  },
+  "price": 40,
+  "weight": 2,
+  "icon": "scanner"
+}

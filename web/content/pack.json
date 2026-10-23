@@ -40,7 +40,11 @@
     "equipment/coil-gun.equipment.json",
     "equipment/longshot-rifle.equipment.json",
     "equipment/delay-charge.equipment.json",
-    "equipment/deflector-shield.equipment.json"
+    "equipment/deflector-shield.equipment.json",
+    "equipment/scatter-emitter.equipment.json",
+    "equipment/incinerator.equipment.json",
+    "equipment/beam-projector.equipment.json",
+    "equipment/scanner.equipment.json"
   ],
   "missions": [
     "missions/restore-relay.mission.json",

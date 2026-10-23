@@ -12,6 +12,7 @@ export const EFFECT_DURATIONS = Object.freeze({
   blast: 0.75,
   impact: 0.3,
   puff: 0.35,
+  flame: 1.0,
 });
 
 export function createEffects() {

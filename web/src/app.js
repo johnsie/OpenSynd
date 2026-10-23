@@ -113,6 +113,10 @@ import {
   advanceShields,
   hasWeaponSelected,
   raiseShield,
+  advanceScanners,
+  scannedUnits,
+  scannerItem,
+  useScanner,
   startPanic,
   advanceUnits,
   consumeFixedSteps,
@@ -1808,6 +1812,14 @@ function drawUnit(unit, viewport) {
     context.strokeText("!", 0, -size * 2.7);
     context.fillText("!", 0, -size * 2.7);
   }
+  if (!unit.disabled && unit.side !== "team" && state.scanned?.has(unit.id)) {
+    // Seen by a scanner: a ring around the feet that shows through whatever stands in front.
+    context.strokeStyle = "rgba(120, 245, 240, 0.9)";
+    context.lineWidth = 2;
+    context.beginPath();
+    context.ellipse(0, size * 1.05, size * 1.2, size * 0.5, 0, 0, Math.PI * 2);
+    context.stroke();
+  }
   if (!unit.disabled && isOpenTarget(state.objectives, unit.id)) {
     // A named target of an open objective: a pulsing diamond and label above the head.
     const pulse = reduceMotion ? 1 : 0.75 + 0.25 * Math.sin(state.elapsed * 5);
@@ -1847,6 +1859,7 @@ function draw() {
   const size = resizeCanvas();
   const viewport = viewportFor(size);
   state.viewport = viewport;
+  state.scanned = new Set(scannedUnits(state.units).map((unit) => unit.id));
   context.clearRect(0, 0, size.width, size.height);
 
   forEachVisibleTile(state.grid, visibleBounds(viewport, state.map), (tile) => {
@@ -1871,6 +1884,8 @@ function draw() {
 
 const minimap = document.querySelector("#minimap");
 const miniContext = minimap.getContext("2d");
+// How far from the squad the minimap still shows other people.
+const MINI_SIGHT = 16;
 const MINI_UNIT_COLOURS = {
   team: "#42d6d0",
   opposition: "#ff6b62",
@@ -1926,9 +1941,22 @@ function drawMinimap(viewport) {
       miniContext.strokeRect(Math.round(point.x - 3), Math.floor(point.y) - 2, 6, 4);
     }
   }
+  // The map shows the squad and its followers, and anyone within sight of them or picked up by a scanner.
+  const friends = state.units.filter((unit) => (unit.side === "team" || unit.persuaded) && !unit.disabled);
+  const scanned = new Set(scannedUnits(state.units).map((unit) => unit.id));
   for (const unit of state.units) {
     if (unit.disabled || unit.inVehicle) continue;
+    const known =
+      unit.side === "team" ||
+      unit.persuaded ||
+      scanned.has(unit.id) ||
+      friends.some((friend) => Math.hypot(friend.position.x - unit.position.x, friend.position.y - unit.position.y) <= MINI_SIGHT);
+    if (!known) continue;
     const point = miniProject(unit.position, state.map);
+    if (scanned.has(unit.id)) {
+      miniContext.strokeStyle = "#78f5f0";
+      miniContext.strokeRect(Math.round(point.x) - 3, Math.round(point.y) - 3, 6, 6);
+    }
     miniContext.fillStyle = unit.persuaded ? "#79d59b" : (MINI_UNIT_COLOURS[unit.side] ?? "#ff6b62");
     const size = isVehicle(unit) ? 5 : 3;
     miniContext.fillRect(Math.round(point.x) - Math.floor(size / 2), Math.round(point.y) - Math.floor(size / 2), size, size);
@@ -2099,6 +2127,18 @@ function drawEffects(viewport) {
         context.arc(at.x, at.y, size * (0.5 + grow * 1.1), 0, Math.PI * 2);
         context.stroke();
       }
+    } else if (effect.type === "flame") {
+      const unit = state.units.find((item) => item.id === effect.unitId);
+      if (unit) {
+        const at = unitScreenPoint(unit, viewport);
+        for (let tongue = 0; tongue < 3; tongue += 1) {
+          const lift = size * (0.4 + progress * 1.4 + tongue * 0.25);
+          context.fillStyle = `rgba(${255 - tongue * 20}, ${150 + tongue * 40}, 60, ${0.85 * fade})`;
+          context.beginPath();
+          context.arc(at.x + (tongue - 1) * size * 0.35, at.y - lift, size * (0.3 - progress * 0.12), 0, Math.PI * 2);
+          context.fill();
+        }
+      }
     } else if (effect.type === "muzzle") {
       const unit = state.units.find((item) => item.id === effect.unitId);
       if (unit) {
@@ -2191,6 +2231,8 @@ function handleCombatEvents(combatEvents) {
         setStatus(`${shooter.definition.name}: ${event.weapon} is out of rounds.`);
         audio.play("alert");
       }
+    } else if (event.type === "burn") {
+      addEffect(state.effects, "flame", { unitId: event.targetId });
     } else if (event.type === "disabled") {
       countDisabled(state.units.find((item) => item.id === event.unitId));
     } else if (event.type === "ejected") {
@@ -2200,6 +2242,7 @@ function handleCombatEvents(combatEvents) {
     }
   }
   const latest = combatEvents.at(-1);
+  if (latest.type === "burn") return;
   if (latest.type === "disabled") {
     audio.play("disabled");
     const unit = state.units.find((item) => item.id === latest.unitId);
@@ -2288,6 +2331,7 @@ function simulationStep(deltaSeconds) {
   }
   updateAlertMusic(deltaSeconds);
   advanceShields(state.units, deltaSeconds);
+  advanceScanners(state.units, deltaSeconds);
   for (const bomb of state.bombs) {
     const second = Math.ceil(bomb.left);
     if (bomb.tickedAt !== second) {
@@ -3410,6 +3454,8 @@ function slotHint(definition) {
       return "click to plant";
     case "shield":
       return "click to raise";
+    case "scan":
+      return "click to scan";
     case "restore-vitality":
     case "restore-energy":
       return "click to use";
@@ -3469,6 +3515,17 @@ function pressSlot(unit, slot) {
     }
     audio.play("shield-up");
     setStatus(`${unit.definition.name}: ${definition.name} up for ${definition.effect.duration} seconds.`);
+    renderInterface();
+  } else if (definition.action === "scan") {
+    if (!useScanner(unit)) {
+      setStatus(entry.charges === 0 ? "That scanner is spent." : `${unit.definition.name} is already scanning.`);
+      return;
+    }
+    audio.play("select");
+    setStatus(
+      `${unit.definition.name}: ${definition.name} on for ${definition.effect.duration} seconds. ` +
+        "Everyone nearby shows on the map.",
+    );
     renderInterface();
   } else if (definition.action === "persuade") {
     // Like weapons, with several operators selected the switch applies to all of them that carry one.

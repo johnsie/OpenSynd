@@ -87,7 +87,7 @@ export function advanceUnits(units, deltaSeconds) {
     if (!walking) continue;
 
     // Tired legs take levels off the Legs bar, so the pace follows the effective level.
-    const pace = speedMultiplier(effectiveLevels(unit.levels, unit.stamina, unit.focus));
+    const pace = speedMultiplier(effectiveLevels(unit.levels, unit.stamina, unit.focus)) * weightPace(unit);
     let remaining = deltaSeconds * unit.definition.stats.speed * pace * 0.7;
     while (remaining > 0 && unit.path.length > 0) {
       const destination = unit.path[0];
@@ -111,6 +111,21 @@ export function advanceUnits(units, deltaSeconds) {
   }
 
   return arrivals;
+}
+
+// Gear has weight. An operator carries WEIGHT_CAPACITY units freely; every unit beyond slows them by 3 percent,
+// down to a floor of 60 percent of their pace.
+export const WEIGHT_CAPACITY = 16;
+export const WEIGHT_SLOWDOWN = 0.03;
+export const WEIGHT_PACE_FLOOR = 0.6;
+
+export function carriedWeight(unit) {
+  return (unit.equipment ?? []).reduce((sum, item) => sum + (item.definition.weight ?? 0), 0);
+}
+
+export function weightPace(unit) {
+  const over = Math.max(0, carriedWeight(unit) - WEIGHT_CAPACITY);
+  return Math.max(WEIGHT_PACE_FLOOR, 1 - over * WEIGHT_SLOWDOWN);
 }
 
 const PATROL_SPEED_FACTOR = 0.45;
@@ -655,6 +670,7 @@ export function advanceCombat(units, deltaSeconds, grid = null, now = null) {
   const byId = new Map(units.map((unit) => [unit.id, unit]));
 
   const context = { units, grid };
+  events.push(...advanceBurning(units, deltaSeconds));
   for (const attacker of units) {
     if (attacker.disabled || attacker.inVehicle || isVehicle(attacker)) continue;
     attacker.cooldownRemaining = Math.max(
@@ -691,9 +707,50 @@ export function advanceCombat(units, deltaSeconds, grid = null, now = null) {
     if (weapon && weapon.charges !== null) weapon.charges -= 1;
 
     startCooldown(attacker, stats);
-    strike(attacker, target, weapon, stats, events, context);
+    strike(attacker, target, weapon, stats, events, context, pelletsLanding(stats, distance));
   }
 
+  return events;
+}
+
+// A scatter weapon puts more of its pellets on a target the closer it is: all of them point blank, about
+// two fifths at the edge of its reach. Other weapons land their one shot.
+export function pelletsLanding(stats, distance) {
+  if (!stats.pellets || stats.pellets <= 1) return 1;
+  const share = 1 - 0.6 * Math.min(1, Math.max(0, distance) / stats.range);
+  return Math.max(1, Math.round(stats.pellets * share));
+}
+
+export const BURN_TICK_SECONDS = 1;
+
+/**
+ * Burning: a unit set alight takes the flame's damage every second until it runs out or it is put out by
+ * dying. Returns damage and disabled events.
+ */
+export function advanceBurning(units, deltaSeconds) {
+  const events = [];
+  for (const unit of units) {
+    const fire = unit.burning;
+    if (!fire) continue;
+    if (unit.disabled || fire.left <= 0) {
+      unit.burning = null;
+      continue;
+    }
+    fire.left = Math.max(0, fire.left - deltaSeconds);
+    fire.carry += fire.dps * deltaSeconds;
+    const whole = Math.floor(fire.carry + 1e-9);
+    if (whole <= 0) continue;
+    fire.carry -= whole;
+    unit.health = Math.max(0, unit.health - whole);
+    events.push({ type: "burn", attackerId: fire.by, targetId: unit.id, amount: whole, remaining: unit.health });
+    if (unit.health === 0) {
+      unit.disabled = true;
+      unit.path = [];
+      unit.targetId = null;
+      unit.burning = null;
+      events.push({ type: "disabled", unitId: unit.id });
+    }
+  }
   return events;
 }
 
@@ -704,18 +761,24 @@ function startCooldown(unit, stats) {
 }
 
 // Apply a hit and report it; a unit reduced to zero health is disabled.
-function strike(attacker, target, weapon, stats, events, context = null) {
+function strike(attacker, target, weapon, stats, events, context = null, hitCount = 1) {
   // A criminal who is attacked goes after whoever did it (a persuaded follower's owner, if it was a follower).
   if (target.side === "criminal" && (attacker.side === "team" || attacker.persuaded)) {
     target.hostileTo = attacker.persuaded ? attacker.persuadedBy : attacker.id;
   }
   const blocked = (target.shieldLeft ?? 0) > 0;
-  if (!blocked) target.health = Math.max(0, target.health - stats.attack);
+  const damage = stats.attack * hitCount;
+  if (!blocked) target.health = Math.max(0, target.health - damage);
+  if (!blocked && stats.burn && target.health > 0) {
+    target.burning = { left: stats.burn.seconds, dps: stats.burn.dps, by: attacker.id, carry: target.burning?.carry ?? 0 };
+  }
   events.push({
     type: "damage",
     attackerId: attacker.id,
     targetId: target.id,
-    amount: blocked ? 0 : stats.attack,
+    amount: blocked ? 0 : damage,
+    pellets: hitCount,
+    damageType: stats.damageType ?? "bullet",
     blocked,
     remaining: target.health,
     outOfRounds: weapon !== null && weapon.charges === 0,
@@ -775,6 +838,33 @@ export function castShot(shooter, aim, units, grid, range, pierce = false) {
   return { target: hits[0] ?? null, hits, end: pierce && hits.length > 0 ? { ...hits.at(-1).position } : last };
 }
 
+// A weapon with `pellets` fires them in an even fan of `spread` degrees around the aim; each enemy takes
+// the damage once per pellet that reaches them. Other weapons fire one ray.
+function castPellets(shooter, aim, units, grid, stats) {
+  const pellets = stats.pellets ?? 1;
+  if (pellets <= 1) {
+    const single = castShot(shooter, aim, units, grid, stats.range, Boolean(stats.pierce));
+    return { ...single, counts: new Map(single.hits.map((unit) => [unit, 1])) };
+  }
+  const dx = aim.x - shooter.position.x;
+  const dy = aim.y - shooter.position.y;
+  const base = Math.atan2(dy, dx);
+  const half = ((stats.spread ?? 20) * Math.PI) / 360;
+  const counts = new Map();
+  let centre = null;
+  for (let index = 0; index < pellets; index += 1) {
+    const angle = base + (pellets === 1 ? 0 : (index / (pellets - 1) - 0.5) * 2 * half);
+    const target = {
+      x: shooter.position.x + Math.cos(angle) * stats.range,
+      y: shooter.position.y + Math.sin(angle) * stats.range,
+    };
+    const ray = castShot(shooter, target, units, grid, stats.range, Boolean(stats.pierce));
+    for (const hit of ray.hits) counts.set(hit, (counts.get(hit) ?? 0) + 1);
+    if (index === Math.floor((pellets - 1) / 2)) centre = ray;
+  }
+  return { target: [...counts.keys()][0] ?? null, hits: [...counts.keys()], end: centre.end, counts };
+}
+
 /**
  * A shot fired by hand (right-click): the selected weapon, or the longest-ranged loaded one if none
  * is selected, fires in the direction of `aim`. It needs the weapon recharged and a round left, spends
@@ -789,13 +879,13 @@ export function fireManual(shooter, aim, units, grid) {
     const reason = pulseItems(shooter).length === 0 ? "no-weapon" : roundsLeft(shooter) === 0 ? "no-rounds" : "none-selected";
     return { fired: false, reason, events: [] };
   }
-  const shot = castShot(shooter, aim, units, grid, stats.range, Boolean(stats.pierce));
+  const shot = castPellets(shooter, aim, units, grid, stats);
   if (weapon && weapon.charges !== null) weapon.charges -= 1;
   startCooldown(shooter, stats);
   shooter.aimAt = { ...aim };
   const events = [];
   if (shot.hits.length > 0) {
-    for (const target of shot.hits) strike(shooter, target, weapon, stats, events, { units, grid });
+    for (const target of shot.hits) strike(shooter, target, weapon, stats, events, { units, grid }, shot.counts.get(target) ?? 1);
   } else {
     events.push({
       type: "shot",
@@ -1054,4 +1144,38 @@ export function raiseShield(unit) {
   unit.shieldLeft = item.definition.effect.duration;
   if (item.charges !== null) item.charges -= 1;
   return item;
+}
+
+/** Scanners: a switched-on scanner shows every enemy within its radius for its duration. */
+export function scannerItem(unit) {
+  return (unit.equipment ?? []).find((item) => item.definition.action === "scan" && item.charges !== 0) ?? null;
+}
+
+export function useScanner(unit) {
+  const item = scannerItem(unit);
+  if (!item || unit.disabled || (unit.scanLeft ?? 0) > 0) return null;
+  unit.scanLeft = item.definition.effect.duration;
+  unit.scanRadius = item.definition.effect.radius;
+  if (item.charges !== null) item.charges -= 1;
+  return item;
+}
+
+export function advanceScanners(units, deltaSeconds) {
+  for (const unit of units) {
+    if (unit.scanLeft > 0) unit.scanLeft = Math.max(0, unit.scanLeft - deltaSeconds);
+  }
+}
+
+// The units shown by active scanners: anything not on the scanner's side and still up, within its radius.
+export function scannedUnits(units) {
+  const scanners = units.filter((unit) => unit.scanLeft > 0 && !unit.disabled);
+  if (scanners.length === 0) return [];
+  return units.filter(
+    (unit) =>
+      !unit.disabled &&
+      unit.side !== "team" &&
+      scanners.some(
+        (scanner) => Math.hypot(scanner.position.x - unit.position.x, scanner.position.y - unit.position.y) <= scanner.scanRadius,
+      ),
+  );
 }

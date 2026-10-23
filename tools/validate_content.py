@@ -21,7 +21,10 @@ COLOR_PATTERN = re.compile(r"^#[0-9a-fA-F]{6}$")
 CONTENT_LICENSES = {"CC0-1.0", "CC-BY-4.0"}
 
 
-ICONS = {"pulse", "heavy-pulse", "medkit", "syringe", "cloak", "persuader", "smg", "rotary", "coil", "longshot", "bomb", "shield"}
+ICONS = {
+    "pulse", "heavy-pulse", "medkit", "syringe", "cloak", "persuader", "smg", "rotary", "coil", "longshot",
+    "bomb", "shield", "scatter", "flame", "beam", "scanner",
+}
 
 
 class Validation:
@@ -243,7 +246,8 @@ class Validation:
         self.validate_identity(path, value)
         if value["type"] not in {"tool", "consumable"}:
             self.error(path, f"unsupported equipment type: {value['type']!r}")
-        if value["action"] not in {"disable-pulse", "restore-vitality", "restore-energy", "stealth", "persuade", "time-bomb", "shield"}:
+        actions = {"disable-pulse", "restore-vitality", "restore-energy", "stealth", "persuade", "time-bomb", "shield", "scan"}
+        if value["action"] not in actions:
             self.error(path, f"unsupported equipment action: {value['action']!r}")
         charges = value["charges"]
         if charges is not None and (
@@ -269,6 +273,8 @@ class Validation:
             self.error(path, "restore-energy effect requires restoreStamina or restoreFocus")
         elif value["action"] == "time-bomb" and not {"attack", "radius", "fuse"} <= effect.keys():
             self.error(path, "time-bomb effect requires attack, radius, and fuse")
+        elif value["action"] == "scan" and not {"radius", "duration"} <= effect.keys():
+            self.error(path, "scan effect requires radius and duration")
         elif value["action"] == "shield" and not isinstance(effect.get("duration"), (int, float)):
             self.error(path, "shield effect requires duration")
         elif value["action"] == "persuade" and not {"range", "cooldown"} <= effect.keys():
@@ -278,13 +284,22 @@ class Validation:
             and 0.1 <= effect["sightFactor"] <= 1
         ):
             self.error(path, "stealth effect requires sightFactor between 0.1 and 1")
+        pellets = effect.get("pellets") if isinstance(effect, dict) else None
+        if pellets is not None and (not isinstance(pellets, int) or not 2 <= pellets <= 12):
+            self.error(path, "pellets must be an integer from 2 to 12")
+        burn = effect.get("burn") if isinstance(effect, dict) else None
+        if burn is not None and not (isinstance(burn, dict) and {"dps", "seconds"} <= burn.keys()):
+            self.error(path, "burn requires dps and seconds")
+        weight = value.get("weight", 0)
+        if not isinstance(weight, int) or isinstance(weight, bool) or not 0 <= weight <= 30:
+            self.error(path, "weight must be an integer from 0 to 30")
         price = value.get("price")
         if not isinstance(price, int) or isinstance(price, bool) or not 0 <= price <= 1000:
             self.error(path, "price must be an integer from 0 to 1000")
         if value.get("icon") not in ICONS:
             self.error(path, f"icon must be one of {', '.join(sorted(ICONS))}")
-        if value.get("sound") not in {None, "pistol", "smg", "rotary", "rifle", "coil", "longshot"}:
-            self.error(path, "sound must be pistol, smg, rotary, rifle, coil or longshot")
+        if value.get("sound") not in {None, "pistol", "smg", "rotary", "rifle", "coil", "longshot", "scatter", "flame", "beam"}:
+            self.error(path, "sound must be pistol, smg, rotary, rifle, coil, longshot, scatter, flame or beam")
         if value.get("carry") not in {None, "pistol", "rifle"}:
             self.error(path, "carry must be pistol or rifle")
         cost = value.get("researchCost", 0)
