@@ -739,6 +739,21 @@ async function loadGame(index = state.missionIndex) {
   renderInterface();
 }
 
+// How far a door has slid open (0 to 1): it moves toward its state over a quarter of a second, so it opens and shuts in view.
+const DOOR_SLIDE_SECONDS = 0.25;
+const doorSlides = new Map();
+function doorSlide(tile) {
+  const now = performance.now();
+  const target = tile.door.open ? 1 : 0;
+  const slide = doorSlides.get(tile) ?? { value: target, time: now };
+  if (reduceMotion) slide.value = target;
+  const step = (now - slide.time) / 1000 / DOOR_SLIDE_SECONDS;
+  slide.value = target > slide.value ? Math.min(target, slide.value + step) : Math.max(target, slide.value - step);
+  slide.time = now;
+  doorSlides.set(tile, slide);
+  return slide.value;
+}
+
 function syncGates() {
   const doors = (state.map.objects ?? []).filter((object) => object.kind === "door");
   const wasOpen = doors.map((door) => state.grid[door.position.y]?.[door.position.x]?.door?.open);
@@ -1730,7 +1745,8 @@ function drawTile(tile, viewport) {
   if (tile.gate) {
     const gate = state.map.objects?.find((item) => item.id === tile.gate);
     const gateAlong = gate && gate.width > gate.height ? "x" : "y";
-    drawGateTile(context, project, { ...tile, gateAlong }, cellSize.height, tile.door ? tile.door.open : tile.walkable, performance.now());
+    const slide = tile.door ? doorSlide(tile) : tile.walkable;
+    drawGateTile(context, project, { ...tile, gateAlong }, cellSize.height, slide, performance.now());
     return;
   }
   if (tile.surface === FENCE_SURFACE) drawFenceTile(context, project, tile, cellSize.height);

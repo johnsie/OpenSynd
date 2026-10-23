@@ -217,6 +217,7 @@ export function drawConsole(context, p, { x, y }, cellHeight, complete, time) {
 }
 
 // The service gate: two posts with a bar of red light that drops away when the gate is open.
+// `open` may be a number from 0 (shut) to 1 (open) while a door is sliding.
 export function drawGateTile(context, p, tile, cellHeight, open, time) {
   const along = tile.gateAlong ?? "y";
   const point = (a, z) => (along === "y" ? p(tile.x, tile.y + a, z) : p(tile.x + a, tile.y, z));
@@ -231,16 +232,19 @@ export function drawGateTile(context, p, tile, cellHeight, open, time) {
     context.lineTo(base.x, base.y - height);
   }
   context.stroke();
-  const colour = open ? "#79d59b" : "#ff6b62";
+  // `open` is true or false, or how far a door has slid open (0 shut to 1 open): the bars rise and bunch at the top.
+  const amount = typeof open === "number" ? open : open ? 1 : 0;
+  const colour = amount >= 0.5 ? "#79d59b" : "#ff6b62";
   const topFirst = point(-0.5, height);
   const topLast = point(0.5, height);
-  if (open) {
+  if (amount >= 1) {
     context.setLineDash([4, 5]);
   } else {
     // Closed: horizontal bars of glowing red between the posts.
     for (const fraction of [0.35, 0.65, 0.92]) {
-      const a = point(-0.5, height * fraction);
-      const b = point(0.5, height * fraction);
+      const lifted = 1 - (1 - fraction) * (1 - amount);
+      const a = point(-0.5, height * lifted);
+      const b = point(0.5, height * lifted);
       context.strokeStyle = colour;
       context.globalAlpha = 0.25;
       context.lineWidth = 5;
