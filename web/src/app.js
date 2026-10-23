@@ -1816,16 +1816,55 @@ function markRailBridges(map, grid) {
     if (here.y !== next.y || next.x - (here.x + here.width) > 8) continue;
     for (let x = here.x + here.width; x < next.x; x += 1) {
       const tile = grid[here.y]?.[x];
-      if (tile) tile.railOver = here.elevation;
+      if (tile) tile.railOver = { height: here.elevation, first: x === here.x + here.width, last: x === next.x - 1 };
     }
   }
 }
 
+// The track over a street is a bridge: the deck and a steel truss under it span the street, and the posts stand only at the two
+// kerbs, so cars and people pass through freely underneath.
 function drawRailOver(tile, cellSize, origin) {
+  const { height, first, last } = tile.railOver;
   const base = gridToScreen(tile, cellSize, origin, 0);
-  const top = { x: base.x, y: base.y - tile.railOver * cellSize.height * 0.28 };
-  const deck = { ...tile, surface: "rail", color: "#3a3f44", elevation: tile.railOver };
-  drawScaffold(top, base, cellSize, deck);
+  const top = { x: base.x, y: base.y - height * cellSize.height * 0.28 };
+  const deck = { ...tile, surface: "rail", color: "#3a3f44", elevation: height };
+  const halfW = cellSize.width / 2;
+  const halfH = cellSize.height / 2;
+  const truss = cellSize.height * 0.55;
+  context.lineCap = "round";
+  // The truss under the deck on the two faces that face the camera: a lower chord and crossing diagonals.
+  const nodes = [[top.x - halfW, top.y], [top.x, top.y + halfH], [top.x + halfW, top.y]];
+  context.strokeStyle = "rgba(140, 156, 168, .85)";
+  context.lineWidth = 1.6;
+  context.beginPath();
+  for (let face = 0; face < 2; face += 1) {
+    const [x0, y0] = nodes[face];
+    const [x1, y1] = nodes[face + 1];
+    const mx = (x0 + x1) / 2;
+    const my = (y0 + y1) / 2 + truss;
+    context.moveTo(x0, y0 + 2);
+    context.lineTo(mx, my);
+    context.lineTo(x1, y1 + 2);
+    context.moveTo(x0, y0 + truss * 0.45);
+    context.lineTo(x1, y1 + truss * 0.45);
+    context.moveTo(mx, (y0 + y1) / 2 + 2);
+    context.lineTo(mx, my);
+  }
+  context.stroke();
+  // Posts at the kerbs only: the west edge of the first tile, the east edge of the last.
+  context.strokeStyle = "#7d8a95";
+  context.lineWidth = 3;
+  const down = base.y - top.y;
+  const posts = [];
+  if (first) posts.push([top.x - halfW, top.y], [top.x, top.y - halfH]);
+  if (last) posts.push([top.x, top.y + halfH], [top.x + halfW, top.y]);
+  context.beginPath();
+  for (const [x, y] of posts) {
+    context.moveTo(x, y);
+    context.lineTo(x, y + down);
+  }
+  context.stroke();
+  context.lineCap = "butt";
   const { image, offsetX, offsetY } = tileSprites(deck, cellSize.width, cellSize.height);
   context.drawImage(image, top.x + offsetX, top.y + offsetY);
 }

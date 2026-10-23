@@ -731,11 +731,11 @@ export function drawTrain(context, p, vehicle, cars, cellHeight, time) {
   const order = cars.map((car, index) => ({ car, index })).sort((a, b) => a.car.x + a.car.y - (b.car.x + b.car.y));
   for (const { car, index } of order) {
     const alongX = Math.abs(car.heading.x) >= Math.abs(car.heading.y);
-    const length = 2.25;
+    const length = 1.0;
     const width = 0.95;
     const halfX = (alongX ? length : width) / 2;
     const halfY = (alongX ? width : length) / 2;
-    const bodyHeight = cellHeight * 0.95;
+    const bodyHeight = cellHeight * 0.75; // FreeSynd: a vehicle stands three quarters of a tile high
     const lift = (point, z) => ({ x: point.x, y: point.y - z });
     // Dark bogies under the floor at each end, and the shadow of the viaduct edge is the track itself.
     for (const end of [-0.7, 0.7]) {
@@ -763,11 +763,11 @@ export function drawTrain(context, p, vehicle, cars, cellHeight, time) {
     }
     context.fill();
     context.fillStyle = "rgba(255, 226, 150, .85)";
-    for (let window = 0; window < 5; window += 1) {
-      const u0 = 0.1 + window * 0.17;
+    for (let window = 0; window < 2; window += 1) {
+      const u0 = 0.12 + window * 0.45;
       const a = along(u0, bodyHeight * 0.88);
-      const b = along(u0 + 0.12, bodyHeight * 0.88);
-      const c = along(u0 + 0.12, bodyHeight * 0.52);
+      const b = along(u0 + 0.33, bodyHeight * 0.88);
+      const c = along(u0 + 0.33, bodyHeight * 0.52);
       const d = along(u0, bodyHeight * 0.52);
       polygon(context, [a, b, c, d]);
       context.fill();

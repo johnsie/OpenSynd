@@ -422,7 +422,9 @@ function runOver(vehicle, units, seconds) {
 // ---- Trains
 // A train runs on rails between its stations (the head stops on each stop in turn, waits there, and goes on; at the end of the
 // line it turns round: the carriages become the front, in the same places). It is not driven by anyone and nothing stops it.
-export const TRAIN_SPACING = 2.3;
+// FreeSynd gives every vehicle a footprint of one tile by one tile, and a train is five of them (an engine and four carriages)
+// running along one axis on a track one tile wide.
+export const TRAIN_SPACING = 1.05;
 export const TRAIN_STOP_SECONDS = 6;
 
 /** Set a train up on its line: the engine on the first stop and the carriages standing in a row behind it. */
