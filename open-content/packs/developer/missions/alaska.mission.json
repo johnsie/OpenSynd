@@ -133,7 +133,9 @@
         "x": 26,
         "y": 38
       },
-      "equipment": [],
+      "equipment": [
+        "equipment/delay-charge.equipment.json"
+      ],
       "patrol": [
         {
           "x": 26,
@@ -210,7 +212,8 @@
         "y": 48
       },
       "equipment": [
-        "equipment/field-repair-kit.equipment.json"
+        "equipment/field-repair-kit.equipment.json",
+        "equipment/delay-charge.equipment.json"
       ],
       "patrol": [
         {
@@ -290,7 +293,9 @@
         "x": 35,
         "y": 69
       },
-      "equipment": [],
+      "equipment": [
+        "equipment/delay-charge.equipment.json"
+      ],
       "patrol": [
         {
           "x": 35,
@@ -375,7 +380,8 @@
       },
       "equipment": [
         "equipment/heavy-pulse-emitter.equipment.json",
-        "equipment/field-repair-kit.equipment.json"
+        "equipment/field-repair-kit.equipment.json",
+        "equipment/delay-charge.equipment.json"
       ],
       "patrol": [
         {

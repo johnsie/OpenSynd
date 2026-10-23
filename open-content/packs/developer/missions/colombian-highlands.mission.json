@@ -130,7 +130,9 @@
         "x": 74,
         "y": 77
       },
-      "equipment": [],
+      "equipment": [
+        "equipment/delay-charge.equipment.json"
+      ],
       "patrol": [
         {
           "x": 74,
@@ -211,7 +213,8 @@
         "y": 100
       },
       "equipment": [
-        "equipment/heavy-pulse-emitter.equipment.json"
+        "equipment/heavy-pulse-emitter.equipment.json",
+        "equipment/delay-charge.equipment.json"
       ],
       "patrol": [
         {

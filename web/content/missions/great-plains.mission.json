@@ -129,7 +129,8 @@
         "y": 76
       },
       "equipment": [
-        "equipment/heavy-pulse-emitter.equipment.json"
+        "equipment/heavy-pulse-emitter.equipment.json",
+        "equipment/delay-charge.equipment.json"
       ],
       "patrol": [
         {
@@ -210,7 +211,9 @@
         "x": 74,
         "y": 66
       },
-      "equipment": [],
+      "equipment": [
+        "equipment/delay-charge.equipment.json"
+      ],
       "patrol": [
         {
           "x": 74,
@@ -288,7 +291,9 @@
         "x": 14,
         "y": 125
       },
-      "equipment": [],
+      "equipment": [
+        "equipment/delay-charge.equipment.json"
+      ],
       "patrol": [
         {
           "x": 14,
@@ -367,7 +372,8 @@
         "y": 99
       },
       "equipment": [
-        "equipment/heavy-pulse-emitter.equipment.json"
+        "equipment/heavy-pulse-emitter.equipment.json",
+        "equipment/delay-charge.equipment.json"
       ],
       "patrol": [
         {

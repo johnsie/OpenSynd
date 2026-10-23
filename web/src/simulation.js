@@ -525,8 +525,22 @@ function advancePolice(unit, units, armed, deltaSeconds, grid, events) {
 
 // Enemy agents, guards and criminals who have been attacked (FreeSynd's "player hostile" behaviour):
 // spot someone, wait the reaction time, chase and shoot, and drop back to patrol when the quarry is gone.
+// An enemy agent who carries a time bomb plants it when the squad is close (FreeSynd gives them one), then backs away for
+// a few seconds. The simulation only says so ("plant-bomb" event); the bombs themselves live in the game state.
+export const BOMB_PLANT_RANGE = 5.5;
+export const BOMB_COOLDOWN = 30;
+export const BOMB_RETREAT_SECONDS = 4.5;
+const bombItem = (unit) => (unit.equipment ?? []).find((item) => item.definition.action === "time-bomb" && item.charges !== 0) ?? null;
+
 function advanceHostile(unit, units, byId, deltaSeconds, grid, now, events) {
   const role = unit.definition.role;
+  unit.bombCooldown = Math.max(0, (unit.bombCooldown ?? 0) - deltaSeconds);
+  if ((unit.retreatLeft ?? 0) > 0 && grid && unit.bombAt) {
+    unit.retreatLeft = Math.max(0, unit.retreatLeft - deltaSeconds);
+    if (unit.path.length === 0) runAwayFrom(unit, unit.bombAt, grid, [9, 6, 4]);
+    followPath(unit, deltaSeconds, CHASE_SPEED_FACTOR);
+    return;
+  }
   if (unit.side === "criminal" && !unit.hostileTo) {
     walkPatrol(unit, deltaSeconds, grid);
     return;
@@ -576,6 +590,14 @@ function advanceHostile(unit, units, byId, deltaSeconds, grid, now, events) {
     unit.alertedBy = seen.id;
     if ((unit.reactLeft ?? 0) > 0) {
       unit.path = []; // taken a moment to react before moving or firing
+      return;
+    }
+    if (role === "enemy-agent" && unit.bombCooldown <= 0 && bombItem(unit) && distanceBetween(unit, seen) <= BOMB_PLANT_RANGE) {
+      events.push({ type: "plant-bomb", unitId: unit.id, targetId: seen.id });
+      unit.bombCooldown = BOMB_COOLDOWN;
+      unit.bombAt = { x: unit.position.x, y: unit.position.y };
+      unit.retreatLeft = BOMB_RETREAT_SECONDS;
+      unit.path = [];
       return;
     }
     if (distanceBetween(unit, seen) <= stopRange) {

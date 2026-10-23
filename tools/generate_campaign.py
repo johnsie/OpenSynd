@@ -353,6 +353,9 @@ def make_mission(territory: dict, tier: int, layout: dict, map_value: dict, map_
         if number % 2 == 0 and anchors:
             anchor = anchors[number // 2 % len(anchors)]
             source = [p for p in pool if math.hypot(p[0] - anchor[0], p[1] - anchor[1]) < 9] or pool
+        # From the third tier, every fourth agent carries a time bomb and plants it when the squad is close.
+        if tier >= 3 and number % 4 == 3:
+            equipment = equipment + ["equipment/delay-charge.equipment.json"]
         position = spot(source)
         opponents.append(with_patrol(rng, reach, {
             "id": f"enemy-agent-{NUMBERS[number]}", "unit": "units/enemy-agent.unit.json",

@@ -132,7 +132,9 @@
         "x": 98,
         "y": 110
       },
-      "equipment": [],
+      "equipment": [
+        "equipment/delay-charge.equipment.json"
+      ],
       "patrol": [
         {
           "x": 98,
@@ -212,7 +214,9 @@
         "x": 101,
         "y": 5
       },
-      "equipment": [],
+      "equipment": [
+        "equipment/delay-charge.equipment.json"
+      ],
       "patrol": [
         {
           "x": 101,

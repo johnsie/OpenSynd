@@ -301,3 +301,25 @@ test("a thrown-out civilian runs away from the car", () => {
   assert.equal(driver.panic.fleeing, true);
   assert.ok(driver.position.x > 14, "away from the car");
 });
+
+test("an enemy agent with a time bomb plants it when the squad gets close, then backs away, and waits to do it again", () => {
+  const bomb = { definition: { action: "time-bomb", effect: { attack: 55, radius: 3, fuse: 6 } }, charges: 2 };
+  const target = operator(8, false);
+  const agent = person("enemy", "opposition", 12, {
+    equipment: [bomb],
+    definition: { role: "enemy-agent", stats: stats({ awareness: 100 }) },
+  });
+  const events = clock([target, agent], 3);
+  const plants = events.filter((event) => event.type === "plant-bomb");
+  assert.equal(plants.length, 1, "once, not every step");
+  assert.equal(plants[0].unitId, "enemy");
+  assert.ok(agent.retreatLeft > 0 || agent.bombCooldown > 0);
+  assert.ok(agent.bombAt, "it remembers where it left it");
+  // It does not plant again while its cooldown runs.
+  assert.equal(clock([target, agent], 3, 20).filter((event) => event.type === "plant-bomb").length, 0);
+  // Without a bomb, or far from the squad, nothing is planted.
+  const unarmed = person("plain", "opposition", 12, { definition: { role: "enemy-agent", stats: stats({ awareness: 100 }) } });
+  assert.equal(clock([operator(8, false), unarmed], 3).filter((event) => event.type === "plant-bomb").length, 0);
+  const far = person("far", "opposition", 30, { equipment: [bomb], definition: { role: "enemy-agent", stats: stats({ awareness: 100 }) } });
+  assert.equal(clock([operator(8, false), far], 1).filter((event) => event.type === "plant-bomb").length, 0);
+});

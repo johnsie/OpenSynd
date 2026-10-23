@@ -131,7 +131,9 @@
         "x": 24,
         "y": 100
       },
-      "equipment": [],
+      "equipment": [
+        "equipment/delay-charge.equipment.json"
+      ],
       "patrol": [
         {
           "x": 24,
@@ -212,7 +214,8 @@
         "y": 50
       },
       "equipment": [
-        "equipment/field-repair-kit.equipment.json"
+        "equipment/field-repair-kit.equipment.json",
+        "equipment/delay-charge.equipment.json"
       ],
       "patrol": [
         {

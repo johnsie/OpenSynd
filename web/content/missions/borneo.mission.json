@@ -131,7 +131,9 @@
         "x": 23,
         "y": 99
       },
-      "equipment": [],
+      "equipment": [
+        "equipment/delay-charge.equipment.json"
+      ],
       "patrol": [
         {
           "x": 23,
@@ -213,7 +215,9 @@
         "x": 85,
         "y": 101
       },
-      "equipment": [],
+      "equipment": [
+        "equipment/delay-charge.equipment.json"
+      ],
       "patrol": [
         {
           "x": 85,
@@ -291,7 +295,9 @@
         "x": 26,
         "y": 83
       },
-      "equipment": [],
+      "equipment": [
+        "equipment/delay-charge.equipment.json"
+      ],
       "patrol": [
         {
           "x": 26,
@@ -371,7 +377,9 @@
         "x": 105,
         "y": 76
       },
-      "equipment": [],
+      "equipment": [
+        "equipment/delay-charge.equipment.json"
+      ],
       "patrol": [
         {
           "x": 105,

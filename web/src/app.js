@@ -2888,6 +2888,15 @@ function simulationStep(deltaSeconds) {
       interfaceChanged = true;
       continue;
     }
+    if (event.type === "plant-bomb") {
+      const charge = watcher.equipment.find((item) => item.definition.action === "time-bomb" && item.charges !== 0);
+      if (charge && plantBomb(watcher, charge, state.bombs)) {
+        setStatus(`${watcher.definition.name} plants a ${charge.definition.name}! Get clear: ${charge.definition.effect.fuse} seconds.`);
+        audio.play("tick");
+        interfaceChanged = true;
+      }
+      continue;
+    }
     if (event.type === "warning") {
       setStatus(`${watcher.definition.name}: "Put down your weapon!" Holster it, or they open fire in two seconds.`);
       audio.play("police-warning");

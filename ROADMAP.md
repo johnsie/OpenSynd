@@ -327,7 +327,7 @@ browser e2e run).
 | F4 | Scanner | done: ring marks on the view and map, minimap shows only sight range otherwise |
 | F5 | Clearance Key and locked gates | done: the key opens a gate while its carrier is near |
 | F6 | Energy shield | have: blocks fire for its duration |
-| F7 | Time bomb | done: clear line, chain reactions, shots set it off, vehicles shield occupants, thrown six tiles to a clicked spot; enemy agents do not carry one |
+| F7 | Time bomb | done: clear line, chain reactions, shots set it off, vehicles shield occupants, thrown six tiles to a clicked spot; from tier 3 every fourth generated enemy agent carries one, plants it when the squad is close and backs away |
 | F8 | Damage types | done: bullet, burn, beam and explosion; scenery reacts to each |
 | F9 | Accuracy, spread, fire rate | done: seeded accuracy roll (base by kind, upgrade and drug terms, weapon accuracy, 6 degree cone), spread through pellets, hold-to-fire; no reaction delay |
 | F10 | Weight and capacity | done: slowdown beyond capacity, Arms raise it |
