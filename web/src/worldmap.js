@@ -195,7 +195,11 @@ export function renderWorldMap({ container, entries, progress, selectedIndex, on
     );
     // Labels go to the right of the pin, except in the Americas where the open sea is to the left.
     const lon = entry.region?.lon ?? (centre.x / MAP_WIDTH) * 360 - 180;
-    const toRight = lon > -62;
+    // A region with a neighbour close on its right puts its label on the left instead, so labels do not overlap.
+    const crowdedRight = centres.some(
+      (other, otherIndex) => otherIndex !== index && other.x > centre.x && other.x - centre.x < 90 && Math.abs(other.y - centre.y) < 30,
+    );
+    const toRight = lon > -62 && !crowdedRight;
     const anchor = toRight ? "start" : "end";
     const labelX = centre.x + (toRight ? REGION_RADIUS + 8 : -(REGION_RADIUS + 8));
     group.append(

@@ -65,7 +65,7 @@ for (const [name, type, executablePath] of targets) {
     assert.match(await page.locator("#title-dialog").innerText(), /First Light/);
     // A fresh browser has only the first operation open.
     const missionButtons = page.locator("#mission-list button");
-    assert.equal(await missionButtons.count(), 5);
+    assert.equal(await missionButtons.count(), 6);
     assert.equal(await missionButtons.nth(0).isDisabled(), false);
     assert.equal(await missionButtons.nth(1).isDisabled(), true);
     assert.match(await missionButtons.nth(1).innerText(), /LOCKED/);
@@ -423,6 +423,14 @@ for (const [name, type, executablePath] of targets) {
     assert.match(await page.locator("#title-heading").innerText(), /Loose Ends/);
     await page.click("#begin-button");
     assert.match(await page.locator("#operation-eyebrow").innerText(), /OPERATION 05/);
+    await page.evaluate(() => window.opensyndTest.completeObjectives());
+    await page.waitForSelector("#outcome-dialog[open]");
+    // Foyle Crossing (opened by the first operation) is still to do, so it comes next.
+    await page.click("#next-button");
+    await page.waitForSelector("#title-dialog[open]");
+    assert.match(await page.locator("#title-heading").innerText(), /Foyle Crossing/);
+    await page.click("#begin-button");
+    assert.match(await page.locator("#operation-eyebrow").innerText(), /OPERATION 06/);
     // The last mission has no next operation.
     await page.evaluate(() => window.opensyndTest.completeObjectives());
     await page.waitForSelector("#outcome-dialog[open]");

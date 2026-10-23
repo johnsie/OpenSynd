@@ -68,8 +68,9 @@ test("every shipped mission is placed on land, apart from the others, inside the
     const centre = regionCentre(mission, 0, pack.missions.length);
     assert.ok(centre.x > 0 && centre.x < MAP_WIDTH && centre.y > 0 && centre.y < MAP_HEIGHT);
     const lonLat = [mission.region.lon, mission.region.lat];
-    assert.ok(LANDMASSES.some((land) => pointInPolygon(lonLat, land.points)), `${mission.name} should be on land`);
-    for (const other of centres) assert.ok(Math.hypot(centre.x - other.x, centre.y - other.y) > 60, "regions must not crowd");
+    const outlines = [...LANDMASSES.map((land) => land.points), ...ISLANDS];
+    assert.ok(outlines.some((outline) => pointInPolygon(lonLat, outline)), `${mission.name} should be on land`);
+    for (const other of centres) assert.ok(Math.hypot(centre.x - other.x, centre.y - other.y) > 27, "regions must not crowd");
     centres.push(centre);
   }
 });

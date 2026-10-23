@@ -247,14 +247,6 @@
       "owner": "Meridian Combine"
     },
     {
-      "id": "developer.western-sahara",
-      "name": "Western Sahara",
-      "lon": -6,
-      "lat": 23,
-      "population": 5200000,
-      "owner": "Meridian Combine"
-    },
-    {
       "id": "developer.gulf-of-guinea",
       "name": "Gulf of Guinea",
       "lon": -3,
@@ -405,6 +397,15 @@
       "lat": -19,
       "population": 4100000,
       "owner": "Tidewater Consortium"
+    },
+    {
+      "id": "developer.northern-ireland",
+      "name": "Northern Ireland",
+      "lon": -6.5,
+      "lat": 54.6,
+      "population": 1900000,
+      "owner": "Tidewater Consortium",
+      "mission": "missions/foyle-crossing.mission.json"
     }
   ]
 }
