@@ -535,3 +535,95 @@ export function drawVehicle(context, p, vehicle, cellHeight, time, { controlled 
     }
   }
 }
+
+// Street scenery. `prop` is a props.js record: "standing", "burning" (flames lick up for the ten seconds) or "destroyed"
+// (a charred stump, a fallen pole, a dented bin).
+export function drawScenery(context, p, prop, cellHeight, time) {
+  const { x, y } = prop.position;
+  const base = p(x, y, 0);
+  const unit = cellHeight;
+  const ellipse = (cx, cy, rx, ry, fill) => {
+    context.fillStyle = fill;
+    context.beginPath();
+    context.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+    context.fill();
+  };
+  const flames = (height, width) => {
+    for (let tongue = 0; tongue < 4; tongue += 1) {
+      const flicker = 0.6 + 0.4 * Math.sin(time / 120 + tongue * 1.7 + x * 3.1);
+      const fx = base.x + (tongue - 1.5) * width * 0.3;
+      context.fillStyle = tongue % 2 === 0 ? "rgba(255, 150, 60, 0.85)" : "rgba(255, 220, 120, 0.8)";
+      context.beginPath();
+      context.moveTo(fx - width * 0.16, base.y - height * 0.45);
+      context.quadraticCurveTo(fx, base.y - height * (0.55 + 0.7 * flicker), fx + width * 0.16, base.y - height * 0.45);
+      context.closePath();
+      context.fill();
+    }
+  };
+  context.fillStyle = "rgba(0, 0, 0, 0.28)";
+  context.beginPath();
+  context.ellipse(base.x, base.y, unit * 0.34, unit * 0.16, 0, 0, Math.PI * 2);
+  context.fill();
+  if (prop.kind === "tree") {
+    if (prop.state === "destroyed") {
+      ellipse(base.x, base.y - unit * 0.1, unit * 0.22, unit * 0.1, "#2a2420");
+      context.fillStyle = "#1c1816";
+      context.fillRect(base.x - unit * 0.07, base.y - unit * 0.55, unit * 0.14, unit * 0.5);
+      return;
+    }
+    context.fillStyle = "#4b3a2c";
+    context.fillRect(base.x - unit * 0.07, base.y - unit * 1.0, unit * 0.14, unit * 1.0);
+    const sway = Math.sin(time / 900 + x) * unit * 0.03;
+    const canopy = prop.state === "burning" ? ["#8a4a24", "#a65a2b", "#c27a30"] : ["#1f5a46", "#287059", "#318a6c"];
+    ellipse(base.x + sway, base.y - unit * 1.35, unit * 0.58, unit * 0.46, canopy[0]);
+    ellipse(base.x + sway - unit * 0.18, base.y - unit * 1.55, unit * 0.4, unit * 0.34, canopy[1]);
+    ellipse(base.x + sway + unit * 0.2, base.y - unit * 1.5, unit * 0.36, unit * 0.3, canopy[2]);
+    if (prop.state === "burning") flames(unit * 2.4, unit * 1.1);
+  } else if (prop.kind === "streetlight") {
+    if (prop.state === "destroyed") {
+      context.strokeStyle = "#55636d";
+      context.lineWidth = Math.max(2, unit * 0.1);
+      context.beginPath();
+      context.moveTo(base.x - unit * 0.5, base.y - unit * 0.05);
+      context.lineTo(base.x + unit * 0.5, base.y + unit * 0.2);
+      context.stroke();
+      ellipse(base.x + unit * 0.55, base.y + unit * 0.22, unit * 0.1, unit * 0.06, "#2a3036");
+      return;
+    }
+    context.strokeStyle = "#6a7a86";
+    context.lineWidth = Math.max(2, unit * 0.1);
+    context.beginPath();
+    context.moveTo(base.x, base.y);
+    context.lineTo(base.x, base.y - unit * 2.3);
+    context.lineTo(base.x + unit * 0.4, base.y - unit * 2.4);
+    context.stroke();
+    const glow = 0.7 + 0.3 * Math.sin(time / 500 + x * 2);
+    context.fillStyle = `rgba(255, 226, 150, ${0.12 * glow})`;
+    context.beginPath();
+    context.ellipse(base.x + unit * 0.4, base.y - unit * 2.25, unit * 0.9, unit * 0.5, 0, 0, Math.PI * 2);
+    context.fill();
+    ellipse(base.x + unit * 0.4, base.y - unit * 2.4, unit * 0.14, unit * 0.08, `rgba(255, 236, 170, ${0.9 * glow})`);
+    if (prop.state === "burning") flames(unit * 2, unit * 0.6);
+  } else if (prop.kind === "bin") {
+    const tilt = prop.state === "destroyed" ? 0.25 : 0;
+    context.save();
+    context.translate(base.x, base.y);
+    context.rotate(tilt);
+    context.fillStyle = prop.state === "destroyed" ? "#2d3439" : "#3f4a52";
+    context.fillRect(-unit * 0.2, -unit * 0.6, unit * 0.4, unit * 0.6);
+    context.fillStyle = "#59666f";
+    context.fillRect(-unit * 0.24, -unit * 0.66, unit * 0.48, unit * 0.1);
+    context.restore();
+  } else if (prop.kind === "billboard") {
+    context.fillStyle = "#46505a";
+    context.fillRect(base.x - unit * 0.05, base.y - unit * 1.8, unit * 0.1, unit * 1.8);
+    if (prop.state !== "destroyed") {
+      context.fillStyle = prop.state === "burning" ? "#6b4a2b" : "#1e3340";
+      context.fillRect(base.x - unit * 0.9, base.y - unit * 2.9, unit * 1.8, unit * 1.0);
+      context.strokeStyle = "#42d6d0";
+      context.lineWidth = 2;
+      context.strokeRect(base.x - unit * 0.9, base.y - unit * 2.9, unit * 1.8, unit * 1.0);
+    }
+    if (prop.state === "burning") flames(unit * 2.6, unit * 1.6);
+  }
+}

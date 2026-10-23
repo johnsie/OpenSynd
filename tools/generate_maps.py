@@ -50,6 +50,7 @@ LAYOUTS = [
         "fences": [("fence-north", 117, 95, 11, 1), ("fence-west-upper", 117, 96, 1, 14),
                    ("fence-west-lower", 117, 112, 1, 16)],
         "gate": (117, 110, 1, 2),
+        "gate_key": "developer.clearance-key",  # Safe Passage opens the gate with this key instead of the panel
         "entry": (2, 62),
         "zones": [
             zone("team-entry", "entry", 2, 62, 2, 2),
@@ -217,6 +218,8 @@ def build(layout: dict) -> dict:
             "id": "service-gate", "kind": "gate", "position": {"x": gx, "y": gy},
             "width": gw, "height": gh, "control": "gate-panel",
         })
+        if layout.get("gate_key"):
+            objects[-1]["key"] = layout["gate_key"]
     return {
         "formatVersion": 1,
         "id": layout["id"],
@@ -228,7 +231,51 @@ def build(layout: dict) -> dict:
         "regions": regions,
         "zones": layout["zones"],
         "objects": objects,
+        "props": place_props(layout, regions),
     }
+
+
+def place_props(layout: dict, regions: list[dict]) -> list[dict]:
+    """Trees, street lights and bins along the pavement beside the streets. They never block anything."""
+    size = layout["size"]
+    rng = random.Random(layout["seed"] + 7)
+    surface: dict[tuple[int, int], tuple[str, bool]] = {}
+    for r in regions:
+        for y in range(r["y"], r["y"] + r["height"]):
+            for x in range(r["x"], r["x"] + r["width"]):
+                surface[(x, y)] = (r["surface"], r["walkable"])
+    near = ((1, 0), (-1, 0), (0, 1), (0, -1))
+    reserved = set()
+    for z in layout["zones"]:
+        for y in range(z["position"]["y"] - 2, z["position"]["y"] + z["height"] + 2):
+            for x in range(z["position"]["x"] - 2, z["position"]["x"] + z["width"] + 2):
+                reserved.add((x, y))
+    for point in layout["watch_points"]:
+        for dy in range(-1, 2):
+            for dx in range(-1, 2):
+                reserved.add((point[0] + dx, point[1] + dy))
+    found = []
+    taken: list[tuple[int, int]] = []
+    counts = {"tree": 0, "streetlight": 0, "bin": 0}
+    for (x, y), (name, walkable) in sorted(surface.items()):
+        if name != "service-concrete" or not walkable or (x, y) in reserved or not (0 < x < size - 1 and 0 < y < size - 1):
+            continue
+        beside_street = any(surface.get((x + dx, y + dy), ("", False))[0] == "street" for dx, dy in near)
+        beside_building = any(surface.get((x + dx, y + dy), ("", False))[0] == "utility-building" for dx, dy in near)
+        roll = rng.random()
+        kind = None
+        if beside_street and roll < 0.035:
+            kind = "tree"
+        elif beside_street and roll < 0.065:
+            kind = "streetlight"
+        elif beside_street and beside_building and roll < 0.085:
+            kind = "bin"
+        if kind is None or any(abs(x - tx) + abs(y - ty) < 4 for tx, ty in taken):
+            continue
+        taken.append((x, y))
+        counts[kind] += 1
+        found.append({"id": f"{kind}-{counts[kind]}", "kind": kind, "position": {"x": x, "y": y}})
+    return found
 
 
 def walkable_grid(map_value: dict, layout: dict, gate_open: bool) -> list[list[bool]]:

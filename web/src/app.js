@@ -15,10 +15,12 @@ import {
 } from "./vehicles.js";
 import { createOverlay, createTileSprites } from "./textures.js";
 import { renderWorldMap } from "./worldmap.js";
+import { advanceProps, damageProp, newProp, propsNear } from "./props.js";
 import {
   FENCE_SURFACE,
   WALL_SURFACE,
   drawBeacon,
+  drawScenery,
   drawConsole,
   drawFenceTile,
   drawGateTile,
@@ -460,6 +462,7 @@ const state = {
   grid: null,
   units: [],
   objectives: [],
+  props: [],
   selectedId: null,
   cursor: { x: 1, y: 5 },
   paused: false,
@@ -544,6 +547,20 @@ async function loadGame(index = state.missionIndex) {
       structure: zone.prop ?? (zone.kind === "hold" ? "beacon" : zone.id.includes("gate") ? "console" : "relay"),
       elevation: state.grid[zone.position.y][zone.position.x]?.elevation ?? 0,
     }));
+  // Street scenery: trees, lights and bins. They take damage and are drawn in depth order with everything else.
+  state.props = (map.props ?? []).map(newProp);
+  for (const prop of state.props) {
+    state.structures.push({
+      id: prop.id,
+      x: prop.position.x,
+      y: prop.position.y,
+      width: 1,
+      height: 1,
+      structure: "scenery",
+      prop,
+      elevation: state.grid[prop.position.y]?.[prop.position.x]?.elevation ?? 0,
+    });
+  }
   state.objectives = mission.objectives.map((objective) => ({
     ...objective,
     complete: false,
@@ -1791,6 +1808,13 @@ function drawBombs(viewport) {
 }
 
 function drawStructure(structure, viewport) {
+  if (structure.prop) {
+    const project = propProjector(viewport, structure.elevation);
+    const at = project(structure.x, structure.y, 0);
+    if (at.x < -120 || at.x > viewport.width + 120 || at.y < -200 || at.y > viewport.height + 120) return;
+    drawScenery(context, project, structure.prop, viewport.cellSize.height, performance.now());
+    return;
+  }
   const objective = state.objectives.find((item) => item.targetZone === structure.id);
   const complete = objective?.complete ?? false;
   const progress = objective?.holdSeconds ? (objective.progress ?? 0) / objective.holdSeconds : 0;
@@ -2553,6 +2577,16 @@ function harmBystander(unit, cost, counter) {
   persistCampaign();
 }
 
+// Scenery that caught fire or broke: a puff of debris and a line in the status.
+const PROP_NAMES = { tree: "A tree", streetlight: "A street light", bin: "A bin", billboard: "A billboard" };
+function announceProp(event) {
+  const prop = state.props.find((item) => item.id === event.propId);
+  if (!prop) return;
+  addEffect(state.effects, "puff", { to: prop.position, spin: Math.random() * 3 });
+  if (event.state === "burning") setStatus(`${PROP_NAMES[prop.kind]} catches fire.`);
+  else audio.play("hit");
+}
+
 // Effects, counters and messages for shots, from automatic combat and from shots fired by hand.
 function handleCombatEvents(combatEvents) {
   for (const event of combatEvents) {
@@ -2582,6 +2616,8 @@ function handleCombatEvents(combatEvents) {
         setStatus(`${shooter.definition.name}: ${event.weapon} is out of rounds.`);
         audio.play("alert");
       }
+    } else if (event.type === "prop") {
+      announceProp(event);
     } else if (event.type === "burn") {
       addEffect(state.effects, "flame", { unitId: event.targetId });
     } else if (event.type === "disabled") {
@@ -2725,6 +2761,10 @@ function simulationStep(deltaSeconds) {
     ...advanceBombs(state.bombs, state.units, deltaSeconds, state.grid),
   ];
   for (const blast of blasts) {
+    for (const prop of propsNear(state.props, blast.at, blast.radius)) {
+      const change = damageProp(prop, 40, "explosion");
+      if (change) announceProp(change);
+    }
     addEffect(state.effects, "blast", { at: blast.at, radius: blast.radius });
     audio.play("blast");
     startPanic(state.units, blast.at, state.grid);
@@ -2763,6 +2803,12 @@ function simulationStep(deltaSeconds) {
       setStatus(`${state.units.find((unit) => unit.id === event.unitId).definition.name} now follows ${agent.definition.name}.`);
     }
     interfaceChanged = true;
+  }
+  const fires = advanceProps(state.props, state.units, deltaSeconds);
+  for (const change of fires.events) announceProp(change);
+  for (const id of fires.ignited) {
+    const unit = state.units.find((item) => item.id === id);
+    if (unit) setStatus(`${unit.definition.name} catches fire from the flames nearby.`);
   }
   const combatEvents = advanceCombat(state.units, deltaSeconds, state.grid, state.elapsed);
   if (combatEvents.length > 0) {
@@ -3565,7 +3611,7 @@ function fireByHand(aim, held = false) {
   const events = [];
   const reasons = new Set();
   for (const unit of squad) {
-    const result = fireManual(unit, aim, state.units, state.grid);
+    const result = fireManual(unit, aim, state.units, state.grid, state.props);
     if (result.fired) events.push(...result.events);
     else reasons.add(result.reason);
   }
@@ -3897,6 +3943,13 @@ if (new URLSearchParams(location.search).has("e2e")) {
     },
     moveSelected(x, y) {
       issueMove({ x, y });
+    },
+    props() {
+      return state.props.map((prop) => ({ id: prop.id, kind: prop.kind, state: prop.state, position: { ...prop.position } }));
+    },
+    hurtProp(id, amount, type) {
+      const change = damageProp(state.props.find((prop) => prop.id === id), amount, type);
+      if (change) announceProp(change);
     },
     advanceHours(hours) {
       passHours(hours);

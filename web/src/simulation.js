@@ -3,6 +3,7 @@
 import { findPath, hasLineOfSight, SIGHT_STEP } from "./engine.js";
 import { LOOT_RANGE, lootBody, lootableBody } from "./inventory.js";
 import { VEHICLE_HIT_RADIUS, ejectDriver, isSquadVehicle, isVehicle } from "./vehicles.js";
+import { damageProp, propsAlong } from "./props.js";
 import { armsCapacity, armsCooldown, chestVitality, eyesRange, legsPace } from "./upgrades.js";
 import { cooldownMultiplier, effectiveLevels, nextFocus, nextStamina, speedMultiplier } from "./stats.js";
 
@@ -946,7 +947,7 @@ function castPellets(shooter, aim, units, grid, stats) {
  * the round and starts the recharge. Returns { fired, reason, events }; events use the same shapes as
  * automatic combat ("damage", "disabled") plus a "shot" event for a shot that hit nothing.
  */
-export function fireManual(shooter, aim, units, grid) {
+export function fireManual(shooter, aim, units, grid, props = null) {
   if (shooter.disabled) return { fired: false, reason: "down", events: [] };
   if (shooter.cooldownRemaining > ARRIVAL_EPSILON) return { fired: false, reason: "recharging", events: [] };
   const { item: weapon, stats } = pickWeapon(shooter);
@@ -970,6 +971,18 @@ export function fireManual(shooter, aim, units, grid) {
       weapon: weapon ? weapon.definition.name : null,
       sound: weapon?.definition.sound ?? "pistol",
     });
+  }
+  // Scenery along the line of fire takes the damage too (a tree ignores bullets; fire and beams do not).
+  if (props && props.length > 0) {
+    const reach = Math.hypot(shot.end.x - shooter.position.x, shot.end.y - shooter.position.y);
+    const length = Math.hypot(aim.x - shooter.position.x, aim.y - shooter.position.y);
+    if (length > 1e-6 && reach > 0) {
+      const direction = { x: (aim.x - shooter.position.x) / length, y: (aim.y - shooter.position.y) / length };
+      for (const prop of propsAlong(props, shooter.position, direction, reach)) {
+        const change = damageProp(prop, stats.attack, stats.damageType ?? "bullet");
+        if (change) events.push(change);
+      }
+    }
   }
   return { fired: true, reason: null, events };
 }

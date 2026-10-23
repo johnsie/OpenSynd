@@ -139,6 +139,20 @@ class Validation:
             rectangle.update({"width": zone.get("width"), "height": zone.get("height")})
             self.validate_rectangle(path, rectangle, width, height, f"zone {zone_id}")
 
+        prop_ids: set[str] = set()
+        for item in value.get("props", []):
+            prop_id = item.get("id") if isinstance(item, dict) else None
+            if not isinstance(prop_id, str) or ID_PATTERN.fullmatch(prop_id) is None or prop_id in prop_ids:
+                self.error(path, f"invalid or duplicate prop id: {prop_id!r}")
+                continue
+            prop_ids.add(prop_id)
+            if item.get("kind") not in {"tree", "streetlight", "bin", "billboard"}:
+                self.error(path, f"prop {prop_id} has an unsupported kind")
+            position = item.get("position")
+            rectangle = dict(position) if isinstance(position, dict) else {}
+            rectangle.update({"width": 1, "height": 1})
+            self.validate_rectangle(path, rectangle, width, height, f"prop {prop_id}")
+
         objects = value.get("objects", [])
         if not isinstance(objects, list):
             self.error(path, "objects must be an array")

@@ -24,6 +24,11 @@
       "type": "array",
       "items": { "$ref": "#/$defs/zone" }
     },
+    "props": {
+      "type": "array",
+      "description": "Street scenery that reacts to damage: trees and billboards burn, street lights and bins break. Props never block movement.",
+      "items": { "$ref": "#/$defs/prop" }
+    },
     "objects": {
       "type": "array",
       "description": "Interactive world objects. A gate blocks its tiles until the objective at its control zone is complete.",
@@ -91,6 +96,16 @@
         "height": { "type": "integer", "minimum": 1 },
         "control": { "$ref": "#/$defs/id" },
         "key": { "$ref": "#/$defs/id", "description": "Equipment id of a key that also opens the gate while its carrier stands next to it." }
+      }
+    },
+    "prop": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "position"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "kind": { "enum": ["tree", "streetlight", "bin", "billboard"] },
+        "position": { "$ref": "#/$defs/position" }
       }
     },
     "color": { "type": "string", "pattern": "^#[0-9a-fA-F]{6}$" }
