@@ -35,7 +35,17 @@ export function markCompleted(progress, missionId) {
     : { completed: [...progress.completed, missionId] };
 }
 
-// The first operation is always open; each later one opens when the one before it is done.
-export function isUnlocked(progress, missionIds, index) {
-  return index <= 0 || isCompleted(progress, missionIds[index - 1]);
+// Operations form a graph of territories (FreeSynd's neighbours): winning one opens the ones it lists in `unlocks`. When no
+// operation lists any, they open as a simple chain, each after the one before. Entries may be plain ids (always a chain).
+export function prerequisites(entries, index) {
+  const list = entries.map((entry) => (typeof entry === "string" ? { id: entry } : entry));
+  const graph = list.some((entry) => Array.isArray(entry.unlocks) && entry.unlocks.length > 0);
+  if (!graph) return index <= 0 ? [] : [list[index - 1].id];
+  return index <= 0 ? [] : list.filter((entry) => entry.unlocks?.includes(list[index].id)).map((entry) => entry.id);
+}
+
+// The first operation is always open; the others open when one that unlocks them has been completed.
+export function isUnlocked(progress, entries, index) {
+  if (index <= 0) return true;
+  return prerequisites(entries, index).some((id) => isCompleted(progress, id));
 }

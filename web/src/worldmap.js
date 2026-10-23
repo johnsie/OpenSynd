@@ -2,7 +2,7 @@
 
 import { hashString, seededRandom } from "./buildings.js";
 import { CONTINENTS, INLAND_SEAS, ISLANDS, MAP_HEIGHT, MAP_WIDTH, SEA_LABELS, polygonPath, project } from "./atlas.js";
-import { isCompleted, isUnlocked } from "./progress.js";
+import { isCompleted, isUnlocked, prerequisites } from "./progress.js";
 
 // The world map used to choose an operation: a flat atlas of the Earth (see atlas.js) with each
 // operation a region the player clicks. A mission says where it sits with `region` (a name and a
@@ -47,11 +47,10 @@ export function pointInPolygon(point, polygon) {
 
 /** Each operation's state on the map: "locked", "available" or "completed", and which is chosen. */
 export function regionStates(entries, progress, selectedIndex) {
-  const ids = entries.map((entry) => entry.id);
   return entries.map((entry, index) => ({
     index,
     id: entry.id,
-    state: isCompleted(progress, entry.id) ? "completed" : isUnlocked(progress, ids, index) ? "available" : "locked",
+    state: isCompleted(progress, entry.id) ? "completed" : isUnlocked(progress, entries, index) ? "available" : "locked",
     selected: index === selectedIndex,
   }));
 }
@@ -63,7 +62,12 @@ export function regionCard(entry, index, state, entries) {
   const label = state === "completed" ? "COMPLETED" : state === "available" ? "AVAILABLE" : "LOCKED";
   const detail =
     state === "locked"
-      ? `Complete ${entries[index - 1]?.name ?? "the previous operation"} to unlock this operation.`
+      ? `Complete ${
+          prerequisites(entries, index)
+            .map((id) => entries.find((item) => item.id === id)?.name)
+            .filter(Boolean)
+            .join(" or ") || "the previous operation"
+        } to unlock this operation.`
       : `${entry.objectives} objectives · ${entry.enemies} enemy agents`;
   return { title: `Operation ${number} · ${entry.name}`, place, label, detail };
 }

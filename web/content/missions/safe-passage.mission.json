@@ -910,5 +910,8 @@
       }
     }
   ],
-  "sequence": true
+  "sequence": true,
+  "unlocks": [
+    "developer.loose-ends"
+  ]
 }

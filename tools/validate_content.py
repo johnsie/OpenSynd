@@ -572,6 +572,11 @@ class Validation:
                 if needed not in equipment_items or needed == equipment_id:
                     self.error(equipment_path, f"requires unknown equipment: {needed}")
 
+        mission_ids = {m.get("id") for _, m in missions}
+        for mission_path, mission in missions:
+            for target in mission.get("unlocks", []):
+                if target not in mission_ids or target == mission.get("id"):
+                    self.error(mission_path, f"unlocks an operation that is not in the pack: {target}")
         for mission_path, mission in missions:
             self.validate_mission(
                 mission_path, mission, pack_root, maps, units, equipment, vehicles

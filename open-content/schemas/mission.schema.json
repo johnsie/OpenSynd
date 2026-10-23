@@ -36,6 +36,10 @@
         "lat": { "type": "number", "minimum": -58, "maximum": 84, "description": "The atlas shows 84 degrees north to 58 degrees south." }
       }
     },
+    "unlocks": {
+      "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/id" },
+      "description": "Operations (by id) that open when this one is won. If no operation in a pack lists any, they open as a chain."
+    },
     "sequence": { "type": "boolean", "description": "When true the required objectives must be done in the order listed; the briefing points at the one to do now." },
     "map": { "$ref": "#/$defs/path" },
     "team": { "type": "array", "minItems": 1, "maxItems": 4, "items": { "$ref": "#/$defs/placement" } },

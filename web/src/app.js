@@ -223,6 +223,7 @@ import {
   emptyProgress,
   isCompleted,
   isUnlocked,
+  prerequisites,
   markCompleted,
   parseProgress,
   serializeProgress,
@@ -673,6 +674,7 @@ async function loadGame(index = state.missionIndex) {
           enemies: entry.opponents.length,
           region: entry.region ?? null,
           population: entry.region?.population,
+          unlocks: entry.unlocks ?? [],
         };
       }),
     );
@@ -1163,7 +1165,6 @@ function changeTax(id, tax) {
 
 function renderMissionList() {
   renderTerritoryPanel();
-  const ids = state.missionList.map((entry) => entry.id);
   renderWorldMap({
     container: document.querySelector("#world-map"),
     entries: state.missionList,
@@ -1178,7 +1179,7 @@ function renderMissionList() {
   });
   missionListElement.replaceChildren(
     ...state.missionList.map((entry, index) => {
-      const unlocked = isUnlocked(state.progress, ids, index);
+      const unlocked = isUnlocked(state.progress, state.missionList, index);
       const done = isCompleted(state.progress, entry.id);
       const button = document.createElement("button");
       button.type = "button";
@@ -1193,7 +1194,9 @@ function renderMissionList() {
       const note = document.createElement("small");
       note.textContent = unlocked
         ? `${entry.objectives} objectives · ${entry.enemies} enemy agents`
-        : `Complete ${state.missionList[index - 1].name} to unlock this operation.`;
+        : `Complete ${prerequisites(state.missionList, index)
+            .map((id) => state.missionList.find((item) => item.id === id)?.name ?? id)
+            .join(" or ")} to unlock this operation.`;
       button.append(name, status, note);
       button.addEventListener("click", () => chooseMission(index));
       return button;
@@ -2860,7 +2863,7 @@ function showOutcome(outcome) {
   document.querySelector("#outcome-text").textContent = won
     ? debrief?.success ?? "The operation is complete."
     : reason ?? debrief?.failure ?? "Every operator has been disabled. Regroup and try a different approach.";
-  const hasNext = won && state.missionIndex + 1 < state.missionCount;
+  const hasNext = won && nextOperation() !== -1;
   document.querySelector("#next-button").hidden = !hasNext;
   const teamDown = state.units.filter((unit) => unit.side === "team" && unit.disabled).length;
   const watchersDown = state.units.filter((unit) => unit.side === "opposition" && unit.disabled).length;
@@ -3847,9 +3850,17 @@ document.querySelector("#replay-button").addEventListener("click", () => {
   outcomeDialog.close();
   loadGame(state.missionIndex).catch(showFatalError);
 });
+// The next operation along that is open: the first after this one that has been unlocked and is not yet won.
+function nextOperation() {
+  const open = (index) =>
+    isUnlocked(state.progress, state.missionList, index) && !isCompleted(state.progress, state.missionList[index].id);
+  for (let index = state.missionIndex + 1; index < state.missionList.length; index += 1) if (open(index)) return index;
+  return -1;
+}
+
 document.querySelector("#next-button").addEventListener("click", () => {
   outcomeDialog.close();
-  loadGame(state.missionIndex + 1)
+  loadGame(nextOperation())
     .then(() => {
       state.modal = true;
       titleDialog.showModal();

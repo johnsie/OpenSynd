@@ -43,3 +43,30 @@ test("progress round-trips and bad data is ignored", () => {
     { completed: ["one", "two"] },
   );
 });
+
+import { prerequisites } from "../src/progress.js";
+
+test("operations can form a graph: winning one opens the ones it lists, and any one prerequisite is enough", () => {
+  const entries = [
+    { id: "a", unlocks: ["b", "c"] },
+    { id: "b", unlocks: ["d"] },
+    { id: "c", unlocks: ["d"] },
+    { id: "d", unlocks: [] },
+  ];
+  assert.deepEqual(prerequisites(entries, 0), []);
+  assert.deepEqual(prerequisites(entries, 1), ["a"]);
+  assert.deepEqual(prerequisites(entries, 3), ["b", "c"]);
+  let progress = emptyProgress();
+  assert.deepEqual([1, 2, 3].map((index) => isUnlocked(progress, entries, index)), [false, false, false]);
+  progress = markCompleted(progress, "a");
+  assert.deepEqual([1, 2, 3].map((index) => isUnlocked(progress, entries, index)), [true, true, false], "b and c both open");
+  progress = markCompleted(progress, "c");
+  assert.equal(isUnlocked(progress, entries, 3), true, "either route to d will do");
+});
+
+test("with no unlocks listed, operations open as a chain", () => {
+  const entries = [{ id: "a" }, { id: "b", unlocks: [] }, { id: "c" }];
+  assert.deepEqual(prerequisites(entries, 2), ["b"]);
+  assert.equal(isUnlocked(markCompleted(emptyProgress(), "a"), entries, 2), false);
+  assert.equal(isUnlocked(markCompleted(emptyProgress(), "b"), entries, 2), true);
+});
