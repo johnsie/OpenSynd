@@ -121,3 +121,13 @@ vehicles, and city cars that never run anyone down. The roadmap lists each one.
 
 Code is GPL-2.0-or-later; the shipped content is CC0-1.0 (see `LICENSES/`, `ASSET_POLICY.md` and `provenance/`). The old
 C++ FreeSynd engine under `src/` and `data/` is left in the repository for reference and is not used by the browser game.
+
+## Hot updates
+
+`src/update.js` holds the logic (and `test/update.test.js` tests it). The game resolves every content, art and music URL against
+the folder its own code was loaded from (`releaseBase(import.meta.url)` in `app.js`). With `PIN_RELEASES=1` the build rewrites
+`index.html` to load `r/<revision>/app.js` and `r/<revision>/styles.css`, and the server keeps each release under `/r/<revision>/`
+(see `deploy/`), so an open game never mixes its code with newer content. It polls the site's own `build-meta.json` every minute;
+a different revision shows the "new version" note, and `canApplyQuietly` decides when it may reload by itself (not during an
+operation or with the research screen open, and only if the tab is hidden or has been idle for 20 s). Browser tests use `?e2e` to
+poll every second and intercept `build-meta.json`.

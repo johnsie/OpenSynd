@@ -61,9 +61,19 @@ await writeFile(
   "utf8",
 );
 
-const index = await readFile(resolve(output, "index.html"), "utf8");
+let index = await readFile(resolve(output, "index.html"), "utf8");
 if (!index.includes("OpenSynd")) {
   throw new Error("Built index is missing the OpenSynd identity");
+}
+// Hot updates: when the site keeps every release under /r/<revision>/ (PIN_RELEASES=1, as the deploy build does), the page
+// loads its style sheet and code from its own release's folder, so a running game is never changed by a newer deploy.
+if (process.env.PIN_RELEASES) {
+  const pinned = index
+    .replace('href="styles.css"', `href="r/${revision}/styles.css"`)
+    .replace('src="app.js"', `src="r/${revision}/app.js"`);
+  if (pinned === index || !pinned.includes(`r/${revision}/app.js`)) throw new Error("Could not pin the release in index.html");
+  index = pinned;
+  await writeFile(resolve(output, "index.html"), index, "utf8");
 }
 
 console.log(`Built OpenSynd static site at ${output}`);

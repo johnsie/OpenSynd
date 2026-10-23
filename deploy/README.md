@@ -50,8 +50,27 @@ backend opensyn
 1. **check**: the content, style and provenance checks and the unit tests.
 2. **build**: builds the site into `web/dist`.
 3. **deploy**: `deploy/deploy.sh` copies the build into `releases/<commit>` and switches the `current` link to it in one
-   step, so visitors never see a half-copied site. The newest four releases are kept (roll back by pointing `current` at an
+   step, so visitors never see a half-copied site. The newest twelve releases are kept (roll back by pointing `current` at an
    older folder).
+
+## Hot updates: pushing without disturbing anyone playing
+
+A deploy never changes the game underneath someone who is playing it:
+
+- **Each release keeps its own folder**, and the site serves every kept release under `/r/<release>/`. When the pipeline
+  builds with `HOT_UPDATES=1`, the home page loads its code and style sheet from its own release's folder, and the game fetches
+  all its content, art and music from the same folder. A game that is already open therefore keeps running on the release it
+  started with, whatever is deployed next. The newest twelve releases are kept so that games left open for a long time still
+  find their files.
+- **The open game notices the new release** (it checks `build-meta.json` once a minute) and shows a small "A new version is
+  ready" note in the corner. It switches over by itself only when that costs the player nothing: between operations (the title
+  or outcome screen) and with the tab out of sight or left alone for twenty seconds. In the middle of an operation it only
+  waits, and the note's **Update now** button asks first. The campaign, funds, research, settings and saves live in the
+  browser, so they carry over untouched.
+
+**To switch pinning on:** run `sudo sh deploy/setup-apache.sh` again on the web server (it adds the `/r/` alias to the virtual
+host), then set the project's CI/CD variable `HOT_UPDATES` to `1` (Settings, CI/CD, Variables). Until then the pages are not
+pinned and a deploy is only announced to the open games, not isolated from them.
 
 Pushes to the project's default branch deploy by themselves. Any other branch can be deployed with the manual **deploy**
 button on its pipeline.

@@ -913,3 +913,19 @@ main { grid-template-columns: minmax(0, 1fr) minmax(250px, 300px); gap: 0.6rem; 
 .world-map-svg.zoomed { cursor: grab; }
 .map-zoom { position: absolute; right: 0.5rem; top: 0.5rem; display: flex; flex-direction: column; gap: 0.25rem; }
 .map-zoom button { width: 2rem; height: 2rem; padding: 0; font-size: 1.1rem; background: rgba(8, 14, 18, 0.85); }
+
+/* The "new version ready" notice: small, in a corner, never over the play area's controls. */
+.update-banner {
+  position: fixed;
+  left: 0.75rem;
+  bottom: 0.75rem;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0.7rem;
+  background: rgba(10, 18, 22, 0.95);
+  border: 1px solid rgba(66, 214, 208, 0.6);
+  font-size: 0.85rem;
+}
+.update-banner[hidden] { display: none; }

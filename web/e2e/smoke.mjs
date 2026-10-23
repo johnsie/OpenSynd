@@ -706,6 +706,40 @@ for (const [name, type, executablePath] of targets) {
     await beside.getByLabel(/Field Operator 2 slot 3: Scanner/).waitFor({ timeout: 10000 });
     await beside.close();
 
+    // Hot updates: a newer release is announced quietly and never switched in while an operation is being played.
+    const updating = await browser.newPage();
+    let published = "rev-a";
+    await updating.route("**/build-meta.json", (route) =>
+      route.fulfill({ contentType: "application/json", body: JSON.stringify({ revision: published, builtAt: "now" }) }),
+    );
+    await updating.goto(`${url}?e2e`);
+    await updating.waitForSelector(".roster-select");
+    await updating.evaluate(() => (window.updateMarker = "still the same page"));
+    assert.equal(await updating.locator("#update-banner").isVisible(), false, "nothing waiting");
+    published = "rev-b";
+    await updating.waitForSelector("#update-banner:not([hidden])", { timeout: 15000 });
+    // Pretend the tab is out of sight while the title screen is up: that is a quiet moment, so it switches over by itself.
+    await updating.evaluate(() => Object.defineProperty(document, "hidden", { get: () => true, configurable: true }));
+    await updating.waitForFunction(() => window.updateMarker === undefined, null, { timeout: 15000 });
+    await updating.waitForSelector(".roster-select");
+    // The new page begins an operation; a newer release then waits, even with the tab out of sight.
+    await updating.click("#begin-button");
+    await updating.waitForFunction(() => document.querySelector("#status-message").textContent.includes("Local map established"));
+    await updating.evaluate(() => (window.updateMarker = "mid-operation"));
+    published = "rev-c";
+    await updating.waitForSelector("#update-banner:not([hidden])", { timeout: 15000 });
+    await updating.evaluate(() => Object.defineProperty(document, "hidden", { get: () => true, configurable: true }));
+    await updating.waitForTimeout(3500);
+    assert.equal(await updating.evaluate(() => window.updateMarker), "mid-operation", "never switched in the middle of an operation");
+    // Asking for it mid-operation asks first; saying no keeps playing.
+    await updating.click("#update-now");
+    assert.match(await updating.locator("#confirm-heading").innerText(), /Update the game/);
+    await updating.click("#confirm-cancel");
+    assert.equal(await updating.evaluate(() => window.updateMarker), "mid-operation");
+    await updating.click("#update-later");
+    assert.equal(await updating.locator("#update-banner").isVisible(), false);
+    await updating.close();
+
     // Gear bought before the operation begins is on the operative when it does (the operation is set up again on closing).
     const buyer = await browser.newPage();
     await buyer.goto(`${url}?e2e`);

@@ -9,7 +9,7 @@ set -eu
 SOURCE=${1:?usage: deploy.sh <built-folder> <release-name>}
 RELEASE=${2:?usage: deploy.sh <built-folder> <release-name>}
 DOCROOT=${DOCROOT:-/var/www/opensynd.outiva.com}
-KEEP=${KEEP:-4}
+KEEP=${KEEP:-12}
 
 [ -f "$SOURCE/index.html" ] || { echo "no index.html in $SOURCE: was the game built?" >&2; exit 1; }
 [ -d "$DOCROOT" ] || { echo "$DOCROOT does not exist: run deploy/setup-apache.sh on the server first" >&2; exit 1; }
@@ -25,7 +25,8 @@ ln -sfn "$TARGET" "$DOCROOT/current.new"
 mv -T "$DOCROOT/current.new" "$DOCROOT/current"
 echo "deployed $RELEASE to $DOCROOT/current"
 
-# Keep only the newest few releases.
+# Keep the newest releases. Anyone playing stays on the release they started from (it is served under /r/<name>/), so
+# the older ones are kept for a good while.
 cd "$DOCROOT/releases"
 ls -1t | tail -n +"$((KEEP + 1))" | while read -r old; do
   [ "$old" = "$RELEASE" ] || rm -rf "./$old"

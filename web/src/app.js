@@ -35,6 +35,7 @@ import {
   drawWallTile,
 } from "./structures.js";
 import { deathKind, deathLook } from "./death.js";
+import { CHECK_SECONDS, canApplyQuietly, releaseBase, watchForUpdates } from "./update.js";
 import { windowKey, windowShot, windowsInBlast } from "./windows.js";
 import { BUILDING_SURFACE, buildingStyle, buildingsFromMap, drawOrder, seededRandom } from "./buildings.js";
 import {
@@ -279,11 +280,16 @@ const audio = createAudio({
   AudioContextClass: window.AudioContext ?? window.webkitAudioContext,
 });
 
+// Everything the game loads (content, art, music) comes from the folder this code came from, so a running game stays on its own
+// release while the site moves on to a newer one (see update.js).
+const BASE = releaseBase(import.meta.url);
+const assetUrl = (path) => new URL(path, BASE).href;
+
 const music = createMusic({
   getSettings: () => settings,
   AudioContextClass: window.AudioContext ?? window.webkitAudioContext,
-  trackUrl: "assets/music/the-core.mp3",
-  alertTrackUrl: "assets/music/electric-stream.mp3",
+  trackUrl: assetUrl("assets/music/the-core.mp3"),
+  alertTrackUrl: assetUrl("assets/music/electric-stream.mp3"),
   AudioElementClass: window.Audio,
 });
 // Browsers only allow audio after a user gesture, so music starts on first input.
@@ -441,7 +447,7 @@ async function loadSprites() {
               resolve();
             };
             image.onerror = () => reject(new Error(`Unable to load ${sheet.file}`));
-            image.src = `assets/sprites/${sheet.file}`;
+            image.src = assetUrl(`assets/sprites/${sheet.file}`);
           }),
       ),
     );
@@ -492,7 +498,7 @@ const state = {
 };
 
 async function readJson(path) {
-  const response = await fetch(path);
+  const response = await fetch(assetUrl(path));
   if (!response.ok) throw new Error(`Unable to load ${path}`);
   return response.json();
 }
@@ -5226,14 +5232,66 @@ function showFatalError(error) {
   setStatus(`Prototype could not start: ${error.message}`);
 }
 
-fetch("build-meta.json")
+// The release this page is running, shown in the footer, and the watch for a newer one.
+const updateBanner = document.querySelector("#update-banner");
+let waitingRevision = null;
+let lastInput = performance.now();
+for (const type of ["pointerdown", "pointermove", "keydown", "wheel"]) {
+  window.addEventListener(type, () => (lastInput = performance.now()), { passive: true });
+}
+
+function operationActive() {
+  return !titleDialog.open && !outcomeDialog.open && state.outcome === "active" && Boolean(state.mission);
+}
+
+function applyUpdate() {
+  persistCampaign();
+  location.reload();
+}
+
+fetch(assetUrl("build-meta.json"))
   .then((response) => response.json())
   .then((metadata) => {
     document.querySelector("#revision").textContent = `source: ${metadata.revision.slice(0, 12)}`;
+    const quick = new URLSearchParams(location.search).has("e2e");
+    watchForUpdates({
+      running: metadata.revision,
+      every: quick ? 1 : CHECK_SECONDS,
+      fetchPublished: async () => {
+        // The site's own copy (not this release's): whatever is published now.
+        const response = await fetch(new URL("build-meta.json", document.baseURI), { cache: "no-store" });
+        return response.ok ? (await response.json()).revision : null;
+      },
+      onWaiting: (revision) => {
+        waitingRevision = revision;
+        updateBanner.hidden = false;
+      },
+    });
   })
   .catch(() => {
     document.querySelector("#revision").textContent = "source: unavailable";
   });
+
+// Between operations, out of sight or left alone: switch to the waiting release without anyone noticing.
+setInterval(() => {
+  const idleSeconds = (performance.now() - lastInput) / 1000;
+  const busy = operationActive() || researchDialog.open;
+  if (canApplyQuietly({ waiting: Boolean(waitingRevision), operationActive: busy, hidden: document.hidden, idleSeconds })) applyUpdate();
+}, 1000);
+document.querySelector("#update-later").addEventListener("click", () => {
+  updateBanner.hidden = true;
+});
+document.querySelector("#update-now").addEventListener("click", async () => {
+  if (operationActive()) {
+    const ok = await confirmLeave("Updating restarts the current operation. Your campaign, funds and settings are kept.", {
+      heading: "Update the game?",
+      accept: "Update now",
+      cancel: "Keep playing",
+    });
+    if (!ok) return;
+  }
+  applyUpdate();
+});
 
 loadGame().catch(showFatalError);
 requestAnimationFrame(frame);
