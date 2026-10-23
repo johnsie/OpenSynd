@@ -36,6 +36,10 @@ import {
   hire,
   loseOperatives,
   recruit,
+  INTEL_LEVELS,
+  buyIntel,
+  intelLevel,
+  intelPrice,
   canFit,
   resupplyCost,
   roundPrice,
@@ -252,7 +256,7 @@ test("the campaign round-trips and damaged data is repaired or ignored", () => {
     },
     items: ["a"], loadouts: { op: ["x", "y"] }, achievements: [],
     roster: emptyCampaign().roster, squad: emptyCampaign().squad, permadeath: true,
-    hours: 0, territories: {}, research: { active: null, level: 4, progress: {} },
+    hours: 0, territories: {}, research: { active: null, level: 4, progress: {} }, intel: {},
   });
   assert.equal(parseCampaign(JSON.stringify({ loadouts: { o: Array(20).fill("kit") } })).loadouts.o.length, 8);
 });
@@ -418,4 +422,21 @@ test("a damaged roster is repaired", () => {
   assert.deepEqual(repaired.roster.map((member) => [member.id, member.alive]), [["a", true], ["b", false]]);
   assert.deepEqual(repaired.squad, ["a"], "the dead and the unknown are not deployed");
   assert.equal(parseCampaign(JSON.stringify({ roster: [] })).roster.length, 4);
+});
+
+test("survey intelligence is bought a level at a time, priced by the enemies, and kept per operation", () => {
+  assert.equal(intelPrice(1, 12), 34);
+  assert.equal(intelPrice(2, 12), 68);
+  let campaign = { ...emptyCampaign(), funds: 120 };
+  assert.equal(intelLevel(campaign, "m1"), 0);
+  campaign = buyIntel(campaign, "m1", 12);
+  assert.deepEqual([campaign.funds, intelLevel(campaign, "m1")], [86, 1]);
+  campaign = buyIntel(campaign, "m1", 12);
+  assert.deepEqual([campaign.funds, intelLevel(campaign, "m1")], [18, 2]);
+  assert.equal(buyIntel(campaign, "m1", 12), campaign, "there is nothing beyond the full survey");
+  assert.equal(INTEL_LEVELS, 2);
+  assert.equal(intelLevel(campaign, "m2"), 0, "other operations are untouched");
+  assert.equal(buyIntel({ ...emptyCampaign(), funds: 5 }, "m1", 12).intel.m1, undefined, "too poor");
+  assert.equal(parseCampaign(JSON.stringify({ intel: { a: 9, b: 1, c: -1, d: "x" } })).intel.a, 2);
+  assert.deepEqual(Object.keys(parseCampaign(JSON.stringify({ intel: { a: 9, b: 1, c: -1, d: "x" } })).intel), ["a", "b"]);
 });

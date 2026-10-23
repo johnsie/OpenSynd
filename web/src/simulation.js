@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-import { findPath } from "./engine.js";
+import { findPath, hasLineOfSight, SIGHT_STEP } from "./engine.js";
 import { LOOT_RANGE, lootBody, lootableBody } from "./inventory.js";
 import { VEHICLE_HIT_RADIUS, ejectDriver, isSquadVehicle, isVehicle } from "./vehicles.js";
 import { armsCapacity, armsCooldown, chestVitality, eyesRange, legsPace } from "./upgrades.js";
@@ -177,10 +177,9 @@ export function stealthFactor(unit) {
   return factor;
 }
 
-// What stops a watcher seeing across a tile: solid ground such as buildings and walls. Fences,
-// gates and water are see-through. Anything off the map blocks.
-const SEE_THROUGH_SURFACES = new Set(["service-fence", "runoff-channel"]);
-export const SIGHT_STEP = 0.25;
+// Sight (see engine.js): solid ground such as buildings and walls stops it; fences, gates and water do not.
+export { SIGHT_STEP, hasLineOfSight };
+
 // Street-life behaviour, mapped from FreeSynd's behaviour components (see ROADMAP.md) and scaled to this
 // game's tiles. Civilians scout for anyone with a weapon out and run from them; police go on alert when
 // anyone draws a weapon, warn, then shoot any armed non-police unit until its weapon is put away;
@@ -202,29 +201,6 @@ export const FOLLOWER_WEAPON_SEARCH = 3;
 const CRIMINAL_GIVE_UP = 30;
 // A chasing watcher keeps hold of a quarry this close even round a corner.
 export const LOST_TRACK_CLOSE = 4;
-
-function blocksSight(tile) {
-  if (!tile) return true;
-  if (tile.walkable || tile.gate) return false;
-  return !SEE_THROUGH_SURFACES.has(tile.surface);
-}
-
-/** Can one position see another with nothing solid between them? Without a grid, always. */
-export function hasLineOfSight(grid, from, to) {
-  if (!grid) return true;
-  const dx = to.x - from.x;
-  const dy = to.y - from.y;
-  const length = Math.hypot(dx, dy);
-  const startTile = tileOf(from);
-  const endTile = tileOf(to);
-  for (let travelled = SIGHT_STEP; travelled < length; travelled += SIGHT_STEP) {
-    const point = { x: from.x + (dx / length) * travelled, y: from.y + (dy / length) * travelled };
-    const tile = tileOf(point);
-    if ((tile.x === startTile.x && tile.y === startTile.y) || (tile.x === endTile.x && tile.y === endTile.y)) continue;
-    if (blocksSight(grid[tile.y]?.[tile.x])) return false;
-  }
-  return true;
-}
 
 // An operator with a weapon drawn (selected, or firing a moment ago). Police only react to these.
 export function gunOut(unit, now) {

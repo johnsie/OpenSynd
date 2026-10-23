@@ -68,6 +68,7 @@ export function emptyCampaign() {
     hours: 0,
     territories: {},
     research: { active: null, level: 4, progress: {} },
+    intel: {},
   };
 }
 
@@ -115,6 +116,12 @@ export function parseCampaign(text) {
       if (id.length < 120) territories[id] = sanitizeTerritory(id, record);
     }
   }
+  const intel = {};
+  if (value.intel !== null && typeof value.intel === "object" && !Array.isArray(value.intel)) {
+    for (const [id, level] of Object.entries(value.intel)) {
+      if (id.length < 120 && Number.isInteger(level) && level > 0) intel[id] = Math.min(INTEL_LEVELS, level);
+    }
+  }
   const roster = parseRoster(value.roster);
   const aliveIds = roster.filter((member) => member.alive).map((member) => member.id);
   const squad = Array.isArray(value.squad)
@@ -132,6 +139,7 @@ export function parseCampaign(text) {
     hours: wholeNumber(value.hours),
     territories,
     research: parseResearch(value.research),
+    intel,
   };
 }
 
@@ -513,4 +521,25 @@ export function resupplyCost(entries) {
     return sum + Math.max(0, entry.definition.charges - entry.charges) * roundPrice(entry.definition);
   }, 0);
   return Math.round(total);
+}
+
+// Mission intelligence, bought before an operation (FreeSynd sells briefing detail by the level):
+//   level 1  patrol survey: every enemy agent and guard shows on the minimap for the whole operation
+//   level 2  full survey: police, criminals, civilians and vehicles show as well
+// The price rises with the number of enemies, and each level costs twice the one before.
+export const INTEL_LEVELS = 2;
+export const INTEL_LABELS = Object.freeze(["No survey", "Patrol survey", "Full survey"]);
+
+export const intelLevel = (campaign, missionId) => campaign.intel?.[missionId] ?? 0;
+
+export function intelPrice(level, enemies) {
+  return (10 + 2 * enemies) * 2 ** (level - 1);
+}
+
+export function buyIntel(campaign, missionId, enemies) {
+  const next = intelLevel(campaign, missionId) + 1;
+  if (next > INTEL_LEVELS) return campaign;
+  const price = intelPrice(next, enemies);
+  if (campaign.funds < price) return campaign;
+  return { ...campaign, funds: campaign.funds - price, intel: { ...campaign.intel, [missionId]: next } };
 }

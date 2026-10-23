@@ -154,3 +154,33 @@ export function buildPatrolRoute(grid, start, waypoints) {
   }
   return route;
 }
+
+// ---- Sight
+
+const SEE_THROUGH_SURFACES = new Set(["service-fence", "runoff-channel"]);
+export const SIGHT_STEP = 0.25;
+
+const tileAt = (position) => ({ x: Math.round(position.x), y: Math.round(position.y) });
+
+function blocksSight(tile) {
+  if (!tile) return true;
+  if (tile.walkable || tile.gate) return false;
+  return !SEE_THROUGH_SURFACES.has(tile.surface);
+}
+
+/** Can one position see another with nothing solid between them? Without a grid, always. */
+export function hasLineOfSight(grid, from, to) {
+  if (!grid) return true;
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const length = Math.hypot(dx, dy);
+  const startTile = tileAt(from);
+  const endTile = tileAt(to);
+  for (let travelled = SIGHT_STEP; travelled < length; travelled += SIGHT_STEP) {
+    const point = { x: from.x + (dx / length) * travelled, y: from.y + (dy / length) * travelled };
+    const tile = tileAt(point);
+    if ((tile.x === startTile.x && tile.y === startTile.y) || (tile.x === endTile.x && tile.y === endTile.y)) continue;
+    if (blocksSight(grid[tile.y]?.[tile.x])) return false;
+  }
+  return true;
+}

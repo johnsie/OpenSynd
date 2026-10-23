@@ -1,7 +1,13 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
+import { hasLineOfSight } from "./engine.js";
+
 // Time bombs (the Delay Charge): planted where an operative stands, they blast everyone nearby when
-// the fuse runs out, friend or foe. Pure rules; drawing and funds live in the app.
+// the fuse runs out, friend or foe, unless a wall is between: a blast only reaches what it has a clear line to
+// (FreeSynd). A blast also sets off any other bomb within its radius. Pure rules; drawing and funds live in the app.
+// A bomb set off by another blast goes off this long afterwards.
+export const CHAIN_DELAY = 0.3;
+
 export function plantBomb(unit, item, bombs) {
   if (!item || item.charges === 0 || unit.disabled) return null;
   if (item.charges !== null) item.charges -= 1;
@@ -29,7 +35,7 @@ export function blastDamage(attack, distance, radius) {
  * Count the fuses down. Each bomb that reaches zero is removed and reported as one "blast" event
  * listing everyone it hurt, with how much, what they have left and whether it disabled them.
  */
-export function advanceBombs(bombs, units, deltaSeconds) {
+export function advanceBombs(bombs, units, deltaSeconds, grid = null) {
   const events = [];
   for (let index = bombs.length - 1; index >= 0; index -= 1) {
     const bomb = bombs[index];
@@ -37,11 +43,16 @@ export function advanceBombs(bombs, units, deltaSeconds) {
     if (bomb.left > 0) continue;
     bombs.splice(index, 1);
     const hits = [];
+    // Another bomb caught in the blast goes off a moment later, in a chain.
+    for (const other of bombs) {
+      const gap = Math.hypot(other.at.x - bomb.at.x, other.at.y - bomb.at.y);
+      if (gap <= bomb.radius && hasLineOfSight(grid, bomb.at, other.at)) other.left = Math.min(other.left, CHAIN_DELAY);
+    }
     for (const unit of units) {
       if (unit.disabled) continue;
       const distance = Math.hypot(unit.position.x - bomb.at.x, unit.position.y - bomb.at.y);
       const amount = blastDamage(bomb.attack, distance, bomb.radius);
-      if (amount === 0) continue;
+      if (amount === 0 || !hasLineOfSight(grid, bomb.at, unit.position)) continue;
       unit.health = Math.max(0, unit.health - amount);
       const down = unit.health === 0;
       if (down) {

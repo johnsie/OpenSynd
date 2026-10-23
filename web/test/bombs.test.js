@@ -48,3 +48,40 @@ test("the fuse counts down, then the blast hurts everyone in range, friend or fo
   assert.equal(units[3].health, 100);
   assert.deepEqual(advanceBombs(bombs, units, 5), [], "nothing left to blow");
 });
+
+import { createTileGrid } from "../src/engine.js";
+
+const walled = createTileGrid({
+  dimensions: { width: 20, height: 5 },
+  regions: [
+    { id: "ground", x: 0, y: 0, width: 20, height: 5, surface: "street", walkable: true, elevation: 0 },
+    { id: "wall", x: 10, y: 0, width: 1, height: 5, surface: "service-wall", walkable: false, elevation: 0 },
+  ],
+});
+
+test("a wall between a bomb and a person shields them from the blast", () => {
+  const bombs = [{ id: "b", at: { x: 8, y: 2 }, attack: 55, radius: 5, fuse: 1, left: 0, plantedBy: "x" }];
+  const behind = person("behind", 12, 2);
+  const open = person("open", 5, 2);
+  const [blast] = advanceBombs(bombs, [behind, open], 0.1, walled);
+  assert.deepEqual(blast.hits.map((hit) => hit.unitId), ["open"]);
+  assert.equal(behind.health, 100);
+  const again = [{ id: "b", at: { x: 8, y: 2 }, attack: 55, radius: 5, fuse: 1, left: 0, plantedBy: "x" }];
+  const [free] = advanceBombs(again, [person("behind", 12, 2)], 0.1, null);
+  assert.equal(free.hits.length, 1, "without a map there is nothing in the way");
+});
+
+test("a blast sets off a bomb within reach, a moment later, in a chain; a bomb behind a wall is spared", () => {
+  const near = { id: "near", at: { x: 6, y: 2 }, attack: 30, radius: 2, fuse: 9, left: 9, plantedBy: "x" };
+  const shielded = { id: "shielded", at: { x: 12, y: 2 }, attack: 30, radius: 2, fuse: 9, left: 9, plantedBy: "x" };
+  const first = { id: "first", at: { x: 8, y: 2 }, attack: 30, radius: 4, fuse: 1, left: 0, plantedBy: "x" };
+  const bombs = [first, near, shielded];
+  advanceBombs(bombs, [], 0.1, walled);
+  assert.equal(bombs.length, 2);
+  assert.ok(near.left <= 0.3, "the neighbour was set off");
+  assert.ok(shielded.left > 8, "the wall protected the other");
+  const events = [];
+  for (let step = 0; step < 10; step += 1) events.push(...advanceBombs(bombs, [], 0.1, walled));
+  assert.equal(events.length, 1);
+  assert.equal(bombs.length, 1);
+});

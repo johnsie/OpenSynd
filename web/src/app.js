@@ -67,6 +67,11 @@ import {
   canBuy,
   captureItems,
   earnAchievement,
+  INTEL_LABELS,
+  INTEL_LEVELS,
+  buyIntel,
+  intelLevel,
+  intelPrice,
   advanceCampaign,
   dayOf,
   ensureTerritories,
@@ -1094,7 +1099,28 @@ function renderTerritoryPanel() {
     held || revolt
       ? `Mood: ${MOODS[territory.mood]} · ${rule.direction === "better" ? "improving" : "worsening"} in ${daysLeft} days`
       : "Mood: unknown until you hold it";
-  panel.replaceChildren(title, taxRow, mood);
+  const survey = document.createElement("div");
+  survey.className = "tax-row";
+  const level = intelLevel(state.campaign, entry.id);
+  const label = document.createElement("span");
+  label.textContent = `Intelligence: ${INTEL_LABELS[level]}`;
+  survey.append(label);
+  if (level < INTEL_LEVELS) {
+    const price = intelPrice(level + 1, entry.enemies);
+    const buy = document.createElement("button");
+    buy.type = "button";
+    buy.textContent = `Buy ${INTEL_LABELS[level + 1].toLowerCase()} · ${price} funds`;
+    buy.setAttribute("aria-label", `Buy ${INTEL_LABELS[level + 1]} for ${entry.name}, ${price} funds`);
+    buy.disabled = state.campaign.funds < price;
+    buy.addEventListener("click", () => {
+      state.campaign = buyIntel(state.campaign, entry.id, entry.enemies);
+      persistCampaign();
+      updateFundsReadout();
+      renderTerritoryPanel();
+    });
+    survey.append(buy);
+  }
+  panel.replaceChildren(title, taxRow, mood, survey);
 }
 
 function changeTax(id, tax) {
@@ -2247,12 +2273,15 @@ function drawMinimap(viewport) {
   // The map shows the squad and its followers, and anyone within sight of them or picked up by a scanner.
   const friends = state.units.filter((unit) => (unit.side === "team" || unit.persuaded) && !unit.disabled);
   const scanned = new Set(scannedUnits(state.units).map((unit) => unit.id));
+  const survey = intelLevel(state.campaign, state.mission.id);
   for (const unit of state.units) {
     if (unit.disabled || unit.inVehicle) continue;
     const known =
       unit.side === "team" ||
       unit.persuaded ||
       scanned.has(unit.id) ||
+      (survey >= 1 && unit.side === "opposition") ||
+      (survey >= 2 && unit.side !== "team") ||
       friends.some((friend) => Math.hypot(friend.position.x - unit.position.x, friend.position.y - unit.position.y) <= MINI_SIGHT);
     if (!known) continue;
     const point = miniProject(unit.position, state.map);
@@ -2681,7 +2710,7 @@ function simulationStep(deltaSeconds) {
   }
   const blasts = [
     ...vehicleEvents.filter((event) => event.type === "blast"),
-    ...advanceBombs(state.bombs, state.units, deltaSeconds),
+    ...advanceBombs(state.bombs, state.units, deltaSeconds, state.grid),
   ];
   for (const blast of blasts) {
     addEffect(state.effects, "blast", { at: blast.at, radius: blast.radius });
@@ -2773,8 +2802,12 @@ function showOutcome(outcome) {
   stats.replaceChildren();
   for (const [label, value] of [
     ["Time", formatDuration(state.missionSeconds)],
+    ["Objectives", `${state.objectives.filter((objective) => objective.complete).length} of ${state.objectives.length}`],
     ["Operators disabled", String(teamDown)],
     ["Enemies disabled", String(watchersDown)],
+    ...(state.units.some((unit) => unit.persuaded && !unit.disabled)
+      ? [["Following the squad", String(state.units.filter((unit) => unit.persuaded && !unit.disabled).length)]]
+      : []),
     ...(state.opStats.lost?.length > 0 ? [["Operatives lost", state.opStats.lost.join(", ")]] : []),
     ...(state.opStats.recruited?.length > 0 ? [["Recruited", state.opStats.recruited.join(", ")]] : []),
     ...(state.opStats.resupply > 0 ? [["Resupply bill", `${state.opStats.resupply} funds`]] : []),

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 import { blastDamage } from "./bombs.js";
-import { findPath } from "./engine.js";
+import { findPath, hasLineOfSight } from "./engine.js";
 
 // Vehicles are units with the role "vehicle" (side "vehicle"), so they can be shot, caught in blasts, drawn in
 // depth order and saved like anyone else. Mapped from FreeSynd's vehicle model: cars are driven along the roads
@@ -275,7 +275,7 @@ export function advanceVehicles(units, seconds, roadGrid, grid) {
           if (unit === vehicle || unit.disabled || unit.inVehicle) continue;
           const distance = Math.hypot(unit.position.x - vehicle.position.x, unit.position.y - vehicle.position.y);
           const amount = blastDamage(damage, distance, blastRadius);
-          if (amount === 0) continue;
+          if (amount === 0 || !hasLineOfSight(grid, vehicle.position, unit.position)) continue;
           unit.health = Math.max(0, unit.health - amount);
           const down = unit.health === 0;
           if (down) {
