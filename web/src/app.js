@@ -76,6 +76,7 @@ import {
   canBuy,
   campaignEnding,
   captureItems,
+  persuadedBonus,
   discoverItems,
   earnAchievement,
   INTEL_LABELS,
@@ -152,6 +153,7 @@ import {
   dropItem,
   findLoot,
   freeSlots,
+  pickLooter,
   makeDrop,
   inLootReach,
   lootBody,
@@ -3229,6 +3231,9 @@ function showOutcome(outcome) {
         ]
       : []),
     ...(state.opStats.discovered?.length > 0 ? [["Discovered", state.opStats.discovered.join(", ")]] : []),
+    ...(state.opStats.persuadedPaid?.amount > 0
+      ? [["Persuaded bonus", `${state.opStats.persuadedPaid.amount} funds for ${state.opStats.persuadedPaid.count} followers`]]
+      : []),
     ...(state.opStats.resupply > 0 ? [["Resupply bill", `${state.opStats.resupply} funds`]] : []),
     ["Funds", fundsChange(state.fundsAtStart ?? state.campaign.funds, state.campaign.funds)],
     ...(state.opStats.civiliansHarmed + state.opStats.policeHarmed > 0
@@ -3332,6 +3337,9 @@ function settleRoster() {
   state.opStats.lost = state.campaign.permadeath ? fallen.map(nameOf) : [];
   state.campaign = loseOperatives(state.campaign, fallen);
   state.opStats.recruited = [];
+  const bonus = persuadedBonus(state.units);
+  state.opStats.persuadedPaid = bonus;
+  if (bonus.amount > 0) state.campaign = { ...state.campaign, funds: state.campaign.funds + bonus.amount };
   const captives = state.units.filter(
     (unit) => unit.persuaded && !unit.disabled && unit.side === "opposition" && unit.definition.role === "enemy-agent",
   );
@@ -3847,16 +3855,12 @@ function lootAction() {
   else setStatus("There is nothing to pick up. Gear lies where an armed person falls.");
 }
 
-// Send the nearest selected operator to a body; they loot it on arrival.
+// Send the selected operator with the fewest items to a body; they loot it on arrival.
 function goLoot(body, queue = false) {
   const squad = selectedOperators();
   if (squad.length === 0) return;
-  const nearest = squad.reduce((best, unit) =>
-    Math.hypot(unit.position.x - body.position.x, unit.position.y - body.position.y) <
-    Math.hypot(best.position.x - body.position.x, best.position.y - body.position.y)
-      ? unit
-      : best,
-  );
+  // The one with the fewest items collects it, not just whoever is closest.
+  const nearest = pickLooter(squad, body) ?? squad[0];
   if (queue && isBusy(nearest)) {
     queueAction(nearest, { type: "loot", id: body.id }, `pick up the ${body.definition.name}`);
     return;

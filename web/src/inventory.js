@@ -119,7 +119,19 @@ export function lootBody(operator, body, capacity = SLOTS_PER_OPERATIVE) {
   return { taken, left: body.equipment.length };
 }
 
-// The nearest lootable body within reach of any of the given operators.
+// Who should collect gear when several operators could: the one with the fewest items (the most room), then the nearest.
+export function pickLooter(operators, body) {
+  let best = null;
+  for (const operator of operators) {
+    if (operator.disabled) continue;
+    const items = operator.equipment?.length ?? 0;
+    const distance = distanceBetween(operator, body);
+    if (!best || items < best.items || (items === best.items && distance < best.distance)) best = { operator, items, distance };
+  }
+  return best?.operator ?? null;
+}
+
+// The lootable body nearest to an operator within reach, with the operator best placed to take it (see pickLooter).
 export function findLoot(operators, units) {
   let best = null;
   for (const operator of operators) {
@@ -130,6 +142,7 @@ export function findLoot(operators, units) {
       if (!best || distance < best.distance) best = { operator, body, distance };
     }
   }
+  if (best) best.operator = pickLooter(operators.filter((operator) => inLootReach(operator, best.body)), best.body);
   return best;
 }
 

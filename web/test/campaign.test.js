@@ -550,3 +550,19 @@ test("a repair kit that restores to full says so, and one with a fixed amount sh
   const small = { action: "restore-vitality", effect: { restoreVitality: 30 }, charges: 1, price: 10, weight: 2 };
   assert.ok(describeStats(small).includes("Restores 30"));
 });
+
+test("each persuaded person still following the squad pays a bonus when an operation is won; recruits and the fallen do not", async () => {
+  const { persuadedBonus, PERSUADED_BONUS } = await import("../src/campaign.js");
+  const person = (side, role, extra = {}) => ({ side, persuaded: true, definition: { role }, ...extra });
+  const units = [
+    person("civilian", "civilian"),
+    person("opposition", "guard"),
+    person("police", "police"),
+    person("opposition", "enemy-agent"),
+    person("civilian", "civilian", { disabled: true }),
+    { side: "civilian", persuaded: false, definition: { role: "civilian" } },
+    { side: "team", persuaded: false, definition: { role: "operator" } },
+  ];
+  assert.deepEqual(persuadedBonus(units), { count: 3, amount: 3 * PERSUADED_BONUS });
+  assert.deepEqual(persuadedBonus([]), { count: 0, amount: 0 });
+});

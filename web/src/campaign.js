@@ -269,6 +269,17 @@ export function penalise(campaign, amount) {
   return { ...campaign, funds: Math.max(0, campaign.funds - Math.max(0, amount)) };
 }
 
+// FreeSynd left a note to pay for every persuaded person who is not an agent (it never did). We pay a little for each one
+// still following the squad when an operation is won: enemy agents are recruited instead.
+export const PERSUADED_BONUS = 15;
+
+export function persuadedBonus(units) {
+  const count = units.filter(
+    (unit) => unit.persuaded && !unit.disabled && !unit.escaped && unit.side !== "team" && unit.definition?.role !== "enemy-agent",
+  ).length;
+  return { count, amount: count * PERSUADED_BONUS };
+}
+
 // An achievement pays its reward once, ever.
 export function earnAchievement(campaign, achievement) {
   if (campaign.achievements.includes(achievement.id)) return campaign;

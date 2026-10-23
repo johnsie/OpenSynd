@@ -374,7 +374,7 @@ export function drawBeacon(context, p, { x, y }, cellHeight, complete, time, pro
   }
 }
 
-// A road vehicle: body, cabin with dark windows, wheels, head and tail lights, and what makes its kind its own
+// A road vehicle: a curved hovering body, a glass canopy, head and tail lights, and what makes its kind its own
 // (a flashing light bar on a patrol car, a red cross on an ambulance, heavy plating on an armored car). It lies
 // along the way it is heading (snapped to a grid axis). Destroyed, it is a charred wreck that burns for a while.
 const VEHICLE_SHAPES = Object.freeze({
@@ -417,47 +417,94 @@ export function drawVehicle(context, p, vehicle, cellHeight, time, { controlled 
     context.stroke();
   }
 
-  const wheelHeight = cellHeight * 0.2;
+  // Hovering, streamlined and curved: the body is a rounded, tapering pill rising to a glass canopy, riding on a glow.
+  const hover = wrecked ? 0.04 : 0.16 + 0.015 * Math.sin(time / 380 + x * 3);
+  const wheelHeight = cellHeight * hover; // the height of the underside, which the markings below measure from
   const bodyTop = wheelHeight + cellHeight * shape.body;
-  // Wheels: four dark blocks at the corners.
-  for (const [sx, sy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
-    const wx = x + sx * (alongX ? halfX * 0.6 : halfX * 0.9);
-    const wy = y + sy * (alongX ? halfY * 0.9 : halfY * 0.6);
-    drawBox(context, p, wx, wy, 0.2, 0.2, 0, wheelHeight, "#14171a", "#262a2e");
+  const front = alongX ? Math.sign(state.heading.x || 1) : Math.sign(state.heading.y || 1);
+  // A ring of points around the body at `scale` of its size, from `shiftA` along its length (+1 is the nose).
+  const ring = (scaleA, scaleB, shiftA = 0) => {
+    const points = [];
+    for (let step = 0; step < 32; step += 1) {
+      const angle = (step / 32) * Math.PI * 2;
+      const c = Math.cos(angle);
+      const sn = Math.sin(angle);
+      const a = Math.sign(c) * Math.abs(c) ** 0.62; // a squarish oval: long flat sides, round ends
+      let b = Math.sign(sn) * Math.abs(sn) ** 0.62;
+      b *= 1 - 0.34 * Math.max(0, a) ** 1.6 - 0.08 * Math.max(0, -a); // narrower at the nose
+      const along = a * scaleA + shiftA;
+      const across = b * scaleB;
+      points.push({ x: x + (alongX ? along * front : across) * halfX, y: y + (alongX ? across : along * front) * halfY });
+    }
+    return points;
+  };
+  const tint = (colour, amount) => (colour.startsWith("#") ? shadeHex(colour, amount) : colour);
+  // A rounded band between two rings, drawn on the sides the camera sees (lit more on the south-west side).
+  const band = (low, lowZ, high, highZ, colour, glassy = false) => {
+    for (let index = 0; index < low.length; index += 1) {
+      const next = (index + 1) % low.length;
+      const dx = low[next].x - low[index].x;
+      const dy = low[next].y - low[index].y;
+      // The outward normal of this slice (rings run clockwise on the ground).
+      const normal = { x: dy, y: -dx };
+      if (normal.x + normal.y <= 0) continue;
+      const facing = (normal.y - normal.x) / (Math.hypot(normal.x, normal.y) || 1);
+      context.fillStyle = tint(colour, Math.round(facing * (glassy ? 14 : 26)));
+      polygon(context, [lift(p(high[index].x, high[index].y, 0), highZ), lift(p(high[next].x, high[next].y, 0), highZ),
+        lift(p(low[next].x, low[next].y, 0), lowZ), lift(p(low[index].x, low[index].y, 0), lowZ)]);
+      context.fill();
+    }
+  };
+  const cap = (points, z, colour) => {
+    context.fillStyle = colour;
+    polygon(context, points.map((point) => lift(p(point.x, point.y, 0), z)));
+    context.fill();
+  };
+  if (!wrecked) {
+    // The glow under the hull: the vehicle floats on it.
+    context.fillStyle = accentColor;
+    context.globalAlpha = 0.28 + 0.1 * Math.sin(time / 300 + x);
+    polygon(context, ring(1.08, 1.12).map((point) => lift(p(point.x, point.y, 0), 1)));
+    context.fill();
+    context.globalAlpha = 1;
   }
-  const { west, south, lift: up } = drawBox(context, p, x, y, halfX, halfY, wheelHeight, bodyTop, bodyColour, shadeHex(bodyColour, 22));
+  const hullLow = ring(0.96, 0.86);
+  const hullMid = ring(1, 1);
+  const hullTop = ring(0.93, 0.82);
+  const midZ = wheelHeight + cellHeight * shape.body * 0.55;
+  band(hullLow, wheelHeight, hullMid, midZ, shadeHex(bodyColour, -14));
+  band(hullMid, midZ, hullTop, bodyTop, bodyColour);
+  cap(hullTop, bodyTop, shadeHex(bodyColour, 22));
+  // The two ground points the markings below run between (the middle of the two visible sides).
+  const west = p(x - halfX * 0.78, y + halfY, 0);
+  const south = p(x + halfX * 0.78, y + halfY, 0);
+  const up = lift;
+  let cabinTop = bodyTop;
 
   if (!wrecked) {
-    // Cabin: shorter, set back, with dark glass on the two visible sides.
-    const inset = shape.cabinInset;
-    const cabinHalfX = alongX ? halfX * (1 - inset) : halfX * 0.86;
-    const cabinHalfY = alongX ? halfY * 0.86 : halfY * (1 - inset);
-    const cabinTop = bodyTop + cellHeight * shape.cabin;
-    const cabin = drawBox(context, p, x, y, cabinHalfX, cabinHalfY, bodyTop, cabinTop, shadeHex(bodyColour, -8), shadeHex(bodyColour, 30));
-    const glass = (from, to, z0, z1) => {
-      polygon(context, [
-        { x: from.x + (to.x - from.x) * 0.1, y: from.y - z1 + (to.y - from.y) * 0.1 },
-        { x: from.x + (to.x - from.x) * 0.9, y: from.y - z1 + (to.y - from.y) * 0.9 },
-        { x: from.x + (to.x - from.x) * 0.9, y: from.y - z0 + (to.y - from.y) * 0.9 },
-        { x: from.x + (to.x - from.x) * 0.1, y: from.y - z0 + (to.y - from.y) * 0.1 },
-      ]);
-      context.fill();
-    };
-    context.fillStyle = "#15232d";
-    const glassLow = bodyTop + cellHeight * 0.07;
-    const glassHigh = cabinTop - cellHeight * 0.06;
-    glass(cabin.west, cabin.south, glassLow, glassHigh);
-    context.fillStyle = "#101c25";
-    // The other visible face runs from south to east.
-    const cabinEast = p(x + cabinHalfX, y - cabinHalfY, 0);
-    glass(cabin.south, cabinEast, glassLow, glassHigh);
+    // A glass canopy set back from the nose, curving up from the roof line; a streak of light along it.
+    const canopyShift = -0.12 * shape.cabinInset * 2;
+    cabinTop = bodyTop + cellHeight * shape.cabin;
+    const canopyBase = ring(0.66 * (1 - shape.cabinInset * 0.2), 0.7, canopyShift);
+    const canopyTop = ring(0.4 * (1 - shape.cabinInset * 0.2), 0.42, canopyShift - 0.08);
+    band(canopyBase, bodyTop, canopyTop, cabinTop, "#17303f", true);
+    cap(canopyTop, cabinTop, "#2b5266");
+    context.strokeStyle = "rgba(190, 240, 255, .5)";
+    context.lineWidth = 1.2;
+    const glint = canopyTop.filter((_, index) => index % 4 === 0).slice(2, 5);
+    context.beginPath();
+    glint.forEach((point, index) => {
+      const at = lift(p(point.x, point.y, 0), cabinTop);
+      if (index === 0) context.moveTo(at.x, at.y);
+      else context.lineTo(at.x, at.y);
+    });
+    context.stroke();
 
     // Head and tail lights at the two ends.
-    const front = alongX ? Math.sign(state.heading.x || 1) : Math.sign(state.heading.y || 1);
-    const end = (sign) => (alongX ? [x + sign * halfX, y] : [x, y + sign * halfY]);
+    const end = (sign) => (alongX ? [x + sign * halfX * 0.97, y] : [x, y + sign * halfY * 0.97]);
     for (const [sign, colour] of [[front, "#ffeeb0"], [-front, "#ff4d5e"]]) {
       const [ex, ey] = end(sign);
-      for (const side of [-0.55, 0.55]) {
+      for (const side of [-0.4, 0.4]) {
         const at = p(alongX ? ex : ex + side * halfX, alongX ? ey + side * halfY : ey, wheelHeight + cellHeight * shape.body * 0.6);
         context.fillStyle = colour;
         context.globalAlpha = 0.9;

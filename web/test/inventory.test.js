@@ -244,3 +244,18 @@ test("nothing is dropped from an empty slot or by someone who is down", () => {
   assert.equal(dropItem({ ...unit, disabled: true }, 0, [], grassGrid), null);
   assert.equal(unit.equipment.length, 1);
 });
+
+test("with several operators selected, the one carrying the fewest items collects the gear", async () => {
+  const { pickLooter, findLoot } = await import("../src/inventory.js");
+  const at = (id, x, count, extra = {}) => ({
+    id, position: { x, y: 0 }, equipment: Array.from({ length: count }, () => item("z")), ...extra,
+  });
+  const loaded = at("near", 1, 5);
+  const light = at("far", 2, 1);
+  const down = at("down", 1.5, 0, { disabled: true });
+  const body = { kind: "drop", id: "d", position: { x: 1.2, y: 0 }, equipment: [item("a")] };
+  assert.equal(pickLooter([loaded, light, down], body).id, "far", "fewest items, not nearest; the fallen never");
+  assert.equal(pickLooter([at("a", 1, 2), at("b", 2, 2)], body).id, "a", "a tie goes to the nearer");
+  const found = findLoot([loaded, light], [body]);
+  assert.equal(found.operator.id, "far", "within reach of both: the lighter one takes it");
+});
