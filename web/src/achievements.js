@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 // In-game achievements. Each pays funds once per campaign. `stats` is the running
-// record of the current operation: watchersDisabled, watchersTotal,
+// record of the current operation: enemiesDisabled, enemiesTotal,
 // operatorsDisabled, objectivesCompleted, itemsLooted, spotted, seconds and
 // outcome ("active", "success" or "failure").
 export const ACHIEVEMENTS = Object.freeze([
@@ -15,23 +15,23 @@ export const ACHIEVEMENTS = Object.freeze([
   {
     id: "first-contact",
     name: "First contact",
-    description: "Disable a watcher.",
+    description: "Disable an enemy agent.",
     reward: 10,
-    earned: (stats) => stats.watchersDisabled >= 1,
+    earned: (stats) => stats.enemiesDisabled >= 1,
   },
   {
     id: "scavenger",
     name: "Scavenger",
-    description: "Loot a weapon from a disabled watcher.",
+    description: "Loot a weapon from a disabled enemy.",
     reward: 15,
     earned: (stats) => stats.itemsLooted >= 1,
   },
   {
     id: "clear-the-streets",
     name: "Clear the streets",
-    description: "Disable every watcher in one operation.",
+    description: "Disable every enemy agent in one operation.",
     reward: 40,
-    earned: (stats) => stats.watchersTotal > 0 && stats.watchersDisabled >= stats.watchersTotal,
+    earned: (stats) => stats.enemiesTotal > 0 && stats.enemiesDisabled >= stats.enemiesTotal,
   },
   {
     id: "whole-squad",
@@ -50,7 +50,7 @@ export const ACHIEVEMENTS = Object.freeze([
   {
     id: "ghost",
     name: "Ghost",
-    description: "Finish an operation without a watcher ever spotting you.",
+    description: "Finish an operation without an enemy agent ever spotting you.",
     reward: 50,
     earned: (stats) => stats.outcome === "success" && stats.spotted === 0,
   },
@@ -63,10 +63,10 @@ export const ACHIEVEMENTS = Object.freeze([
   },
 ]);
 
-export function newStats(watchersTotal) {
+export function newStats(enemiesTotal) {
   return {
-    watchersDisabled: 0,
-    watchersTotal,
+    enemiesDisabled: 0,
+    enemiesTotal,
     operatorsDisabled: 0,
     objectivesCompleted: 0,
     itemsLooted: 0,

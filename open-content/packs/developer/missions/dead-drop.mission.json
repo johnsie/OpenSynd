@@ -63,8 +63,8 @@
   ],
   "opponents": [
     {
-      "id": "watcher-one",
-      "unit": "units/security-watcher.unit.json",
+      "id": "enemy-agent-one",
+      "unit": "units/enemy-agent.unit.json",
       "position": {
         "x": 25,
         "y": 10
@@ -82,8 +82,8 @@
       ]
     },
     {
-      "id": "watcher-two",
-      "unit": "units/security-watcher.unit.json",
+      "id": "enemy-agent-two",
+      "unit": "units/enemy-agent.unit.json",
       "position": {
         "x": 25,
         "y": 58
@@ -101,8 +101,8 @@
       ]
     },
     {
-      "id": "watcher-three",
-      "unit": "units/security-watcher.unit.json",
+      "id": "enemy-agent-three",
+      "unit": "units/enemy-agent.unit.json",
       "position": {
         "x": 47,
         "y": 8
@@ -120,8 +120,8 @@
       ]
     },
     {
-      "id": "watcher-four",
-      "unit": "units/security-watcher.unit.json",
+      "id": "enemy-agent-four",
+      "unit": "units/enemy-agent.unit.json",
       "position": {
         "x": 40,
         "y": 47
@@ -139,8 +139,8 @@
       ]
     },
     {
-      "id": "watcher-five",
-      "unit": "units/security-watcher.unit.json",
+      "id": "enemy-agent-five",
+      "unit": "units/enemy-agent.unit.json",
       "position": {
         "x": 69,
         "y": 8
@@ -158,8 +158,8 @@
       ]
     },
     {
-      "id": "watcher-six",
-      "unit": "units/security-watcher.unit.json",
+      "id": "enemy-agent-six",
+      "unit": "units/enemy-agent.unit.json",
       "position": {
         "x": 69,
         "y": 52
@@ -177,8 +177,8 @@
       ]
     },
     {
-      "id": "watcher-seven",
-      "unit": "units/security-watcher.unit.json",
+      "id": "enemy-agent-seven",
+      "unit": "units/enemy-agent.unit.json",
       "position": {
         "x": 69,
         "y": 78
@@ -196,8 +196,8 @@
       ]
     },
     {
-      "id": "watcher-eight",
-      "unit": "units/security-watcher.unit.json",
+      "id": "enemy-agent-eight",
+      "unit": "units/enemy-agent.unit.json",
       "position": {
         "x": 91,
         "y": 10
@@ -215,8 +215,8 @@
       ]
     },
     {
-      "id": "watcher-nine",
-      "unit": "units/security-watcher.unit.json",
+      "id": "enemy-agent-nine",
+      "unit": "units/enemy-agent.unit.json",
       "position": {
         "x": 91,
         "y": 58
@@ -234,8 +234,8 @@
       ]
     },
     {
-      "id": "watcher-ten",
-      "unit": "units/security-watcher.unit.json",
+      "id": "enemy-agent-ten",
+      "unit": "units/enemy-agent.unit.json",
       "position": {
         "x": 12,
         "y": 69
@@ -253,8 +253,8 @@
       ]
     },
     {
-      "id": "watcher-eleven",
-      "unit": "units/security-watcher.unit.json",
+      "id": "enemy-agent-eleven",
+      "unit": "units/enemy-agent.unit.json",
       "position": {
         "x": 30,
         "y": 91
@@ -272,8 +272,8 @@
       ]
     },
     {
-      "id": "watcher-twelve",
-      "unit": "units/security-watcher.unit.json",
+      "id": "enemy-agent-twelve",
+      "unit": "units/enemy-agent.unit.json",
       "position": {
         "x": 12,
         "y": 25
@@ -313,7 +313,7 @@
     },
     {
       "id": "vault-guard",
-      "unit": "units/security-watcher.unit.json",
+      "unit": "units/enemy-agent.unit.json",
       "position": {
         "x": 69,
         "y": 62
@@ -327,6 +327,82 @@
         {
           "x": 69,
           "y": 76
+        }
+      ]
+    },
+    {
+      "id": "guard-1",
+      "unit": "units/guard.unit.json",
+      "position": {
+        "x": 52,
+        "y": 92
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 52,
+          "y": 92
+        },
+        {
+          "x": 64,
+          "y": 92
+        }
+      ]
+    },
+    {
+      "id": "guard-2",
+      "unit": "units/guard.unit.json",
+      "position": {
+        "x": 47,
+        "y": 59
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 47,
+          "y": 59
+        },
+        {
+          "x": 47,
+          "y": 70
+        }
+      ]
+    },
+    {
+      "id": "guard-3",
+      "unit": "units/guard.unit.json",
+      "position": {
+        "x": 48,
+        "y": 17
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 48,
+          "y": 17
+        },
+        {
+          "x": 48,
+          "y": 31
+        }
+      ]
+    },
+    {
+      "id": "guard-4",
+      "unit": "units/guard.unit.json",
+      "position": {
+        "x": 69,
+        "y": 38
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 69,
+          "y": 38
+        },
+        {
+          "x": 69,
+          "y": 46
         }
       ]
     }
@@ -705,6 +781,82 @@
         {
           "x": 38,
           "y": 26
+        }
+      ]
+    },
+    {
+      "id": "criminal-1",
+      "unit": "units/criminal.unit.json",
+      "position": {
+        "x": 17,
+        "y": 47
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 17,
+          "y": 47
+        },
+        {
+          "x": 25,
+          "y": 47
+        }
+      ]
+    },
+    {
+      "id": "criminal-2",
+      "unit": "units/criminal.unit.json",
+      "position": {
+        "x": 31,
+        "y": 91
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 31,
+          "y": 91
+        },
+        {
+          "x": 43,
+          "y": 91
+        }
+      ]
+    },
+    {
+      "id": "criminal-3",
+      "unit": "units/criminal.unit.json",
+      "position": {
+        "x": 91,
+        "y": 45
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 91,
+          "y": 45
+        },
+        {
+          "x": 91,
+          "y": 53
+        }
+      ]
+    },
+    {
+      "id": "criminal-4",
+      "unit": "units/criminal.unit.json",
+      "position": {
+        "x": 92,
+        "y": 59
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 92,
+          "y": 59
+        },
+        {
+          "x": 92,
+          "y": 68
         }
       ]
     }

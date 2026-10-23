@@ -513,6 +513,158 @@
           "seconds": 0.66
         }
       ]
+    },
+    "guard-1": {
+      "file": "guard-1.png",
+      "frameSize": 128,
+      "directions": 8,
+      "animations": [
+        {
+          "name": "idle",
+          "row": 0,
+          "frames": 4,
+          "seconds": 2
+        },
+        {
+          "name": "walk",
+          "row": 8,
+          "frames": 8,
+          "seconds": 0.66
+        }
+      ]
+    },
+    "guard-2": {
+      "file": "guard-2.png",
+      "frameSize": 128,
+      "directions": 8,
+      "animations": [
+        {
+          "name": "idle",
+          "row": 0,
+          "frames": 4,
+          "seconds": 2
+        },
+        {
+          "name": "walk",
+          "row": 8,
+          "frames": 8,
+          "seconds": 0.66
+        }
+      ]
+    },
+    "criminal-1": {
+      "file": "criminal-1.png",
+      "frameSize": 128,
+      "directions": 8,
+      "animations": [
+        {
+          "name": "idle",
+          "row": 0,
+          "frames": 4,
+          "seconds": 2
+        },
+        {
+          "name": "walk",
+          "row": 8,
+          "frames": 8,
+          "seconds": 0.66
+        }
+      ]
+    },
+    "criminal-2": {
+      "file": "criminal-2.png",
+      "frameSize": 128,
+      "directions": 8,
+      "animations": [
+        {
+          "name": "idle",
+          "row": 0,
+          "frames": 4,
+          "seconds": 2
+        },
+        {
+          "name": "walk",
+          "row": 8,
+          "frames": 8,
+          "seconds": 0.66
+        }
+      ]
+    },
+    "guard-1-pulse": {
+      "file": "guard-1-pulse.png",
+      "frameSize": 128,
+      "directions": 8,
+      "animations": [
+        {
+          "name": "idle",
+          "row": 0,
+          "frames": 4,
+          "seconds": 2
+        },
+        {
+          "name": "walk",
+          "row": 8,
+          "frames": 8,
+          "seconds": 0.66
+        }
+      ]
+    },
+    "guard-2-pulse": {
+      "file": "guard-2-pulse.png",
+      "frameSize": 128,
+      "directions": 8,
+      "animations": [
+        {
+          "name": "idle",
+          "row": 0,
+          "frames": 4,
+          "seconds": 2
+        },
+        {
+          "name": "walk",
+          "row": 8,
+          "frames": 8,
+          "seconds": 0.66
+        }
+      ]
+    },
+    "criminal-1-pulse": {
+      "file": "criminal-1-pulse.png",
+      "frameSize": 128,
+      "directions": 8,
+      "animations": [
+        {
+          "name": "idle",
+          "row": 0,
+          "frames": 4,
+          "seconds": 2
+        },
+        {
+          "name": "walk",
+          "row": 8,
+          "frames": 8,
+          "seconds": 0.66
+        }
+      ]
+    },
+    "criminal-2-pulse": {
+      "file": "criminal-2-pulse.png",
+      "frameSize": 128,
+      "directions": 8,
+      "animations": [
+        {
+          "name": "idle",
+          "row": 0,
+          "frames": 4,
+          "seconds": 2
+        },
+        {
+          "name": "walk",
+          "row": 8,
+          "frames": 8,
+          "seconds": 0.66
+        }
+      ]
     }
   }
 }

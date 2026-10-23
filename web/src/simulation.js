@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 import { findPath } from "./engine.js";
+import { LOOT_RANGE, lootBody, lootableBody } from "./inventory.js";
 import { cooldownMultiplier, effectiveLevels, nextFocus, nextStamina, speedMultiplier } from "./stats.js";
 
 export const FIXED_STEP_SECONDS = 1 / 30;
@@ -163,9 +164,24 @@ export function stealthFactor(unit) {
 // gates and water are see-through. Anything off the map blocks.
 const SEE_THROUGH_SURFACES = new Set(["service-fence", "runoff-channel"]);
 export const SIGHT_STEP = 0.25;
-export const PANIC_SECONDS = 6;
-export const PANIC_RADIUS = 10;
-const PANIC_SPEED_FACTOR = 1.6;
+// Street-life behaviour, mapped from FreeSynd's behaviour components (see ROADMAP.md) and scaled to this
+// game's tiles. Civilians scout for anyone with a weapon out and run from them; police go on alert when
+// anyone draws a weapon, warn, then shoot any armed non-police unit until its weapon is put away;
+// enemy agents and guards go for the squad after a short reaction time.
+export const CIVILIAN_SCOUT = 6;
+export const CIVILIAN_RUN = 2.6;
+const CIVILIAN_SCOUT_PERIOD = 0.5;
+const CIVILIAN_RUN_FACTOR = 1.8;
+export const POLICE_SCOUT = 8;
+const POLICE_SCOUT_PERIOD = 0.2;
+export const POLICE_WARNING = 0.8;
+export const POLICE_PENDING = 1.5;
+// How long an enemy waits, after it first sees the squad, before it opens fire.
+export const REACTION_SECONDS = Object.freeze({ "enemy-agent": 0.4, guard: 0.3, criminal: 0.4 });
+// Followers hunt for a dropped weapon this far away when their owner has one out.
+export const FOLLOWER_WEAPON_SEARCH = 3;
+// A retaliating criminal gives up on someone who gets this far away.
+const CRIMINAL_GIVE_UP = 30;
 // A chasing watcher keeps hold of a quarry this close even round a corner.
 export const LOST_TRACK_CLOSE = 4;
 
@@ -217,119 +233,290 @@ function nearestVisibleOperator(unit, units, sight, grid = null, accept = null) 
   return best;
 }
 
+/** Whether a unit has its weapon out: what civilians run from and police react to. */
+export function armedOut(unit, now, byId = null) {
+  if (unit.disabled || now === null || now === undefined) return false;
+  if (unit.side === "team") return gunOut(unit, now);
+  if (unit.persuaded) {
+    const owner = byId?.get(unit.persuadedBy);
+    return Boolean(owner && gunOut(owner, now) && pulseItems(unit).some(loaded));
+  }
+  if (unit.side === "civilian") return false;
+  return Boolean(unit.alertedBy || unit.targetId);
+}
+
+// A unit walks its patrol route (or back to it after a chase, along real streets).
+function walkPatrol(unit, deltaSeconds, grid) {
+  if (!unit.patrol || unit.patrol.route.length === 0) return;
+  if (unit.path.length > 0) {
+    followPath(unit, deltaSeconds, PATROL_SPEED_FACTOR);
+    return;
+  }
+  const { route } = unit.patrol;
+  const waypoint = route[unit.patrol.index % route.length];
+  // Far from the route after a chase: walk back along real streets.
+  if (grid && distanceBetween(unit, { position: waypoint }) > 1.5) {
+    unit.path = findPath(grid, tileOf(unit.position), waypoint);
+    if (unit.path.length > 0) {
+      followPath(unit, deltaSeconds, PATROL_SPEED_FACTOR);
+      return;
+    }
+  }
+  let remaining = deltaSeconds * unit.definition.stats.speed * 0.7 * PATROL_SPEED_FACTOR;
+  while (remaining > 0) {
+    const destination = route[unit.patrol.index % route.length];
+    const offsetX = destination.x - unit.position.x;
+    const offsetY = destination.y - unit.position.y;
+    const distance = Math.hypot(offsetX, offsetY);
+    if (distance <= remaining + ARRIVAL_EPSILON) {
+      unit.position = { ...destination };
+      unit.patrol.index = (unit.patrol.index + 1) % route.length;
+      remaining = Math.max(0, remaining - distance);
+    } else {
+      unit.position = {
+        x: unit.position.x + (offsetX / distance) * remaining,
+        y: unit.position.y + (offsetY / distance) * remaining,
+      };
+      remaining = 0;
+    }
+  }
+}
+
+// Set off along the furthest reachable tile away from `from` (trying a few angles); returns whether it could.
+function runAwayFrom(unit, from, grid, reaches) {
+  const away = { x: unit.position.x - from.x, y: unit.position.y - from.y };
+  const base = Math.hypot(away.x, away.y) < 0.01 ? 0 : Math.atan2(away.y, away.x);
+  for (const reach of reaches) {
+    for (const turn of [0, 0.6, -0.6, 1.2, -1.2]) {
+      const angle = base + turn;
+      const goal = tileOf({
+        x: unit.position.x + Math.cos(angle) * reach,
+        y: unit.position.y + Math.sin(angle) * reach,
+      });
+      if (!grid[goal.y]?.[goal.x]?.walkable) continue;
+      const path = findPath(grid, tileOf(unit.position), goal);
+      if (path.length > 0) {
+        unit.path = path;
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+function nearestOf(unit, candidates, within, grid = null, needSight = false) {
+  let best = null;
+  let bestDistance = within;
+  for (const other of candidates) {
+    const distance = distanceBetween(unit, other);
+    if (distance > bestDistance) continue;
+    if (needSight && !hasLineOfSight(grid, unit.position, other.position)) continue;
+    best = other;
+    bestDistance = distance;
+  }
+  return best;
+}
+
+// Civilians (FreeSynd's panic behaviour): every half second look for anyone with a weapon out nearby;
+// if there is one, run the other way for a short stretch, then look again. Persuaded civilians do not panic.
+function advanceCivilian(unit, armed, deltaSeconds, grid) {
+  const panic = (unit.panic ??= { fleeing: false, scoutLeft: 0 });
+  if (panic.fleeing && unit.path.length > 0) {
+    followPath(unit, deltaSeconds, CIVILIAN_RUN_FACTOR);
+    return;
+  }
+  panic.scoutLeft -= deltaSeconds;
+  if (grid && panic.scoutLeft <= 0) {
+    panic.scoutLeft = CIVILIAN_SCOUT_PERIOD;
+    const threat = nearestOf(unit, armed, CIVILIAN_SCOUT);
+    panic.fleeing = Boolean(threat) && runAwayFrom(unit, threat.position, grid, [CIVILIAN_RUN, CIVILIAN_RUN / 2]);
+    if (panic.fleeing) {
+      followPath(unit, deltaSeconds, CIVILIAN_RUN_FACTOR);
+      return;
+    }
+  }
+  panic.fleeing = false;
+  walkPatrol(unit, deltaSeconds, grid);
+}
+
+// Police (FreeSynd's police behaviour): on patrol until anyone draws a weapon; then alert, scouting
+// every fifth of a second for an armed non-police unit nearby; warn it and wait; follow it and shoot;
+// when it puts its weapon away wait a moment, then look for another target or go back on patrol.
+function advancePolice(unit, units, armed, deltaSeconds, grid, events) {
+  const police = (unit.police ??= { status: "patrol", scoutLeft: 0, warnLeft: 0, pendingLeft: 0, targetId: null });
+  const targets = armed.filter((other) => other.side !== "police" && other !== unit);
+  const engage = (target) => {
+    police.status = "warn";
+    police.warnLeft = POLICE_WARNING;
+    police.targetId = target.id;
+    unit.path = [];
+    if (!unit.alertedBy && target.side === "team") events.push({ type: "spotted", unitId: unit.id, targetId: target.id });
+    unit.alertedBy = target.id;
+  };
+  const stand = () => {
+    unit.path = [];
+    unit.targetId = null;
+  };
+
+  if (police.status === "patrol") {
+    if (targets.length === 0) {
+      walkPatrol(unit, deltaSeconds, grid);
+      return;
+    }
+    police.status = "alert";
+  }
+  if (police.status === "alert") {
+    police.scoutLeft -= deltaSeconds;
+    if (police.scoutLeft <= 0) {
+      police.scoutLeft = POLICE_SCOUT_PERIOD;
+      const target = nearestOf(unit, targets, POLICE_SCOUT, grid, true);
+      if (target) {
+        engage(target);
+        return;
+      }
+    }
+    if (targets.length === 0) police.status = "patrol";
+    walkPatrol(unit, deltaSeconds, grid);
+    return;
+  }
+  if (police.status === "warn") {
+    stand();
+    police.warnLeft -= deltaSeconds;
+    if (police.warnLeft <= 0) police.status = "engage";
+    return;
+  }
+  if (police.status === "engage") {
+    const target = units.find((other) => other.id === police.targetId);
+    if (!target || target.disabled || !targets.includes(target)) {
+      police.status = "pending";
+      police.pendingLeft = POLICE_PENDING;
+      unit.alertedBy = null;
+      stand();
+      return;
+    }
+    const reach = combatStats(unit).range * STOP_RANGE_FACTOR;
+    if (distanceBetween(unit, target) <= reach && hasLineOfSight(grid, unit.position, target.position)) {
+      unit.path = [];
+      unit.targetId = target.id;
+      return;
+    }
+    unit.targetId = null;
+    const goal = tileOf(target.position);
+    const end = unit.path.at(-1);
+    if (grid && (!end || Math.abs(end.x - goal.x) + Math.abs(end.y - goal.y) > 1)) {
+      unit.path = findPath(grid, tileOf(unit.position), goal);
+    }
+    followPath(unit, deltaSeconds, CHASE_SPEED_FACTOR);
+    return;
+  }
+  // pending: the target put its weapon away; wait, then re-engage or go back to patrol.
+  stand();
+  police.pendingLeft -= deltaSeconds;
+  if (police.pendingLeft > 0) return;
+  const next = nearestOf(unit, targets, POLICE_SCOUT, grid, true);
+  if (next) {
+    engage(next);
+    return;
+  }
+  police.status = targets.length > 0 ? "alert" : "patrol";
+  unit.alertedBy = null;
+}
+
+// Enemy agents, guards and criminals who have been attacked (FreeSynd's "player hostile" behaviour):
+// spot someone, wait the reaction time, chase and shoot, and drop back to patrol when the quarry is gone.
+function advanceHostile(unit, units, byId, deltaSeconds, grid, now, events) {
+  const role = unit.definition.role;
+  if (unit.side === "criminal" && !unit.hostileTo) {
+    walkPatrol(unit, deltaSeconds, grid);
+    return;
+  }
+  if (unit.targetId !== null) {
+    const target = byId.get(unit.targetId);
+    const engaged =
+      target &&
+      !target.disabled &&
+      distanceBetween(unit, target) <= combatStats(unit).range &&
+      hasLineOfSight(grid, unit.position, target.position);
+    if (engaged) {
+      unit.path = [];
+      unit.alertedBy ??= unit.targetId;
+      return;
+    }
+    unit.targetId = null;
+  }
+
+  const stopRange = combatStats(unit).range * STOP_RANGE_FACTOR;
+  const called = units.some(
+    (other) =>
+      other !== unit &&
+      other.side === "opposition" &&
+      !other.disabled &&
+      other.alertedBy &&
+      distanceBetween(unit, other) <= CALL_RADIUS,
+  );
+  const sight = unit.definition.stats.awareness * SIGHT_TILES_PER_AWARENESS * (called ? CALL_SIGHT_FACTOR : 1);
+  let seen = null;
+  if (grid) {
+    if (unit.side === "criminal") {
+      const attacker = byId.get(unit.hostileTo);
+      const close = attacker && !attacker.disabled && distanceBetween(unit, attacker) <= CRIMINAL_GIVE_UP;
+      if (close) seen = attacker;
+      else unit.hostileTo = null;
+    } else {
+      seen = nearestVisibleOperator(unit, units, unit.alertedBy ? sight * LOSE_SIGHT_FACTOR : sight, grid);
+    }
+  }
+
+  if (seen) {
+    if (!unit.alertedBy) {
+      events.push({ type: "spotted", unitId: unit.id, targetId: seen.id });
+      unit.reactLeft = REACTION_SECONDS[role] ?? 0.4;
+    }
+    unit.alertedBy = seen.id;
+    if ((unit.reactLeft ?? 0) > 0) {
+      unit.path = []; // taken a moment to react before moving or firing
+      return;
+    }
+    if (distanceBetween(unit, seen) <= stopRange) {
+      unit.path = [];
+      return;
+    }
+    const goal = tileOf(seen.position);
+    const end = unit.path.at(-1);
+    if (!end || Math.abs(end.x - goal.x) + Math.abs(end.y - goal.y) > 1) {
+      unit.path = findPath(grid, tileOf(unit.position), goal);
+    }
+    followPath(unit, deltaSeconds, CHASE_SPEED_FACTOR);
+    return;
+  }
+  unit.alertedBy = null;
+  walkPatrol(unit, deltaSeconds, grid);
+}
+
 /**
- * Move opposition units. A watcher holds position while it has a target in
- * pulse range; otherwise it chases the nearest operator within sight (slower
- * than operators can run), returns to its patrol route when it loses them, and
- * walks the route otherwise. With a `grid` it paths around obstacles; without
- * one it only follows its route. Returns "spotted" events when a watcher first
- * notices an operator.
+ * Move everyone who is not on the squad. Civilians wander and run from anyone with a weapon out; police
+ * patrol and deal with armed people; enemy agents and guards chase the squad; criminals wander until
+ * they are attacked; persuaded units follow their owner. With a `grid` they path around obstacles;
+ * `now` is the game clock (police and civilians need it to tell who has a weapon out). Returns
+ * "spotted" events when an enemy first notices an operator, and "pickup" events when a follower
+ * takes a weapon.
  */
 export function advancePatrols(units, deltaSeconds, grid = null, now = null) {
   const events = [];
   const byId = new Map(units.map((unit) => [unit.id, unit]));
+  const armed = now === null ? [] : units.filter((unit) => armedOut(unit, now, byId));
   for (const unit of units) {
     if (unit.side === "team" || unit.disabled) continue;
     if (unit.persuaded) {
-      if (grid) followAgent(unit, byId.get(unit.persuadedBy), grid, deltaSeconds);
+      if (grid) advanceFollower(unit, byId, units, grid, deltaSeconds, now, events);
       continue;
     }
     const hasRoute = unit.patrol && unit.patrol.route.length > 0;
     if (!hasRoute && !grid) continue;
-
-    if (unit.targetId !== null) {
-      const target = byId.get(unit.targetId);
-      const engaged =
-        target &&
-        !target.disabled &&
-        distanceBetween(unit, target) <= combatStats(unit).range &&
-        hasLineOfSight(grid, unit.position, target.position) &&
-        (unit.side !== "police" || gunOut(target, now));
-      if (engaged) {
-        unit.path = [];
-        continue;
-      }
-      unit.targetId = null;
-    }
-
-    const stopRange = combatStats(unit).range * STOP_RANGE_FACTOR;
-    const called = units.some(
-      (other) =>
-        other !== unit &&
-        other.side === "opposition" &&
-        !other.disabled &&
-        other.alertedBy &&
-        distanceBetween(unit, other) <= CALL_RADIUS,
-    );
-    const sight = unit.definition.stats.awareness * SIGHT_TILES_PER_AWARENESS * (called ? CALL_SIGHT_FACTOR : 1);
-    // Civilians notice nothing; police only notice operators who have a weapon out.
-    const watching = grid && unit.side !== "civilian";
-    const seen = watching
-      ? nearestVisibleOperator(
-          unit,
-          units,
-          unit.alertedBy ? sight * LOSE_SIGHT_FACTOR : sight,
-          grid,
-          unit.side === "police" ? (candidate) => gunOut(candidate, now) : null,
-        )
-      : null;
-
-    if (unit.side === "civilian" && now !== null && now < (unit.panicUntil ?? 0) && unit.path.length > 0) {
-      followPath(unit, deltaSeconds, PANIC_SPEED_FACTOR);
-      continue;
-    }
-
-    if (seen) {
-      if (!unit.alertedBy) events.push({ type: "spotted", unitId: unit.id, targetId: seen.id });
-      unit.alertedBy = seen.id;
-      if (distanceBetween(unit, seen) <= stopRange) {
-        unit.path = [];
-        continue;
-      }
-      const goal = tileOf(seen.position);
-      const end = unit.path.at(-1);
-      if (!end || Math.abs(end.x - goal.x) + Math.abs(end.y - goal.y) > 1) {
-        unit.path = findPath(grid, tileOf(unit.position), goal);
-      }
-      followPath(unit, deltaSeconds, CHASE_SPEED_FACTOR);
-      continue;
-    }
-    unit.alertedBy = null;
-
-    if (!hasRoute) continue;
-    if (unit.path.length > 0) {
-      followPath(unit, deltaSeconds, PATROL_SPEED_FACTOR);
-      continue;
-    }
-
-    const { route } = unit.patrol;
-    const waypoint = route[unit.patrol.index % route.length];
-    // Far from the route after a chase: walk back along real streets.
-    if (grid && distanceBetween(unit, { position: waypoint }) > 1.5) {
-      unit.path = findPath(grid, tileOf(unit.position), waypoint);
-      if (unit.path.length > 0) {
-        followPath(unit, deltaSeconds, PATROL_SPEED_FACTOR);
-        continue;
-      }
-    }
-    let remaining = deltaSeconds * unit.definition.stats.speed * 0.7 * PATROL_SPEED_FACTOR;
-    while (remaining > 0) {
-      const destination = route[unit.patrol.index % route.length];
-      const offsetX = destination.x - unit.position.x;
-      const offsetY = destination.y - unit.position.y;
-      const distance = Math.hypot(offsetX, offsetY);
-      if (distance <= remaining + ARRIVAL_EPSILON) {
-        unit.position = { ...destination };
-        unit.patrol.index = (unit.patrol.index + 1) % route.length;
-        remaining = Math.max(0, remaining - distance);
-      } else {
-        unit.position = {
-          x: unit.position.x + (offsetX / distance) * remaining,
-          y: unit.position.y + (offsetY / distance) * remaining,
-        };
-        remaining = 0;
-      }
-    }
+    unit.reactLeft = Math.max(0, (unit.reactLeft ?? 0) - deltaSeconds);
+    if (unit.side === "civilian") advanceCivilian(unit, armed, deltaSeconds, grid);
+    else if (unit.side === "police") advancePolice(unit, units, armed, deltaSeconds, grid, events);
+    else advanceHostile(unit, units, byId, deltaSeconds, grid, now, events);
   }
   return events;
 }
@@ -341,24 +528,27 @@ function distanceBetween(left, right) {
   );
 }
 
-// Who an armed unit may open fire on by itself. Opposition and alerted police shoot operators (police
-// only ones with a weapon out); a persuaded follower shoots whoever is hostile to the squad.
-function isHostileTo(attacker, candidate, now) {
+// Who an armed unit may open fire on by itself. Enemy agents and guards shoot the squad and anyone it has
+// persuaded; a criminal only the person who attacked it; a persuaded follower shoots whoever is hostile
+// to the squad. Police are handled by their own behaviour, which picks their target.
+function isHostileTo(attacker, candidate) {
   if (candidate.disabled || candidate === attacker) return false;
   if (attacker.persuaded) {
     if (candidate.persuaded) return false;
-    return candidate.side === "opposition" || (candidate.side === "police" && Boolean(candidate.alertedBy));
+    if (candidate.side === "opposition") return true;
+    return (candidate.side === "criminal" && Boolean(candidate.hostileTo)) || (candidate.side === "police" && Boolean(candidate.alertedBy));
   }
-  if (candidate.side !== "team") return false;
-  return attacker.side !== "police" || gunOut(candidate, now);
+  if (attacker.side === "criminal") return Boolean(attacker.hostileTo) && candidate.id === attacker.hostileTo;
+  if (attacker.side === "opposition") return candidate.side === "team" || Boolean(candidate.persuaded);
+  return false;
 }
 
-function automaticTarget(attacker, units, grid = null, now = null) {
+function automaticTarget(attacker, units, grid = null) {
   const stats = combatStats(attacker);
   return units
     .filter(
       (candidate) =>
-        isHostileTo(attacker, candidate, now) &&
+        isHostileTo(attacker, candidate) &&
         distanceBetween(attacker, candidate) <= stats.range &&
         hasLineOfSight(grid, attacker.position, candidate.position),
     )
@@ -460,12 +650,15 @@ export function advanceCombat(units, deltaSeconds, grid = null, now = null) {
       attacker.cooldownRemaining - deltaSeconds,
     );
 
+    // Who picks their own targets: enemies, criminals who were attacked, and armed followers (while their owner
+    // has a weapon out). Police have their targets chosen by their behaviour.
+    const owner = attacker.persuaded ? byId.get(attacker.persuadedBy) : null;
+    if (attacker.persuaded && !(owner && !owner.disabled && gunOut(owner, now))) attacker.targetId = null;
     const hostile =
-      (attacker.persuaded && combatStats(attacker).attack > 0) ||
-      (!attacker.persuaded && attacker.side === "opposition") ||
-      (!attacker.persuaded && attacker.side === "police" && attacker.alertedBy);
+      (attacker.persuaded && Boolean(owner) && gunOut(owner, now) && combatStats(attacker).attack > 0) ||
+      (!attacker.persuaded && (attacker.side === "opposition" || (attacker.side === "criminal" && attacker.hostileTo)));
     if (hostile && attacker.targetId === null) {
-      attacker.targetId = automaticTarget(attacker, units, grid, now)?.id ?? null;
+      attacker.targetId = automaticTarget(attacker, units, grid)?.id ?? null;
     }
 
     const target = byId.get(attacker.targetId);
@@ -479,6 +672,7 @@ export function advanceCombat(units, deltaSeconds, grid = null, now = null) {
       attacker.targetId = null; // a follower that cannot reach its target drops it and keeps up with its leader
       continue;
     }
+    if ((attacker.reactLeft ?? 0) > 0) continue; // still reacting
     if (!hasLineOfSight(grid, attacker.position, target.position)) continue;
     if (stats.range <= 0 || distance > stats.range || attacker.cooldownRemaining > ARRIVAL_EPSILON) continue;
     // Firing spends a round; the weapon that fires is the one that loses it.
@@ -499,6 +693,10 @@ function startCooldown(unit, stats) {
 
 // Apply a hit and report it; a unit reduced to zero health is disabled.
 function strike(attacker, target, weapon, stats, events) {
+  // A criminal who is attacked goes after whoever did it (a persuaded follower's owner, if it was a follower).
+  if (target.side === "criminal" && (attacker.side === "team" || attacker.persuaded)) {
+    target.hostileTo = attacker.persuaded ? attacker.persuadedBy : attacker.id;
+  }
   const blocked = (target.shieldLeft ?? 0) > 0;
   if (!blocked) target.health = Math.max(0, target.health - stats.attack);
   events.push({
@@ -618,38 +816,21 @@ export function consumeFixedSteps(clock, elapsedSeconds, step) {
 }
 
 /**
- * Gunfire at `source` sends civilians within PANIC_RADIUS running away from it for PANIC_SECONDS.
- * Each picks the furthest reachable tile in the direction away (trying a few angles), or stays
- * put, frightened, when boxed in. Returns how many started to flee.
+ * An explosion (or anything else sudden) at `source` sends civilians within CIVILIAN_SCOUT running away from it,
+ * as far as they can get (up to 14 tiles). Returns how many started to flee. Guns do not need this: civilians
+ * run from anyone with a weapon out (see advanceCivilian).
  */
-export function startPanic(units, source, grid, now) {
+export function startPanic(units, source, grid) {
   let fled = 0;
   for (const unit of units) {
     if (unit.side !== "civilian" || unit.disabled || unit.persuaded) continue;
-    const away = { x: unit.position.x - source.x, y: unit.position.y - source.y };
-    const distance = Math.hypot(away.x, away.y);
-    if (distance > PANIC_RADIUS) continue;
-    const base = distance < 0.01 ? 0 : Math.atan2(away.y, away.x);
-    unit.panicUntil = now + PANIC_SECONDS;
+    if (Math.hypot(unit.position.x - source.x, unit.position.y - source.y) > CIVILIAN_SCOUT * 1.5) continue;
+    const panic = (unit.panic ??= { fleeing: false, scoutLeft: 0 });
     unit.path = [];
-    for (const reach of [14, 9, 5]) {
-      let done = false;
-      for (const turn of [0, 0.6, -0.6, 1.2, -1.2]) {
-        const angle = base + turn;
-        const goal = tileOf({
-          x: unit.position.x + Math.cos(angle) * reach,
-          y: unit.position.y + Math.sin(angle) * reach,
-        });
-        if (!grid[goal.y]?.[goal.x]?.walkable) continue;
-        const path = findPath(grid, tileOf(unit.position), goal);
-        if (path.length > 0) {
-          unit.path = path;
-          fled += 1;
-          done = true;
-          break;
-        }
-      }
-      if (done) break;
+    if (runAwayFrom(unit, source, grid, [14, 9, 5])) {
+      panic.fleeing = true;
+      panic.scoutLeft = CIVILIAN_SCOUT_PERIOD;
+      fled += 1;
     }
   }
   return fled;
@@ -663,17 +844,30 @@ export function startPanic(units, source, grid, now) {
  */
 export const POLICE_NEEDS_CIVILIANS = 6;
 export const ENEMY_NEEDS_POLICE = 4;
-const KIND_BY_SIDE = { civilian: "civilian", police: "police", opposition: "opposition" };
+export const GUARD_NEEDS_CIVILIANS = 3;
+
+// What kind of person a unit is for persuading. Criminals and civilians are both "street people": either
+// kind persuaded counts toward what guards and police need.
+export function persuadeKind(unit) {
+  if (unit.side === "civilian") return "civilian";
+  if (unit.side === "criminal") return "criminal";
+  if (unit.side === "police") return "police";
+  if (unit.side === "opposition") return unit.definition?.role === "guard" ? "guard" : "opposition";
+  return null;
+}
 
 export function newPersuasions() {
-  return { civilian: 0, police: 0, opposition: 0 };
+  return { civilian: 0, police: 0, guard: 0, opposition: 0 };
 }
 
 /** Whether `agent` may persuade `target` now; otherwise what is still needed, if anything. */
 export function persuadeCheck(agent, target) {
-  const kind = KIND_BY_SIDE[target.side];
+  const kind = persuadeKind(target);
   if (!kind || target.disabled || target.persuaded) return { ok: false, kind: null };
-  const done = agent.persuasions ?? newPersuasions();
+  const done = { ...newPersuasions(), ...(agent.persuasions ?? {}) };
+  if (kind === "guard" && done.civilian < GUARD_NEEDS_CIVILIANS) {
+    return { ok: false, kind, needs: `${GUARD_NEEDS_CIVILIANS - done.civilian} more civilians` };
+  }
   if (kind === "police" && done.civilian < POLICE_NEEDS_CIVILIANS) {
     return { ok: false, kind, needs: `${POLICE_NEEDS_CIVILIANS - done.civilian} more civilians` };
   }
@@ -683,12 +877,35 @@ export function persuadeCheck(agent, target) {
   return { ok: true, kind };
 }
 
+// When an operator goes down, the people they persuaded follow another living operator, and take the
+// persuasion count with them (FreeSynd hands a fallen agent's persuaded to the next agent).
+function reassignFollowers(units, events) {
+  for (const unit of units) {
+    if (!unit.persuaded) continue;
+    const owner = units.find((other) => other.id === unit.persuadedBy);
+    if (owner && !owner.disabled) continue;
+    const heir = units.find((other) => other.side === "team" && !other.disabled);
+    if (!heir) continue;
+    unit.persuadedBy = heir.id;
+    events.push({ type: "reassigned", unitId: unit.id, agentId: heir.id });
+  }
+  for (const former of units) {
+    if (former.side !== "team" || !former.disabled || !former.persuasions) continue;
+    const heir = units.find((other) => other.side === "team" && !other.disabled);
+    if (!heir) continue;
+    heir.persuasions = { ...newPersuasions(), ...(heir.persuasions ?? {}) };
+    for (const [kind, count] of Object.entries(former.persuasions)) heir.persuasions[kind] = (heir.persuasions[kind] ?? 0) + count;
+    former.persuasions = newPersuasions();
+  }
+}
+
 function persuasionItem(unit) {
   return (unit.equipment ?? []).find((item) => item.definition.action === "persuade" && item.charges !== 0) ?? null;
 }
 
 export function advancePersuasion(units, deltaSeconds, grid = null) {
   const events = [];
+  reassignFollowers(units, events);
   for (const agent of units) {
     if (agent.side !== "team" || agent.disabled || !agent.persuading) continue;
     const item = persuasionItem(agent);
@@ -719,17 +936,21 @@ export function advancePersuasion(units, deltaSeconds, grid = null) {
       target.alertedBy = null;
       target.targetId = null;
       target.path = [];
-      target.panicUntil = 0;
+      target.panic = { fleeing: false, scoutLeft: 0 };
+      target.hostileTo = null;
+      target.police = null;
       if (item.charges !== null) item.charges -= 1;
       agent.persuadeCooldown = item.definition.effect.cooldown;
       agent.persuasions = { ...newPersuasions(), ...(agent.persuasions ?? {}) };
-      agent.persuasions[check.kind] += 1;
+      // Criminals count as civilians toward what guards and police need.
+      const counted = check.kind === "criminal" ? "civilian" : check.kind;
+      agent.persuasions[counted] += 1;
       events.push({
         type: "persuaded",
         agentId: agent.id,
         targetId: target.id,
         kind: check.kind,
-        count: agent.persuasions[check.kind],
+        count: agent.persuasions[counted],
         outOfCharges: item.charges === 0,
       });
       blocked = null;
@@ -745,13 +966,40 @@ export function advancePersuasion(units, deltaSeconds, grid = null) {
   return events;
 }
 
-// A follower keeps close to its persuader, walking real streets to do it.
+// A follower keeps close to its persuader, walking real streets to do it (FreeSynd's persuaded behaviour).
+// When its owner has a weapon out and it has none, it goes and takes one from a fallen enemy nearby.
 const FOLLOW_DISTANCE = 1.8;
 const FOLLOW_SPEED_FACTOR = 1.5;
-function followAgent(unit, agent, grid, deltaSeconds) {
+function advanceFollower(unit, byId, units, grid, deltaSeconds, now, events) {
+  const agent = byId.get(unit.persuadedBy);
   if (!agent || agent.disabled) {
     unit.path = [];
     return;
+  }
+  const wantsWeapon = gunOut(agent, now) && !pulseItems(unit).some(loaded);
+  if (wantsWeapon) {
+    unit.pickupCheck = (unit.pickupCheck ?? 0) - deltaSeconds;
+    if (!unit.pickupTarget && unit.pickupCheck <= 0) {
+      unit.pickupCheck = 1;
+      const body = nearestOf(unit, units.filter(lootableBody), FOLLOWER_WEAPON_SEARCH);
+      unit.pickupTarget = body?.id ?? null;
+    }
+    const body = unit.pickupTarget ? byId.get(unit.pickupTarget) : null;
+    if (body && lootableBody(body)) {
+      if (distanceBetween(unit, body) <= LOOT_RANGE) {
+        const { taken } = lootBody(unit, body);
+        unit.pickupTarget = null;
+        if (taken.length > 0) events.push({ type: "pickup", unitId: unit.id, items: taken.map((item) => item.definition.name) });
+      } else {
+        const end = unit.path.at(-1);
+        const goal = tileOf(body.position);
+        if (!end || Math.abs(end.x - goal.x) + Math.abs(end.y - goal.y) > 1) unit.path = findPath(grid, tileOf(unit.position), goal);
+        followPath(unit, deltaSeconds, FOLLOW_SPEED_FACTOR);
+        return;
+      }
+    } else {
+      unit.pickupTarget = null;
+    }
   }
   const distance = distanceBetween(unit, agent);
   if (distance <= FOLLOW_DISTANCE) {

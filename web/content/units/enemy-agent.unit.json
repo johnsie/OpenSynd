@@ -1,9 +1,9 @@
 {
   "formatVersion": 1,
-  "id": "developer.security-watcher",
-  "name": "Security Watcher",
+  "id": "developer.enemy-agent",
+  "name": "Enemy Agent",
   "license": "CC0-1.0",
-  "role": "security",
+  "role": "enemy-agent",
   "stats": {
     "vitality": 75,
     "speed": 4.2,

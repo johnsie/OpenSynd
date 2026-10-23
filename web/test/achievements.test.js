@@ -14,12 +14,12 @@ test("a fresh operation has earned nothing", () => {
 test("achievements unlock as the operation goes on and pay only once", () => {
   const stats = newStats(2);
   stats.objectivesCompleted = 1;
-  stats.watchersDisabled = 1;
+  stats.enemiesDisabled = 1;
   assert.deepEqual(ids(newlyEarned(stats, [])), ["first-signal", "first-contact"]);
   assert.deepEqual(ids(newlyEarned(stats, ["first-signal"])), ["first-contact"]);
 
   stats.itemsLooted = 1;
-  stats.watchersDisabled = 2;
+  stats.enemiesDisabled = 2;
   assert.deepEqual(
     ids(newlyEarned(stats, ["first-signal", "first-contact"])),
     ["scavenger", "clear-the-streets"],

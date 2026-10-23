@@ -22,11 +22,11 @@ const state = {
       path: [{ x: 2, y: 2 }],
       health: 88,
       cooldownRemaining: 0.25,
-      targetId: "watcher-one",
+      targetId: "enemy-agent-one",
       disabled: false,
     },
     {
-      id: "watcher-one",
+      id: "enemy-agent-one",
       position: { x: 4, y: 3 },
       path: [],
       health: 45,
@@ -43,18 +43,18 @@ const state = {
 
 const context = {
   missionId: "developer.restore-relay",
-  unitIds: ["operator-one", "watcher-one"],
+  unitIds: ["operator-one", "enemy-agent-one"],
   selectableUnitIds: ["operator-one"],
   objectiveIds: ["restore-west", "leave-yard"],
   bounds: { width: 8, height: 6 },
   isWalkable: (x, y) => !(x === 3 && y === 3),
   unitRules: {
     "operator-one": { side: "team", vitality: 100, cooldown: 0.75 },
-    "watcher-one": { side: "opposition", vitality: 45, cooldown: 1.2 },
+    "enemy-agent-one": { side: "opposition", vitality: 45, cooldown: 1.2 },
   },
   initialUnits: {
     "operator-one": { position: { x: 1, y: 2 } },
-    "watcher-one": { position: { x: 4, y: 3 } },
+    "enemy-agent-one": { position: { x: 4, y: 3 } },
   },
 };
 

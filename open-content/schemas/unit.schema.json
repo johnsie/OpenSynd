@@ -11,7 +11,7 @@
     "id": { "$ref": "#/$defs/id" },
     "name": { "type": "string", "minLength": 1, "maxLength": 80 },
     "license": { "enum": ["CC0-1.0", "CC-BY-4.0"] },
-    "role": { "enum": ["operator", "civilian", "police", "security", "drone"] },
+    "role": { "enum": ["operator", "enemy-agent", "guard", "civilian", "criminal", "police"] },
     "stats": {
       "type": "object",
       "additionalProperties": false,

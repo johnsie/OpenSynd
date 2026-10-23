@@ -245,7 +245,7 @@ function playOnce(world, tactics) {
     for (const event of advanceCombat(units, FIXED_STEP_SECONDS, grid)) {
       if (event.type === "disabled") {
         const down = units.find((unit) => unit.id === event.unitId);
-        if (down.side === "opposition") stats.watchersDisabled += 1;
+        if (down.side === "opposition") stats.enemiesDisabled += 1;
         else stats.operatorsDisabled += 1;
       }
     }
@@ -276,7 +276,7 @@ function playOnce(world, tactics) {
   stats.outcome = outcome === "timeout" ? "failure" : outcome;
   for (const achievement of newlyEarned(stats, earned)) earned.push(achievement.id);
   const funds = Math.floor(seconds * 0.1) + earned.reduce((sum, id) => sum + ACHIEVEMENTS.find((a) => a.id === id).reward, 0);
-  return { outcome, seconds, operatorsLost: stats.operatorsDisabled, watchersDown: stats.watchersDisabled, spotted: stats.spotted, funds };
+  return { outcome, seconds, operatorsLost: stats.operatorsDisabled, watchersDown: stats.enemiesDisabled, spotted: stats.spotted, funds };
 }
 
 function summarise(results) {
@@ -302,7 +302,7 @@ const policies = {
 };
 for (const file of pack.missions) {
   const world = await loadWorld(file);
-  console.log(`\n${world.mission.name}  (${world.mission.opponents.length} watchers, ${runs} runs per policy)`);
+  console.log(`\n${world.mission.name}  (${world.mission.opponents.length} enemies, ${runs} runs per policy)`);
   console.log("policy    win%  timeouts  min   lost  killed  spotted  funds");
   for (const [name, make] of Object.entries(policies)) {
     const random = generator(name.length * 1009 + file.length);

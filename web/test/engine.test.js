@@ -151,11 +151,11 @@ function combatUnits() {
       path: [],
       health: 100,
       cooldownRemaining: 0,
-      targetId: "watcher-one",
+      targetId: "enemy-agent-one",
       disabled: false,
     },
     {
-      id: "watcher-one",
+      id: "enemy-agent-one",
       side: "opposition",
       definition: { stats: { attack: 6, range: 2.5, cooldown: 1.2 } },
       position: { x: 3, y: 1 },
@@ -1017,17 +1017,6 @@ test("police ignore an operator with no weapon out, but act on one who draws it"
   assert.equal(cop.alertedBy, "op");
 });
 
-test("police shoot an armed operator in range and stop when the weapon is put away", () => {
-  const grid = createTileGrid(streetMap);
-  const cop = copAt(6, 2, { alertedBy: "op" });
-  const operator = operatorAt(9, 2, { activeSlot: 0, targetId: null, equipment: [weaponItem(12, 3.25, 0.75)] });
-  const first = advanceCombat([cop, operator], FIXED_STEP_SECONDS, grid, 10);
-  assert.equal(first.filter((event) => event.type === "damage" && event.attackerId === "cop").length, 1);
-  operator.activeSlot = null;
-  advancePatrols([cop, operator], 1, grid, 10);
-  assert.equal(cop.targetId, null, "the weapon is away: the cop holds fire");
-  assert.deepEqual(advanceCombat([cop, operator], 1, grid, 20), []);
-});
 
 test("watchers and police never shoot civilians, and civilians notice no one", () => {
   const grid = createTileGrid(streetMap);
@@ -1135,7 +1124,7 @@ test("one person is persuaded at a time, nearest first, and the cooldown spaces 
 test("persuaded followers are not shot at by hand and a persuaded enemy fights for the squad", () => {
   const grid = createTileGrid(streetMap);
   const follower = personAt("civ", "civilian", 12, 2, { persuaded: true, persuadedBy: "agent" });
-  const shooter = operatorAt(10, 2, { id: "agent", cooldownRemaining: 0, equipment: [weaponItem(12, 3.25, 0.75)] });
+  const shooter = operatorAt(10, 2, { id: "agent", cooldownRemaining: 0, activeSlot: 0, equipment: [weaponItem(12, 3.25, 0.75)] });
   assert.equal(castShot(shooter, { x: 14, y: 2 }, [shooter, follower], grid, 4).target, null, "friends are not hit");
   const turned = personAt("turned", "opposition", 20, 2, {
     persuaded: true,

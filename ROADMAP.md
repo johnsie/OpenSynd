@@ -601,6 +601,26 @@ through everything along their line), the Longshot Rifle (15 tiles of reach), th
 (two uses of eight seconds in which every bullet aimed at the wearer is stopped; blasts still
 hurt). Weapon names are original, not real product names, to keep the content legally clean.
 
+**People and behaviours, mapped from FreeSynd.** The cast follows FreeSynd's ped types (Agent, Civilian,
+Police, Guard, Criminal), with what FreeSynd calls "enemy agents" as our former watchers:
+
+| Type | Side | Speed (FreeSynd base) | Behaviour |
+|---|---|---|---|
+| Field Operator (agent) | squad | 256 | the player's squad; persuading, regenerating chest mods are research items |
+| Enemy Agent | enemy | 256 | "player hostile": spots the squad, waits 0.4 s, chases and shoots, goes back on patrol when it loses them |
+| Guard | enemy | 192 | the same behaviour, slower (0.75x), weaker, reacts in 0.3 s; always armed, helmeted and armoured |
+| Police | police | 160 | patrol until anyone draws a weapon, then alert; scout every 0.2 s for an armed non-police unit within 8 tiles; warn it for 0.8 s; follow and shoot until it puts its weapon away; wait 1.5 s; re-engage or return to patrol. Police shoot any armed non-police unit (enemy agents, criminals and persuaded followers with weapons out too) |
+| Civilian | street | 128 | panic: every 0.5 s look for anyone with a weapon out within 6 tiles and run 2.6 tiles away at nearly double speed, look again, resume wandering when nobody armed is near; persuaded civilians never panic |
+| Criminal | street | 128 | wanders armed (always drawn armed), ignores everyone until attacked, then goes after whoever attacked it |
+
+Persuasion follows FreeSynd's persuaded behaviour: a persuaded unit follows its owner; when the owner draws a weapon
+a follower with none looks for a fallen enemy's weapon within 3 tiles, takes it and arms; armed followers fire only
+while the owner has a weapon out; when an operator goes down their followers and persuasion counts pass to another
+living operator. The requirements are our own scale of FreeSynd's points: criminals and civilians need nothing, a
+guard needs three persuaded civilians, police six, enemy agents four police (criminals count as civilians).
+Differences from FreeSynd: shots are not randomised by accuracy (fixed damage instead), distances are scaled to our
+tiles, and "weapon out" is a selected, loaded weapon for operators and an engaged enemy for the rest.
+
 The Persuader is a shop item (research 80, price 90, 30 charges, range 3.5 tiles). Click it in
 an operator's inventory to switch it on (with several operators selected, it switches on for
 every one who carries it); magenta waves roll out from an operator who has it on. Each second

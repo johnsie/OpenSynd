@@ -327,7 +327,14 @@ applyTextScale();
 
 const SPRITE_SKINS = ["operative-one", "operative-two", "operative-three", "operative-four"];
 // Which side of the fight a unit definition's role puts it on.
-const SIDE_BY_ROLE = { operator: "team", civilian: "civilian", police: "police" };
+const SIDE_BY_ROLE = {
+  operator: "team",
+  "enemy-agent": "opposition",
+  guard: "opposition",
+  civilian: "civilian",
+  criminal: "criminal",
+  police: "police",
+};
 const WATCHER_SKINS = ["watcher-one", "watcher-two"];
 const sprites = { manifest: null, images: new Map() };
 
@@ -526,7 +533,7 @@ async function loadGame(index = state.missionIndex) {
           id: entry.id,
           name: entry.name,
           objectives: entry.objectives.length,
-          watchers: entry.opponents.length,
+          enemies: entry.opponents.length,
           region: entry.region ?? null,
         };
       }),
@@ -817,7 +824,7 @@ function renderMissionList() {
       status.textContent = done ? "COMPLETED" : unlocked ? "AVAILABLE" : "LOCKED";
       const note = document.createElement("small");
       note.textContent = unlocked
-        ? `${entry.objectives} objectives · ${entry.watchers} watchers`
+        ? `${entry.objectives} objectives · ${entry.enemies} enemy agents`
         : `Complete ${state.missionList[index - 1].name} to unlock this operation.`;
       button.append(name, status, note);
       button.addEventListener("click", () => chooseMission(index));
@@ -1537,8 +1544,17 @@ function spriteSheetFor(unit) {
     // Civilians and police: each kind hands its looks out in turn, so a crowd is not clones.
     const index = state.units.filter((item) => item.definition === unit.definition).indexOf(unit);
     key = looks[index % looks.length];
-    // A police officer who has spotted a drawn weapon has their own out.
-    if (unit.side === "police" && unit.alertedBy && !unit.disabled && sheets[`${key}-pulse`]) return sheets[`${key}-pulse`];
+    // Enemy agents, guards and criminals always show a weapon; police only once they have spotted a drawn one;
+    // a persuaded follower while its owner has a weapon out and it has one.
+    const owner = unit.persuaded ? state.units.find((item) => item.id === unit.persuadedBy) : null;
+    const carrying = unit.equipment.some((item) => item.definition.action === "disable-pulse" && item.charges !== 0);
+    const armed =
+      !unit.disabled &&
+      (unit.side === "opposition" ||
+        unit.side === "criminal" ||
+        (unit.side === "police" && Boolean(unit.alertedBy)) ||
+        (unit.persuaded && carrying && Boolean(owner) && Boolean(heldWeapon(owner, state.elapsed))));
+    if (armed && sheets[`${key}-pulse`]) return sheets[`${key}-pulse`];
     return sheets[key] ?? null;
   }
   if (unit.side !== "team") {
@@ -1729,7 +1745,7 @@ function drawUnit(unit, viewport) {
       context.stroke();
     }
   }
-  if ((unit.side === "opposition" || unit.side === "police") && unit.alertedBy && !unit.disabled && !unit.persuaded) {
+  if (["opposition", "police", "criminal"].includes(unit.side) && unit.alertedBy && !unit.disabled && !unit.persuaded) {
     // An alert marker over a watcher that has noticed the squad and is giving chase.
     const pulse = reduceMotion ? 1 : 0.8 + 0.2 * Math.sin(state.elapsed * 8);
     context.fillStyle = `rgba(255, 107, 98, ${pulse})`;
@@ -1804,7 +1820,13 @@ function draw() {
 
 const minimap = document.querySelector("#minimap");
 const miniContext = minimap.getContext("2d");
-const MINI_UNIT_COLOURS = { team: "#42d6d0", opposition: "#ff6b62", police: "#4aa3ff", civilian: "#8d9aa3" };
+const MINI_UNIT_COLOURS = {
+  team: "#42d6d0",
+  opposition: "#ff6b62",
+  police: "#4aa3ff",
+  civilian: "#8d9aa3",
+  criminal: "#ff9a4a",
+};
 const MINI_COLORS = {
   "runoff-channel": "#1f5568",
   "signal-grate": "#7a96a0",
@@ -2072,7 +2094,7 @@ function knockBack(victim, shooter) {
 
 // Keep the record of who has been put out of action, and charge for bystanders.
 function countDisabled(down) {
-  if (down.side === "opposition") state.opStats.watchersDisabled += 1;
+  if (down.side === "opposition") state.opStats.enemiesDisabled += 1;
   else if (down.side === "civilian") harmBystander(down, CIVILIAN_PENALTY, "civiliansHarmed");
   else if (down.side === "police") harmBystander(down, POLICE_PENALTY, "policeHarmed");
   else state.opStats.operatorsDisabled += 1;
@@ -2110,11 +2132,7 @@ function handleCombatEvents(combatEvents) {
       } else {
         addEffect(state.effects, "puff", { to: event.end, spin: Math.random() * 3 });
       }
-      if (shooter) {
-        shooter.firedAt = state.elapsed;
-        // Gunfire sends nearby civilians running.
-        startPanic(state.units, shooter.position, state.grid, state.elapsed);
-      }
+      if (shooter) shooter.firedAt = state.elapsed;
       if (event.outOfRounds && shooter?.side === "team") {
         setStatus(`${shooter.definition.name}: ${event.weapon} is out of rounds.`);
         audio.play("alert");
@@ -2198,6 +2216,12 @@ function simulationStep(deltaSeconds) {
   }
   for (const event of advancePatrols(state.units, deltaSeconds, state.grid, state.elapsed)) {
     const watcher = state.units.find((unit) => unit.id === event.unitId);
+    if (event.type === "pickup") {
+      setStatus(`${watcher.definition.name} takes ${event.items.join(" and ")} from the fallen.`);
+      audio.play("select");
+      interfaceChanged = true;
+      continue;
+    }
     const spotted = state.units.find((unit) => unit.id === event.targetId);
     setStatus(`${watcher.definition.name} spotted ${spotted.definition.name}! It is closing in.`);
     audio.play("alert");
@@ -2216,7 +2240,7 @@ function simulationStep(deltaSeconds) {
   for (const blast of advanceBombs(state.bombs, state.units, deltaSeconds)) {
     addEffect(state.effects, "blast", { at: blast.at, radius: blast.radius });
     audio.play("blast");
-    startPanic(state.units, blast.at, state.grid, state.elapsed);
+    startPanic(state.units, blast.at, state.grid);
     for (const hit of blast.hits) {
       const victim = state.units.find((unit) => unit.id === hit.unitId);
       addEffect(state.effects, "impact", { unitId: hit.unitId, spin: Math.random() * 3 });
@@ -2236,13 +2260,16 @@ function simulationStep(deltaSeconds) {
     if (event.type === "persuaded") {
       addEffect(state.effects, "persuade", { unitId: event.targetId });
       audio.play("persuade");
-      const kinds = { civilian: "civilians", police: "police", opposition: "enemy agents" };
+      const kinds = { civilian: "civilians", criminal: "criminals", guard: "guards", police: "police", opposition: "enemy agents" };
+      const counted = event.kind === "criminal" ? "civilians" : kinds[event.kind];
       setStatus(
-        `${target.definition.name} now follows ${agent.definition.name} (${event.count} ${kinds[event.kind]} persuaded).` +
+        `${target.definition.name} now follows ${agent.definition.name} (${event.count} ${counted} persuaded).` +
           (event.outOfCharges ? " The Persuader is spent." : ""),
       );
-    } else {
+    } else if (event.type === "refused") {
       setStatus(`${agent.definition.name} cannot persuade ${target.definition.name} yet: ${event.needs} to persuade first.`);
+    } else if (event.type === "reassigned") {
+      setStatus(`${state.units.find((unit) => unit.id === event.unitId).definition.name} now follows ${agent.definition.name}.`);
     }
     interfaceChanged = true;
   }
@@ -2292,7 +2319,7 @@ function showOutcome(outcome) {
   for (const [label, value] of [
     ["Time", formatDuration(state.missionSeconds)],
     ["Operators disabled", String(teamDown)],
-    ["Watchers disabled", String(watchersDown)],
+    ["Enemies disabled", String(watchersDown)],
     ...(state.opStats.civiliansHarmed + state.opStats.policeHarmed > 0
       ? [["Bystanders killed", String(state.opStats.civiliansHarmed + state.opStats.policeHarmed)]]
       : []),
@@ -2759,7 +2786,7 @@ function lootAction() {
     }
   }
   if (target) goLoot(target.body);
-  else setStatus("There is nothing to pick up. Disable a watcher that carries gear first.");
+  else setStatus("There is nothing to pick up. Disable an enemy that carries gear first.");
 }
 
 // Send the nearest selected operator to a body; they loot it on arrival.
@@ -2886,7 +2913,7 @@ function setPointerCursor(kind) {
 
 // Anyone the squad could fire on: watchers, civilians and police, but not people it has persuaded.
 function isAttackable(unit) {
-  return (unit.side === "opposition" || unit.side === "civilian" || unit.side === "police") && !unit.persuaded;
+  return ["opposition", "civilian", "police", "criminal"].includes(unit.side) && !unit.persuaded;
 }
 
 function pointerKindAt(position) {
@@ -3643,13 +3670,15 @@ function renderInterface() {
 
   const threats = state.units.filter((unit) => unit.side === "opposition" && !unit.persuaded);
   threatsElement.replaceChildren(
-    ...threats.map((unit, index) => {
+    ...threats.map((unit) => {
       const button = document.createElement("button");
       button.type = "button";
       button.dataset.disabled = String(unit.disabled);
       button.addEventListener("click", () => issueAttack(unit.id));
       const name = document.createElement("span");
-      name.textContent = `${unit.definition.name} ${index + 1}`;
+      // Numbered within its own kind: Enemy Agent 3, Guard 2.
+      const sameKind = threats.filter((other) => other.definition === unit.definition);
+      name.textContent = `${unit.definition.name} ${sameKind.indexOf(unit) + 1}`;
       const vitality = document.createElement("span");
       vitality.className = "vitality";
       vitality.textContent = unit.disabled

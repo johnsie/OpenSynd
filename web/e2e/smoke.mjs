@@ -74,7 +74,7 @@ for (const [name, type, executablePath] of targets) {
     const before = await page.evaluate(() => window.opensyndTest.positions());
     await page.waitForTimeout(1500);
     const after = await page.evaluate(() => window.opensyndTest.positions());
-    assert.notDeepEqual(after["watcher-one"], before["watcher-one"]);
+    assert.notDeepEqual(after["enemy-agent-one"], before["enemy-agent-one"]);
     assert.deepEqual(after["operator-one"], before["operator-one"]);
     assert.match(await page.locator("#objective-list").innerText(), /service gate/i);
     await page.locator(".roster-select").first().click();
@@ -264,14 +264,15 @@ for (const [name, type, executablePath] of targets) {
     await firstSquares.nth(1).click();
     assert.match(await page.locator("#status-message").innerText(), /integrity is already full/);
     await page.evaluate(() => {
-      window.opensyndTest.disableUnit("watcher-one");
-      window.opensyndTest.placeNear("operator-one", "watcher-one");
+      window.opensyndTest.disableUnit("enemy-agent-one");
+      window.opensyndTest.placeNear("operator-one", "enemy-agent-one");
     });
     await page.waitForFunction(() => !document.querySelector("#loot-button").disabled);
     assert.match(await page.locator("#loot-label").innerText(), /Pick up 1 item/);
     await page.locator("#game-canvas").focus();
     await page.keyboard.press("f");
-    assert.match(await page.locator("#status-message").innerText(), /picked up Heavy Pulse Emitter/);
+    // (Read it from the inventory: a nearby guard may spot the operator and change the status line at once.)
+    assert.equal(await page.getByLabel(/slot \d+: Heavy Pulse Emitter/).count(), 1);
     assert.match(await page.locator("#achievement-toast").innerText(), /Scavenger/);
     assert.equal(await page.locator(".roster-item").first().locator(".slot:not(.empty)").count(), 3);
     assert.equal(await page.getByLabel("Field Operator 1 slot 3: Heavy Pulse Emitter", { exact: false }).count(), 1);
@@ -279,21 +280,17 @@ for (const [name, type, executablePath] of targets) {
     await page.waitForFunction(() => document.querySelector("#loot-button").disabled);
     // Click-to-pickup: the pointer changes over fallen gear and a click sends an operator to collect it.
     await page.evaluate(() => {
-      window.opensyndTest.disableUnit("watcher-three");
-      window.opensyndTest.placeNear("operator-one", "watcher-three", 0, 6);
-      window.opensyndTest.focusOn("watcher-three");
+      window.opensyndTest.disableUnit("enemy-agent-three");
+      window.opensyndTest.placeNear("operator-one", "enemy-agent-three", 0, 6);
+      window.opensyndTest.focusOn("enemy-agent-three");
     });
     await page.waitForTimeout(250);
-    const gear = await page.evaluate(() => window.opensyndTest.screenPoint("watcher-three"));
+    const gear = await page.evaluate(() => window.opensyndTest.screenPoint("enemy-agent-three"));
     await page.mouse.move(gear.x, gear.y);
     await page.waitForFunction(() => document.querySelector("#game-canvas").classList.contains("cursor-loot"));
     await page.mouse.click(gear.x, gear.y);
     assert.match(await page.locator("#status-message").innerText(), /walking over to pick up/);
-    await page.waitForFunction(
-      () => document.querySelector("#status-message").textContent.includes("picked up Shadow Cloak"),
-      null,
-      { timeout: 20000 },
-    );
+    await page.getByLabel(/slot \d+: Shadow Cloak/).first().waitFor({ timeout: 20000 });
     assert.equal(await page.locator(".roster-item").first().locator(".slot:not(.empty)").count(), 4);
     assert.equal(await page.getByLabel("Field Operator 1 slot 4: Shadow Cloak", { exact: false }).count(), 1);
     // With the gear gone the pointer goes back to normal over the same spot.
@@ -303,39 +300,39 @@ for (const [name, type, executablePath] of targets) {
     // Pursuit: the pointer becomes a circular crosshair over a watcher, and clicking sends the selected
     // operator after it until it is in range of the weapon.
     await page.evaluate(() => {
-      window.opensyndTest.placeNear("operator-two", "watcher-four", -17, 0);
-      window.opensyndTest.focusOn("watcher-four");
+      window.opensyndTest.placeNear("operator-two", "enemy-agent-four", -17, 0);
+      window.opensyndTest.focusOn("enemy-agent-four");
     });
     await page.locator(".roster-select").nth(1).click();
     // Nobody fires without choosing a weapon: with none selected the order is refused.
-    await page.evaluate(() => window.opensyndTest.focusOn("watcher-four"));
+    await page.evaluate(() => window.opensyndTest.focusOn("enemy-agent-four"));
     await page.waitForTimeout(400);
-    const firstEnemy = await page.evaluate(() => window.opensyndTest.screenPoint("watcher-four"));
+    const firstEnemy = await page.evaluate(() => window.opensyndTest.screenPoint("enemy-agent-four"));
     await page.mouse.click(firstEnemy.x, firstEnemy.y);
     assert.match(await page.locator("#status-message").innerText(), /No weapon selected/);
     await page.locator(".roster-item").nth(1).getByLabel(/slot \d+: Civic Pulse Emitter/).first().click();
-    await page.evaluate(() => window.opensyndTest.focusOn("watcher-four"));
+    await page.evaluate(() => window.opensyndTest.focusOn("enemy-agent-four"));
     await page.waitForTimeout(400);
-    const enemy = await page.evaluate(() => window.opensyndTest.screenPoint("watcher-four"));
+    const enemy = await page.evaluate(() => window.opensyndTest.screenPoint("enemy-agent-four"));
     await page.mouse.move(enemy.x + 40, enemy.y + 40);
     await page.mouse.move(enemy.x, enemy.y);
     // Seventeen tiles away is out of the pistol's range: the crosshair is white.
     await page.waitForFunction(() => document.querySelector("#game-canvas").classList.contains("cursor-attack-far"));
     assert.equal(await page.evaluate(() => document.querySelector("#game-canvas").classList.contains("cursor-attack")), false);
     await page.mouse.click(enemy.x, enemy.y);
-    assert.match(await page.locator("#status-message").innerText(), /(closing in on|engaging) Security Watcher/);
-    assert.equal(await page.evaluate(() => window.opensyndTest.following("operator-two")), "watcher-four");
+    assert.match(await page.locator("#status-message").innerText(), /(closing in on|engaging) Enemy Agent/);
+    assert.equal(await page.evaluate(() => window.opensyndTest.following("operator-two")), "enemy-agent-four");
     // Ordering the operator somewhere else ends the pursuit.
     await page.locator("#game-canvas").focus();
     await page.keyboard.press("Enter");
     assert.equal(await page.evaluate(() => window.opensyndTest.following("operator-two")), null);
     // Brought within range, the same crosshair turns red without the mouse moving.
     await page.evaluate(() => {
-      window.opensyndTest.focusOn("watcher-four");
-      window.opensyndTest.placeNear("operator-two", "watcher-four", -2, 0);
+      window.opensyndTest.focusOn("enemy-agent-four");
+      window.opensyndTest.placeNear("operator-two", "enemy-agent-four", -2, 0);
     });
     await page.waitForTimeout(300);
-    const closeEnemy = await page.evaluate(() => window.opensyndTest.screenPoint("watcher-four"));
+    const closeEnemy = await page.evaluate(() => window.opensyndTest.screenPoint("enemy-agent-four"));
     await page.mouse.move(closeEnemy.x + 30, closeEnemy.y + 30);
     await page.mouse.move(closeEnemy.x, closeEnemy.y);
     await page.waitForFunction(() => document.querySelector("#game-canvas").classList.contains("cursor-attack"));
@@ -351,7 +348,7 @@ for (const [name, type, executablePath] of targets) {
 
     // A watcher notices an operator who walks into its sight (shortened by the cloak just
     // picked up) and raises the alert.
-    await page.evaluate(() => window.opensyndTest.placeNear("operator-one", "watcher-two", 0, 4));
+    await page.evaluate(() => window.opensyndTest.placeNear("operator-one", "enemy-agent-two", 0, 4));
     await page.waitForFunction(
       () => document.querySelector("#status-message").textContent.includes("spotted"),
     );

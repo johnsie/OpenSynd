@@ -87,7 +87,7 @@ export const ACTION_LABELS = Object.freeze({
   interact: "Interact",
   repair: "Use repair kit",
   useStim: "Use stim injector",
-  loot: "Loot a disabled watcher",
+  loot: "Loot a disabled enemy",
   selectAll: "Select all operators",
   centre: "Centre view on selection",
   zoomIn: "Zoom in",

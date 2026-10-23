@@ -1,0 +1,29 @@
+{
+  "formatVersion": 1,
+  "id": "developer.criminal",
+  "name": "Criminal",
+  "license": "CC0-1.0",
+  "role": "criminal",
+  "stats": {
+    "vitality": 50,
+    "speed": 2.4,
+    "awareness": 40,
+    "attack": 8,
+    "range": 3.5,
+    "cooldown": 1.1
+  },
+  "abilities": [
+    "wander",
+    "retaliate"
+  ],
+  "appearance": {
+    "shape": "hexagon",
+    "primaryColor": "#4a2a2a",
+    "accentColor": "#ff8a4a",
+    "marker": "K",
+    "sprites": [
+      "criminal-1",
+      "criminal-2"
+    ]
+  }
+}

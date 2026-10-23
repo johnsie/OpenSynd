@@ -17,9 +17,9 @@ import {
 } from "../src/worldmap.js";
 
 const entries = [
-  { id: "a", name: "First", objectives: 4, watchers: 8, region: { name: "Alpha", lon: -90, lat: 40 } },
-  { id: "b", name: "Second", objectives: 4, watchers: 14, region: { name: "Beta", lon: 0, lat: 0 } },
-  { id: "c", name: "Third", objectives: 4, watchers: 14 },
+  { id: "a", name: "First", objectives: 4, enemies: 8, region: { name: "Alpha", lon: -90, lat: 40 } },
+  { id: "b", name: "Second", objectives: 4, enemies: 14, region: { name: "Beta", lon: 0, lat: 0 } },
+  { id: "c", name: "Third", objectives: 4, enemies: 14 },
 ];
 
 test("regions are locked until the one before is completed", () => {
@@ -40,7 +40,7 @@ test("a region's card says what it is, its state and what is needed", () => {
   assert.equal(locked.label, "LOCKED");
   assert.match(locked.detail, /Complete First to unlock/);
   const open = regionCard(entries[0], 0, "available", entries);
-  assert.equal(open.detail, "4 objectives · 8 watchers");
+  assert.equal(open.detail, "4 objectives · 8 enemy agents");
   assert.equal(regionCard(entries[2], 2, "completed", entries).place, "Third", "falls back to the mission name");
 });
 

@@ -64,7 +64,7 @@ export function regionCard(entry, index, state, entries) {
   const detail =
     state === "locked"
       ? `Complete ${entries[index - 1]?.name ?? "the previous operation"} to unlock this operation.`
-      : `${entry.objectives} objectives · ${entry.watchers} watchers`;
+      : `${entry.objectives} objectives · ${entry.enemies} enemy agents`;
   return { title: `Operation ${number} · ${entry.name}`, place, label, detail };
 }
 

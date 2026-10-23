@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 export const SAVE_FORMAT = "opensynd-save";
-export const SAVE_VERSION = 9;
-export const LOCAL_SAVE_KEY = "opensynd.save.v9";
+export const SAVE_VERSION = 10;
+export const LOCAL_SAVE_KEY = "opensynd.save.v10";
 export const LEGACY_LOCAL_SAVE_KEYS = [
+  "opensynd.save.v9",
   "opensynd.save.v8",
   "opensynd.save.v7",
   "opensynd.save.v6",
@@ -75,7 +76,7 @@ export function createSaveSnapshot(state, createdAt = new Date().toISOString()) 
       equipment: (unit.equipment ?? []).map((item) => ({ id: item.definition.id, charges: item.charges })),
       looted: [...(unit.looted ?? [])],
       persuadedBy: unit.persuadedBy ?? null,
-      persuasions: { civilian: 0, police: 0, opposition: 0, ...(unit.persuasions ?? {}) },
+      persuasions: { civilian: 0, police: 0, guard: 0, opposition: 0, ...(unit.persuasions ?? {}) },
     })),
     objectives: state.objectives.map((objective) => ({
       id: objective.id,
@@ -158,7 +159,7 @@ export function validateSaveSnapshot(value, context) {
     }
     const counts = unit.persuasions;
     const validCount = (value) => Number.isInteger(value) && value >= 0 && value <= 999;
-    if (!isObject(counts) || !["civilian", "police", "opposition"].every((kind) => validCount(counts[kind]))) {
+    if (!isObject(counts) || !["civilian", "police", "guard", "opposition"].every((kind) => validCount(counts[kind]))) {
       fail(`${unit.id} persuasion counts are invalid`);
     }
     const patrolLength = context.patrolLengths?.[unit.id] ?? 0;
@@ -187,6 +188,7 @@ export function validateSaveSnapshot(value, context) {
       persuasions: {
         civilian: counts.civilian,
         police: counts.police,
+        guard: counts.guard,
         opposition: counts.opposition,
       },
     };
@@ -324,11 +326,22 @@ export function migrateSaveSnapshot(value, context) {
     // Version 9 stores who has been persuaded to follow whom, and each operator's persuasion counts.
     migrated = {
       ...migrated,
-      formatVersion: SAVE_VERSION,
+      formatVersion: 9,
       units: migrated.units.map((unit) => ({
         ...unit,
         persuadedBy: null,
         persuasions: { civilian: 0, police: 0, opposition: 0 },
+      })),
+    };
+  }
+  if (migrated.formatVersion === 9) {
+    // Version 10 adds the count of guards persuaded (guards are a kind of their own).
+    migrated = {
+      ...migrated,
+      formatVersion: SAVE_VERSION,
+      units: migrated.units.map((unit) => ({
+        ...unit,
+        persuasions: { guard: 0, ...(unit.persuasions ?? {}) },
       })),
     };
   }
@@ -353,7 +366,7 @@ export function migrateSaveSnapshot(value, context) {
         equipment: (context.initialEquipment?.[id] ?? []).map((item) => ({ ...item })),
         looted: [],
         persuadedBy: null,
-        persuasions: { civilian: 0, police: 0, opposition: 0 },
+        persuasions: { civilian: 0, police: 0, guard: 0, opposition: 0 },
       }));
     if (added.length > 0) migrated = { ...migrated, units: [...migrated.units, ...added] };
   }
