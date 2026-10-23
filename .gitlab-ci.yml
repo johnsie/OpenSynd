@@ -30,12 +30,18 @@ check:
     - python3 tools/check_provenance.py
     - cd web && npm test
 
-# Hot updates: set the CI/CD variable HOT_UPDATES to 1 once deploy/setup-apache.sh has been run again on the server (it adds the
-# /r/<release>/ alias the pinned pages load from). Until then pages are not pinned and updates are simply announced.
+# Hot updates: pages are pinned to their release once deploy/setup-apache.sh has been run again on the server (it adds the
+# /r/<release>/ alias they load from): the build notices the alias in Apache's configuration, or the CI/CD variable HOT_UPDATES can
+# be set to 1. Until then pages are not pinned and updates are simply announced.
 build:
   stage: build
   script:
-    - cd web && SOURCE_REVISION="$CI_COMMIT_SHORT_SHA" PIN_RELEASES="${HOT_UPDATES:-}" node build.mjs
+    # Pin releases (hot updates) when HOT_UPDATES is set, or when this server's Apache already has the /r/ alias.
+    - |
+      PIN="${HOT_UPDATES:-}"
+      if [ -z "$PIN" ] && grep -rqs "Alias /r/" /etc/apache2 2>/dev/null; then PIN=1; fi
+      echo "pinning releases: ${PIN:-no}"
+      cd web && SOURCE_REVISION="$CI_COMMIT_SHORT_SHA" PIN_RELEASES="$PIN" node build.mjs
   artifacts:
     paths:
       - web/dist
