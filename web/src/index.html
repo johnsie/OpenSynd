@@ -16,8 +16,8 @@
   <body>
     <div id="update-banner" class="update-banner" role="status" hidden>
       <span>A new version is ready.</span>
-      <button id="update-now" type="button">Update now</button>
-      <button id="update-later" type="button">Later</button>
+      <button id="update-now" data-i18n="update.now" type="button">Update now</button>
+      <button id="update-later" data-i18n="update.later" type="button">Later</button>
     </div>
     <a class="skip-link" href="#mission-panel">Skip to mission controls</a>
     <div class="app-shell">
@@ -40,8 +40,8 @@
             <button id="pause-button" type="button" aria-pressed="false">
               <span id="pause-label">Pause</span> <kbd>Space</kbd>
             </button>
-            <button id="operations-button" type="button">Operations</button>
-            <button id="reset-button" type="button">Reset</button>
+            <button id="operations-button" data-i18n="top.operations" type="button">Operations</button>
+            <button id="reset-button" data-i18n="top.reset" type="button">Reset</button>
           </div>
         </div>
         <p id="funds-readout" class="funds"
@@ -103,7 +103,7 @@
                 <button type="button" data-cursor-x="0" data-cursor-y="1" aria-label="Move cursor down">↓</button>
                 <button type="button" data-cursor-x="1" data-cursor-y="0" aria-label="Move cursor right">→</button>
               </div>
-            <button id="move-button" type="button">Move to cursor</button>
+            <button id="move-button" data-i18n="action.move" type="button">Move to cursor</button>
             <button id="action-button" type="button" disabled><span id="action-label">Restore relay</span> <kbd>E</kbd></button>
             <button id="repair-button" type="button" disabled><span id="repair-label">Use repair kit</span> <kbd>R</kbd></button>
             <button id="loot-button" type="button" disabled><span id="loot-label">Loot body</span> <kbd>F</kbd></button>
@@ -121,7 +121,7 @@
         <aside class="mission-panel" id="mission-panel" aria-label="Mission controls">
           <div class="tabs" role="tablist" aria-label="Mission panel">
             <button
-              id="tab-mission"
+              id="tab-mission" data-i18n="tab.mission"
               class="tab"
               type="button"
               role="tab"
@@ -129,7 +129,7 @@
               aria-controls="panel-mission"
             >Mission</button>
             <button
-              id="tab-enemies"
+              id="tab-enemies" data-i18n="tab.enemies"
               class="tab"
               type="button"
               role="tab"
@@ -138,7 +138,7 @@
               tabindex="-1"
             >Enemies <span id="enemy-count" class="count-badge">0</span></button>
             <button
-              id="tab-archive"
+              id="tab-archive" data-i18n="tab.save"
               class="tab"
               type="button"
               role="tab"
@@ -156,7 +156,7 @@
 
             <section class="panel-section">
               <div class="section-heading">
-                <h2>Objectives</h2>
+                <h2 data-i18n="heading.objectives">Objectives</h2>
                 <span id="objective-count" class="count-badge" aria-live="polite">0 / 0</span>
               </div>
               <ol id="objective-list" class="objective-list"></ol>
@@ -170,20 +170,20 @@
 
           <div id="panel-enemies" class="tab-panel" role="tabpanel" aria-labelledby="tab-enemies" hidden>
             <section class="panel-section">
-              <h2>Threats</h2>
+              <h2 data-i18n="heading.threats">Threats</h2>
               <div id="threats" class="threats"></div>
             </section>
           </div>
 
           <div id="panel-archive" class="tab-panel" role="tabpanel" aria-labelledby="tab-archive" hidden>
             <section class="panel-section">
-              <h2>Save data</h2>
+              <h2 data-i18n="heading.save_data">Save data</h2>
               <p class="save-note">Stored only in this browser unless you export it.</p>
               <div class="save-tools">
-                <button id="save-button" type="button">Save</button>
-                <button id="load-button" type="button">Load</button>
-                <button id="export-button" type="button">Export JSON</button>
-                <button id="import-button" type="button">Import JSON</button>
+                <button id="save-button" data-i18n="save.save" type="button">Save</button>
+                <button id="load-button" data-i18n="save.load" type="button">Load</button>
+                <button id="export-button" data-i18n="save.export" type="button">Export JSON</button>
+                <button id="import-button" data-i18n="save.import" type="button">Import JSON</button>
                 <input id="import-file" class="sr-only" type="file" accept="application/json,.json" tabindex="-1" />
               </div>
             </section>
@@ -198,9 +198,9 @@
           Code GPL-2.0-or-later · Developer content CC0-1.0
         </p>
         <p>
-          <button id="settings-button" class="text-button" type="button">Settings</button>
+          <button id="settings-button" data-i18n="footer.settings" class="text-button" type="button">Settings</button>
           <span aria-hidden="true">·</span>
-          <button id="about-button" class="text-button" type="button">About &amp; licenses</button>
+          <button id="about-button" data-i18n="footer.about" class="text-button" type="button">About &amp; licenses</button>
           <span aria-hidden="true">·</span>
           <a href="editor.html">Mission editor</a>
           <span aria-hidden="true">·</span>
@@ -224,16 +224,25 @@
           <p id="title-story">Loading the operation…</p>
           <div class="tabs list-filter" role="tablist" aria-label="Which operations to list">
             <button
-              id="filter-open"
+              id="filter-open" data-i18n="filter.open"
               class="tab"
               type="button"
               role="tab"
               aria-selected="true"
               data-filter="open"
             >Open</button>
-            <button id="filter-all" class="tab" type="button" role="tab" aria-selected="false" data-filter="all" tabindex="-1">All</button>
             <button
-              id="filter-done"
+              id="filter-all"
+              data-i18n="filter.all"
+              class="tab"
+              type="button"
+              role="tab"
+              aria-selected="false"
+              data-filter="all"
+              tabindex="-1"
+            >All</button>
+            <button
+              id="filter-done" data-i18n="filter.done"
               class="tab"
               type="button"
               role="tab"
@@ -244,7 +253,7 @@
           </div>
           <div id="mission-list" class="mission-list" role="group" aria-label="Operations"></div>
           <details class="title-help">
-            <summary>How to play</summary>
+            <summary data-i18n="title.how_to_play">How to play</summary>
             <ul>
               <li>Select an operator, then click a tile, or move the cursor with I/J/K/L and press Enter.</li>
               <li>Click a weapon in an operator's inventory to select it: nobody fires without one.
@@ -270,13 +279,13 @@
           </details>
           <div id="resume-box" class="resume-box" hidden>
             <p id="resume-text"></p>
-            <button id="resume-button" type="button" class="primary">Resume the operation</button>
-            <button id="resume-discard" type="button">Discard it</button>
+            <button id="resume-button" data-i18n="title.resume" type="button" class="primary">Resume the operation</button>
+            <button id="resume-discard" data-i18n="title.discard" type="button">Discard it</button>
           </div>
           <div class="title-actions">
-            <button id="new-game-button" type="button">New game</button>
-            <button id="open-research" type="button">Research &amp; Armoury</button>
-            <button id="begin-button" type="button" class="primary">Begin operation</button>
+            <button id="new-game-button" data-i18n="title.new_game" type="button">New game</button>
+            <button id="open-research" data-i18n="title.research" type="button">Research &amp; Armoury</button>
+            <button id="begin-button" data-i18n="title.begin" type="button" class="primary">Begin operation</button>
           </div>
         </aside>
       </div>
@@ -292,9 +301,17 @@
       </div>
       <p id="research-funds" class="funds-large" role="status"></p>
       <div class="tabs lab-tabs" role="tablist" aria-label="Between operations">
-        <button id="tab-lab-squad" class="tab" type="button" role="tab" aria-selected="true" aria-controls="lab-squad">Squad</button>
         <button
-          id="tab-lab-research"
+          id="tab-lab-squad"
+          data-i18n="lab.squad"
+          class="tab"
+          type="button"
+          role="tab"
+          aria-selected="true"
+          aria-controls="lab-squad"
+        >Squad</button>
+        <button
+          id="tab-lab-research" data-i18n="lab.research"
           class="tab"
           type="button"
           role="tab"
@@ -303,7 +320,7 @@
           tabindex="-1"
         >Research</button>
         <button
-          id="tab-lab-parts"
+          id="tab-lab-parts" data-i18n="lab.parts"
           class="tab"
           type="button"
           role="tab"
@@ -372,24 +389,32 @@
       <p id="outcome-text"></p>
 
       <dl id="outcome-stats" class="outcome-stats"></dl>
-      <button id="next-button" type="button" class="primary" hidden>Next operation</button>
-      <button id="replay-button" type="button" class="primary">Replay operation</button>
-      <button id="outcome-research" type="button">Research &amp; Armoury</button>
-      <button id="outcome-close" type="button">Review the map</button>
+      <button id="next-button" data-i18n="outcome.next" type="button" class="primary" hidden>Next operation</button>
+      <button id="replay-button" data-i18n="outcome.replay" type="button" class="primary">Replay operation</button>
+      <button id="outcome-research" data-i18n="title.research" type="button">Research &amp; Armoury</button>
+      <button id="outcome-close" data-i18n="outcome.review" type="button">Review the map</button>
     </dialog>
 
     <dialog id="settings-dialog" aria-labelledby="settings-title">
       <div class="dialog-header">
-        <h2 id="settings-title">Settings</h2>
+        <h2 id="settings-title" data-i18n="settings.title">Settings</h2>
         <button id="close-settings" type="button" aria-label="Close">×</button>
       </div>
       <form id="settings-form" class="settings-form">
-        <label>Volume
+        <label data-i18n="settings.language"> Language
+          <select id="setting-language">
+            <option value="auto">Automatic</option>
+            <option value="en">English</option>
+            <option value="es">Español</option>
+            <option value="fr">Français</option>
+          </select>
+        </label>
+        <label data-i18n="settings.volume"> Volume
           <input id="setting-volume" type="range" min="0" max="1" step="0.05" />
         </label>
-        <label><input id="setting-muted" type="checkbox" /> Mute sound</label>
-        <label><input id="setting-music" type="checkbox" /> Play music</label>
-        <label>Music volume
+        <label data-i18n="settings.mute"><input id="setting-muted" type="checkbox" /> Mute sound</label>
+        <label data-i18n="settings.music"><input id="setting-music" type="checkbox" /> Play music</label>
+        <label data-i18n="settings.music_volume"> Music volume
           <input id="setting-music-volume" type="range" min="0" max="1" step="0.05" />
         </label>
         <label><input id="setting-spoken" type="checkbox" /> Spoken cues (agent selected, mission completed, police warning)</label>
@@ -401,25 +426,25 @@
           </select>
         </label>
         <button id="setting-victory-play" type="button">Hear it</button>
-        <label><input id="setting-captions" type="checkbox" /> Show cue captions</label>
-        <label><input id="setting-edge" type="checkbox" /> Scroll the map at the screen edges</label>
-        <label>Reduced motion
+        <label data-i18n="settings.captions"><input id="setting-captions" type="checkbox" /> Show cue captions</label>
+        <label data-i18n="settings.edge_scroll"><input id="setting-edge" type="checkbox" /> Scroll the map at the screen edges</label>
+        <label data-i18n="settings.motion"> Reduced motion
           <select id="setting-motion">
             <option value="system">Follow system</option>
             <option value="on">Always reduce</option>
             <option value="off">Never reduce</option>
           </select>
         </label>
-        <label>Text size
+        <label data-i18n="settings.text"> Text size
           <input id="setting-text" type="range" min="0.75" max="2" step="0.25" />
         </label>
         <fieldset class="key-bindings">
           <legend>Keyboard controls (click a button, then press a key)</legend>
           <div id="binding-list"></div>
-          <button id="reset-bindings" type="button">Restore default keys</button>
+          <button id="reset-bindings" data-i18n="settings.reset_keys" type="button">Restore default keys</button>
           <p id="binding-message" class="hint" role="status"></p>
         </fieldset>
-        <button id="reset-progress" type="button">Reset completed operations</button>
+        <button id="reset-progress" data-i18n="settings.reset_progress" type="button">Reset completed operations</button>
         <p class="hint">Settings are stored only in this browser. Motion changes apply on reload.</p>
       </form>
     </dialog>

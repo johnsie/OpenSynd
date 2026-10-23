@@ -40,6 +40,7 @@ import {
   drawWallTile,
 } from "./structures.js";
 import { deathKind, deathLook } from "./death.js";
+import { applyTranslations, pickLanguage } from "./i18n.js";
 import { CHECK_SECONDS, canApplyQuietly, releaseBase, watchForUpdates } from "./update.js";
 import { windowKey, windowShot, windowsInBlast } from "./windows.js";
 import { BUILDING_SURFACE, buildingStyle, buildingsFromMap, drawOrder, seededRandom } from "./buildings.js";
@@ -319,8 +320,15 @@ function updateSettings(changes) {
   }
   bindings = settings.keyBindings;
   setVictoryTheme(settings.victoryTheme);
+  applyLanguage();
   music.refresh();
   applyTextScale();
+}
+
+// The language of the fixed interface: the chosen one, or the browser's own if it is one we have.
+function applyLanguage() {
+  const language = settings.language === "auto" ? pickLanguage(navigator.languages ?? [navigator.language]) : settings.language;
+  applyTranslations(document, language);
 }
 
 function applyTextScale() {
@@ -335,6 +343,7 @@ const settingControls = {
   musicVolume: document.querySelector("#setting-music-volume"),
   victoryTheme: document.querySelector("#setting-victory"),
   spoken: document.querySelector("#setting-spoken"),
+  language: document.querySelector("#setting-language"),
   captions: document.querySelector("#setting-captions"),
   edgeScroll: document.querySelector("#setting-edge"),
   reducedMotion: document.querySelector("#setting-motion"),
@@ -397,6 +406,7 @@ function showSettings() {
   settingControls.musicVolume.value = settings.musicVolume;
   settingControls.victoryTheme.value = settings.victoryTheme;
   settingControls.spoken.checked = settings.spoken;
+  settingControls.language.value = settings.language;
   settingControls.captions.checked = settings.captions;
   settingControls.edgeScroll.checked = settings.edgeScroll;
   settingControls.reducedMotion.value = settings.reducedMotion;
@@ -418,6 +428,7 @@ document.querySelector("#settings-form").addEventListener("input", () => {
     musicVolume: Number(settingControls.musicVolume.value),
     victoryTheme: settingControls.victoryTheme.value,
     spoken: settingControls.spoken.checked,
+    language: settingControls.language.value,
     captions: settingControls.captions.checked,
     edgeScroll: settingControls.edgeScroll.checked,
     reducedMotion: settingControls.reducedMotion.value,
@@ -426,6 +437,7 @@ document.querySelector("#settings-form").addEventListener("input", () => {
 });
 applyTextScale();
 setVictoryTheme(settings.victoryTheme);
+applyLanguage();
 
 const SPRITE_SKINS = ["operative-one", "operative-two", "operative-three", "operative-four"];
 // Which side of the fight a unit definition's role puts it on.

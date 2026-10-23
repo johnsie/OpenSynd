@@ -663,6 +663,23 @@ for (const [name, type, executablePath] of targets) {
     assert.equal((await spentPage.evaluate(() => window.opensyndTest.drops())).length, 1);
     await spentPage.close();
 
+    // Languages: the fixed interface can be switched to Spanish or French, and back (the choice is kept in the browser).
+    const tongue = await browser.newPage();
+    await tongue.goto(`${url}?e2e`);
+    await tongue.waitForSelector(".roster-select");
+    await tongue.click("#begin-button");
+    await tongue.click("#settings-button");
+    await tongue.selectOption("#setting-language", "es");
+    assert.equal(await tongue.locator("html").getAttribute("lang"), "es");
+    assert.equal(await tongue.locator("#reset-button").innerText(), "Reiniciar");
+    assert.match(await tongue.locator("#settings-title").innerText(), /Ajustes/);
+    assert.equal(await tongue.locator("#setting-muted").count(), 1, "the checkbox inside a translated label survives");
+    await tongue.selectOption("#setting-language", "fr");
+    assert.equal(await tongue.locator("#reset-button").innerText(), "Réinitialiser");
+    await tongue.selectOption("#setting-language", "en");
+    assert.equal(await tongue.locator("#reset-button").innerText(), "Reset");
+    await tongue.close();
+
     // Privacy and security: the game talks only to the site it came from, and the content security policy is never violated.
     const private_ = await browser.newPage();
     const strangers = [];
