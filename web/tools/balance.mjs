@@ -141,7 +141,8 @@ function playOnce(world, tactics) {
       unit.activeSlot = best === -1 ? null : best;
       const kit = unit.equipment.find((item) => item.definition.action === "restore-vitality" && item.charges !== 0);
       if (kit && unit.health < 50) {
-        unit.health = Math.min(unit.definition.stats.vitality, unit.health + kit.definition.effect.restoreVitality);
+        const wanted = kit.definition.effect.restoreFull ? unit.definition.stats.vitality : kit.definition.effect.restoreVitality;
+        unit.health = Math.min(unit.definition.stats.vitality, unit.health + wanted);
         kit.charges -= 1;
       }
     }

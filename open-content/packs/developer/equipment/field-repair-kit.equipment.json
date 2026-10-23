@@ -2,13 +2,13 @@
   "formatVersion": 1,
   "id": "developer.field-repair-kit",
   "name": "Field Repair Kit",
-  "description": "A single-use kit that restores 30 integrity to one field operator.",
+  "description": "A single-use kit that restores one field operator to full integrity.",
   "license": "CC0-1.0",
   "type": "consumable",
   "action": "restore-vitality",
   "charges": 1,
   "effect": {
-    "restoreVitality": 30
+    "restoreFull": true
   },
   "price": 10,
   "icon": "medkit",

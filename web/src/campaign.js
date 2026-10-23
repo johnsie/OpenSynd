@@ -620,7 +620,7 @@ export function describeStats(item) {
   } else if (item.action === "scan") {
     parts.push(`Reach ${effect.radius}`, `Lasts ${effect.duration} s`);
   } else if (item.action === "restore-vitality") {
-    parts.push(`Restores ${effect.restoreVitality}`);
+    parts.push(effect.restoreFull ? "Restores to full" : `Restores ${effect.restoreVitality}`);
   } else if (item.action === "persuade") {
     parts.push(`Range ${effect.range}`);
   }

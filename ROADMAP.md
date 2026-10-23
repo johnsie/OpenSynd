@@ -585,7 +585,8 @@ about eight rounds).
 #### F16. Medikit
 
 *FreeSynd.* One-use, self only: restores the user to full health and takes as long as a shot to apply.
-*OpenSynd.* *have* (Field Repair Kit restores a fixed amount; consider "to full" as an option for the premium kit).
+*OpenSynd.* *done:* the Field Repair Kit restores the user to full integrity, one use, only when hurt (an equipment item may still
+restore a fixed amount with `restoreVitality`).
 
 ---
 

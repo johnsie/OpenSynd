@@ -3615,7 +3615,9 @@ function useRepairOn(unit, kit) {
     setStatus("Operator integrity is already full.");
     return;
   }
-  const restored = Math.min(kit.definition.effect.restoreVitality, maximum - unit.health);
+  // FreeSynd's medikit restores the user to full health; a kit may instead restore a fixed amount.
+  const wanted = kit.definition.effect.restoreFull ? maximum : kit.definition.effect.restoreVitality;
+  const restored = Math.min(wanted, maximum - unit.health);
   unit.health += restored;
   if (kit.charges !== null) kit.charges -= 1;
   setStatus(`${kit.definition.name} restored ${restored} integrity.`);

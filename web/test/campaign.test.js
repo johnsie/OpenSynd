@@ -543,3 +543,10 @@ test("the campaign ends when every main mission is won, and the ending is only s
   assert.equal(parseCampaign(JSON.stringify(after)).ended, true);
   assert.equal(parseCampaign(JSON.stringify(campaign)).ended, false);
 });
+
+test("a repair kit that restores to full says so, and one with a fixed amount shows the number", () => {
+  const medikit = { action: "restore-vitality", effect: { restoreFull: true }, charges: 1, price: 10, weight: 2 };
+  assert.ok(describeStats(medikit).includes("Restores to full"));
+  const small = { action: "restore-vitality", effect: { restoreVitality: 30 }, charges: 1, price: 10, weight: 2 };
+  assert.ok(describeStats(small).includes("Restores 30"));
+});

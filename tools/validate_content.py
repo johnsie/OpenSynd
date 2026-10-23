@@ -281,10 +281,10 @@ class Validation:
         } <= effect.keys():
             self.error(path, "disable-pulse effect requires attack, range, and cooldown")
         elif value["action"] == "restore-vitality" and (
-            not isinstance(effect.get("restoreVitality"), int)
-            or effect["restoreVitality"] <= 0
+            effect.get("restoreFull") is not True
+            and (not isinstance(effect.get("restoreVitality"), int) or effect["restoreVitality"] <= 0)
         ):
-            self.error(path, "restore-vitality effect requires positive restoreVitality")
+            self.error(path, "restore-vitality effect requires restoreFull or a positive restoreVitality")
         elif value["action"] == "time-bomb" and not {"attack", "radius", "fuse"} <= effect.keys():
             self.error(path, "time-bomb effect requires attack, radius, and fuse")
         elif value["action"] == "key" and not isinstance(effect.get("range"), (int, float)):
