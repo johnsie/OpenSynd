@@ -39,9 +39,16 @@
         "armored-car",
         "ambulance",
         "fire-engine",
-        "small-armored"
+        "small-armored",
+        "train"
       ],
-      "description": "Which kind of vehicle it is: a regular car, a police car, a large or a small armored car, a medical van or a fire engine."
+      "description": "Which kind of vehicle it is: a regular car, a police car, a large or a small armored car, a medical van, a fire engine or a train that runs on rails between stations."
+    },
+    "carriages": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 8,
+      "description": "A train: how many carriages follow the engine."
     },
     "stats": {
       "type": "object",

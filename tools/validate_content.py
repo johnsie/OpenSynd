@@ -238,7 +238,7 @@ class Validation:
         if not self.require(path, value, required):
             return
         self.validate_identity(path, value)
-        if value["kind"] not in {"city-car", "patrol-car", "armored-car", "ambulance", "fire-engine", "small-armored"}:
+        if value["kind"] not in {"city-car", "patrol-car", "armored-car", "ambulance", "fire-engine", "small-armored", "train"}:
             self.error(path, f"unsupported vehicle kind: {value['kind']!r}")
         stats = value["stats"]
         names = {"health", "speed", "seats", "blastRadius", "blastDamage"}
@@ -460,6 +460,9 @@ class Validation:
             rectangle = dict(position) if isinstance(position, dict) else {}
             rectangle.update({"width": 1, "height": 1})
             self.validate_rectangle(path, rectangle, dimensions["width"], dimensions["height"], f"vehicle {vehicle_id}")
+            for stop in placement.get("stops", []):
+                point = {"x": stop.get("x"), "y": stop.get("y"), "width": 1, "height": 1} if isinstance(stop, dict) else {}
+                self.validate_rectangle(path, point, dimensions["width"], dimensions["height"], f"stop of {vehicle_id}")
             for waypoint in placement.get("patrol", []):
                 point = dict(waypoint) if isinstance(waypoint, dict) else {}
                 point.update({"width": 1, "height": 1})

@@ -75,6 +75,16 @@ function paintTile(context, surface, colour, variant, width, height) {
       stroke(context, width, height, [[u0, v], [u0 + 0.3, v - 0.04], [u0 + 0.5, v + 0.03]], "rgba(120, 210, 230, .3)");
     }
     speckle(context, random, width, height, count / 2, "160, 230, 245", "0, 20, 30");
+  } else if (surface === "rail") {
+    // Ballast with a sleeper every quarter tile and two steel rails along the track (which runs along the map's x axis).
+    speckle(context, random, width, height, count * 1.2, "190, 190, 185", "0, 0, 0");
+    for (let sleeper = 0; sleeper < 4; sleeper += 1) {
+      stroke(context, width, height, [[(sleeper + 0.5) / 4, 0.12], [(sleeper + 0.5) / 4, 0.88]], "rgba(60, 44, 30, .85)", 2.5);
+    }
+    for (const side of [0.32, 0.68]) {
+      stroke(context, width, height, [[0, side], [1, side]], "rgba(0, 0, 0, .55)", 3);
+      stroke(context, width, height, [[0, side], [1, side]], "rgba(190, 200, 208, .85)", 1.4);
+    }
   } else if (surface === "signal-grate") {
     for (let line = 1; line < 4; line += 1) {
       stroke(context, width, height, [[line / 4, 0], [line / 4, 1]], "rgba(0, 0, 0, .55)", 1.5);

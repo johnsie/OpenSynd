@@ -4,10 +4,10 @@
   "name": "Madagascar Audit",
   "license": "CC0-1.0",
   "title": "Madagascar is ours",
-  "briefing": "Tidewater Consortium holds Madagascar through its pump station. Reconnect 2 relays, download the records from the vault server, unlock the service gate, then leave by the exit. Expect 9 enemy agents and 4 guards on the streets.",
-  "story": "Madagascar Audit: Tidewater Consortium runs Madagascar from its pump station, and the district only notices when the lights go out. Your team has one night to reconnect the relays, download the records and walk out the exit.",
+  "briefing": "Tidewater Consortium holds Madagascar through its bonded warehouses. Reconnect 2 relays, download the records from the vault server, unlock the service gate, then leave by the exit. Expect 9 enemy agents and 4 guards on the streets.",
+  "story": "Madagascar Audit: Tidewater Consortium runs Madagascar from its bonded warehouses, and the district only notices when the lights go out. Your team has one night to reconnect the relays, download the records and walk out the exit.",
   "debrief": {
-    "success": "Madagascar wakes up with the pump station in other hands. Your team is back in the dark before morning.",
+    "success": "Madagascar wakes up with the bonded warehouses in other hands. Your team is back in the dark before morning.",
     "failure": "The team is down in Madagascar before the work was done. Regroup and try a different approach."
   },
   "map": "maps/madagascar.map.json",
@@ -66,21 +66,18 @@
       "id": "enemy-agent-one",
       "unit": "units/enemy-agent.unit.json",
       "position": {
-        "x": 87,
-        "y": 80
+        "x": 83,
+        "y": 88
       },
-      "equipment": [
-        "equipment/scatter-emitter.equipment.json",
-        "equipment/field-repair-kit.equipment.json"
-      ],
+      "equipment": [],
       "patrol": [
         {
-          "x": 87,
-          "y": 80
+          "x": 83,
+          "y": 88
         },
         {
-          "x": 87,
-          "y": 86
+          "x": 89,
+          "y": 88
         }
       ]
     },
@@ -88,18 +85,20 @@
       "id": "enemy-agent-two",
       "unit": "units/enemy-agent.unit.json",
       "position": {
-        "x": 26,
-        "y": 37
+        "x": 68,
+        "y": 50
       },
-      "equipment": [],
+      "equipment": [
+        "equipment/scatter-emitter.equipment.json"
+      ],
       "patrol": [
         {
-          "x": 26,
-          "y": 37
+          "x": 68,
+          "y": 50
         },
         {
-          "x": 30,
-          "y": 37
+          "x": 68,
+          "y": 54
         }
       ]
     },
@@ -107,20 +106,18 @@
       "id": "enemy-agent-three",
       "unit": "units/enemy-agent.unit.json",
       "position": {
-        "x": 65,
-        "y": 25
+        "x": 63,
+        "y": 19
       },
-      "equipment": [
-        "equipment/scatter-emitter.equipment.json"
-      ],
+      "equipment": [],
       "patrol": [
         {
-          "x": 65,
-          "y": 25
+          "x": 63,
+          "y": 19
         },
         {
-          "x": 60,
-          "y": 25
+          "x": 63,
+          "y": 27
         }
       ]
     },
@@ -129,19 +126,21 @@
       "unit": "units/enemy-agent.unit.json",
       "position": {
         "x": 75,
-        "y": 109
+        "y": 47
       },
       "equipment": [
+        "equipment/scatter-emitter.equipment.json",
+        "equipment/field-repair-kit.equipment.json",
         "equipment/delay-charge.equipment.json"
       ],
       "patrol": [
         {
           "x": 75,
-          "y": 109
+          "y": 47
         },
         {
-          "x": 68,
-          "y": 109
+          "x": 81,
+          "y": 47
         }
       ]
     },
@@ -149,18 +148,18 @@
       "id": "enemy-agent-five",
       "unit": "units/enemy-agent.unit.json",
       "position": {
-        "x": 80,
-        "y": 88
+        "x": 87,
+        "y": 78
       },
       "equipment": [],
       "patrol": [
         {
-          "x": 80,
-          "y": 88
+          "x": 87,
+          "y": 78
         },
         {
-          "x": 74,
-          "y": 88
+          "x": 95,
+          "y": 78
         }
       ]
     },
@@ -168,20 +167,18 @@
       "id": "enemy-agent-six",
       "unit": "units/enemy-agent.unit.json",
       "position": {
-        "x": 97,
-        "y": 50
+        "x": 17,
+        "y": 77
       },
-      "equipment": [
-        "equipment/scatter-emitter.equipment.json"
-      ],
+      "equipment": [],
       "patrol": [
         {
-          "x": 97,
-          "y": 50
+          "x": 17,
+          "y": 77
         },
         {
-          "x": 89,
-          "y": 50
+          "x": 17,
+          "y": 74
         }
       ]
     },
@@ -189,18 +186,20 @@
       "id": "enemy-agent-seven",
       "unit": "units/enemy-agent.unit.json",
       "position": {
-        "x": 51,
-        "y": 29
+        "x": 52,
+        "y": 26
       },
-      "equipment": [],
+      "equipment": [
+        "equipment/scatter-emitter.equipment.json"
+      ],
       "patrol": [
         {
-          "x": 51,
-          "y": 29
+          "x": 52,
+          "y": 26
         },
         {
-          "x": 51,
-          "y": 22
+          "x": 60,
+          "y": 26
         }
       ]
     },
@@ -209,20 +208,19 @@
       "unit": "units/enemy-agent.unit.json",
       "position": {
         "x": 99,
-        "y": 87
+        "y": 62
       },
       "equipment": [
-        "equipment/scatter-emitter.equipment.json",
         "equipment/delay-charge.equipment.json"
       ],
       "patrol": [
         {
           "x": 99,
-          "y": 87
+          "y": 62
         },
         {
           "x": 99,
-          "y": 95
+          "y": 54
         }
       ]
     },
@@ -230,18 +228,18 @@
       "id": "enemy-agent-nine",
       "unit": "units/enemy-agent.unit.json",
       "position": {
-        "x": 81,
-        "y": 77
+        "x": 87,
+        "y": 88
       },
       "equipment": [],
       "patrol": [
         {
-          "x": 81,
-          "y": 77
+          "x": 87,
+          "y": 88
         },
         {
-          "x": 81,
-          "y": 73
+          "x": 87,
+          "y": 80
         }
       ]
     },
@@ -249,18 +247,18 @@
       "id": "guard-1",
       "unit": "units/guard.unit.json",
       "position": {
-        "x": 75,
-        "y": 23
+        "x": 98,
+        "y": 67
       },
       "equipment": [],
       "patrol": [
         {
-          "x": 75,
-          "y": 23
+          "x": 98,
+          "y": 67
         },
         {
-          "x": 75,
-          "y": 33
+          "x": 98,
+          "y": 73
         }
       ]
     },
@@ -268,18 +266,18 @@
       "id": "guard-2",
       "unit": "units/guard.unit.json",
       "position": {
-        "x": 102,
-        "y": 98
+        "x": 74,
+        "y": 83
       },
       "equipment": [],
       "patrol": [
         {
-          "x": 102,
-          "y": 98
+          "x": 74,
+          "y": 83
         },
         {
-          "x": 102,
-          "y": 92
+          "x": 74,
+          "y": 93
         }
       ]
     },
@@ -287,18 +285,18 @@
       "id": "guard-3",
       "unit": "units/guard.unit.json",
       "position": {
-        "x": 22,
-        "y": 75
+        "x": 14,
+        "y": 50
       },
       "equipment": [],
       "patrol": [
         {
-          "x": 22,
-          "y": 75
+          "x": 14,
+          "y": 50
         },
         {
-          "x": 13,
-          "y": 75
+          "x": 8,
+          "y": 50
         }
       ]
     },
@@ -306,18 +304,18 @@
       "id": "guard-4",
       "unit": "units/guard.unit.json",
       "position": {
-        "x": 26,
-        "y": 22
+        "x": 27,
+        "y": 58
       },
       "equipment": [],
       "patrol": [
         {
-          "x": 26,
-          "y": 22
+          "x": 27,
+          "y": 58
         },
         {
-          "x": 26,
-          "y": 14
+          "x": 27,
+          "y": 64
         }
       ]
     },
@@ -325,20 +323,20 @@
       "id": "warden",
       "unit": "units/site-warden.unit.json",
       "position": {
-        "x": 65,
-        "y": 111
+        "x": 17,
+        "y": 15
       },
       "equipment": [
         "equipment/scatter-emitter.equipment.json"
       ],
       "patrol": [
         {
-          "x": 65,
-          "y": 111
+          "x": 17,
+          "y": 15
         },
         {
-          "x": 60,
-          "y": 111
+          "x": 21,
+          "y": 15
         }
       ]
     }
@@ -349,14 +347,14 @@
       "type": "interact",
       "targetZone": "relay-one",
       "required": true,
-      "description": "Reconnect the north-west relay."
+      "description": "Reconnect the river relay."
     },
     {
       "id": "restore-two",
       "type": "interact",
       "targetZone": "relay-two",
       "required": true,
-      "description": "Reconnect the western relay."
+      "description": "Reconnect the central relay."
     },
     {
       "id": "download-records",
@@ -385,6 +383,120 @@
       "id": "civilian-1",
       "unit": "units/civilian-woman.unit.json",
       "position": {
+        "x": 37,
+        "y": 26
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 37,
+          "y": 26
+        },
+        {
+          "x": 37,
+          "y": 30
+        }
+      ]
+    },
+    {
+      "id": "civilian-2",
+      "unit": "units/civilian-man.unit.json",
+      "position": {
+        "x": 34,
+        "y": 74
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 34,
+          "y": 74
+        },
+        {
+          "x": 34,
+          "y": 78
+        }
+      ]
+    },
+    {
+      "id": "civilian-3",
+      "unit": "units/civilian-woman.unit.json",
+      "position": {
+        "x": 101,
+        "y": 40
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 101,
+          "y": 40
+        },
+        {
+          "x": 95,
+          "y": 40
+        }
+      ]
+    },
+    {
+      "id": "civilian-4",
+      "unit": "units/civilian-man.unit.json",
+      "position": {
+        "x": 76,
+        "y": 77
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 76,
+          "y": 77
+        },
+        {
+          "x": 76,
+          "y": 68
+        }
+      ]
+    },
+    {
+      "id": "civilian-5",
+      "unit": "units/civilian-woman.unit.json",
+      "position": {
+        "x": 7,
+        "y": 29
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 7,
+          "y": 29
+        },
+        {
+          "x": 7,
+          "y": 25
+        }
+      ]
+    },
+    {
+      "id": "civilian-6",
+      "unit": "units/civilian-man.unit.json",
+      "position": {
+        "x": 98,
+        "y": 92
+      },
+      "equipment": [],
+      "patrol": [
+        {
+          "x": 98,
+          "y": 92
+        },
+        {
+          "x": 98,
+          "y": 102
+        }
+      ]
+    },
+    {
+      "id": "civilian-7",
+      "unit": "units/civilian-woman.unit.json",
+      "position": {
         "x": 61,
         "y": 100
       },
@@ -401,135 +513,21 @@
       ]
     },
     {
-      "id": "civilian-2",
-      "unit": "units/civilian-man.unit.json",
-      "position": {
-        "x": 27,
-        "y": 94
-      },
-      "equipment": [],
-      "patrol": [
-        {
-          "x": 27,
-          "y": 94
-        },
-        {
-          "x": 30,
-          "y": 94
-        }
-      ]
-    },
-    {
-      "id": "civilian-3",
-      "unit": "units/civilian-woman.unit.json",
-      "position": {
-        "x": 101,
-        "y": 83
-      },
-      "equipment": [],
-      "patrol": [
-        {
-          "x": 101,
-          "y": 83
-        },
-        {
-          "x": 101,
-          "y": 97
-        }
-      ]
-    },
-    {
-      "id": "civilian-4",
-      "unit": "units/civilian-man.unit.json",
-      "position": {
-        "x": 1,
-        "y": 99
-      },
-      "equipment": [],
-      "patrol": [
-        {
-          "x": 1,
-          "y": 99
-        },
-        {
-          "x": 8,
-          "y": 99
-        }
-      ]
-    },
-    {
-      "id": "civilian-5",
-      "unit": "units/civilian-woman.unit.json",
-      "position": {
-        "x": 100,
-        "y": 105
-      },
-      "equipment": [],
-      "patrol": [
-        {
-          "x": 100,
-          "y": 105
-        },
-        {
-          "x": 100,
-          "y": 93
-        }
-      ]
-    },
-    {
-      "id": "civilian-6",
-      "unit": "units/civilian-man.unit.json",
-      "position": {
-        "x": 87,
-        "y": 26
-      },
-      "equipment": [],
-      "patrol": [
-        {
-          "x": 87,
-          "y": 26
-        },
-        {
-          "x": 96,
-          "y": 26
-        }
-      ]
-    },
-    {
-      "id": "civilian-7",
-      "unit": "units/civilian-woman.unit.json",
-      "position": {
-        "x": 75,
-        "y": 74
-      },
-      "equipment": [],
-      "patrol": [
-        {
-          "x": 75,
-          "y": 74
-        },
-        {
-          "x": 83,
-          "y": 74
-        }
-      ]
-    },
-    {
       "id": "civilian-8",
       "unit": "units/civilian-man.unit.json",
       "position": {
-        "x": 27,
-        "y": 79
+        "x": 85,
+        "y": 98
       },
       "equipment": [],
       "patrol": [
         {
-          "x": 27,
-          "y": 79
+          "x": 85,
+          "y": 98
         },
         {
-          "x": 30,
-          "y": 79
+          "x": 95,
+          "y": 98
         }
       ]
     },
@@ -537,18 +535,18 @@
       "id": "civilian-9",
       "unit": "units/civilian-woman.unit.json",
       "position": {
-        "x": 40,
-        "y": 29
+        "x": 99,
+        "y": 48
       },
       "equipment": [],
       "patrol": [
         {
-          "x": 40,
-          "y": 29
+          "x": 99,
+          "y": 48
         },
         {
-          "x": 34,
-          "y": 29
+          "x": 99,
+          "y": 62
         }
       ]
     },
@@ -556,18 +554,18 @@
       "id": "civilian-10",
       "unit": "units/civilian-man.unit.json",
       "position": {
-        "x": 26,
-        "y": 109
+        "x": 50,
+        "y": 12
       },
       "equipment": [],
       "patrol": [
         {
-          "x": 26,
-          "y": 109
+          "x": 50,
+          "y": 12
         },
         {
-          "x": 12,
-          "y": 109
+          "x": 50,
+          "y": 19
         }
       ]
     },
@@ -575,18 +573,18 @@
       "id": "police-1",
       "unit": "units/city-police.unit.json",
       "position": {
-        "x": 28,
-        "y": 97
+        "x": 105,
+        "y": 52
       },
       "equipment": [],
       "patrol": [
         {
-          "x": 28,
-          "y": 97
+          "x": 105,
+          "y": 52
         },
         {
-          "x": 20,
-          "y": 97
+          "x": 111,
+          "y": 52
         }
       ]
     },
@@ -594,18 +592,18 @@
       "id": "police-2",
       "unit": "units/city-police.unit.json",
       "position": {
-        "x": 30,
-        "y": 26
+        "x": 22,
+        "y": 76
       },
       "equipment": [],
       "patrol": [
         {
-          "x": 30,
-          "y": 26
+          "x": 22,
+          "y": 76
         },
         {
-          "x": 30,
-          "y": 36
+          "x": 29,
+          "y": 76
         }
       ]
     },
@@ -614,17 +612,17 @@
       "unit": "units/city-police.unit.json",
       "position": {
         "x": 28,
-        "y": 41
+        "y": 43
       },
       "equipment": [],
       "patrol": [
         {
           "x": 28,
-          "y": 41
+          "y": 43
         },
         {
           "x": 28,
-          "y": 33
+          "y": 32
         }
       ]
     },
@@ -632,18 +630,18 @@
       "id": "criminal-1",
       "unit": "units/criminal.unit.json",
       "position": {
-        "x": 109,
-        "y": 65
+        "x": 51,
+        "y": 80
       },
       "equipment": [],
       "patrol": [
         {
-          "x": 109,
-          "y": 65
+          "x": 51,
+          "y": 80
         },
         {
-          "x": 102,
-          "y": 65
+          "x": 51,
+          "y": 68
         }
       ]
     },
@@ -651,18 +649,18 @@
       "id": "criminal-2",
       "unit": "units/criminal.unit.json",
       "position": {
-        "x": 29,
-        "y": 61
+        "x": 110,
+        "y": 68
       },
       "equipment": [],
       "patrol": [
         {
-          "x": 29,
-          "y": 61
+          "x": 110,
+          "y": 68
         },
         {
-          "x": 25,
-          "y": 61
+          "x": 110,
+          "y": 80
         }
       ]
     },
@@ -670,18 +668,18 @@
       "id": "criminal-3",
       "unit": "units/criminal.unit.json",
       "position": {
-        "x": 17,
-        "y": 29
+        "x": 104,
+        "y": 69
       },
       "equipment": [],
       "patrol": [
         {
-          "x": 17,
-          "y": 29
+          "x": 104,
+          "y": 69
         },
         {
-          "x": 26,
-          "y": 29
+          "x": 104,
+          "y": 79
         }
       ]
     }
@@ -697,6 +695,44 @@
       "id": "city-car-1",
       "vehicle": "vehicles/city-car.vehicle.json",
       "position": {
+        "x": 62,
+        "y": 50
+      },
+      "driver": "units/civilian-man.unit.json",
+      "patrol": [
+        {
+          "x": 62,
+          "y": 50
+        },
+        {
+          "x": 109,
+          "y": 50
+        }
+      ]
+    },
+    {
+      "id": "city-car-2",
+      "vehicle": "vehicles/city-car.vehicle.json",
+      "position": {
+        "x": 62,
+        "y": 99
+      },
+      "driver": "units/civilian-woman.unit.json",
+      "patrol": [
+        {
+          "x": 62,
+          "y": 99
+        },
+        {
+          "x": 109,
+          "y": 99
+        }
+      ]
+    },
+    {
+      "id": "city-car-3",
+      "vehicle": "vehicles/city-car.vehicle.json",
+      "position": {
         "x": 2,
         "y": 74
       },
@@ -713,59 +749,21 @@
       ]
     },
     {
-      "id": "city-car-2",
+      "id": "city-car-4",
       "vehicle": "vehicles/city-car.vehicle.json",
       "position": {
         "x": 2,
-        "y": 100
+        "y": 28
       },
       "driver": "units/civilian-woman.unit.json",
       "patrol": [
         {
           "x": 2,
-          "y": 100
+          "y": 28
         },
         {
           "x": 49,
-          "y": 100
-        }
-      ]
-    },
-    {
-      "id": "city-car-3",
-      "vehicle": "vehicles/city-car.vehicle.json",
-      "position": {
-        "x": 62,
-        "y": 101
-      },
-      "driver": "units/civilian-man.unit.json",
-      "patrol": [
-        {
-          "x": 62,
-          "y": 101
-        },
-        {
-          "x": 109,
-          "y": 101
-        }
-      ]
-    },
-    {
-      "id": "city-car-4",
-      "vehicle": "vehicles/city-car.vehicle.json",
-      "position": {
-        "x": 62,
-        "y": 100
-      },
-      "driver": "units/civilian-woman.unit.json",
-      "patrol": [
-        {
-          "x": 62,
-          "y": 100
-        },
-        {
-          "x": 109,
-          "y": 100
+          "y": 28
         }
       ]
     },
@@ -773,18 +771,18 @@
       "id": "city-car-5",
       "vehicle": "vehicles/patrol-car.vehicle.json",
       "position": {
-        "x": 62,
-        "y": 76
+        "x": 2,
+        "y": 99
       },
       "driver": "units/civilian-man.unit.json",
       "patrol": [
         {
-          "x": 62,
-          "y": 76
+          "x": 2,
+          "y": 99
         },
         {
-          "x": 109,
-          "y": 76
+          "x": 39,
+          "y": 99
         }
       ]
     },
@@ -792,18 +790,43 @@
       "id": "city-car-6",
       "vehicle": "vehicles/armored-car.vehicle.json",
       "position": {
-        "x": 62,
-        "y": 77
+        "x": 2,
+        "y": 75
       },
       "driver": "units/civilian-woman.unit.json",
       "patrol": [
         {
-          "x": 62,
-          "y": 77
+          "x": 2,
+          "y": 75
         },
         {
-          "x": 109,
-          "y": 77
+          "x": 49,
+          "y": 75
+        }
+      ]
+    },
+    {
+      "id": "freight-train-1",
+      "vehicle": "vehicles/freight-train.vehicle.json",
+      "position": {
+        "x": 12,
+        "y": 2
+      },
+      "stops": [
+        {
+          "x": 12,
+          "y": 2,
+          "wait": 0
+        },
+        {
+          "x": 64,
+          "y": 2,
+          "wait": 8
+        },
+        {
+          "x": 94,
+          "y": 2,
+          "wait": 6
         }
       ]
     }

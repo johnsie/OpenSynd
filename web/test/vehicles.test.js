@@ -22,6 +22,7 @@ import {
   leaveVehicle,
   nearestRoadTile,
   newVehicleState,
+  startTrain,
   vehicleDefinition,
 } from "../src/vehicles.js";
 
@@ -392,4 +393,62 @@ test("keeping right shifts a path to the right-hand side where that is road, and
   assert.deepEqual(keepRight(back, roads, { x: 8, y: 5 }).map((node) => node.y), [4, 4], "west: the north side");
   const edge = [{ x: 7, y: 6 }, { x: 8, y: 6 }];
   assert.deepEqual(keepRight(edge, roads, { x: 6, y: 6 }).map((node) => node.y), [6, 6], "no road beyond the kerb: stay put");
+});
+
+test("a train runs between its stations, waits at each, turns round at the end of the line and never carries anyone", async () => {
+  const { isTrain, startTrain, trainCars, TRAIN_SPACING, settleTrain } = await import("../src/vehicles.js");
+  const trainDefinition = vehicleDefinition({
+    id: "developer.freight-train", name: "Freight Train", kind: "train", carriages: 3,
+    stats: { health: 2000, speed: 5, seats: 1, blastRadius: 1, blastDamage: 1 },
+    appearance: { primaryColor: "#5b6671", accentColor: "#e1b35a" },
+  });
+  const train = car("train", 12, 5, null, { definition: trainDefinition, health: 2000 });
+  startTrain(train, [{ x: 12, y: 5, wait: 0 }, { x: 22, y: 5, wait: 4 }, { x: 32, y: 5, wait: 2 }], 3);
+  assert.equal(isTrain(train), true);
+  assert.equal(canEnter({ position: { x: 12, y: 5 }, disabled: false }, train), false, "nobody boards a train");
+  // The carriages stand in a row behind the engine.
+  assert.deepEqual(trainCars(train).map((part) => part.x), [12, 12 - TRAIN_SPACING, 12 - 2 * TRAIN_SPACING, 12 - 3 * TRAIN_SPACING]);
+  const events = [];
+  const at = (seconds) => {
+    for (let step = 0; step < seconds * 10; step += 1) events.push(...advanceVehicles([train], 0.1, roads, grid));
+  };
+  at(2); // 10 tiles at 5 a second: arrives at the first station
+  assert.equal(train.position.x, 22);
+  assert.deepEqual(events.map((event) => event.type), ["train-stops"]);
+  at(3);
+  assert.equal(train.position.x, 22, "waiting at the station");
+  at(2);
+  assert.ok(train.position.x > 22, "gone again");
+  assert.ok(events.some((event) => event.type === "train-leaves"));
+  for (let guard = 0; guard < 300 && events.filter((event) => event.type === "train-stops").length < 2; guard += 1) at(0.1);
+  assert.equal(events.filter((event) => event.type === "train-stops").length, 2, "reached the end of the line");
+  // Turned round: the last carriage is now the engine, standing where the tail was, and the train heads back; it still
+  // occupies the same stretch of track, the front end at the end of the line.
+  assert.equal(Math.max(...trainCars(train).map((part) => part.x)), 32);
+  assert.ok(train.vehicle.heading.x < 0, "heading back");
+  assert.ok(Math.abs(train.position.x - (32 - 3 * TRAIN_SPACING)) < 0.6, "the engine is where the tail was");
+  for (let guard = 0; guard < 200 && train.position.x > 22; guard += 1) at(0.1);
+  assert.ok(train.position.x <= 22.1, "on its way back to the middle station");
+  // After a saved game puts the engine back, the carriages line up behind it again.
+  train.position = { x: 20, y: 5 };
+  train.vehicle.heading = { x: 1, y: 0 };
+  settleTrain(train);
+  assert.deepEqual(trainCars(train).map((part) => part.x), [20, 20 - TRAIN_SPACING, 20 - 2 * TRAIN_SPACING, 20 - 3 * TRAIN_SPACING]);
+});
+
+test("cars wait for a train in their lane and drive on once it has gone", () => {
+  const trainDefinition = vehicleDefinition({
+    id: "developer.freight-train", name: "Freight Train", kind: "train", carriages: 2,
+    stats: { health: 2000, speed: 5, seats: 1, blastRadius: 1, blastDamage: 1 },
+    appearance: { primaryColor: "#5b6671", accentColor: "#e1b35a" },
+  });
+  const train = car("train", 20, 5, null, { definition: trainDefinition, health: 2000 });
+  startTrain(train, [{ x: 20, y: 5, wait: 100 }, { x: 30, y: 5, wait: 0 }], 2);
+  train.vehicle.train.waiting = 100; // standing in the station
+  const traffic = car("taxi", 14, 5, "cabbie", { path: [{ x: 28, y: 5 }] });
+  traffic.vehicle.heading = { x: 1, y: 0 };
+  const cabbie = person("cabbie", 14, 5, { inVehicle: "taxi" });
+  traffic.vehicle.route = { route: [{ x: 14, y: 5 }, { x: 28, y: 5 }], index: 1 };
+  for (let step = 0; step < 60; step += 1) advanceVehicles([train, traffic, cabbie], 0.1, roads, grid);
+  assert.ok(traffic.position.x < 20, `the car stopped short of the train (${traffic.position.x.toFixed(1)})`);
 });

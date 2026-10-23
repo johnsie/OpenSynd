@@ -130,6 +130,21 @@
           "description": "Waypoints along the roads the driver follows, returning to the start and repeating.",
           "minItems": 1,
           "items": { "$ref": "#/$defs/position" }
+        },
+        "stops": {
+          "type": "array",
+          "description": "A train: the stations it runs between, in order and back again; it waits at each for `wait` seconds.",
+          "minItems": 2,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["x", "y"],
+            "properties": {
+              "x": { "type": "integer", "minimum": 0 },
+              "y": { "type": "integer", "minimum": 0 },
+              "wait": { "type": "number", "minimum": 0, "maximum": 120 }
+            }
+          }
         }
       }
     },

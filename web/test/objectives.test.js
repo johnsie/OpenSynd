@@ -291,8 +291,16 @@ test("every placement and scripted destination in every operation stands on grou
         }
       }
     }
-    for (const vehicle of mission.vehicles ?? []) {
+    for (const vehicle of (mission.vehicles ?? []).filter((item) => !item.stops)) {
       assert.ok(grid[vehicle.position.y]?.[vehicle.position.x]?.walkable, `${mission.id}: ${vehicle.id} is off the road`);
+    }
+    for (const train of (mission.vehicles ?? []).filter((item) => item.stops)) {
+      for (const stop of train.stops) {
+        const rail = map.regions.find(
+          (region) => region.surface === "rail" && stop.x >= region.x && stop.x < region.x + region.width && stop.y === region.y,
+        );
+        assert.ok(rail, `${mission.id}: a stop of ${train.id} at ${stop.x}, ${stop.y} is not on the railway`);
+      }
     }
     for (const zone of map.zones) reachable(zone.position, `zone ${zone.id}`);
   }

@@ -151,6 +151,13 @@ def build(layout: dict) -> dict:
             regions.append(region(f"bridge-{row}", channel["x"], row, channel["width"], 4,
                                   "signal-grate", True, 1, "#59717a"))
 
+    rail = layout.get("rail")
+    if rail:
+        # An elevated railway along the quiet top edge of the city, on a platform as high as the buildings. It is a viaduct:
+        # nobody can step onto it, and the streets pass underneath (it leaves a gap where each street column crosses).
+        for number, (x, width) in enumerate(rail["segments"]):
+            regions.append(region(f"rail-line-{number}", x, rail["y"], width, 1, "rail", False, rail["elevation"], "#3a3f44"))
+
     props = random.Random(layout["seed"] + 1)
     doors = []  # alley mouths closed by a door instead of a fence (layouts with "doors": True)
     compound = layout["compound"]

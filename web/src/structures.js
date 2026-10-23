@@ -719,3 +719,79 @@ export function drawSignal(context, p, { x, y }, cellHeight, green) {
   context.arc(base.x, base.y - unit * (green ? 1.55 : 1.8), unit * 0.3, 0, Math.PI * 2);
   context.fill();
 }
+
+/**
+ * A whole train, nothing like a car: a long, low, flat-roofed carriage train on rails, the engine with a sloped cab at its front,
+ * a band of lit windows down every carriage, a stripe in the accent colour and dark bogies under each one. `cars` is
+ * [{ x, y, heading }] from trainCars, engine first; `p` is a projector at the height of the railway.
+ */
+export function drawTrain(context, p, vehicle, cars, cellHeight, time) {
+  const { primaryColor, accentColor } = vehicle.definition.appearance;
+  // Back to front, so the nearer carriages overlap the farther ones.
+  const order = cars.map((car, index) => ({ car, index })).sort((a, b) => a.car.x + a.car.y - (b.car.x + b.car.y));
+  for (const { car, index } of order) {
+    const alongX = Math.abs(car.heading.x) >= Math.abs(car.heading.y);
+    const length = 2.25;
+    const width = 0.95;
+    const halfX = (alongX ? length : width) / 2;
+    const halfY = (alongX ? width : length) / 2;
+    const bodyHeight = cellHeight * 0.95;
+    const lift = (point, z) => ({ x: point.x, y: point.y - z });
+    // Dark bogies under the floor at each end, and the shadow of the viaduct edge is the track itself.
+    for (const end of [-0.7, 0.7]) {
+      const bx = car.x + (alongX ? end * halfX : 0);
+      const by = car.y + (alongX ? 0 : end * halfY);
+      drawBox(context, p, bx, by, alongX ? 0.28 : 0.45, alongX ? 0.45 : 0.28, 0, cellHeight * 0.16, "#15191c", "#262b2f");
+    }
+    const { west, south, east } = drawBox(
+      context, p, car.x, car.y, halfX, halfY, cellHeight * 0.16, bodyHeight, shadeHex(primaryColor, -6), shadeHex(primaryColor, 26),
+    );
+    // The long visible side: a stripe, and a band of lit windows. (For a train along y the long side is south to east.)
+    const [from, to] = alongX ? [west, south] : [south, east];
+    const along = (u, z) => lift({ x: from.x + (to.x - from.x) * u, y: from.y + (to.y - from.y) * u }, z);
+    context.fillStyle = accentColor;
+    context.beginPath();
+    for (const [u0, u1] of [[0.02, 0.98]]) {
+      const a = along(u0, bodyHeight * 0.42);
+      const b = along(u1, bodyHeight * 0.42);
+      const c = along(u1, bodyHeight * 0.34);
+      const d = along(u0, bodyHeight * 0.34);
+      context.moveTo(a.x, a.y);
+      context.lineTo(b.x, b.y);
+      context.lineTo(c.x, c.y);
+      context.lineTo(d.x, d.y);
+    }
+    context.fill();
+    context.fillStyle = "rgba(255, 226, 150, .85)";
+    for (let window = 0; window < 5; window += 1) {
+      const u0 = 0.1 + window * 0.17;
+      const a = along(u0, bodyHeight * 0.88);
+      const b = along(u0 + 0.12, bodyHeight * 0.88);
+      const c = along(u0 + 0.12, bodyHeight * 0.52);
+      const d = along(u0, bodyHeight * 0.52);
+      polygon(context, [a, b, c, d]);
+      context.fill();
+    }
+    if (index === 0) {
+      // The engine: a cab at the front with a dark windscreen, a lamp and a pantograph on the roof.
+      const sign = alongX ? Math.sign(car.heading.x || 1) : Math.sign(car.heading.y || 1);
+      const noseAt = (z) => p(car.x + (alongX ? sign * halfX : 0), car.y + (alongX ? 0 : sign * halfY), z);
+      const nose = lift(noseAt(0), bodyHeight * 0.62);
+      context.fillStyle = "#1a2a35";
+      context.fillRect(nose.x - 6, nose.y - 7, 12, 8);
+      const lamp = lift(noseAt(0), bodyHeight * 0.28);
+      context.fillStyle = "#ffeeb0";
+      context.beginPath();
+      context.arc(lamp.x, lamp.y, 2.6, 0, Math.PI * 2);
+      context.fill();
+      const roof = lift(p(car.x, car.y, 0), bodyHeight + 3);
+      context.strokeStyle = "#aab4bc";
+      context.lineWidth = 1.5;
+      context.beginPath();
+      context.moveTo(roof.x - 7, roof.y);
+      context.lineTo(roof.x, roof.y - 6);
+      context.lineTo(roof.x + 7, roof.y);
+      context.stroke();
+    }
+  }
+}

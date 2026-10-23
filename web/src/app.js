@@ -10,10 +10,14 @@ import {
   driveTo,
   enterVehicle,
   isSquadVehicle,
+  isTrain,
   isVehicle,
   leaveVehicle,
   newVehicleState,
+  settleTrain,
   signalAt,
+  startTrain,
+  trainCars,
   vehicleDefinition,
 } from "./vehicles.js";
 import { createOverlay, createTileSprites } from "./textures.js";
@@ -24,6 +28,7 @@ import {
   FENCE_SURFACE,
   WALL_SURFACE,
   drawBeacon,
+  drawTrain,
   drawScenery,
   drawSignal,
   drawConsole,
@@ -685,6 +690,11 @@ async function loadGame(index = state.missionIndex) {
     vehicle.side = "vehicle";
     vehicle.patrol = null;
     vehicle.vehicle = newVehicleState(driverId);
+    if (placement.stops) {
+      startTrain(vehicle, placement.stops, definition.carriages || 4);
+      // The railway is a viaduct: the train runs at the height of the track under its first stop.
+      vehicle.vehicle.train.elevation = state.grid[placement.stops[0].y]?.[placement.stops[0].x]?.elevation ?? 0;
+    }
     if (placement.patrol) {
       vehicle.vehicle.route = { route: buildPatrolRoute(state.roadGrid, placement.position, placement.patrol), index: 0 };
     }
@@ -1479,6 +1489,7 @@ function applySaveSnapshot(snapshot) {
     unit.looted = [...saved.looted];
     // Who is inside which car is not kept in a save: operators start the loaded game on foot, and a wreck stays one.
     unit.inVehicle = unit.definition.role === "operator" ? null : unit.inVehicle;
+    if (isTrain(unit)) settleTrain(unit);
     if (isVehicle(unit)) {
       unit.vehicle.controlledBy = null;
       unit.vehicle.exploded = unit.disabled;
@@ -1737,6 +1748,63 @@ function propProjector(viewport, elevation = 0) {
   });
 }
 
+// The railway's supports: not a solid wall but scaffolding, steel posts at the corners and crossed braces between them, with the
+// ground showing through, and a thin deck under the rails.
+function drawScaffold(top, base, cellSize, tile) {
+  const halfW = cellSize.width / 2;
+  const halfH = cellSize.height / 2;
+  const drop = base.y - top.y;
+  const corners = [
+    [top.x - halfW, top.y, base.x - halfW, base.y],
+    [top.x, top.y + halfH, base.x, base.y + halfH],
+    [top.x + halfW, top.y, base.x + halfW, base.y],
+  ];
+  // The shadow of the deck on the ground below.
+  context.fillStyle = "rgba(0, 0, 0, .22)";
+  context.beginPath();
+  context.moveTo(base.x, base.y - halfH);
+  context.lineTo(base.x + halfW, base.y);
+  context.lineTo(base.x, base.y + halfH);
+  context.lineTo(base.x - halfW, base.y);
+  context.closePath();
+  context.fill();
+  context.lineCap = "round";
+  // Crossed braces on the two faces that face the camera.
+  context.strokeStyle = "rgba(140, 156, 168, .55)";
+  context.lineWidth = 1.5;
+  context.beginPath();
+  for (const [from, to] of [[corners[0], corners[1]], [corners[1], corners[2]]]) {
+    context.moveTo(from[0], from[1] + drop * 0.08);
+    context.lineTo(to[2], to[3] - drop * 0.06);
+    context.moveTo(to[0], to[1] + drop * 0.08);
+    context.lineTo(from[2], from[3] - drop * 0.06);
+  }
+  // A cross beam part of the way down.
+  const midY = drop * 0.5;
+  context.moveTo(corners[0][0], corners[0][1] + midY);
+  context.lineTo(corners[1][0], corners[1][1] + midY);
+  context.lineTo(corners[2][0], corners[2][1] + midY);
+  context.stroke();
+  // The posts at the three corners, the nearest the thickest.
+  context.strokeStyle = "#7d8a95";
+  corners.forEach(([x0, y0, x1, y1], index) => {
+    context.lineWidth = index === 1 ? 3.5 : 2.5;
+    context.beginPath();
+    context.moveTo(x0, y0);
+    context.lineTo(x1, y1);
+    context.stroke();
+  });
+  // The thin deck edge under the rails.
+  context.strokeStyle = shade(tile.color, -10);
+  context.lineWidth = 3;
+  context.beginPath();
+  context.moveTo(corners[0][0], corners[0][1] + 1);
+  context.lineTo(corners[1][0], corners[1][1] + 1);
+  context.lineTo(corners[2][0], corners[2][1] + 1);
+  context.stroke();
+  context.lineCap = "butt";
+}
+
 function drawTile(tile, viewport) {
   const { cellSize, origin } = viewport;
   const prop = tile.surface === FENCE_SURFACE || tile.surface === WALL_SURFACE;
@@ -1745,7 +1813,9 @@ function drawTile(tile, viewport) {
   const baseCenter = gridToScreen(tile, cellSize, origin, 0);
   const topCenter = { x: baseCenter.x, y: baseCenter.y - elevationHeight };
 
-  if (elevationHeight > 0) {
+  if (elevationHeight > 0 && tile.surface === "rail") {
+    drawScaffold(topCenter, baseCenter, cellSize, tile);
+  } else if (elevationHeight > 0) {
     context.fillStyle = shade(tile.color, -22);
     context.beginPath();
     context.moveTo(topCenter.x - cellSize.width / 2, topCenter.y);
@@ -2335,6 +2405,11 @@ function drawScorch(center, size) {
 function drawUnit(unit, viewport) {
   if (unit.escaped) return;
   if (unit.inVehicle) return;
+  if (isTrain(unit)) {
+    const project = propProjector(viewport, unit.vehicle.train?.elevation ?? 0);
+    drawTrain(context, project, unit, trainCars(unit), viewport.cellSize.height, performance.now());
+    return;
+  }
   if (isVehicle(unit)) {
     const controlled = Boolean(unit.vehicle.controlledBy) && state.selectedIds.includes(unit.vehicle.controlledBy);
     drawVehicle(context, propProjector(viewport, 0), unit, viewport.cellSize.height, performance.now(), { controlled });
@@ -2620,6 +2695,7 @@ const MINI_UNIT_COLOURS = {
 const MINI_COLORS = {
   "runoff-channel": "#1f5568",
   "signal-grate": "#7a96a0",
+  rail: "#5a5f64",
   "utility-building": "#12171b",
   "service-fence": "#6b7a84",
   "service-wall": "#6b7a84",
@@ -3146,6 +3222,11 @@ function simulationStep(deltaSeconds) {
     }
   }
   const vehicleEvents = advanceVehicles(state.units, deltaSeconds, state.roadGrid, state.grid, state.missionSeconds);
+  // A train sounds its horn as it pulls into a station and as it leaves (quieter the further it is from the view).
+  for (const event of vehicleEvents.filter((item) => item.type === "train-stops" || item.type === "train-leaves")) {
+    const away = Math.hypot(event.at.x - state.camera.x, event.at.y - state.camera.y);
+    audio.play("train-horn", { volume: shotVolume(away, false) });
+  }
   for (const hit of vehicleEvents.filter((event) => event.type === "runover")) {
     const victim = state.units.find((unit) => unit.id === hit.unitId);
     const car = state.units.find((unit) => unit.id === hit.vehicleId);
@@ -4310,7 +4391,8 @@ canvas.addEventListener("click", (event) => {
     if (toGear < toUnit) unit = null;
   }
   if (unit) {
-    if (isVehicle(unit) && !unit.disabled && !isSquadVehicle(unit)) goEnterVehicle(unit, event.shiftKey);
+    if (isTrain(unit)) setStatus("The train does not stop for anyone, and cannot be boarded.");
+    else if (isVehicle(unit) && !unit.disabled && !isSquadVehicle(unit)) goEnterVehicle(unit, event.shiftKey);
     else if (unit.side !== "team") {
       // FreeSynd: a left click on a person follows them; shooting is the right click. Watchers and criminals are still engaged.
       if (isFollowable(unit)) issueFollow(unit.id);
@@ -4674,6 +4756,9 @@ if (new URLSearchParams(location.search).has("e2e")) {
       const definition = state.catalog.find((item) => item.id === itemId);
       unit.equipment.push({ definition, charges: charges ?? definition.charges });
       renderInterface();
+    },
+    trains() {
+      return state.units.filter(isTrain).map((unit) => ({ id: unit.id, cars: trainCars(unit), waiting: unit.vehicle.train.waiting }));
     },
     brokenWindows() {
       return state.windowsBroken.size;

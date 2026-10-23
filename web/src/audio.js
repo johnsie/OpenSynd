@@ -319,6 +319,16 @@ const SYNTH = Object.freeze({
       tone(audio, out, at + 0.2, { seconds: 0.05, gain: 0.25, type: "square", from: 220, to: 160 });
     },
   },
+  // A train's horn: two low notes together, held, with a little air in it.
+  "train-horn": {
+    caption: "Train horn",
+    gap: 2,
+    play(audio, out, at) {
+      tone(audio, out, at, { seconds: 0.9, gain: 0.3, type: "sawtooth", from: 196, to: 190 });
+      tone(audio, out, at, { seconds: 0.9, gain: 0.25, type: "sawtooth", from: 247, to: 240 });
+      noise(audio, out, at, { seconds: 0.9, gain: 0.05, filter: "lowpass", from: 900, to: 500, q: 0.5 });
+    },
+  },
   // A window breaking: a sharp crack and falling shards.
   glass: {
     caption: "Breaking glass",

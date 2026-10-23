@@ -7,13 +7,17 @@ import { findPath, hasLineOfSight } from "./engine.js";
 // depth order and saved like anyone else. Mapped from FreeSynd's vehicle model: cars are driven along the roads
 // by an AI driver, can carry passengers, blow up when destroyed (dropping their passengers and hurting everyone
 // nearby), eject a driver who is shot at by the squad, and can be taken over and driven by the squad.
-export const ROAD_SURFACES = new Set(["street", "signal-grate"]);
+export const ROAD_SURFACES = new Set(["street", "signal-grate", "rail"]);
 export const VEHICLE_HIT_RADIUS = 1.0;
 export const ENTER_RANGE = 2.4;
 export const WRECK_SECONDS = 12;
 
 export function isVehicle(unit) {
   return unit?.definition?.role === "vehicle";
+}
+
+export function isTrain(unit) {
+  return isVehicle(unit) && unit.definition.kind === "train";
 }
 
 // The unit definition a vehicle placement gets: stats a unit understands, plus the vehicle's own data.
@@ -23,6 +27,7 @@ export function vehicleDefinition(vehicle) {
     name: vehicle.name,
     role: "vehicle",
     kind: vehicle.kind,
+    carriages: vehicle.carriages ?? 0,
     stats: {
       vitality: vehicle.stats.health,
       speed: vehicle.stats.speed,
@@ -46,6 +51,7 @@ export function newVehicleState(driverId = null) {
     exploded: false,
     wreckLeft: 0,
     heading: { x: 1, y: 0 },
+    train: null,
   };
 }
 
@@ -216,7 +222,7 @@ export function seatsLeft(vehicle) {
 
 /** Whether an operator is close enough to a working vehicle to get in. */
 export function canEnter(operator, vehicle) {
-  if (!isVehicle(vehicle) || vehicle.disabled || operator.disabled || operator.inVehicle) return false;
+  if (!isVehicle(vehicle) || isTrain(vehicle) || vehicle.disabled || operator.disabled || operator.inVehicle) return false;
   return Math.hypot(operator.position.x - vehicle.position.x, operator.position.y - vehicle.position.y) <= ENTER_RANGE;
 }
 
@@ -345,8 +351,20 @@ export function blockedAhead(vehicle, units) {
     return ahead > 0 && ahead <= PEDESTRIAN_GAP && aside <= PEDESTRIAN_WIDTH;
   });
   if (person) return true;
+  // A train always has the right of way: cars wait for any of its carriages close ahead in their lane.
+  const train = units.some((other) => {
+    if (!isTrain(other) || !other.vehicle.train) return false;
+    return other.vehicle.train.body.some((part) => {
+      const dx = part.x - vehicle.position.x;
+      const dy = part.y - vehicle.position.y;
+      const ahead = dx * heading.x + dy * heading.y;
+      const aside = Math.abs(dx * heading.y - dy * heading.x);
+      return ahead > 0 && ahead <= FOLLOW_GAP + 0.6 && aside <= 1.2;
+    });
+  });
+  if (train) return true;
   return units.some((other) => {
-    if (other === vehicle || !isVehicle(other)) return false;
+    if (other === vehicle || !isVehicle(other) || isTrain(other)) return false;
     if (other.disabled && !(other.vehicle.wreckLeft > 0)) return false;
     // Parked cars (nobody at the wheel) are driven around rather than queued behind.
     if (!other.disabled && !other.vehicle.driverId && !other.vehicle.controlledBy) return false;
@@ -393,6 +411,111 @@ function runOver(vehicle, units, seconds) {
   return events;
 }
 
+// ---- Trains
+// A train runs on rails between its stations (the head stops on each stop in turn, waits there, and goes on; at the end of the
+// line it turns round: the carriages become the front, in the same places). It is not driven by anyone and nothing stops it.
+export const TRAIN_SPACING = 2.3;
+export const TRAIN_STOP_SECONDS = 6;
+
+/** Set a train up on its line: the engine on the first stop and the carriages standing in a row behind it. */
+export function startTrain(vehicle, stops, carriages) {
+  const first = stops[0];
+  const next = stops[1] ?? first;
+  const length = Math.hypot(next.x - first.x, next.y - first.y) || 1;
+  const heading = { x: (next.x - first.x) / length, y: (next.y - first.y) / length };
+  const body = [{ x: first.x, y: first.y }];
+  for (let index = 1; index <= carriages; index += 1) {
+    body.push({ x: first.x - heading.x * TRAIN_SPACING * index, y: first.y - heading.y * TRAIN_SPACING * index });
+  }
+  vehicle.position = { ...body[0] };
+  vehicle.vehicle.heading = heading;
+  vehicle.vehicle.train = {
+    stops: stops.map((stop) => ({ x: stop.x, y: stop.y, wait: stop.wait ?? TRAIN_STOP_SECONDS })),
+    index: stops.length > 1 ? 1 : 0,
+    direction: 1,
+    waiting: 0,
+    body,
+    arrivals: 0,
+  };
+}
+
+/** Where the carriages are, engine first: [{ x, y, heading }]. */
+export function trainCars(vehicle) {
+  const train = vehicle.vehicle.train;
+  if (!train) return [{ ...vehicle.position, heading: vehicle.vehicle.heading }];
+  return train.body.map((point, index) => {
+    const front = index === 0 ? null : train.body[index - 1];
+    const heading = front
+      ? { x: front.x - point.x, y: front.y - point.y }
+      : vehicle.vehicle.heading;
+    const length = Math.hypot(heading.x, heading.y) || 1;
+    return { x: point.x, y: point.y, heading: { x: heading.x / length, y: heading.y / length } };
+  });
+}
+
+/** After a saved game puts the engine back, stand the carriages in a row behind it again. */
+export function settleTrain(vehicle) {
+  const train = vehicle.vehicle.train;
+  if (!train) return;
+  const heading = vehicle.vehicle.heading;
+  train.body.forEach((point, index) => {
+    point.x = vehicle.position.x - heading.x * TRAIN_SPACING * index;
+    point.y = vehicle.position.y - heading.y * TRAIN_SPACING * index;
+  });
+}
+
+function advanceTrain(vehicle, seconds) {
+  const train = vehicle.vehicle.train;
+  if (!train) return null;
+  let event = null;
+  if (train.waiting > 0) {
+    train.waiting = Math.max(0, train.waiting - seconds);
+    if (train.waiting > 0) return null;
+    event = { type: "train-leaves", vehicleId: vehicle.id, at: { ...vehicle.position } };
+  }
+  const target = train.stops[train.index];
+  const head = train.body[0];
+  const dx = target.x - head.x;
+  const dy = target.y - head.y;
+  const distance = Math.hypot(dx, dy);
+  const step = vehicle.definition.stats.speed * seconds;
+  if (distance > 1e-6) vehicle.vehicle.heading = { x: dx / distance, y: dy / distance };
+  const arrived = distance <= step + 1e-6;
+  if (arrived) {
+    head.x = target.x;
+    head.y = target.y;
+  } else {
+    head.x += (dx / distance) * step;
+    head.y += (dy / distance) * step;
+  }
+  // Each carriage follows the one in front, keeping its distance.
+  for (let index = 1; index < train.body.length; index += 1) {
+    const front = train.body[index - 1];
+    const car = train.body[index];
+    const gap = Math.hypot(front.x - car.x, front.y - car.y);
+    if (gap > TRAIN_SPACING) {
+      const pull = (gap - TRAIN_SPACING) / gap;
+      car.x += (front.x - car.x) * pull;
+      car.y += (front.y - car.y) * pull;
+    }
+  }
+  if (arrived) {
+    train.waiting = target.wait;
+    train.arrivals += 1;
+    event = { type: "train-stops", vehicleId: vehicle.id, at: { x: head.x, y: head.y } };
+    // At the end of the line the train turns round: the last carriage becomes the engine, the others in the places they stood.
+    const last = train.index + train.direction;
+    if (last < 0 || last >= train.stops.length) {
+      train.direction = -train.direction;
+      train.body.reverse();
+      vehicle.vehicle.heading = { x: -vehicle.vehicle.heading.x, y: -vehicle.vehicle.heading.y };
+    }
+    train.index = Math.min(train.stops.length - 1, Math.max(0, train.index + train.direction));
+  }
+  vehicle.position = { x: train.body[0].x, y: train.body[0].y };
+  return event;
+}
+
 /**
  * Move every vehicle: driven ones along the player's orders or their AI route, occupants carried with them.
  * A vehicle that has just been destroyed drops its occupants and explodes, hurting everyone near it (and setting
@@ -403,6 +526,11 @@ export function advanceVehicles(units, seconds, roadGrid, grid, time = 0) {
   for (const vehicle of units) {
     if (!isVehicle(vehicle)) continue;
     const state = vehicle.vehicle;
+    if (isTrain(vehicle)) {
+      const event = advanceTrain(vehicle, seconds);
+      if (event) events.push(event);
+      continue;
+    }
     if (vehicle.disabled) {
       if (!state.exploded) {
         state.exploded = true;

@@ -188,7 +188,8 @@ export function validateDraft(mission, map) {
       problems.push(`${entry.id} is outside the map.`);
       continue;
     }
-    if (!grid[entry.position.y]?.[entry.position.x]?.walkable) {
+    // A train stands on its viaduct, which nobody can walk on.
+    if (!entry.item.stops && !grid[entry.position.y]?.[entry.position.x]?.walkable) {
       const gate = (map.objects ?? []).some(
         (object) =>
           entry.position.x >= object.position.x && entry.position.x < object.position.x + object.width &&

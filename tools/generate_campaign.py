@@ -110,6 +110,22 @@ def surfaces(map_value: dict) -> tuple[list[list[str]], list[list[bool]]]:
     return surface, walkable
 
 
+RAIL_HEIGHT = 8  # tile elevation of the viaduct: about as high as the buildings
+
+
+def rail_for(size: int, period: int, block: int, first: int, blocks: int, compound) -> dict:
+    """The railway: segments of an elevated line along row 2, leaving a gap at each street column (which passes underneath)."""
+    end = (compound[0] - 3) if compound else size - 2
+    columns = [(first + block + period * index, first + block + period * index + 4) for index in range(blocks)]
+    segments = []
+    start = 1
+    for low, high in columns + [(end + 1, end + 1)]:
+        if low - start >= 4:
+            segments.append((start, min(low, end + 1) - start))
+        start = high
+    return {"y": 2, "elevation": RAIL_HEIGHT, "segments": [(x, w) for x, w in segments if x + w <= end + 1]}
+
+
 def layout_for(territory: dict, tier: int) -> dict:
     """The parameters of a city for this territory: bigger and more fenced further along the campaign."""
     rng = random.Random(seed_of(territory["id"]))
@@ -154,6 +170,7 @@ def layout_for(territory: dict, tier: int) -> dict:
         "compound": compound,
         "fences": fences,
         "gate": gate,
+        "rail": rail_for(size, period, block, first, blocks, compound),
         "doors": tier >= 2,  # alley mouths closed by doors that open for anyone who walks up to them
         "entry": (2, size // 2),
         "zones": [],
@@ -298,7 +315,8 @@ def make_mission(territory: dict, tier: int, layout: dict, map_value: dict, map_
         for y in range(z["position"]["y"] - 2, z["position"]["y"] + z["height"] + 2):
             for x in range(z["position"]["x"] - 2, z["position"]["x"] + z["width"] + 2):
                 reserved.add((x, y))
-    pool = sorted(p for p in reach if p not in reserved and math.hypot(p[0] - entry[0], p[1] - entry[1]) > 12)
+    pool = sorted(p for p in reach if p not in reserved and math.hypot(p[0] - entry[0], p[1] - entry[1]) > 12
+                  and surface[p[1]][p[0]] != "rail")
     street = sorted(p for p in pool if surface[p[1]][p[0]] == "street")
     rng.shuffle(pool)
     rng.shuffle(street)
@@ -410,6 +428,19 @@ def make_mission(territory: dict, tier: int, layout: dict, map_value: dict, map_
         (x0, y0), (x1, y1) = run
         vehicles.append({"id": f"city-car-{number + 1}", "vehicle": kind, "position": {"x": x0, "y": y0},
                          "driver": drivers[number % 2], "patrol": [{"x": x0, "y": y0}, {"x": x1, "y": y1}]})
+
+    # A freight train shuttles along the viaduct, waiting at a station on the middle stretch and at each end.
+    rail = layout["rail"]
+    segments = rail["segments"]
+    first_x = segments[0][0] + 11
+    last_x = segments[-1][0] + segments[-1][1] - 2
+    middle = segments[len(segments) // 2]
+    station_x = middle[0] + middle[1] // 2
+    vehicles.append({
+        "id": "freight-train-1", "vehicle": "vehicles/freight-train.vehicle.json", "position": {"x": first_x, "y": rail["y"]},
+        "stops": [{"x": first_x, "y": rail["y"], "wait": 0}, {"x": station_x, "y": rail["y"], "wait": 8},
+                  {"x": last_x, "y": rail["y"], "wait": 6}],
+    })
 
     place = rng.choice(PLACES)
     name = f"{territory['name']} {recipe['noun']}"

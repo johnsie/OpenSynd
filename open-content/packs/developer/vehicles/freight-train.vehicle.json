@@ -1,0 +1,19 @@
+{
+  "formatVersion": 1,
+  "id": "developer.freight-train",
+  "name": "Freight Train",
+  "license": "CC0-1.0",
+  "kind": "train",
+  "carriages": 4,
+  "stats": {
+    "health": 2000,
+    "speed": 7,
+    "seats": 1,
+    "blastRadius": 1,
+    "blastDamage": 1
+  },
+  "appearance": {
+    "primaryColor": "#5b6671",
+    "accentColor": "#e1b35a"
+  }
+}
