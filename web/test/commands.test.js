@@ -88,7 +88,7 @@ test("rules modules use no browser APIs, wall clocks or Math.random", () => {
   const rules = [
     "engine", "simulation", "mission", "inventory", "vehicles", "props", "drugs", "upgrades", "campaign", "bombs", "buildings",
     "random", "progress", "strategy", "death", "opstats", "debrief", "commands", "windows", "operations", "tutorial",
-    "core/hooks", "core/step", "core/orders", "core/apply", "core/world",
+    "core/hooks", "core/step", "core/orders", "core/apply", "core/world", "core/create",
   ];
   for (const name of rules) {
     const code = readFileSync(new URL(`../src/${name}.js`, import.meta.url), "utf8")

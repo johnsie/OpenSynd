@@ -4,6 +4,7 @@
 // order functions in orders.js. The browser calls this for the player's clicks and key presses; a server calls it for each command
 // a player sends it; a replay calls it with the commands it recorded.
 import { validateCommand } from "../commands.js";
+import { useStreams } from "../simulation.js";
 import {
   dropFromSlot,
   goEnterVehicle,
@@ -30,7 +31,8 @@ export function applyCommand(world, hooks, command, context = {}) {
   const exists = (id) => Boolean(findUnit(world, id)) || world.drops.some((drop) => drop.id === id);
   const check = validateCommand(command, { size: world.map.dimensions, owns: context.owns, exists });
   if (!check.ok) return check;
-  const chance = context.chance ?? (() => 0.5);
+  useStreams(world.streams);
+  const chance = context.chance ?? (() => world.streams.world());
   const operators = operatorsOf(world, command.unitIds);
   const queue = Boolean(command.queue);
   switch (command.type) {

@@ -48,8 +48,6 @@ function freeSpot(position, grid, drops, start = 0) {
   return { x: position.x, y: position.y };
 }
 
-let dropSerial = 0;
-
 /**
  * FreeSynd lets an agent drop a weapon or item they carry: it leaves the slot and lies on the ground beside them, free
  * for anyone to pick up (even them again). Returns the drop, or null if the slot is empty or the operative is down.
@@ -63,8 +61,8 @@ export function dropItem(unit, slot, drops, grid = null) {
     else if (unit.activeSlot > slot) unit.activeSlot -= 1;
   }
   if (entry.definition.action === "persuade") unit.persuading = false;
-  dropSerial += 1;
-  const drop = makeDrop(`dropped-${unit.id}-${dropSerial}`, entry, freeSpot(unit.position, grid, drops));
+  unit.dropCount = (unit.dropCount ?? 0) + 1; // numbered per person, so the same orders always name the same drops
+  const drop = makeDrop(`dropped-${unit.id}-${unit.dropCount}`, entry, freeSpot(unit.position, grid, drops));
   drop.droppedBy = unit.id;
   drops.push(drop);
   return drop;

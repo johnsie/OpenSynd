@@ -8,21 +8,29 @@ import { adrenalineAim, adrenalineSpeed, drugMultiplier, intelligenceRecharge, p
 import { aimBonus, armsCapacity, armsCooldown, chestTier, chestVitality, eyesRange, legsPace } from "./upgrades.js";
 import { createRandom } from "./random.js";
 
-// The simulation's source of chance (shot accuracy). Reseed it at the start of an operation for a repeatable run.
-let random = createRandom(1);
-// A second stream for chance that is not about shots (which window a bullet breaks), so drawing from it never changes where shots land.
-let worldRandom = createRandom(0x9e3779b9);
+// The simulation's sources of chance. An operation has its own pair of streams: one for shot accuracy and a second for chance
+// that is not about shots (which window a bullet breaks), so drawing from it never changes where shots land. They are seeded, so
+// the same operation and the same orders always play out the same way. Several operations can run in one process (a server runs
+// many): each world keeps its streams and makes them the active ones for the moment it is being stepped (see useStreams).
+export function createStreams(seed = 1) {
+  return { shots: createRandom(seed), world: createRandom((seed ^ 0x9e3779b9) >>> 0) };
+}
+let streams = createStreams(1);
+const random = () => streams.shots();
+export function useStreams(next) {
+  streams = next;
+}
+/** Start the active streams afresh from a seed (for a single operation running alone). */
 export function seedSimulation(seed = 1) {
-  random = createRandom(seed);
-  worldRandom = createRandom((seed ^ 0x9e3779b9) >>> 0);
+  streams = createStreams(seed);
 }
 /** A chance from the operation's seeded world stream (0 to 1). Rules must use this or the shot stream, never Math.random. */
 export function worldChance() {
-  return worldRandom();
+  return streams.world();
 }
-/** Replace the source of chance (a function returning 0 to 1); tests use it to aim exactly (always 0.5). */
+/** Replace the source of shot chance (a function returning 0 to 1); tests use it to aim exactly (always 0.5). */
 export function setRandomSource(source) {
-  random = source;
+  streams = { ...streams, shots: source };
 }
 
 export const FIXED_STEP_SECONDS = 1 / 30;

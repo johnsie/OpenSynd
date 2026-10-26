@@ -35,6 +35,7 @@ import {
   syncWorldGates,
 } from "./core/step.js";
 import { applyCommand } from "./core/apply.js";
+import { createWorld } from "./core/create.js";
 import { commands } from "./commands.js";
 import {
   interactionCandidate as coreInteractionCandidate,
@@ -477,15 +478,6 @@ setVictoryTheme(settings.victoryTheme);
 applyLanguage();
 
 const SPRITE_SKINS = ["operative-one", "operative-two", "operative-three", "operative-four"];
-// Which side of the fight a unit definition's role puts it on.
-const SIDE_BY_ROLE = {
-  operator: "team",
-  "enemy-agent": "opposition",
-  guard: "opposition",
-  civilian: "civilian",
-  criminal: "criminal",
-  police: "police",
-};
 const WATCHER_SKINS = ["watcher-one", "watcher-two"];
 const sprites = { manifest: null, images: new Map() };
 
@@ -569,18 +561,6 @@ function squadTeam(slots) {
     .map((member, index) => ({ ...slots[index], id: member.id, callsign: member.name }));
 }
 
-function startingEquipment(placement, definition, byPath, byId) {
-  const defaults = placement.equipment.map((path) => byPath.get(path));
-  const issued = state.enemyArms?.get(placement.id);
-  if (issued && definition.role === "enemy-agent") defaults.push(issued);
-  if (definition.role !== "operator") return defaults;
-  const ids = loadoutFor(state.campaign, placement.id, defaults.map((item) => item.id));
-  return ids
-    .map((id) => byId.get(id))
-    .filter((item) => item && isItemAvailable(state.campaign, item))
-    .slice(0, SLOTS_PER_OPERATIVE);
-}
-
 // `options.variant` forces which of the territory's operations to load ("uprising", "defence", or null for the main one); left out,
 // the territory's state decides (a revolt gets the uprising, a takeover attempt the defence).
 async function loadGame(index = state.missionIndex, options = {}) {
@@ -631,17 +611,18 @@ async function loadGame(index = state.missionIndex, options = {}) {
   const definitionsById = new Map(state.catalog.map((definition) => [definition.id, definition]));
   updateFundsReadout();
 
-  state.map = map;
-  state.mission = mission;
-  state.grid = createTileGrid(map);
+  // The operation itself is made by the game core, the same way a server would make it; the page adds what it needs to draw it.
+  const world = createWorld({
+    mission,
+    map,
+    content: { units: unitDefinitions, vehicles: vehicleDefinitions, equipment: equipmentDefinitions },
+    campaign: state.campaign,
+    seed: 1,
+    options: { instantMoves: reduceMotion, harmless: tutorialRun },
+  });
+  Object.assign(state, world);
   markRailBridges(map, state.grid);
-  state.buildings = buildingsFromMap(map);
-  state.windowsBroken = new Set();
-  state.targeted = {};
   state.deathsSeeded = false;
-  state.bombs = [];
-  state.drops = [];
-  state.armedBomb = null;
   state.alertHold = 0;
   state.alertMusic = false;
   music.setAlert(false);
@@ -660,7 +641,6 @@ async function loadGame(index = state.missionIndex, options = {}) {
       elevation: state.grid[zone.position.y][zone.position.x]?.elevation ?? 0,
     }));
   // Street scenery: trees, lights and bins. They take damage and are drawn in depth order with everything else.
-  state.props = (map.props ?? []).map(newProp);
   for (const prop of state.props) {
     state.structures.push({
       id: prop.id,
@@ -673,79 +653,6 @@ async function loadGame(index = state.missionIndex, options = {}) {
       elevation: state.grid[prop.position.y]?.[prop.position.x]?.elevation ?? 0,
     });
   }
-  state.objectives = mission.objectives.map((objective) => ({
-    ...objective,
-    complete: false,
-    sequence: Boolean(mission.sequence),
-  }));
-  syncGates();
-  const buildUnit = (placement, definition) => ({
-    ...placement,
-    definition,
-    side: SIDE_BY_ROLE[definition.role] ?? "opposition",
-    position: { ...placement.position },
-    initialPosition: { ...placement.position },
-    alertedBy: null,
-    walkPhase: 0,
-    script: placement.script
-      ? { steps: placement.script, index: 0, waitLeft: null, loop: Boolean(placement.scriptLoop), done: false }
-      : null,
-    patrol: placement.patrol
-      ? { route: buildPatrolRoute(state.grid, placement.position, placement.patrol), index: 0 }
-      : null,
-    path: [],
-    upgrades:
-      definition.role === "operator"
-        ? upgradesOf(state.campaign, placement.id)
-        : definition.role === "enemy-agent"
-          ? enemyUpgrades(state.campaign)
-          : null,
-    drugs: definition.role === "operator" ? newDrugs() : null,
-    looted: [],
-    activeSlot: null,
-    initialEquipment: [],
-    equipment: startingEquipment(placement, definition, equipmentDefinitions, definitionsById).map((item) => ({
-      definition: item,
-      charges: item.charges,
-    })),
-    // What this kind of person carries besides what is in their hands (a policeman's sidearm): it drops when they fall.
-    sidearm: (definition.carries ?? [])
-      .map((path) => equipmentDefinitions.get(path))
-      .filter(Boolean)
-      .map((item) => ({ definition: item, charges: item.charges })),
-    health:
-      definition.stats.vitality +
-      (definition.role === "operator"
-        ? chestVitality(upgradesOf(state.campaign, placement.id))
-        : definition.role === "enemy-agent"
-          ? chestVitality(enemyUpgrades(state.campaign))
-          : 0),
-    cooldownRemaining: 0,
-    targetId: null,
-    disabled: false,
-  });
-  // Training enemies are issued nothing.
-  state.enemyArms = tutorialRun
-    ? new Map()
-    : enemyArmament(
-        mission.opponents
-          .filter((placement) => unitDefinitions.get(placement.unit)?.role === "enemy-agent")
-          .map((placement) => placement.id),
-        state.campaign,
-        state.catalog,
-      );
-  seedSimulation(1);
-  state.units = [...mission.team, ...mission.opponents, ...(mission.bystanders ?? [])].map((placement) =>
-    buildUnit(placement, unitDefinitions.get(placement.unit)),
-  );
-  if (tutorialRun) {
-    // The practice target cannot hurt anyone: an enemy agent's own attack is taken away as well as any weapon.
-    for (const unit of state.units.filter((item) => item.side !== "team" && item.definition.stats.attack > 0)) {
-      unit.definition = { ...unit.definition, stats: { ...unit.definition.stats, attack: 0 } };
-    }
-  }
-  // Vehicles are units too (side "vehicle"), with an AI driver who is a unit riding inside.
-  state.roadGrid = createRoadGrid(state.grid);
   // A signal at each corner of every crossing: two corners show the east-west light, two the north-south one.
   for (const crossing of state.roadGrid.crossings) {
     const corners = [
@@ -767,41 +674,7 @@ async function loadGame(index = state.missionIndex, options = {}) {
       });
     });
   }
-  for (const placement of mission.vehicles ?? []) {
-    const definition = vehicleDefinition(vehicleDefinitions.get(placement.vehicle));
-    const driverDefinition = placement.driver ? unitDefinitions.get(placement.driver) : null;
-    const driverId = driverDefinition ? `${placement.id}-driver` : null;
-    const vehicle = buildUnit({ id: placement.id, position: placement.position, equipment: [] }, definition);
-    vehicle.side = "vehicle";
-    vehicle.patrol = null;
-    vehicle.vehicle = newVehicleState(driverId);
-    if (placement.stops) {
-      startTrain(vehicle, placement.stops, definition.carriages || 4);
-      // The railway is a viaduct: the train runs at the height of the track under its first stop.
-      vehicle.vehicle.train.elevation = state.grid[placement.stops[0].y]?.[placement.stops[0].x]?.elevation ?? 0;
-    }
-    if (placement.patrol) {
-      vehicle.vehicle.route = { route: buildPatrolRoute(state.roadGrid, placement.position, placement.patrol), index: 0 };
-    }
-    state.units.push(vehicle);
-    if (driverDefinition) {
-      const driver = buildUnit({ id: driverId, position: placement.position, equipment: [] }, driverDefinition);
-      driver.inVehicle = placement.id;
-      driver.patrol = null;
-      state.units.push(driver);
-    }
-  }
-  // Each operative's number, shown in gold above their head and matching their place in the squad list.
-  state.units.filter((unit) => unit.side === "team").forEach((unit, index) => {
-    unit.number = index + 1;
-  });
-  for (const unit of state.units) unit.initialEquipment = unit.equipment.map((item) => ({ ...item }));
-  // Reset only now that the new units exist, or the old squad would re-trigger the outcome.
-  state.outcome = "active";
-  state.missionSeconds = 0;
-  state.opStats = newStats(mission.opponents.length);
   state.fundsAtStart = state.campaign.funds;
-  state.debrief = newDebriefCounts();
   state.camera = createCamera(mission.team[0].position);
   buildMiniTerrain();
   state.selectedId = mission.team[0].id;
@@ -3314,7 +3187,7 @@ function updateAlertMusic(deltaSeconds) {
 // ---- Orders. The player's clicks and keys become commands (see commands.js) for the game core (core/apply.js), the same way a
 // server or a replay would give them; what comes back is only for the interface (the cursor, which squares are armed).
 const selectedIds = () => selectedOperators().map((unit) => unit.id);
-const give = (command) => applyCommand(state, worldHooks, command, { chance: worldChance });
+const give = (command) => applyCommand(state, worldHooks, command);
 // A point the pointer chose may lie outside the map; the core wants one inside it.
 const insideMap = (point) => ({
   x: Math.min(state.map.dimensions.width, Math.max(0, point.x)),
@@ -3457,7 +3330,7 @@ function simulationStep(deltaSeconds) {
   state.holdFire = held
     ? { unitIds: selectedIds(), at: insideMap(screenToGridExact(state.holdFireScreen, state.viewport.cellSize, state.viewport.origin)) }
     : null;
-  stepWorld(state, deltaSeconds, worldHooks, worldChance);
+  stepWorld(state, deltaSeconds, worldHooks);
   updateAlertMusic(deltaSeconds);
 }
 
@@ -3714,7 +3587,6 @@ function update(deltaSeconds) {
     state.clock.accumulator = 0;
     return;
   }
-  state.elapsed += deltaSeconds;
   stampDeaths();
   if (state.outcome === "active") {
     // The campaign clock runs with the operation: four seconds make a game hour, which pays for research, and a day
