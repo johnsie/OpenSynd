@@ -54,6 +54,21 @@ const TABLE = Object.freeze({
   "tutorial.leave": ["Leave training", "Salir del entrenamiento", "Quitter l'entraînement"],
   "tutorial.again": ["Train again", "Entrenar de nuevo", "Recommencer"],
   "tutorial.finish": ["Main menu", "Menú principal", "Menu principal"],
+  "about.eyebrow": ["ABOUT OPENSYND", "ACERCA DE OPENSYND", "À PROPOS D'OPENSYND"],
+  "about.heading": ["An unofficial fan game", "Un juego de fans no oficial", "Un jeu de fans non officiel"],
+  "about.lead": [
+    "OpenSynd is an unofficial, non-profit fan game, made as a hobby. It is inspired by other games and is not affiliated with " +
+      "or endorsed by their makers or owners. It is free, has no adverts and sells nothing.",
+    "OpenSynd es un juego de fans no oficial y sin ánimo de lucro, hecho como afición. Se inspira en otros juegos y no está " +
+      "afiliado ni respaldado por sus creadores o propietarios. Es gratis, no tiene anuncios y no vende nada.",
+    "OpenSynd est un jeu de fans non officiel et sans but lucratif, fait par passion. Il s'inspire d'autres jeux, sans affiliation " +
+      "ni soutien de leurs créateurs ou propriétaires. Il est gratuit, sans publicité, et ne vend rien.",
+  ],
+  "about.free": [
+    "Free to inspect, modify, and share",
+    "Libre de inspeccionar, modificar y compartir",
+    "Libre d'inspecter, de modifier et de partager",
+  ],
   "menu.continue": ["Continue", "Continuar", "Continuer"],
   "menu.campaign": ["Start campaign", "Empezar campaña", "Commencer la campagne"],
   "menu.campaign_note": [
@@ -76,7 +91,7 @@ const TABLE = Object.freeze({
     "La misma operación para todos, con clasificación.",
     "La même opération pour tous, avec classement.",
   ],
-  "menu.rivals": ["Rival syndicates", "Sindicatos rivales", "Syndicats rivaux"],
+  "menu.rivals": ["Rival companies", "Empresas rivales", "Sociétés rivales"],
   "menu.rivals_note": [
     "Raid other players' territories.",
     "Asalta los territorios de otros jugadores.",

@@ -13,7 +13,7 @@ the overview is in the [README](README.md).
 
 - **Code** is GPL-2.0-or-later (FreeSynd's licence). **Game content** I wrote (the maps, missions, units, equipment and
   text in `open-content/`) is CC0-1.0, dedicated to the public domain.
-- **Nothing the browser game uses comes from the original *Syndicate* game:** no graphics, sounds, music, maps,
+- **Nothing the browser game uses comes from other games:** no graphics, sounds, music, maps,
   missions or data files. (What FreeSynd left in the repository is a separate matter, covered below.)
 - The **character pictures** are rendered by my own scripts from one free (CC0) 3D model by Quaternius.
 - The **music** is by two free-music authors, credited below.

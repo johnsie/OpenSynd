@@ -10,9 +10,9 @@ release notes (see `docs/RELEASING.md`, "The legal gate").
 ## 1. What the web release ships
 
 - **Code**: every `.js`, `.css` and `.html` file, GPL-2.0-or-later (SPDX notice in each; checked by CI).
-- **Content**: `open-content/packs/developer`, CC0-1.0, written for this project (no original *Syndicate* material).
+- **Content**: `open-content/packs/developer`, CC0-1.0, written for this project (no material from other games).
 - **Registered assets**: 40 files under `web/public/assets/`, of which **40 are not yet approved**.
-- **Nothing** from the original game, and nothing from `data/` or `icon/` (excluded or quarantined, not built into the site).
+- **Nothing** from other games, and nothing from `data/` or `icon/` (excluded or quarantined, not built into the site).
 
 | File | Licence | Maker | Source | Status | SHA-256 (first 12) |
 | --- | --- | --- | --- | --- | --- |
@@ -61,8 +61,8 @@ release notes (see `docs/RELEASING.md`, "The legal gate").
 
 1. **Assets.** Is each source and licence above adequately evidenced (a page that states the licence, the author, the date)? Note the music track offered under `GPL-3.0-only OR CC-BY-SA-3.0`: the project uses it under CC-BY-SA-3.0 with attribution (see the About box); is that the right reading, and is the share-alike requirement satisfied by how it is shipped as a separate audio file?
 2. **Licence expression.** The inherited FreeSynd tree is audited as GPL-2.0-or-later; the web code is new work under the same terms. Is any inherited file GPL-2.0-only? (`docs/legal/IP_AUDIT.md`, "Open questions".)
-3. **Name.** "OpenSynd" is the final name (the project owner's decision). No formal trademark search has been done and the project claims the name is neither registered nor cleared. Is that posture acceptable for a free hobby game, and what would a search against *Syndicate* and FreeSynd be needed for? (`TRADEMARKS.md`.)
-4. **Fan-game posture.** The game takes rules and values from the FreeSynd source (GPL) but no art, sound, text or maps from the original game. Is the public statement of that in the README and About box sufficient?
+3. **Name.** "OpenSynd" is the final name (the project owner's decision). No formal trademark search has been done and the project claims the name is neither registered nor cleared. Is that posture acceptable for a free hobby game, and what would a search against other games and FreeSynd be needed for? (`TRADEMARKS.md`.)
+4. **Fan-game posture.** The game takes rules and values from the FreeSynd source (GPL) but no art, sound, text or maps from other games. Is the public statement of that in the README and About box sufficient?
 5. **Unresolved source files** (not part of the web build): see section 3.
 
 ## 3. Unresolved source files

@@ -128,7 +128,7 @@ notoriety changes by the stated amounts for kills, witnessed shootings and clean
 
 Fifty operations in an order you choose are good; a story and a rival give it pull.
 
-**E1. A rival syndicate that fights back (L, new).** The territories you hold can be attacked. A held district can be lost if you
+**E1. A rival company that fights back (L, new).** The territories you hold can be attacked. A held district can be lost if you
 neglect it (low mood, no defence), and winning it back is an operation. The existing revolt rule is the seed. *Test:* a seeded
 campaign loses a territory on the stated trigger and offers the recapture operation.
 
@@ -197,5 +197,5 @@ adds a sprite or a sound goes through the provenance register like the rest.
 
 ## What is deliberately not here
 
-A store, real-money anything, and any art, sound, text or map from the original game. This is
+A store, real-money anything, and any art, sound, text or map from other games. This is
 a fan game. Multiplayer, with a game server, is planned separately in [the multiplayer design](docs/design/MULTIPLAYER.md).

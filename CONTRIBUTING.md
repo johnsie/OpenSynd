@@ -3,7 +3,7 @@
 # Contributing to OpenSynd
 
 OpenSynd is being built as a free and open-source game that does not require or
-redistribute data from *Syndicate*. Contributions must be both technically
+redistribute data from other games. Contributions must be both technically
 useful and legally redistributable.
 
 ## Before contributing
@@ -12,7 +12,7 @@ useful and legally redistributable.
   data, screenshots, maps, music, dialogue, or extracted resources.
 - Do not use proprietary material as a direct input to asset-generation tools.
 - Do not reproduce distinctive names, characters, missions, maps, story, user
-  interface artwork, or other creative expression from *Syndicate*.
+  interface artwork, or other creative expression from other games.
 - Open an issue before adding a dependency, changing a file format, or importing
   third-party material.
 - Keep source files in the preferred form for modification. For example, submit

@@ -331,10 +331,15 @@ function driveRoute(vehicle, seconds, roadGrid) {
   const state = vehicle.vehicle;
   if (!state.route || state.route.route.length === 0) return;
   if (vehicle.path.length === 0) {
-    const waypoint = state.route.route[state.route.index % state.route.route.length];
-    const start = tileOf(vehicle.position);
-    vehicle.path = keepRight(findPath(roadGrid, start, waypoint), roadGrid, start);
-    state.route.index = (state.route.index + 1) % state.route.route.length;
+    // The route is the street's centre line. The lane is that line moved one tile to the right of the way it is going, worked out
+    // from the line itself (the tile this leg starts from, remembered as `from`), never from where the car happens to be: a car
+    // already in its lane would otherwise be moved over again and weave from side to side down a straight street.
+    const { route } = state.route;
+    const at = state.route.index % route.length;
+    const from = state.route.from ?? tileOf(vehicle.position);
+    vehicle.path = keepRight(findPath(roadGrid, from, route[at]), roadGrid, from);
+    state.route.from = route[at];
+    state.route.index = (at + 1) % route.length;
   }
   moveAlongPath(vehicle, seconds, vehicle.definition.stats.speed);
 }

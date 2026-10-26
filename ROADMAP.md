@@ -4,7 +4,7 @@
 
 Create **OpenSynd**, a browser-native, community-maintainable game derived from
 the FreeSynd codebase while removing every runtime dependency on proprietary
-*Syndicate* data and avoiding use of protected branding or creative expression.
+data from other games and avoiding use of protected branding or creative expression.
 
 OpenSynd is the project's final name, decided by the project owner. An initial exact-name web
 search found no obvious collision, but no formal trademark search or legal review has been done, and the
@@ -871,7 +871,7 @@ migration (a civilian is 1 point, so six civilians reach police). **Interface:**
 *FreeSynd.* The world map is **50 territories ("blocks")**, each with a name, a default and a current
 **population** (a few million), a **tax rate** (starts at 30 percent), a **mood**, a status (unavailable, available,
 finished, rebel), the **mission** played there, a list of **neighbouring territories it unlocks**, and a rival
-**syndicate** owner (a colour) while it is not yours. Playing a mission on an available territory and winning marks it
+**company** owner (a colour) while it is not yours. Playing a mission on an available territory and winning marks it
 finished and unlocks its neighbours.
 
 - **Population drifts** every day by 100 to 300 people, up with 60 percent chance and down with 40, kept between 2000
@@ -891,7 +891,7 @@ finished and unlocks its neighbours.
 *OpenSynd.* *partly:* five operations on a flat world map (the target is **50 territories and 50 main missions**, F45);
 the unlock graph, tax and mood are built. **Design:** give each map region (already positioned by longitude and latitude) a
 `territory` record: population, default population, tax, mood, status, neighbours it unlocks (replacing "locked until
-the one before is done" with a graph), owner (a named rival syndicate). Implement the daily tick,
+the one before is done" with a graph), owner (a named rival company). Implement the daily tick,
 the revenue formula (our own constants), the mood ladder and the rebel revolt as a fresh operation on the same map.
 Make bystander deaths feed the mood: each civilian or police death in an operation lowers that territory's mood by a
 step at the end of the day and costs the funds penalty we already have; persuaded civilians earn a small bonus (the
@@ -934,7 +934,7 @@ research chains F20, intelligence F31, the roster F26) is built to carry it. Fre
 neighbour) is a mechanic, while the territories, names, maps and missions here are original.
 *OpenSynd.* *open:* five operations on five regions (Northern Europe, and four more). **Design:**
 - **Territory records.** 50 `region` records (own names, longitude and latitude on the existing world map, a default
-  population of a few million, a rival owner from a short list of invented syndicates) in a content file of their own
+  population of a few million, a rival owner from a short list of invented companies) in a content file of their own
   (`territories.json` in the pack), separate from the missions, so the map and the campaign can be checked without
   loading 50 missions. Validated: exactly 50, unique ids, every one reachable from the start by the `unlocks` graph, no
   two within a marker's width of each other.
@@ -1160,8 +1160,8 @@ agents only: guards, police and criminals seeing the squad do not bring it in.
 
 ## Non-negotiable principles
 
-1. **No original game data.** Development, tests, demos, releases, screenshots,
-   and CI must work without files copied or extracted from *Syndicate*.
+1. **No data from other games.** Development, tests, demos, releases, screenshots,
+   and CI must work without files copied or extracted from other games.
 2. **Original identity.** Use a new project and game name, logo, setting,
    characters, maps, story, dialogue, factions, interface treatment, and audio.
 3. **Mechanics, not expression.** High-level ideas such as squad tactics,
@@ -1204,7 +1204,7 @@ The intended visual identity is a living municipal diagram under stress:
 three-quarter isometric spaces, clean geometric architecture, strong
 silhouettes, restrained charcoal and mineral surfaces, and functional cyan,
 amber, coral, and green signals. It should use crisp vector-like forms and
-selective atmospheric effects rather than copying the original game's pixels,
+selective atmospheric effects rather than copying any other game's pixels,
 palette, proportions, or interface. Restored districts visibly and audibly
 return to life.
 
@@ -1250,7 +1250,7 @@ Add these before accepting new implementation or art contributions:
   ban on proprietary reference material in commits and issues.
 - `ASSET_POLICY.md` with accepted licenses and an asset intake checklist.
 - `TRADEMARKS.md` stating what, if anything, is a project mark and clarifying
-  that the project is unaffiliated with the original game's rightsholders.
+  that the project is unaffiliated with the rightsholders of any other game.
 - `AUTHORS`, `NOTICE`, and a generated in-game credits screen.
 - Dependency lockfiles, software and asset bills of materials, and automated
   license-policy checks in CI.
@@ -1277,7 +1277,7 @@ Every accepted asset record should contain:
 ### Work
 
 - Inventory every file in the current repository by copyright holder, license,
-  origin, and whether it depends on original game data.
+  origin, and whether it depends on data from other games.
 - Distinguish original FreeSynd code, bundled third-party code, freely licensed
   project assets, and files whose provenance is unclear.
 - Resolve whether the combined codebase is GPL-2.0-only or
@@ -1287,7 +1287,7 @@ Every accepted asset record should contain:
   factions, mission text, map layouts, sprites, sounds, music, cinematics, and
   other recognizable expression.
 - OpenSynd is the final name (the owner's decision). If the project ever grows beyond a hobby, search relevant trademark
-  registers and the web, assess possible confusion with *Syndicate* and FreeSynd, and obtain legal review for the intended
+  registers and the web, assess possible confusion with other games and FreeSynd, and obtain legal review for the intended
   markets; until then the project does not claim the name is registered or cleared.
 - Adopt the repository controls above and publish the decision-making and
   security-reporting processes.
@@ -1311,7 +1311,7 @@ Every accepted asset record should contain:
 ### Work
 
 - Write a short original world bible and visual brief with explicit exclusions
-  from the original game's distinctive expression.
+  from other games' distinctive expression.
 - Define open, documented formats for maps, campaigns, missions, units,
   equipment, research, animation, localization, and audio metadata.
 - Prefer readable JSON or another documented interchange format. Publish JSON
@@ -1352,7 +1352,7 @@ shows that it satisfies maintainability, accessibility, and licensing goals.
 - Add isometric camera transforms, tile rendering, sprite animation, selection,
   input mapping, and Web Audio.
 - Load only the new open formats and manifest; do not add a browser-side loader
-  for original *Syndicate* files.
+  for other games' files.
 - Store settings and saves locally using versioned browser storage, with JSON
   export/import so users retain control of their data.
 - Add an always-available About/Licenses/Credits view and link the exact source
@@ -1640,7 +1640,7 @@ with a badge, long covered sleeves with cuff stripes, armour and shoulder light 
 
 ## Definition of success
 
-The project is successful when a person with no copy of *Syndicate* can clone
+The project is successful when a person with no copy of any other game can clone
 the repository, inspect every input, build the complete game with free tools,
 play an original campaign in a modern browser, create a compatible content
 pack, and redistribute modified versions while preserving the applicable free

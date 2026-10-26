@@ -7,14 +7,14 @@ completed formal trademark clearance, and it is not registered. Do not imply tha
 the name is registered or cleared for commercial release.
 
 The project is independent and is not affiliated with, endorsed by, or
-sponsored by the creators, publishers, or rightsholders of *Syndicate*.
-References to *Syndicate* in historical and compatibility documentation identify
-the earlier work; they do not claim ownership of its name or branding.
+sponsored by the creators, publishers, or rightsholders of any other game.
+References to other games in historical and compatibility documentation identify
+earlier work; they do not claim ownership of any name or branding.
 
 Before public branding begins, the project must:
 
 1. search relevant trademark registers and common-law uses in intended markets;
-2. assess possible confusion created by “Synd” in relation to *Syndicate* and
+2. assess possible confusion created by “Synd” in relation to other games and
    FreeSynd;
 3. review domain, package registry, repository, and storefront availability;
 4. obtain qualified legal review; and

@@ -63,7 +63,7 @@
           "type": "string",
           "minLength": 1,
           "maxLength": 60,
-          "description": "The rival syndicate that holds it until you do."
+          "description": "The rival company that holds it until you do."
         },
         "mission": {
           "type": "string",

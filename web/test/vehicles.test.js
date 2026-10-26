@@ -499,3 +499,29 @@ test("passengers board a train waiting at a station and are put down on the plat
   assert.deepEqual(dropTrainPassengers(train, [train, operator], rails), [], "nobody left to drop");
   assert.ok(TRAIN_SPACING > 0);
 });
+
+test("a car on a street-long route keeps to one lane instead of weaving across it", () => {
+  const driver = person("d", 5, 5, { inVehicle: "c" });
+  const vehicle = car("c", 5, 5, "d");
+  // The route is the street's centre line, a tile at a time, the way a patrol builds it.
+  vehicle.vehicle.route = { route: Array.from({ length: 20 }, (_, index) => ({ x: 6 + index, y: 5 })), index: 0 };
+  const units = [vehicle, driver];
+  const lanes = new Set();
+  for (let step = 0; step < 80; step += 1) {
+    advanceVehicles(units, 0.05, roads, grid);
+    if (vehicle.position.x > 8) lanes.add(vehicle.position.y);
+  }
+  assert.ok(vehicle.position.x > 12, "it drove");
+  assert.deepEqual([...lanes], [6], "one lane, the tile to the right of its heading, all the way");
+
+  // Coming back the other way it uses the other side, so the two never share a lane.
+  const back = car("b", 25, 5, "e");
+  back.vehicle.route = { route: Array.from({ length: 20 }, (_, index) => ({ x: 24 - index, y: 5 })), index: 0 };
+  const there = [back, person("e", 25, 5, { inVehicle: "b" })];
+  const sides = new Set();
+  for (let step = 0; step < 80; step += 1) {
+    advanceVehicles(there, 0.05, roads, grid);
+    if (back.position.x < 22) sides.add(back.position.y);
+  }
+  assert.deepEqual([...sides], [4], "west-bound traffic is on the north side");
+});

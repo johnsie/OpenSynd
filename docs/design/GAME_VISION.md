@@ -13,7 +13,7 @@ depend on them.
 
 The setting and names in this document are original working material. They are
 not intended to reproduce the world, factions, characters, missions, maps, or
-presentation of *Syndicate*.
+presentation of other games.
 
 ## Player objective
 
@@ -180,7 +180,7 @@ that every resident is either an enemy or a resource.
 
 ## Boundaries
 
-OpenSynd is not a recreation of *Syndicate* with renamed assets. The following
+OpenSynd is not a recreation of any other game with renamed assets. The following
 must be original: geography, missions, faction identities, characters,
 equipment catalogue, narrative, audiovisual presentation, interface, and
 content data. Similarity reviews should consider the total impression, not only

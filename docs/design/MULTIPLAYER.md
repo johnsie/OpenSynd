@@ -2,7 +2,7 @@
 
 # OpenSynd multiplayer architecture
 
-This is the design the online modes (co-op operations, the daily operation and rival syndicates) are built on. It assumes there is a
+This is the design the online modes (co-op operations, the daily operation and rival companies) are built on. It assumes there is a
 game server and that the server is the authority.
 
 ## The central idea
@@ -104,7 +104,7 @@ extra code.
   they can run on worker threads or separate processes as load grows. A room ends when the operation does, and writes its result and
   replay.
 - **Lobby and matchmaking:** lists open co-op games, offers quick match, and lets friends see and join each other's games from the friends list.
-- **World service:** the shared rival-syndicate map: ownership, defence layouts, shields, income, seasons. It creates a raid room
+- **World service:** the shared rival-company map: ownership, defence layouts, shields, income, seasons. It creates a raid room
   and applies the verified result. It is the only writer of that state.
 - **Verifier:** takes a replay (version, seed, commands), runs it headless in a worker, and returns the result. The daily board and
   raids accept nothing it has not checked.
@@ -115,7 +115,7 @@ extra code.
 
 - **Accounts:** a display name and a password (hashed); sign-in providers can be added later. A browser can play offline with no
   account and link a local campaign to an account afterwards.
-- **Two kinds of campaign.** The **local campaign** is today's, kept in the browser. The **online campaign** (rival syndicates) is
+- **Two kinds of campaign.** The **local campaign** is today's, kept in the browser. The **online campaign** (rival companies) is
   kept by the server. Co-op and daily operations can pay out to either, chosen when you start. Nothing silently moves between them.
 - **A replay** is `{ version, contentHash, seed, operationId, squad, commands[] }`. It is small and re-runs to the same result.
 - **Content:** the server serves the same content pack as the client and names its hash in the handshake. A client with different

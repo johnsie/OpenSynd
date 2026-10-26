@@ -3,7 +3,7 @@
 # OpenSynd Open Content
 
 This directory contains the documented, engine-independent content formats for
-OpenSynd. It must never contain data extracted or transcribed from *Syndicate*.
+OpenSynd. It must never contain data extracted or transcribed from other games.
 
 ## Layout
 

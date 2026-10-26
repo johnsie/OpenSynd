@@ -20,9 +20,9 @@ treated as a blocker rather than assumed permission.
 | CRC32 implementation | The inherited “All rights reserved” implementation was replaced on 2026-10-22 with a small independently written GPL-2.0-or-later implementation preserving the public API. | Replaced/resolved | Keep the standard-vector regression test in CI. |
 | XMIDI implementation | Project code says portions derive from the System Shock Hack Project under a BSD license. | Keep pending source verification | Identify the exact borrowed portions and preserve the complete upstream BSD notice. |
 | `data/lang` | Contains game-facing names and text with no file-level provenance metadata. | Excluded from OpenSynd | Replace with original OpenSynd localization source. |
-| `data/ref` | Encodes compatibility data for the original game, including expected-file checksums. | Excluded from OpenSynd | Define new schemas and independently authored data. Do not ship original-data validation in the web client. |
+| `data/ref` | Encodes compatibility data for legacy game files, including expected-file checksums. | Excluded from OpenSynd | Define new schemas and independently authored data. Do not ship original-data validation in the web client. |
 | `data/music`, cursor, and icons | No reliable license or authorship metadata was found in the repository files inspected. | Quarantine | Find documentary provenance or replace with original assets. |
-| Original-data loaders | Runtime configuration and engine code explicitly load and validate the original game's `DATA` files. | Legacy-only | Keep outside the OpenSynd build; document behaviour, then replace with open formats. |
+| Original-data loaders | Runtime configuration and engine code explicitly load and validate legacy `DATA` files. | Legacy-only | Keep outside the OpenSynd build; document behaviour, then replace with open formats. |
 | Name `OpenSynd` | An initial exact-name general web search found no obvious collision. | Final name (owner's decision); not cleared | Complete register searches and legal confusion analysis if the project ever goes beyond a hobby; until then make no claim of registration or clearance. |
 
 The automated source audit recognizes explicit GPL-2.0-or-later SPDX notices,
@@ -40,7 +40,7 @@ unresolved.
 - **Quarantine:** `data/cursors`, `data/music`, and `icon` until evidence or
   replacements are available.
 - **Exclude from OpenSynd:** `data/lang`, `data/ref`, original-data checks, and
-  all external *Syndicate* data.
+  all external game data.
 - **New work:** governance documents and provenance tooling added for OpenSynd;
   these contain explicit SPDX identifiers.
 - **Unresolved source:** `src/SDLMain.m`, `src/cp437.h`, and

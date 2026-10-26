@@ -6,8 +6,8 @@ The plain-language overview is in the [main README](../README.md). This file is 
 change the game. It is a hobby project, so expect rough edges.
 
 The browser client is dependency-free ES modules on a Canvas 2D renderer with a fixed-step (30 Hz) simulation. It loads
-the original CC0 developer content pack (`open-content/packs/developer/`, copied to `web/content/`) and does not use
-legacy FreeSynd or *Syndicate* assets.
+the CC0 developer content pack (`open-content/packs/developer/`, copied to `web/content/`) and does not use
+legacy FreeSynd assets or assets from other games.
 
 ## Where things are
 

@@ -66,7 +66,7 @@ weapons to ready it, then **right-click** to fire. **Space** pauses. **A** selec
 ## Credits, and what comes from FreeSynd
 
 **This game would not exist without [FreeSynd](http://freesynd.sourceforge.net/)** and the people who built it. FreeSynd is
-a free, open-source re-creation of the engine of the classic game *Syndicate*, and this project began as a copy (a fork)
+a free, open-source game engine written for a classic 1990s game, and this project began as a copy (a fork)
 of its repository. Thank you to **the FreeSynd team**: Benoit Blancard, Stuart Binge, Anders Eurenius, Tarjei Knapstad,
 Davor Ocelic, Joey Parrish, Joost Peters, Bruce Sutherland, Unavowed, Trent Waddington and Bohdan Stelmak, and to its
 contributors, including Tomas Jakobsson, Mark (mentor66), Michael Schubeck, Ryan Cocks (who started the drug system),
@@ -91,14 +91,14 @@ What I took from FreeSynd:
 - **A way of working.** Reading how a game like this fits together, and the habit of keeping everything that matters in
   plain, open files, comes straight from that project.
 
-What I did **not** take: none of the original game's graphics, sounds, music, maps, missions, writing, names or data
-files. All of that here is made again (the source of every picture and sound is listed in [PROVENANCE.md](PROVENANCE.md) and [provenance/assets.json](provenance/assets.json)), and the numbers are my own or re-used under the terms of the GPL.
+What I did **not** take: none of the graphics, sounds, music, maps, missions, writing, names or data
+files of other games. All of that here is made again (the source of every picture and sound is listed in [PROVENANCE.md](PROVENANCE.md) and [provenance/assets.json](provenance/assets.json)), and the numbers are my own or re-used under the terms of the GPL.
 
 Other things I'm grateful for: the human model that all the characters are drawn from is by **Quaternius** (CC0), and
 the music is **"Electric Stream"** by Alexander Ehlers (CC0) and **"The Core"** by p0ss. Everything else I made myself.
 
-This is also an unofficial tribute to *Syndicate* by Bullfrog Productions. It is not affiliated with or endorsed by the
-makers or owners of that game.
+OpenSynd is an unofficial, non-profit fan game, made as a hobby. It is inspired by other games and is not affiliated with or
+endorsed by their makers or owners.
 
 ## Finding your way around the repository
 

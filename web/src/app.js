@@ -23,6 +23,7 @@ import {
 import { createOverlay, createTileSprites } from "./textures.js";
 import { renderWorldMap } from "./worldmap.js";
 import { continueNote, continueTarget } from "./menu.js";
+import { markerFor } from "./minimap.js";
 import { createTutorial, currentStep, observeTutorial, pointerFor, skipStep, tutorialProgress } from "./tutorial.js";
 import { DRUG_HINTS, DRUG_LABELS, DRUG_NAMES, adrenalineSpeed, advanceDrugs, drugMultiplier, newDrugs, setDrug } from "./drugs.js";
 import { advanceProps, damageProp, newProp, propsNear } from "./props.js";
@@ -2851,14 +2852,6 @@ const minimap = document.querySelector("#minimap");
 const miniContext = minimap.getContext("2d");
 // How far from the squad the minimap still shows other people.
 const MINI_SIGHT = 16;
-const MINI_UNIT_COLOURS = {
-  team: "#42d6d0",
-  opposition: "#ff6b62",
-  police: "#4aa3ff",
-  civilian: "#8d9aa3",
-  criminal: "#ff9a4a",
-  vehicle: "#b0bcc6",
-};
 const MINI_COLORS = {
   "runoff-channel": "#1f5568",
   "signal-grate": "#7a96a0",
@@ -2927,9 +2920,22 @@ function drawMinimap(viewport) {
       miniContext.strokeStyle = "#78f5f0";
       miniContext.strokeRect(Math.round(point.x) - 3, Math.round(point.y) - 3, 6, 6);
     }
-    miniContext.fillStyle = unit.persuaded ? "#79d59b" : (MINI_UNIT_COLOURS[unit.side] ?? "#ff6b62");
-    const size = isVehicle(unit) ? 5 : 3;
-    miniContext.fillRect(Math.round(point.x) - Math.floor(size / 2), Math.round(point.y) - Math.floor(size / 2), size, size);
+    const marker = markerFor(unit, isVehicle(unit));
+    miniContext.fillStyle = marker.fill;
+    if (marker.shape === "dot") {
+      miniContext.beginPath();
+      miniContext.arc(point.x, point.y, marker.radius, 0, Math.PI * 2);
+      miniContext.fill();
+      if (marker.centre) {
+        miniContext.fillStyle = marker.centre;
+        miniContext.beginPath();
+        miniContext.arc(point.x, point.y, marker.radius * 0.45, 0, Math.PI * 2);
+        miniContext.fill();
+      }
+    } else {
+      const size = marker.size;
+      miniContext.fillRect(Math.round(point.x) - Math.floor(size / 2), Math.round(point.y) - Math.floor(size / 2), size, size);
+    }
   }
   // A beacon where the current objective is: slow rings spread out over the whole minimap, so it is easy to find from anywhere.
   const goal = currentObjective(state.objectives);
@@ -3550,7 +3556,7 @@ function showOutcome(outcome) {
       : "The team has gone dark";
   document.querySelector("#outcome-text").textContent = finale
     ? `${debrief?.success ?? ""} That was the last of the ${state.missionList.length} territories: ` +
-      "no syndicate holds a district any more."
+      "no rival company holds a district any more."
     : won
     ? debrief?.success ?? "The operation is complete."
     : reason ?? debrief?.failure ?? "Every operator has been disabled. Regroup and try a different approach.";

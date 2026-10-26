@@ -55,7 +55,7 @@ test fixture, screenshot, demo, or release.
 
 OpenSynd may implement independently designed squad tactics, research,
 territory control, cybernetic upgrades, and other general mechanics. It must not
-copy or closely reproduce *Syndicate*'s audiovisual or literary expression,
+copy or closely reproduce other games' audiovisual or literary expression,
 including its sprites, maps, missions, dialogue, music, sound effects,
 cinematics, logos, interface artwork, factions, or distinctive character and
 equipment names.

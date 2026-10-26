@@ -13,7 +13,7 @@ The architecture is in [docs/design/MULTIPLAYER.md](docs/design/MULTIPLAYER.md):
 single-player and on the server for online games, with the server as the authority. Single-player stays complete and playable
 without an account. Like [ROADMAP_2.md](ROADMAP_2.md) this is a wish list in order, not a promise.
 
-**Sizes:** S a day, M a few days, L a week or more. FreeSynd's rules still win for anything the original defines.
+**Sizes:** S a day, M a few days, L a week or more. FreeSynd's rules still win for anything FreeSynd defines.
 
 ## Phase 0. The server and the core (L)
 
@@ -73,7 +73,7 @@ Two to four players, one operation, a squad each.
 
 Attack other players' territories, and defend your own, on a world map the server keeps.
 
-- **The world:** each player's syndicate holds territories on a shared map. Holdings, income and defences persist while players are
+- **The world:** each player's company holds territories on a shared map. Holdings, income and defences persist while players are
   offline, and only the server changes them.
 - **Defending:** you set a guard layout for each territory from a budget and improve it with funds. Guards run the same AI as in any
   operation. You can watch a replay of every raid on your territory.

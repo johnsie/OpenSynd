@@ -1009,6 +1009,12 @@ for (const [name, type, executablePath] of targets) {
     assert.equal(await menuPage.locator("#menu-dialog button:disabled").count(), 3, "the online modes are listed but planned");
     await menuPage.keyboard.press("Escape");
     assert.equal(await menuPage.locator("#menu-dialog").evaluate((dialog) => dialog.open), true, "Escape leaves the menu up");
+    await menuPage.click("#menu-about");
+    await menuPage.waitForSelector("#about-dialog[open]");
+    const about = await menuPage.locator("#about-dialog").innerText();
+    assert.match(about, /unofficial, non-profit fan game, made as a hobby/);
+    assert.doesNotMatch(about, /syndicate|original game/i, "the About screen names no other game");
+    await menuPage.click("#close-about");
     await menuPage.click("#menu-settings");
     await menuPage.waitForSelector("#settings-dialog[open]");
     await menuPage.click("#close-settings");
@@ -1310,11 +1316,16 @@ for (const [name, type, executablePath] of targets) {
     });
     await garage.getByLabel(/slot \d+: Civic Pulse Emitter/).first().click();
     await garage.evaluate(() => window.opensyndTest.placeNear("city-car-1", "operator-one", 0, -3));
-    await garage.keyboard.press("Space");
-    await garage.waitForTimeout(300);
-    const target = await garage.evaluate(() => window.opensyndTest.screenPoint("city-car-1"));
-    await garage.mouse.click(target.x, target.y - 10, { button: "right" });
-    assert.match(await garage.locator("#status-message").innerText(), /thrown out of the City Car|integrity/);
+    // The car is moving: stand the operator beside it and aim at where it is now, trying again if it has moved on.
+    let shotResult = "";
+    for (let attempt = 0; attempt < 5 && !/thrown out of the City Car|integrity/.test(shotResult); attempt += 1) {
+      await garage.evaluate(() => window.opensyndTest.placeNear("operator-one", "city-car-1", 0, 3));
+      const target = await garage.evaluate(() => window.opensyndTest.screenPoint("city-car-1"));
+      await garage.mouse.click(target.x, target.y - 10, { button: "right" });
+      shotResult = await garage.locator("#status-message").innerText();
+      await garage.waitForTimeout(1300);
+    }
+    assert.match(shotResult, /thrown out of the City Car|integrity/);
     await garage.close();
 
     // The whole squad gets in together (FreeSynd has no seat limit): select everyone and click the car.

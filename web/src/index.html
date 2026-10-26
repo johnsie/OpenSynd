@@ -278,7 +278,7 @@
           <small data-i18n="menu.daily_note">The same operation for everyone, ranked.</small>
         </button>
         <button type="button" disabled>
-          <span data-i18n="menu.rivals">Rival syndicates</span>
+          <span data-i18n="menu.rivals">Rival companies</span>
           <small data-i18n="menu.rivals_note">Raid other players' territories.</small>
         </button>
         <p class="menu-group" data-i18n="menu.more">More</p>
@@ -533,14 +533,19 @@
     <dialog id="about-dialog">
       <div class="dialog-header">
         <div>
-          <p class="eyebrow">PROJECT NOTICE</p>
-          <h2>Free to inspect, modify, and share</h2>
+          <p class="eyebrow" data-i18n="about.eyebrow">ABOUT OPENSYND</p>
+          <h2 data-i18n="about.heading">An unofficial fan game</h2>
         </div>
         <button id="close-about" type="button" aria-label="Close">×</button>
       </div>
+      <p class="about-lead" data-i18n="about.lead">
+        OpenSynd is an unofficial, non-profit fan game, made as a hobby. It is inspired by other games and is not affiliated with or
+        endorsed by their makers or owners. It is free, has no adverts and sells nothing.
+      </p>
+      <h3 data-i18n="about.free">Free to inspect, modify, and share</h3>
       <p>
-        This prototype uses the original OpenSynd developer pack and original drawn art. It does not load or
-        redistribute data from <em>Syndicate</em>.
+        This prototype uses its own developer content pack and its own drawn art. It does not load or
+        redistribute data from other games.
       </p>
       <ul>
         <li><a href="licenses/GPL-2.0-or-later.txt">Code license</a></li>
@@ -560,7 +565,7 @@
           <a href="https://opengameart.org/content/animated-human-low-poly">Quaternius</a>.
         </li>
       </ul>
-      <p>OpenSynd is an independent project and is not affiliated with the original game's rightsholders.</p>
+      <p>OpenSynd is an independent project and is not affiliated with the rightsholders of any other game.</p>
     </dialog>
 
     <script type="module" src="app.js"></script>
