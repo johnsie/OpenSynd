@@ -14,7 +14,7 @@ change its mind.
   *check FreeSynd* must read its source before any design is final. Items marked *new* are in areas FreeSynd leaves open.
 - The art direction stays: a pressured, gritty city with muted clothes and adult proportions; intense music only when an
   enemy agent has seen the squad.
-- Nothing here needs a server, an account or a paid service. Everything is playable offline in the browser, and every change
+- Nothing here needs a server, an account or a paid service (the online modes in [ROADMAP_MULTIPLAYER.md](ROADMAP_MULTIPLAYER.md) do). Everything here is playable offline in the browser, and every change
   ships as a hot update that does not disturb open games.
 
 ## What the game is like now (so the list below starts from the truth)
@@ -172,7 +172,7 @@ loads, validates and plays; a broken one is refused with a sentence saying why.
 own progress. *Test:* two packs keep separate campaigns.
 
 **G3. A shared mission list (S, optional).** A plain text file of links to mission files that a person can host anywhere; the
-game lists them. No account, no server of ours. *Test:* a list loads, entries show their title and author, nothing is fetched
+game lists them. Works without the game server; the server can host lists too (multiplayer Phase 4). *Test:* a list loads, entries show their title and author, nothing is fetched
 until you choose to.
 
 ---
@@ -195,5 +195,5 @@ adds a sprite or a sound goes through the provenance register like the rest.
 
 ## What is deliberately not here
 
-Accounts, a store, real-money anything, and any art, sound, text or map from the original game. This is
-a fan game that runs from a folder of files. Multiplayer (a server is welcome) is planned separately in [ROADMAP_MULTIPLAYER.md](ROADMAP_MULTIPLAYER.md).
+A store, real-money anything, and any art, sound, text or map from the original game. This is
+a fan game that runs from a folder of files. Multiplayer, with a game server, is planned separately in [ROADMAP_MULTIPLAYER.md](ROADMAP_MULTIPLAYER.md).
