@@ -5257,6 +5257,12 @@ if (new URLSearchParams(location.search).has("e2e")) {
     camera() {
       return { x: state.camera.x, y: state.camera.y };
     },
+    // How long redrawing the interface takes, in milliseconds, averaged over some goes (what each server update costs the page).
+    interfaceCost(times = 50) {
+      const start = performance.now();
+      for (let count = 0; count < times; count += 1) renderInterface();
+      return (performance.now() - start) / times;
+    },
     selection() {
       return [...(state.selectedIds ?? [])];
     },
@@ -5305,6 +5311,7 @@ if (new URLSearchParams(location.search).has("e2e")) {
         squad: state.online?.squad ?? null,
         signedInAs: onlinePlay?.account?.name ?? null,
         serverIsUp,
+        cost: onlinePlay ? { ...onlinePlay.stats } : null,
       };
     },
     tutorialStep() {
@@ -5579,36 +5586,51 @@ const serialOf = (unit) => {
   }
   return unitSerials.get(unit);
 };
+// Writing the text an element already has still makes the browser lay the page out again; an operation on a server changes the interface
+// ten times a second, so only changes are written.
+function setText(element, text) {
+  if (element.textContent !== text) element.textContent = text;
+}
+
+let shownObjectivesKey = "";
 let shownRosterKey = "";
 let shownThreatsKey = "";
 
 function renderInterface() {
   if (!state.mission) return;
-  objectiveList.replaceChildren(
-    ...state.objectives.map((objective) => {
-      const item = document.createElement("li");
-      item.textContent = objective.description;
-      if (objective.type === "hold" && !objective.complete) {
-        item.textContent += ` (${Math.floor(objective.progress ?? 0)} / ${objective.holdSeconds} s)`;
-      }
-      item.classList.toggle("complete", objective.complete);
-      const now = objective === currentObjective(state.objectives);
-      item.classList.toggle("current", now && Boolean(state.mission.sequence));
-      item.classList.toggle("waiting", Boolean(state.mission.sequence) && objective.required && !objective.complete && !now);
-      item.setAttribute(
-        "aria-label",
-        `${objective.complete ? "Complete" : now && state.mission.sequence ? "Current" : "Pending"}: ${objective.description}`,
-      );
-      return item;
-    }),
-  );
+  const objectivesKey = JSON.stringify([
+    state.objectives.map((o) => [o.id, o.complete, o.type === "hold" ? Math.floor(o.progress ?? 0) : 0]),
+    currentObjective(state.objectives)?.id ?? null,
+    state.mission.id,
+  ]);
+  if (objectivesKey !== shownObjectivesKey) {
+    shownObjectivesKey = objectivesKey;
+    objectiveList.replaceChildren(
+      ...state.objectives.map((objective) => {
+        const item = document.createElement("li");
+        item.textContent = objective.description;
+        if (objective.type === "hold" && !objective.complete) {
+          item.textContent += ` (${Math.floor(objective.progress ?? 0)} / ${objective.holdSeconds} s)`;
+        }
+        item.classList.toggle("complete", objective.complete);
+        const now = objective === currentObjective(state.objectives);
+        item.classList.toggle("current", now && Boolean(state.mission.sequence));
+        item.classList.toggle("waiting", Boolean(state.mission.sequence) && objective.required && !objective.complete && !now);
+        item.setAttribute(
+          "aria-label",
+          `${objective.complete ? "Complete" : now && state.mission.sequence ? "Current" : "Pending"}: ${objective.description}`,
+        );
+        return item;
+      }),
+    );
+  }
   const completed = state.objectives.filter((objective) => objective.complete).length;
-  objectiveCount.textContent = `${completed} / ${state.objectives.length}`;
+  setText(objectiveCount, `${completed} / ${state.objectives.length}`);
 
   const selectAllButton = document.querySelector("#select-all-button");
   const everyoneSelected = activeOperators().length > 1 && selectedOperators().length === activeOperators().length;
   document.querySelector("#select-all-hub").setAttribute("aria-pressed", String(everyoneSelected));
-  selectAllButton.textContent = `Select all (${bindingLabel(bindings.selectAll)})`;
+  setText(selectAllButton, `Select all (${bindingLabel(bindings.selectAll)})`);
   selectAllButton.setAttribute(
     "aria-pressed",
     String(activeOperators().length > 1 && selectedOperators().length === activeOperators().length),
@@ -5636,8 +5658,8 @@ function renderInterface() {
       const item = rosterElement.querySelector(`[data-unit="${unit.id}"]`);
       if (!item) continue;
       const pad = (value) => Math.round(value).toString().padStart(2, "0");
-      item.querySelector(".hp").textContent = `${unit.health}/${maxHealth(unit)}`;
-      item.querySelector(".operator-position").textContent = `${pad(unit.position.x)}:${pad(unit.position.y)}`;
+      setText(item.querySelector(".hp"), `${unit.health}/${maxHealth(unit)}`);
+      setText(item.querySelector(".operator-position"), `${pad(unit.position.x)}:${pad(unit.position.y)}`);
     }
   } else {
     shownRosterKey = rosterKey;
@@ -5715,7 +5737,7 @@ function renderInterface() {
   }
 
   const threats = state.units.filter((unit) => unit.side === "opposition" && !unit.persuaded);
-  enemyCount.textContent = String(threats.filter((unit) => !unit.disabled).length);
+  setText(enemyCount, String(threats.filter((unit) => !unit.disabled).length));
   const threatsKey = JSON.stringify(threats.map((unit) => [unit.id, serialOf(unit), unit.disabled, unit.health]));
   if (threatsKey !== shownThreatsKey || threatsElement.children.length !== threats.length) {
     shownThreatsKey = threatsKey;
@@ -5744,7 +5766,7 @@ function renderInterface() {
   const interaction = nearbyInteraction();
   actionButton.disabled = interaction === null;
   const prop = interaction ? state.map.zones.find((zone) => zone.id === interaction.targetZone)?.prop : null;
-  actionLabel.textContent = prop === "server" ? "Download data" : interaction ? "Restore nearby relay" : "Restore relay";
+  setText(actionLabel, prop === "server" ? "Download data" : interaction ? "Restore nearby relay" : "Restore relay");
   const repairKit = equipmentWithAction(unit, "restore-vitality");
   const canRepair = Boolean(
     unit &&
@@ -5759,23 +5781,27 @@ function renderInterface() {
   const bodies = state.drops.length;
   updateVehicleButton();
   lootButton.disabled = !nearBody && bodies === 0;
-  document.querySelector("#loot-label").textContent = nearBody
-    ? `Pick up ${nearBody.body.equipment.length} item${nearBody.body.equipment.length > 1 ? "s" : ""}`
-    : bodies > 0
-      ? "Pick up (walk there)"
-      : "Pick up gear";
-  repairLabel.textContent = repairKit
-    ? `Use repair kit (${repairKit.charges ?? "∞"})`
-    : "No repair kit";
+  setText(
+    document.querySelector("#loot-label"),
+    nearBody
+      ? `Pick up ${nearBody.body.equipment.length} item${nearBody.body.equipment.length > 1 ? "s" : ""}`
+      : bodies > 0
+        ? "Pick up (walk there)"
+        : "Pick up gear",
+  );
+  setText(repairLabel, repairKit ? `Use repair kit (${repairKit.charges ?? "∞"})` : "No repair kit");
   let orders = " · awaiting order";
   const followed = unit?.tailId ? state.units.find((item) => item.id === unit.tailId) : null;
   if (followed) orders = ` · following ${followed.definition.name}`;
   else if (unit?.path.length) orders = ` · moving · ${unit.path.length} steps remain`;
   else if (unit?.targetId) orders = " · pulse target locked";
-  selectedReadout.textContent = unit
-    ? `${unit.definition.name} · integrity ${unit.health}/${maxHealth(unit)}` +
-      ` · at ${Math.round(unit.position.x)}, ${Math.round(unit.position.y)}${orders}`
-    : "No operator selected.";
+  setText(
+    selectedReadout,
+    unit
+      ? `${unit.definition.name} · integrity ${unit.health}/${maxHealth(unit)}` +
+          ` · at ${Math.round(unit.position.x)}, ${Math.round(unit.position.y)}${orders}`
+      : "No operator selected.",
+  );
   markTutorialTargets();
 }
 

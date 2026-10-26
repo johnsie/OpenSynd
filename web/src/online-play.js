@@ -24,6 +24,7 @@ export function createOnlinePlay({
   let holdFireSent = "";
   let holdFireAt = -Infinity;
   let asked = false; // the page has asked for an operation and is waiting for it, so its start is not announced to onStart
+  const stats = { updates: 0, totalMs: 0, applyMs: 0, worstMs: 0 }; // what handling the server's updates costs the page
   const listeners = { start: [], end: [], close: [], news: [], chat: [] };
   const emit = (type, payload) => listeners[type].forEach((listener) => listener(payload));
 
@@ -37,13 +38,43 @@ export function createOnlinePlay({
     }
   }
 
+  // The server sends a few steps' news at once, and people are shown walking from the last update's place to this one's over about that
+  // long. Events carry the step they happened in and are played when the walking has got there, so a burst of shots is seen and heard
+  // as a burst, in step with the people, and not all at the start of the update.
+  const STEP_MS = 1000 / 30;
+  const UPDATE_STEPS = 3; // the server's UPDATE_EVERY_STEPS (server/rooms.js)
+  const timers = new Set();
+  function playSpaced(events, updateStep) {
+    const early = [];
+    for (const event of events ?? []) {
+      const delay = Number.isInteger(event.step) ? Math.max(0, (event.step - (updateStep - UPDATE_STEPS)) * STEP_MS) : 0;
+      if (delay < 1) {
+        early.push(event);
+        continue;
+      }
+      const timer = setTimeout(() => {
+        timers.delete(timer);
+        play([event]);
+      }, delay);
+      timers.add(timer);
+    }
+    play(early);
+  }
+
   function handle(message) {
     if (message.t === "update") {
-      applyServerMessage(state, message, lookup, { smoother, now: now() });
+      const began = now();
+      applyServerMessage(state, message, lookup, { smoother, now: began });
       syncWorldGates(state, silentHooks()); // doors and gates follow from who stands where
-      play(message.events);
+      const applied = now();
+      playSpaced(message.events, message.step);
       hooks.changed();
       emit("news", message);
+      const cost = now() - began;
+      stats.updates += 1;
+      stats.totalMs += cost;
+      stats.applyMs += applied - began;
+      stats.worstMs = Math.max(stats.worstMs, cost);
     } else if (message.t === "feedback") {
       play(message.events);
       if (message.refused) hooks.message(`That order was refused: ${message.refused.error}.`);
@@ -64,6 +95,7 @@ export function createOnlinePlay({
     get online() {
       return Boolean(client?.connected);
     },
+    stats,
     get account() {
       return client?.account ?? null;
     },
@@ -152,8 +184,8 @@ export function createOnlinePlay({
     frame(unitIds, holdFire) {
       smoother.show(state.units, now());
       const wanted = holdFire && unitIds.length > 0 ? `${holdFire.x.toFixed(1)},${holdFire.y.toFixed(1)}|${unitIds.join()}` : "";
-      // Where the weapon points is told to the server at most ten times a second; letting go is told at once.
-      if (wanted !== holdFireSent && (wanted === "" || now() - holdFireAt >= 100)) {
+      // Where the weapon points is told to the server at most twenty times a second; letting go is told at once.
+      if (wanted !== holdFireSent && (wanted === "" || now() - holdFireAt >= 50)) {
         holdFireSent = wanted;
         holdFireAt = now();
         client.command(
@@ -171,6 +203,8 @@ export function createOnlinePlay({
 
     /** Leave: the connection is closed and the page goes back to its own operation. */
     stop() {
+      for (const timer of timers) clearTimeout(timer);
+      timers.clear();
       attached = false;
       pending = [];
       holdFireSent = "";

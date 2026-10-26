@@ -150,3 +150,30 @@ test("a recording of the played operation checks out: it replays to the very sam
   playRecording(again, recording, silentHooks());
   assert.equal(stateHash(again), stateHash(room.world));
 });
+
+test("everything that happens between updates reaches the players, stamped with the step it happened in", () => {
+  const room = new Room({ id: "r", content, mission: MISSION, seed: 3 });
+  const anna = player();
+  room.addPlayer("anna", anna);
+  room.startAll?.();
+  // Count what the world says happens, from the room's own hooks.
+  let produced = 0;
+  const events = room.stepHooks.events;
+  const push = events.push.bind(events);
+  events.push = (...added) => {
+    produced += added.filter((event) => event.type !== "changed" && event.type !== "selectionChanged").length;
+    return push(...added);
+  };
+  // A fight: the squad is put next to an enemy and told to attack it.
+  const squad = room.world.units.filter((unit) => unit.side === "team");
+  const enemy = room.world.units.find((unit) => unit.side === "opposition");
+  squad.forEach((unit, index) => {
+    unit.position = { x: enemy.position.x + 3 + index, y: enemy.position.y };
+  });
+  room.receive("anna", 1, commands.attack(squad.map((unit) => unit.id), enemy.id));
+  for (let step = 0; step < 900; step += 1) room.tick();
+  const delivered = anna.messages.filter((message) => message.t === "update").flatMap((message) => message.events);
+  assert.ok(produced > 10, `a fight happened: ${produced} events`);
+  assert.equal(delivered.length, produced, "none were lost between updates");
+  assert.ok(delivered.every((event) => Number.isInteger(event.step)), "each says when it happened");
+});

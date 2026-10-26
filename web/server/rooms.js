@@ -15,6 +15,7 @@ import { makeWorld } from "./content.js";
 
 export const STEPS_PER_SECOND = Math.round(1 / FIXED_STEP_SECONDS);
 export const UPDATE_EVERY_STEPS = 3; // ten updates a second
+const MAX_PENDING_EVENTS = 400; // a long burst is trimmed to its newest news rather than flooding one update
 export const MAX_COMMANDS_PER_STEP = 8; // more than a person could give; the rest wait for the next step
 export const MAX_QUEUED_COMMANDS = 64;
 export const MAX_OPERATION_SECONDS = 20 * 60;
@@ -48,6 +49,7 @@ export class Room {
     this.recording = startRecording({ mission, variant, seed, content: content.hash ?? null });
     this.players = new Map();
     this.stepHooks = recordingHooks();
+    this.pending = []; // events since the last update, each stamped with the step it happened in
     this.finished = false;
     this.result = null;
     this.onFinish = null; // called once when the operation ends; what it returns is added to the message the players get
@@ -160,8 +162,11 @@ export class Room {
     for (const player of this.players.values()) this.runCommands(player);
     this.stepHooks.events.length = 0;
     stepRecorded(this.world, this.stepHooks, this.recording);
-    const events = forPlayers(this.stepHooks.events);
-    if (this.world.steps % UPDATE_EVERY_STEPS === 0 || this.world.outcome !== "active") this.sendUpdates(events);
+    // Players are sent an update every few steps, so what happens in the steps between (shots, hits, sounds, lines) is kept until then.
+    // `step` says when in the game each one happened, so the page can space them out as they were.
+    for (const event of forPlayers(this.stepHooks.events)) this.pending.push({ ...event, step: this.world.steps });
+    if (this.pending.length > MAX_PENDING_EVENTS) this.pending.splice(0, this.pending.length - MAX_PENDING_EVENTS);
+    if (this.world.steps % UPDATE_EVERY_STEPS === 0 || this.world.outcome !== "active") this.sendUpdates(this.pending.splice(0));
     if (this.world.outcome !== "active" || this.world.steps >= MAX_OPERATION_SECONDS * STEPS_PER_SECOND) this.finish();
   }
 
