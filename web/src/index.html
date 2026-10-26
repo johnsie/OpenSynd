@@ -65,6 +65,14 @@
               aria-label="Isometric view of the map. Select an operator and choose a destination."
             ></canvas>
             <div class="scanlines" aria-hidden="true"></div>
+            <aside id="tutorial-panel" class="tutorial-panel" aria-label="Training" hidden>
+              <p class="section-number"><span data-i18n="tutorial.title">TRAINING</span> <span id="tutorial-count"></span></p>
+              <p id="tutorial-text" role="status" aria-live="polite"></p>
+              <div class="tutorial-actions">
+                <button id="tutorial-skip-step" type="button" class="text-button" data-i18n="tutorial.skip_step">Skip this step</button>
+                <button id="tutorial-leave" type="button" class="text-button" data-i18n="tutorial.leave">Leave training</button>
+              </div>
+            </aside>
             <div class="status-overlay">
               <p id="status-message" role="status" aria-live="polite">
                 Establishing local map…
@@ -209,6 +217,17 @@
       </footer>
     </div>
 
+    <dialog id="tutorial-done-dialog" class="company-dialog" aria-labelledby="tutorial-done-heading">
+      <div class="company-form">
+        <h2 id="tutorial-done-heading">Training complete</h2>
+        <p id="tutorial-done-text"></p>
+        <div class="company-actions">
+          <button id="tutorial-again" type="button" data-i18n="tutorial.again">Train again</button>
+          <button id="tutorial-finish" type="button" class="primary" data-i18n="tutorial.finish">Main menu</button>
+        </div>
+      </div>
+    </dialog>
+
     <dialog id="company-dialog" class="company-dialog" aria-labelledby="company-heading">
       <form id="company-form" method="dialog">
         <h2 id="company-heading" data-i18n="company.heading">Name your company</h2>
@@ -240,6 +259,10 @@
         <button id="menu-campaign" type="button">
           <span data-i18n="menu.campaign">Campaign</span>
           <small data-i18n="menu.campaign_note">Fight for the territories on the world map.</small>
+        </button>
+        <button id="menu-tutorial" type="button">
+          <span data-i18n="menu.tutorial">Tutorial</span>
+          <small id="menu-tutorial-note" data-i18n="menu.tutorial_note">Learn the controls in a few minutes. Nothing counts.</small>
         </button>
         <button id="menu-new-game" type="button" hidden>
           <span data-i18n="menu.new_game">New game</span>

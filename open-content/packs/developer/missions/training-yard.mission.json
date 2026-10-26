@@ -1,0 +1,90 @@
+{
+ "formatVersion": 1,
+ "id": "developer.training-yard",
+ "name": "Training Yard",
+ "license": "CC0-1.0",
+ "title": "Basic training",
+ "briefing": "A quiet yard to learn the controls. Nothing here can hurt you, and nothing you do here counts in your campaign. Follow the prompts at the bottom of the screen.",
+ "story": "Basic training: a closed yard, a practice target and a fence gate. Learn to move, shoot, loot, persuade and drive.",
+ "debrief": {
+  "success": "Training complete. You know enough to run an operation.",
+  "failure": "Training stopped. Start it again whenever you like."
+ },
+ "map": "maps/training-yard.map.json",
+ "team": [
+  {
+   "id": "operator-one",
+   "unit": "units/field-operator.unit.json",
+   "position": {
+    "x": 3,
+    "y": 18
+   },
+   "equipment": [
+    "equipment/civic-pulse-emitter.equipment.json",
+    "equipment/field-repair-kit.equipment.json",
+    "equipment/persuader.equipment.json"
+   ]
+  },
+  {
+   "id": "operator-two",
+   "unit": "units/field-operator.unit.json",
+   "position": {
+    "x": 4,
+    "y": 19
+   },
+   "equipment": [
+    "equipment/civic-pulse-emitter.equipment.json"
+   ]
+  }
+ ],
+ "opponents": [
+  {
+   "id": "practice-target",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 20,
+    "y": 19
+   },
+   "equipment": [
+    "equipment/field-repair-kit.equipment.json"
+   ]
+  }
+ ],
+ "bystanders": [
+  {
+   "id": "civilian-1",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 28,
+    "y": 20
+   },
+   "equipment": []
+  }
+ ],
+ "vehicles": [
+  {
+   "id": "training-car",
+   "vehicle": "vehicles/city-car.vehicle.json",
+   "position": {
+    "x": 24,
+    "y": 19
+   }
+  }
+ ],
+ "objectives": [
+  {
+   "id": "open-gate",
+   "type": "interact",
+   "targetZone": "gate-panel",
+   "required": true,
+   "description": "Use the console to open the gate."
+  },
+  {
+   "id": "leave-yard",
+   "type": "extract",
+   "targetZone": "safe-exit",
+   "required": true,
+   "description": "Take the team out through the exit."
+  }
+ ]
+}

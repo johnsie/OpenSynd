@@ -991,3 +991,19 @@ dialog.company-dialog[open] {
 .menu-company, .title-company { margin: 0.25rem 0 0; opacity: 0.85; display: flex; gap: 0.6rem; align-items: baseline; }
 .menu-company[hidden] { display: none; }
 .link-button { background: none; border: 0; padding: 0; color: inherit; text-decoration: underline; cursor: pointer; font: inherit; }
+
+.tutorial-panel {
+  position: absolute;
+  left: 50%;
+  bottom: 4.5rem;
+  transform: translateX(-50%);
+  width: min(34rem, calc(100% - 2rem));
+  padding: 0.7rem 0.9rem;
+  background: rgba(10, 16, 20, 0.92);
+  border: 1px solid #42d6d0;
+  z-index: 5;
+}
+.tutorial-panel[hidden] { display: none; }
+.tutorial-panel p { margin: 0 0 0.4rem; }
+.tutorial-actions { display: flex; justify-content: space-between; gap: 0.5rem; }
+.company-form { display: grid; gap: 0.6rem; }

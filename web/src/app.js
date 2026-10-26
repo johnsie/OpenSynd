@@ -23,6 +23,7 @@ import {
 import { createOverlay, createTileSprites } from "./textures.js";
 import { renderWorldMap } from "./worldmap.js";
 import { continueNote, continueTarget } from "./menu.js";
+import { createTutorial, currentStep, observeTutorial, skipStep, tutorialProgress } from "./tutorial.js";
 import { DRUG_HINTS, DRUG_LABELS, DRUG_NAMES, adrenalineSpeed, advanceDrugs, drugMultiplier, newDrugs, setDrug } from "./drugs.js";
 import { advanceProps, damageProp, newProp, propsNear } from "./props.js";
 import {
@@ -555,7 +556,8 @@ function startingEquipment(placement, definition, byPath, byId) {
 async function loadGame(index = state.missionIndex) {
   await loadSprites();
   const pack = await readJson("content/pack.json");
-  const missionPath = pack.missions[index];
+  const tutorialRun = Boolean(state.tutorial); // the training operation sits outside the campaign's list
+  const missionPath = tutorialRun ? pack.tutorial : pack.missions[index];
   const rawMission = await readJson(`content/${missionPath}`);
   // The squad is chosen from the roster: its members take the mission's starting places in order.
   state.rawTeam = rawMission.team;
@@ -778,6 +780,11 @@ async function loadGame(index = state.missionIndex) {
   }
   state.progress = parseProgress(readStored(PROGRESS_KEY));
   state.campaign = ensureTerritories(state.campaign, state.missionList);
+  if (tutorialRun) {
+    state.tutorial = createTutorial();
+    state.tutorialFlags = { looted: false, queued: false };
+    renderTutorial();
+  }
   describeMission(mission, map, index);
   renderMissionList();
   setStatus("Local map established. Select a relay route.");
@@ -816,7 +823,7 @@ function syncGates() {
 // Show the loaded mission's name and story wherever the page mentions it.
 function describeMission(mission, map, index) {
   const number = String(index + 1).padStart(2, "0");
-  document.querySelector("#operation-eyebrow").textContent = `OPERATION ${number}`;
+  document.querySelector("#operation-eyebrow").textContent = state.tutorial ? "TRAINING" : `OPERATION ${number}`;
   document.querySelector("#operation-title").textContent = mission.name;
   document.querySelector("#brief-title").textContent = mission.name;
   document.querySelector("#title-heading").textContent = `OpenSynd: ${mission.name}`;
@@ -3535,6 +3542,7 @@ function showOutcome(outcome) {
 }
 
 function persistCampaign() {
+  if (state.tutorial) return; // the training campaign is a scratch copy
   try {
     localStorage.setItem(CAMPAIGN_KEY, serializeCampaign(state.campaign));
   } catch {
@@ -3635,6 +3643,10 @@ function checkOutcome() {
   const outcome = missionOutcome(state.objectives, state.units);
   if (outcome === "active") return;
   state.outcome = outcome;
+  if (state.tutorial) {
+    finishTutorial(outcome); // training counts for nothing: no funds, no progress, no territory
+    return;
+  }
   state.opStats.outcome = outcome;
   state.opStats.seconds = state.missionSeconds;
   // Refilling what the squad used up is paid for; it can leave the funds at zero but never below.
@@ -3699,6 +3711,7 @@ function update(deltaSeconds) {
   if (state.meterClock >= 0.2) {
     state.meterClock = 0;
     updateMeters();
+    if (state.tutorial) tickTutorial();
     if (Object.values(state.targeted).some((until) => until > state.elapsed - 0.3 && until < state.elapsed + 0.3)) renderInterface();
     if (state.mission) updateVehicleButton();
     boardWaitingOperators();
@@ -3898,9 +3911,11 @@ function orderMove(unit, destination, queue = false, keepPending = false) {
   if (queue && unit.pending?.length > 0) {
     // Actions are waiting after the route: the walk joins the queue behind them.
     unit.pending.push({ type: "move", to: { ...destination } });
+    if (state.tutorialFlags) state.tutorialFlags.queued = true;
     return 1;
   }
   const queued = queue && unit.path.length > 0;
+  if (queued && state.tutorialFlags) state.tutorialFlags.queued = true;
   const last = queued ? unit.path.at(-1) : unit.position;
   const start = { x: Math.round(last.x), y: Math.round(last.y) };
   const path = findPath(state.grid, start, destination);
@@ -4100,6 +4115,7 @@ function lootNow(operator, body) {
     return;
   }
   state.opStats.itemsLooted += taken.length;
+  if (state.tutorialFlags) state.tutorialFlags.looted = true;
   const names = taken.map((item) => item.definition.name).join(", ");
   setStatus(
     `${operator.definition.name} picked up ${names}.` +
@@ -4728,6 +4744,10 @@ for (const dialog of [titleDialog, outcomeDialog]) {
   });
 }
 document.querySelector("#operations-button").addEventListener("click", () => {
+  if (state.tutorial) {
+    leaveTutorial().catch(showFatalError);
+    return;
+  }
   state.modal = true;
   titleDialog.showModal();
 });
@@ -4751,6 +4771,127 @@ document.querySelector("#new-game-button").addEventListener("click", startNewGam
 function currentContinueTarget() {
   return continueTarget({ hasAutosave: Boolean(readAutosave()), completedCount: state.progress?.completed.length ?? 0 });
 }
+
+// The tutorial: a small operation of its own, run on a scratch copy of the campaign so nothing in it counts. The prompts come from
+// tutorial.js; this part shows them and reports what the game sees.
+const TUTORIAL_KEY = "opensynd.tutorial.v1";
+const tutorialPanel = document.querySelector("#tutorial-panel");
+const tutorialDoneDialog = document.querySelector("#tutorial-done-dialog");
+
+function tutorialDone() {
+  return readStored(TUTORIAL_KEY) === "done";
+}
+
+function zoneCentre(id) {
+  const zone = state.map.zones.find((item) => item.id === id);
+  return zone ? { x: zone.position.x + (zone.width - 1) / 2, y: zone.position.y + (zone.height - 1) / 2 } : null;
+}
+
+function nearZone(unit, id, reach) {
+  const centre = zoneCentre(id);
+  return Boolean(unit && centre && Math.hypot(unit.position.x - centre.x, unit.position.y - centre.y) <= reach);
+}
+
+function seeTutorial() {
+  const team = state.units.filter((unit) => unit.side === "team" && !unit.disabled);
+  const find = (id) => state.units.find((unit) => unit.id === id);
+  return {
+    selectedIds: [...(state.selectedIds ?? [])],
+    onWalkPad: team.some((unit) => nearZone(unit, "walk-pad", 1.8)),
+    weaponOut: team.some((unit) => Boolean(heldWeapon(unit))),
+    targetDown: find("practice-target")?.disabled === true,
+    looted: Boolean(state.tutorialFlags?.looted),
+    queued: Boolean(state.tutorialFlags?.queued),
+    persuaded: find("civilian-1")?.persuaded === true,
+    carAtDrivePad: nearZone(find("training-car"), "drive-pad", 2.2),
+    gateOpen: state.objectives.find((objective) => objective.id === "open-gate")?.complete === true,
+    won: state.outcome === "success",
+  };
+}
+
+function renderTutorial() {
+  const step = state.tutorial ? currentStep(state.tutorial) : null;
+  tutorialPanel.hidden = !step;
+  if (!step) return;
+  const { number, total } = tutorialProgress(state.tutorial);
+  document.querySelector("#tutorial-count").textContent = `${number} / ${total}`;
+  document.querySelector("#tutorial-text").textContent = step.text;
+}
+
+function tickTutorial() {
+  const next = observeTutorial(state.tutorial, seeTutorial());
+  if (next === state.tutorial) return;
+  state.tutorial = next;
+  audio.play("objective");
+  renderTutorial();
+}
+
+async function startTutorial() {
+  if (state.tutorial) return;
+  const kept = state.campaign;
+  state.savedCampaign = kept;
+  state.campaign = emptyCampaign();
+  state.tutorial = createTutorial();
+  state.tutorialFlags = { looted: false, queued: false };
+  try {
+    await loadGame(state.missionIndex);
+  } catch (error) {
+    state.campaign = kept;
+    state.savedCampaign = null;
+    state.tutorial = null;
+    throw error;
+  }
+  menuDialog.close();
+  if (titleDialog.open) titleDialog.close();
+  state.modal = false;
+  renderTutorial();
+  setStatus("Training: follow the prompts at the bottom of the screen.");
+}
+
+function finishTutorial(outcome) {
+  const won = outcome === "success";
+  if (won) {
+    try {
+      localStorage.setItem(TUTORIAL_KEY, "done");
+    } catch {
+      // The training can be done again; nothing is lost.
+    }
+  }
+  state.tutorial = { ...state.tutorial, finished: true };
+  renderTutorial();
+  document.querySelector("#tutorial-done-heading").textContent = won ? "Training complete" : "Training stopped";
+  document.querySelector("#tutorial-done-text").textContent = won
+    ? "You know enough to run an operation. Nothing in the training counted: your campaign is as you left it."
+    : "Your operatives went down. Nothing in the training counted. Try again whenever you like.";
+  state.modal = true;
+  tutorialDoneDialog.showModal();
+}
+
+async function leaveTutorial() {
+  if (!state.tutorial) return;
+  state.tutorial = null;
+  state.tutorialFlags = null;
+  state.campaign = state.savedCampaign ?? state.campaign;
+  state.savedCampaign = null;
+  if (tutorialDoneDialog.open) tutorialDoneDialog.close();
+  renderTutorial();
+  await loadGame(state.missionIndex); // back to the operation that was chosen before
+  showMainMenu();
+}
+
+document.querySelector("#menu-tutorial").addEventListener("click", () => startTutorial().catch(showFatalError));
+document.querySelector("#tutorial-leave").addEventListener("click", () => leaveTutorial().catch(showFatalError));
+document.querySelector("#tutorial-skip-step").addEventListener("click", () => {
+  state.tutorial = skipStep(state.tutorial);
+  renderTutorial();
+});
+document.querySelector("#tutorial-finish").addEventListener("click", () => leaveTutorial().catch(showFatalError));
+document.querySelector("#tutorial-again").addEventListener("click", () => {
+  tutorialDoneDialog.close();
+  state.modal = false;
+  loadGame(state.missionIndex).catch(showFatalError); // the tutorial run is still set, so it reloads the training
+});
+tutorialDoneDialog.addEventListener("cancel", (event) => event.preventDefault());
 
 // The company name is asked for the first time the player heads for the campaign, and can be changed from the menu.
 function showCompany() {
@@ -4806,6 +4947,8 @@ function ensureCompany(rename = false) {
 
 function showMainMenu() {
   showCompany();
+  const tutorialNote = document.querySelector("#menu-tutorial-note");
+  if (tutorialDone()) tutorialNote.textContent = "Done. Play the training again.";
   const target = currentContinueTarget();
   const saved = target === "operation" ? readAutosave() : null;
   const entry = saved ? state.missionList?.find((item) => item.id === saved.missionId) : null;
@@ -4925,6 +5068,14 @@ if (new URLSearchParams(location.search).has("e2e")) {
     setFunds(amount) {
       state.campaign = { ...state.campaign, funds: amount };
       updateFundsReadout();
+    },
+    tutorialStep() {
+      const step = state.tutorial ? currentStep(state.tutorial) : null;
+      return { running: Boolean(state.tutorial), step: step?.id ?? null, finished: Boolean(state.tutorial?.finished) };
+    },
+    selectWeapon(id) {
+      const unit = state.units.find((item) => item.id === id);
+      unit.activeSlot = unit.equipment.findIndex((item) => item.definition.action === "disable-pulse");
     },
     disableUnit(id) {
       const unit = state.units.find((item) => item.id === id);
@@ -5601,7 +5752,8 @@ for (const type of ["pointerdown", "pointermove", "keydown", "wheel"]) {
 }
 
 function operationActive() {
-  return !menuDialog.open && !titleDialog.open && !outcomeDialog.open && state.outcome === "active" && Boolean(state.mission);
+  const dialogOpen = menuDialog.open || titleDialog.open || outcomeDialog.open;
+  return !state.tutorial && !dialogOpen && state.outcome === "active" && Boolean(state.mission);
 }
 
 // The operation in progress is kept in the browser as it is played (every few seconds, and when the page is hidden or left), so

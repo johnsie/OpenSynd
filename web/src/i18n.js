@@ -44,6 +44,17 @@ const TABLE = Object.freeze({
   "company.cancel": ["Back", "Volver", "Retour"],
   "company.save": ["Confirm", "Confirmar", "Confirmer"],
   "company.rename": ["Rename company", "Cambiar nombre", "Renommer la société"],
+  "menu.tutorial": ["Tutorial", "Tutorial", "Tutoriel"],
+  "menu.tutorial_note": [
+    "Learn the controls in a few minutes. Nothing counts.",
+    "Aprende los controles en unos minutos. Nada cuenta.",
+    "Apprenez les commandes en quelques minutes. Rien ne compte.",
+  ],
+  "tutorial.title": ["TRAINING", "ENTRENAMIENTO", "ENTRAÎNEMENT"],
+  "tutorial.skip_step": ["Skip this step", "Saltar este paso", "Passer cette étape"],
+  "tutorial.leave": ["Leave training", "Salir del entrenamiento", "Quitter l'entraînement"],
+  "tutorial.again": ["Train again", "Entrenar de nuevo", "Recommencer"],
+  "tutorial.finish": ["Main menu", "Menú principal", "Menu principal"],
   "menu.continue": ["Continue", "Continuar", "Continuer"],
   "menu.campaign": ["Start campaign", "Empezar campaña", "Commencer la campagne"],
   "menu.campaign_note": [

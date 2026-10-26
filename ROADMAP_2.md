@@ -73,7 +73,7 @@ clock in the objective list. *Test:* an event fires at its time and only once, a
 others let you leave by train as the exit. Uses the boarding already built. *Test:* a mission starting with the squad aboard
 puts them off at the first station.
 
-**B5. A short tutorial operation (M).** Operation 0: five minutes that teach selecting, walking, shooting, looting, queuing,
+**B5. A short tutorial operation (M). Done: the main menu's Tutorial, a ten-step Training Yard run on a scratch campaign.** Operation 0: five minutes that teach selecting, walking, shooting, looting, queuing,
 the persuader and a car, with the status line doing the talking and nothing to read in advance. Skippable. *Test:* a bot that
 follows the prompts finishes it.
 

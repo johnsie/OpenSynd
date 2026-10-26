@@ -570,6 +570,20 @@ class Validation:
                 else:
                     missions.append((content_path, content))
 
+        # The tutorial is a mission outside the campaign: checked like any other, but it belongs to no territory.
+        tutorial_paths: set[Path] = set()
+        if pack.get("tutorial") is not None:
+            tutorial_path = self.resolve_reference(pack_root, pack_path, pack["tutorial"])
+            tutorial = self.read_object(tutorial_path) if tutorial_path is not None else None
+            if tutorial is not None:
+                referenced.add(tutorial_path)
+                if tutorial.get("license") != pack["license"]:
+                    self.error(tutorial_path, "content license must match its pack license")
+                if tutorial.get("unlocks"):
+                    self.error(tutorial_path, "the tutorial cannot unlock operations")
+                tutorial_paths.add(tutorial_path.resolve())
+                missions.append((tutorial_path, tutorial))
+
         equipment_items: dict[str, tuple[Path, dict[str, Any]]] = {}
         for equipment_path in equipment:
             try:
@@ -593,7 +607,8 @@ class Validation:
                 mission_path, mission, pack_root, maps, units, equipment, vehicles
             )
 
-        self.validate_territories(pack_path, pack_root, pack, referenced, missions)
+        self.validate_territories(pack_path, pack_root, pack, referenced,
+                                  [item for item in missions if item[0].resolve() not in tutorial_paths])
 
         actual = {path.resolve() for path in pack_root.rglob("*.json")}
         for unreferenced in sorted(actual - referenced):

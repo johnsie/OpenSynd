@@ -1042,6 +1042,59 @@ for (const [name, type, executablePath] of targets) {
     await menuPage.waitForSelector("#title-dialog[open]");
     await menuPage.close();
 
+    // The tutorial: a bot follows the prompts. It runs on a scratch campaign, so nothing it does is kept.
+    const trainee = await (await browser.newContext()).newPage();
+    await trainee.goto(`${url}?e2e`);
+    await trainee.waitForSelector("#menu-dialog[open]");
+    await trainee.evaluate(() => localStorage.setItem("opensynd.campaign.v1", JSON.stringify({ company: "Keep Me", funds: 777 })));
+    await trainee.reload();
+    await trainee.waitForSelector("#menu-dialog[open]");
+    await trainee.click("#menu-tutorial");
+    await trainee.waitForSelector("#tutorial-panel:not([hidden])");
+    const step = () => trainee.evaluate(() => window.opensyndTest.tutorialStep().step);
+    const waitStep = async (id) => {
+      await trainee.waitForFunction((wanted) => window.opensyndTest.tutorialStep().step === wanted, id, { timeout: 8000 });
+      assert.ok((await trainee.locator("#tutorial-text").innerText()).length > 20, `${id} has a prompt`);
+    };
+    assert.equal(await step(), "select");
+    await trainee.locator("#game-canvas").focus();
+    await trainee.keyboard.press("2");
+    await waitStep("walk");
+    await trainee.evaluate(() => window.opensyndTest.moveSelected(11, 20));
+    await waitStep("weapon");
+    await trainee.evaluate(() => window.opensyndTest.selectWeapon("operator-two"));
+    await waitStep("shoot");
+    await trainee.evaluate(() => window.opensyndTest.disableUnit("practice-target"));
+    await waitStep("loot");
+    await trainee.evaluate(() => window.opensyndTest.placeNear("operator-two", "practice-target", 1, 0));
+    await trainee.locator("#game-canvas").focus();
+    await trainee.keyboard.press("f");
+    await waitStep("queue");
+    await trainee.evaluate(() => window.opensyndTest.placeUnit("operator-two", 6, 19));
+    await trainee.evaluate(() => window.opensyndTest.moveSelected(16, 19));
+    await trainee.evaluate(() => window.opensyndTest.focusOn("operator-two"));
+    await trainee.waitForTimeout(700);
+    const farther = await trainee.evaluate(() => window.opensyndTest.screenPointAt(9, 19));
+    await trainee.keyboard.down("Shift");
+    await trainee.mouse.click(farther.x, farther.y);
+    await trainee.keyboard.up("Shift");
+    await waitStep("persuade");
+    await trainee.evaluate(() => window.opensyndTest.persuade("civilian-1", "operator-one"));
+    await waitStep("drive");
+    await trainee.evaluate(() => window.opensyndTest.placeUnit("training-car", 34, 20));
+    await waitStep("gate");
+    await trainee.evaluate(() => window.opensyndTest.completeObjectives());
+    await trainee.waitForSelector("#tutorial-done-dialog[open]", { timeout: 8000 });
+    assert.equal((await trainee.evaluate(() => window.opensyndTest.tutorialStep())).finished, true);
+    await trainee.click("#tutorial-finish");
+    await trainee.waitForSelector("#menu-dialog[open]");
+    assert.equal(await trainee.evaluate(() => window.opensyndTest.tutorialStep().running), false, "back out of the training");
+    const kept = await trainee.evaluate(() => JSON.parse(localStorage.getItem("opensynd.campaign.v1")));
+    assert.equal(kept.funds, 777, "the campaign is untouched by the training");
+    assert.equal(kept.company, "Keep Me");
+    assert.equal(await trainee.evaluate(() => localStorage.getItem("opensynd.progress.v1")), null, "nothing is marked won");
+    await trainee.close();
+
     // Gear bought before the operation begins is on the operative when it does (the operation is set up again on closing).
     const buyer = await browser.newPage();
     await buyer.goto(`${url}?e2e`);

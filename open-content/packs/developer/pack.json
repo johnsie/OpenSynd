@@ -60,7 +60,8 @@
     "maps/japan.map.json",
     "maps/manchuria.map.json",
     "maps/pacific-coast.map.json",
-    "maps/western-australia.map.json"
+    "maps/western-australia.map.json",
+    "maps/training-yard.map.json"
   ],
   "units": [
     "units/field-operator.unit.json",
@@ -149,5 +150,6 @@
     "vehicles/fire-engine.vehicle.json",
     "vehicles/scout-armored.vehicle.json",
     "vehicles/freight-train.vehicle.json"
-  ]
+  ],
+  "tutorial": "missions/training-yard.mission.json"
 }
