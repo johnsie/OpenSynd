@@ -24,7 +24,6 @@ import { createOverlay, createTileSprites } from "./textures.js";
 import { renderWorldMap } from "./worldmap.js";
 import { continueNote, continueTarget } from "./menu.js";
 import {
-  advanceWorld,
   announceProp as coreAnnounceProp,
   breakWindowAt as coreBreakWindowAt,
   collectFallenGear as coreCollectFallenGear,
@@ -35,6 +34,17 @@ import {
   lootNow as coreLootNow,
   syncWorldGates,
 } from "./core/step.js";
+import { applyCommand } from "./core/apply.js";
+import { commands } from "./commands.js";
+import {
+  interactionCandidate as coreInteractionCandidate,
+  isAttackable,
+  isBusy as coreIsBusy,
+  isFollowable,
+  orderMove as coreOrderMove,
+  vehicleCandidate as coreVehicleCandidate,
+} from "./core/orders.js";
+import { stepWorld } from "./core/world.js";
 import { markerFor } from "./minimap.js";
 import { VARIANT_LABELS, operationPath, territoryAlert, variantFor } from "./operations.js";
 import { createTutorial, currentStep, observeTutorial, pointerFor, skipStep, tutorialProgress } from "./tutorial.js";
@@ -508,6 +518,7 @@ const state = {
   targeted: {},
   armoury: { operator: 0, slot: 0, selected: [] },
   campaign: emptyCampaign(),
+  options: { instantMoves: reduceMotion }, // a player who asked for reduced motion has routes completed at once
   catalog: [],
   opStats: newStats(0),
   shownFunds: -1,
@@ -3250,6 +3261,9 @@ const worldHooks = {
   looted() {
     if (state.tutorialFlags) state.tutorialFlags.looted = true;
   },
+  queued() {
+    if (state.tutorialFlags) state.tutorialFlags.queued = true;
+  },
   penalise(amount) {
     state.campaign = penalise(state.campaign, amount);
     updateFundsReadout();
@@ -3297,12 +3311,153 @@ function updateAlertMusic(deltaSeconds) {
   }
 }
 
-function simulationStep(deltaSeconds) {
-  // A weapon held down by the pointer keeps firing while the button is held.
-  if (state.holdFire && state.viewport && state.outcome === "active") {
-    fireByHand(screenToGridExact(state.holdFire, state.viewport.cellSize, state.viewport.origin), true);
+// ---- Orders. The player's clicks and keys become commands (see commands.js) for the game core (core/apply.js), the same way a
+// server or a replay would give them; what comes back is only for the interface (the cursor, which squares are armed).
+const selectedIds = () => selectedOperators().map((unit) => unit.id);
+const give = (command) => applyCommand(state, worldHooks, command, { chance: worldChance });
+// A point the pointer chose may lie outside the map; the core wants one inside it.
+const insideMap = (point) => ({
+  x: Math.min(state.map.dimensions.width, Math.max(0, point.x)),
+  y: Math.min(state.map.dimensions.height, Math.max(0, point.y)),
+});
+
+function orderMove(unit, destination, queue = false, keepPending = false) {
+  return coreOrderMove(state, worldHooks, unit, destination, queue, keepPending);
+}
+
+function isBusy(unit) {
+  return coreIsBusy(state, unit);
+}
+
+function issueMove(destination, queue = false) {
+  const ids = selectedIds();
+  if (ids.length > 0 && give(commands.move(ids, destination, queue)).moved) state.cursor = { ...destination };
+}
+
+// Clicking a watcher sends the selected armed operators after it.
+function issueAttack(targetId, queue = false) {
+  const ids = selectedIds();
+  if (ids.length === 0) return;
+  give(commands.attack(ids, targetId, queue));
+  canvas.focus();
+}
+
+// Left-click on someone: the selected operatives walk after them and stay beside them (no shooting).
+function issueFollow(targetId, queue = false) {
+  const ids = selectedIds();
+  if (ids.length === 0) return;
+  give(commands.follow(ids, targetId, queue));
+  canvas.focus();
+}
+
+function fireByHand(aim, held = false) {
+  const ids = selectedIds();
+  if (ids.length === 0) {
+    if (!held) setStatus("Select an operator first, then right-click to fire.");
+    return;
   }
-  advanceWorld(state, deltaSeconds, worldHooks, worldChance);
+  give(commands.fire(ids, insideMap(aim), held));
+}
+
+// F: pick up what is within reach, otherwise send the nearest selected operator to the closest body that still carries gear.
+function lootAction() {
+  const ids = selectedIds();
+  if (ids.length === 0) setStatus("There is nothing to pick up. Gear lies where an armed person falls.");
+  else give(commands.loot(ids));
+}
+
+// Send the selected operator with the fewest items to gear on the ground; they loot it on arrival.
+function goLoot(body, queue = false) {
+  const ids = selectedIds();
+  if (ids.length > 0) give(commands.loot(ids, body.id, queue));
+}
+
+function performInteraction() {
+  const ids = selectedIds();
+  if (ids.length === 0) setStatus("Nothing to use is within reach.");
+  else give(commands.interact(ids));
+}
+
+// The operator who can interact right now and what with.
+function interactionCandidate() {
+  return coreInteractionCandidate(state, selectedOperators());
+}
+
+function nearbyInteraction() {
+  return interactionCandidate()?.objective ?? null;
+}
+
+// The vehicle the selected squad could use right now: the one they are in (to leave), or the nearest one to enter.
+function vehicleCandidate() {
+  return coreVehicleCandidate(state, selectedOperators());
+}
+
+// Left-click a vehicle: the selected operators walk to it and get in.
+function goEnterVehicle(vehicle, queue = false) {
+  const ids = selectedIds();
+  if (ids.length === 0) setStatus("Select an operator first, then click the vehicle to get in.");
+  else give(commands.board(ids, vehicle.id, queue));
+}
+
+// V: take the vehicle within reach, or leave the one the squad is in.
+function toggleVehicle(queue = false) {
+  const ids = selectedIds();
+  if (ids.length === 0) setStatus("No vehicle within reach. Walk up to one and press V.");
+  else give(commands.vehicle(ids, queue));
+}
+
+// The operators an item square is for: the selected group if this operator is one of them, else just this one.
+function idsFor(unit) {
+  const ids = selectedIds();
+  return ids.includes(unit.id) ? ids : [unit.id];
+}
+
+// Press an item square: weapons are selected (press again to put away), consumables are used, worn gear explains itself.
+function pressSlot(unit, slot) {
+  const entry = unit.equipment[slot];
+  if (!entry || unit.disabled) return;
+  if (entry.definition.action === "time-bomb" && entry.charges !== 0) {
+    // The first press arms the charge (the next click on the ground throws it); pressing its square again drops it underfoot.
+    const armed = state.armedBomb?.unitId === unit.id && state.armedBomb.slot === slot;
+    const result = give(commands.useItem(idsFor(unit), unit.id, slot, { plant: armed }));
+    state.armedBomb = result.arm ? { unitId: unit.id, slot } : null;
+    return;
+  }
+  give(commands.useItem(idsFor(unit), unit.id, slot));
+}
+
+// Throw the armed charge to a spot on the ground, within range and on walkable ground.
+function throwArmedBomb(target) {
+  const { unitId, slot } = state.armedBomb;
+  const unit = state.units.find((item) => item.id === unitId);
+  const entry = unit?.equipment[slot];
+  if (!unit || unit.disabled || !entry || entry.definition.action !== "time-bomb" || entry.charges === 0) {
+    state.armedBomb = null;
+    return;
+  }
+  const result = give(commands.useItem([unit.id], unit.id, slot, { at: insideMap(target) }));
+  if (result.thrown) state.armedBomb = null;
+}
+
+function dropFromSlot(unit, slot, queue = false) {
+  give(commands.dropItem(idsFor(unit), unit.id, slot, queue));
+}
+
+// The field repair kit of the selected operator, if they carry one.
+function useRepairKit() {
+  const unit = selectedUnit();
+  const slot = unit ? unit.equipment.findIndex((item) => item.definition.action === "restore-vitality") : -1;
+  if (slot === -1 || unit.equipment[slot].charges === 0 || unit.disabled) setStatus("No field repair kit is available.");
+  else give(commands.useItem([unit.id], unit.id, slot));
+}
+
+function simulationStep(deltaSeconds) {
+  // A weapon held down by the pointer keeps firing: the pointer's place on the screen becomes a place on the map for the core.
+  const held = state.holdFireScreen && state.viewport && state.outcome === "active";
+  state.holdFire = held
+    ? { unitIds: selectedIds(), at: insideMap(screenToGridExact(state.holdFireScreen, state.viewport.cellSize, state.viewport.origin)) }
+    : null;
+  stepWorld(state, deltaSeconds, worldHooks, worldChance);
   updateAlertMusic(deltaSeconds);
 }
 
@@ -3587,9 +3742,6 @@ function update(deltaSeconds) {
     if (state.tutorial) tickTutorial();
     if (Object.values(state.targeted).some((until) => until > state.elapsed - 0.3 && until < state.elapsed + 0.3)) renderInterface();
     if (state.mission) updateVehicleButton();
-    boardWaitingOperators();
-    runPendingOrders();
-    if (state.map?.objects?.some((gate) => gate.key || gate.kind === "door")) syncGates();
     if (state.objectives.some((objective) => objective.type === "hold" && !objective.complete && objective.progress > 0)) {
       renderInterface();
     }
@@ -3604,42 +3756,6 @@ function update(deltaSeconds) {
 
 function completeObjectivesAt(position) {
   return coreCompleteObjectivesAt(state, worldHooks, position);
-}
-
-// The operator who can interact right now (any group member in group mode) and what with.
-function interactionCandidate() {
-  const candidates = selectedOperators();
-  for (const unit of candidates) {
-    if (!unit || unit.disabled || unit.path.length > 0) continue;
-    const objective = findObjectiveAtPosition(
-      state.objectives,
-      state.map.zones,
-      { x: Math.round(unit.position.x), y: Math.round(unit.position.y) },
-      "interact",
-    );
-    if (objective) return { unit, objective };
-  }
-  return null;
-}
-
-function nearbyInteraction() {
-  return interactionCandidate()?.objective ?? null;
-}
-
-function performInteraction() {
-  const candidate = interactionCandidate();
-  if (!candidate) {
-    setStatus("Nothing to use is within reach.");
-    return;
-  }
-  const { unit, objective } = candidate;
-  objective.complete = true;
-  state.opStats.objectivesCompleted += 1;
-  syncGates();
-  audio.play("objective");
-  addEffect(state.effects, "restore", { unitId: unit.id });
-  setStatus(`${objective.description} Commitment fulfilled.`);
-  renderInterface();
 }
 
 function frame(time) {
@@ -3746,190 +3862,6 @@ function selectAll() {
   canvas.focus();
 }
 
-// Order one operator along a route; returns the number of steps, or 0 if there is none.
-// With `queue` (Shift held) the new route is added after the one already under way, from where it ends.
-// A plain order replaces everything, including actions queued after the route (`keepPending` is for the queue itself).
-function orderMove(unit, destination, queue = false, keepPending = false) {
-  unit.targetId = null;
-  unit.lootTargetId = null;
-  unit.followId = null;
-  unit.tailId = null;
-  if (!keepPending) unit.pending = [];
-  if (queue && unit.pending?.length > 0) {
-    // Actions are waiting after the route: the walk joins the queue behind them.
-    unit.pending.push({ type: "move", to: { ...destination } });
-    if (state.tutorialFlags) state.tutorialFlags.queued = true;
-    return 1;
-  }
-  const queued = queue && unit.path.length > 0;
-  if (queued && state.tutorialFlags) state.tutorialFlags.queued = true;
-  const last = queued ? unit.path.at(-1) : unit.position;
-  const start = { x: Math.round(last.x), y: Math.round(last.y) };
-  const path = findPath(state.grid, start, destination);
-  if (path.length === 0) return 0;
-  if (queued) {
-    unit.path = [...unit.path, ...path];
-    unit.waypoints = [...(unit.waypoints ?? []), { ...destination }];
-    return path.length;
-  }
-  unit.waypoints = [{ ...destination }];
-  unit.position = start;
-  unit.path = path;
-  if (reduceMotion) {
-    for (const step of path) completeObjectivesAt(step);
-    unit.position = { ...destination };
-    unit.path = [];
-  }
-  return path.length;
-}
-
-// Spread a group over distinct tiles around the destination, nearest tile first.
-function groupDestinations(operators, destination) {
-  const free = formationTiles(state.grid, destination, operators.length);
-  const assignments = [];
-  for (const unit of [...operators].sort((left, right) => (left.id < right.id ? -1 : 1))) {
-    let best = 0;
-    for (let index = 1; index < free.length; index += 1) {
-      const distance = (tile) => Math.hypot(tile.x - unit.position.x, tile.y - unit.position.y);
-      if (distance(free[index]) < distance(free[best])) best = index;
-    }
-    if (free.length > 0) assignments.push([unit, free.splice(best, 1)[0]]);
-  }
-  return assignments;
-}
-
-// Orders for operators who are in a vehicle drive it: it goes to the nearest road to the point clicked.
-function driveOrder(destination, queue = false) {
-  const riders = selectedOperators().filter((unit) => unit.inVehicle);
-  if (riders.length === 0) return false;
-  // Any selected rider can give the order: the car the squad is steering goes, whoever sits where. (Everyone can ride
-  // together, so the first one selected is often a passenger.)
-  const car = riders.map((unit) => state.units.find((item) => item.id === unit.inVehicle)).find((item) => item?.vehicle.controlledBy);
-  if (!car) {
-    setStatus("Nobody is driving this vehicle. Leave it with V and take it again.");
-    return true;
-  }
-  const driver = state.units.find((unit) => unit.id === car.vehicle.controlledBy);
-  if (queue && isBusy(driver)) {
-    queueAction(driver, { type: "drive", to: { ...destination } }, "drive on to the next point");
-    return true;
-  }
-  driver.pending = [];
-  if (!driveTo(car, destination, state.roadGrid)) {
-    setStatus("No road to drive there.");
-    return true;
-  }
-  state.cursor = { ...destination };
-  audio.play("move");
-  setStatus(`${car.definition.name} driving off.`);
-  renderInterface();
-  return true;
-}
-
-function issueMove(destination, queue = false) {
-  if (driveOrder(destination, queue)) return;
-  const squad = selectedOperators();
-  if (squad.length > 1) {
-    const assignments = groupDestinations(squad, destination);
-    const moving = assignments.filter(([unit, tile]) => orderMove(unit, tile, queue) > 0);
-    if (moving.length === 0) {
-      setStatus("No safe route to that tile.");
-      return;
-    }
-    state.cursor = { ...destination };
-    audio.play("move");
-    setStatus(`${moving.length} operators moving.`);
-    renderInterface();
-    return;
-  }
-  const unit = selectedUnit();
-  if (!unit || unit.side !== "team" || unit.disabled) return;
-  const start = { x: Math.round(unit.position.x), y: Math.round(unit.position.y) };
-  const steps = orderMove(unit, destination, queue);
-  if (steps === 0) {
-    setStatus(
-      start.x === destination.x && start.y === destination.y
-        ? "Operator is already at that position."
-        : "No safe route to that tile.",
-    );
-    return;
-  }
-  state.cursor = { ...destination };
-  audio.play("move");
-  setStatus(reduceMotion ? `Route completed: ${steps} grid steps.` : `Route accepted: ${steps} grid steps.`);
-  renderInterface();
-}
-
-// Clicking a watcher sends the selected armed operators after it. Each closes in until the
-// watcher is within range of the weapon it would fire (the selected one, if any), then stands
-// and shoots; if the watcher moves away it is followed again.
-function issueAttack(targetId, queue = false) {
-  const target = state.units.find((unit) => unit.id === targetId);
-  if (!target || !isAttackable(target)) return;
-  if (target.disabled) {
-    const gear = nearestDrop(target.position, 3);
-    if (gear) goLoot(gear, queue);
-    else setStatus(`${target.definition.name} is already down and has nothing left to loot.`);
-    return;
-  }
-  const squad = selectedOperators();
-  if (squad.length === 0) return;
-  const carrying = (unit) => unit.equipment.some((item) => item.definition.action === "disable-pulse");
-  const armed = squad.filter((unit) => carrying(unit) && roundsLeft(unit) !== 0 && hasWeaponSelected(unit));
-  if (armed.length === 0) {
-    setStatus(
-      squad.some((unit) => carrying(unit) && roundsLeft(unit) !== 0)
-        ? "No weapon selected. Click a weapon in the operator's inventory, then give the order."
-        : squad.some(carrying)
-          ? "Out of rounds. Swap to another weapon or loot one."
-          : "No selected operator has a weapon equipped.",
-    );
-    return;
-  }
-  for (const unit of armed) {
-    unit.followId = target.id;
-    unit.lootTargetId = null;
-  }
-  const inRange = armed.filter(
-    (unit) => distanceBetween(unit, target) <= combatStats(unit, distanceBetween(unit, target)).range,
-  );
-  const who = armed.length > 1 ? `${armed.length} operators` : armed[0].definition.name;
-  setStatus(
-    inRange.length === armed.length
-      ? `${who} engaging ${target.definition.name}.`
-      : `${who} closing in on ${target.definition.name}.`,
-  );
-  audio.play("move");
-  renderInterface();
-  canvas.focus();
-}
-
-function useRepairOn(unit, kit) {
-  if (!unit || unit.disabled || !kit || kit.charges === 0) {
-    setStatus("No field repair kit is available.");
-    return;
-  }
-  const maximum = maxHealth(unit);
-  if (unit.health >= maximum) {
-    setStatus("Operator integrity is already full.");
-    return;
-  }
-  // FreeSynd's medikit restores the user to full health; a kit may instead restore a fixed amount.
-  const wanted = kit.definition.effect.restoreFull ? maximum : kit.definition.effect.restoreVitality;
-  const restored = Math.min(wanted, maximum - unit.health);
-  unit.health += restored;
-  if (kit.charges !== null) kit.charges -= 1;
-  setStatus(`${kit.definition.name} restored ${restored} integrity.`);
-  audio.play("repair");
-  addEffect(state.effects, "repair", { unitId: unit.id });
-  renderInterface();
-}
-
-function useRepairKit() {
-  const unit = selectedUnit();
-  useRepairOn(unit, equipmentWithAction(unit, "restore-vitality"));
-}
-
 // Anyone who has just been put down drops what they carried, scattered around where they fell (FreeSynd), unless a
 // beam, or fire or a blast without a strong chest, took it with them.
 function collectFallenGear() {
@@ -3949,130 +3881,6 @@ function nearestDrop(position, within) {
 // Pick up gear lying on the ground with one of the selected operators.
 function lootNow(operator, body) {
   coreLootNow(state, worldHooks, operator, body);
-}
-
-// F: pick up what is within reach, otherwise send the nearest selected operator to the
-// closest body that still carries gear.
-function lootAction() {
-  const squad = selectedOperators();
-  // Everything within reach goes in at once, as far as there are free slots.
-  let found = findLoot(squad, state.drops);
-  if (found) {
-    if (freeSlots(found.operator) === 0) lootNow(found.operator, found.body); // says why nothing was taken
-    while (found && freeSlots(found.operator) > 0) {
-      lootNow(found.operator, found.body);
-      found = findLoot(squad, state.drops);
-    }
-    return;
-  }
-  let target = null;
-  for (const unit of squad) {
-    const candidate = nearestLootable(unit, state.drops);
-    if (candidate && (!target || distanceBetween(unit, candidate) < distanceBetween(target.unit, target.body))) {
-      target = { unit, body: candidate };
-    }
-  }
-  if (target) goLoot(target.body);
-  else setStatus("There is nothing to pick up. Gear lies where an armed person falls.");
-}
-
-// Send the selected operator with the fewest items to a body; they loot it on arrival.
-function goLoot(body, queue = false) {
-  const squad = selectedOperators();
-  if (squad.length === 0) return;
-  // The one with the fewest items collects it, not just whoever is closest.
-  const nearest = pickLooter(squad, body) ?? squad[0];
-  if (queue && isBusy(nearest)) {
-    queueAction(nearest, { type: "loot", id: body.id }, `pick up the ${body.definition.name}`);
-    return;
-  }
-  sendLoot(nearest, body);
-  // The rest of the selection moves up with them, to the ground around the gear.
-  const others = squad.filter((unit) => unit !== nearest && !unit.disabled && !unit.inVehicle);
-  if (others.length > 0 && !inLootReach(nearest, body)) {
-    const spot = { x: Math.round(body.position.x), y: Math.round(body.position.y) };
-    for (const [unit, tile] of groupDestinations(others, spot)) orderMove(unit, tile);
-  }
-}
-
-// Send one operator to gear on the ground (lootNow once they are beside it).
-function sendLoot(unit, body, keepPending = false) {
-  if (inLootReach(unit, body)) {
-    lootNow(unit, body);
-    return;
-  }
-  const steps = orderMove(unit, { x: Math.round(body.position.x), y: Math.round(body.position.y) }, false, keepPending);
-  if (steps === 0) {
-    setStatus("No safe route to that gear.");
-    return;
-  }
-  unit.lootTargetId = body.id;
-  audio.play("move");
-  setStatus(`${unit.definition.name} is walking over to pick up the ${body.definition.name}.`);
-  renderInterface();
-}
-
-// Orders queued after the current route (Shift+click): walk on, pick up gear, get into a vehicle, in the order given.
-// An operator is busy while they still have somewhere to go or something to do.
-function isBusy(unit) {
-  const car = unit.inVehicle ? state.units.find((item) => item.id === unit.inVehicle) : null;
-  if (car) return car.path.length > 0 || (unit.pending?.length ?? 0) > 0;
-  return unit.path.length > 0 || Boolean(unit.lootTargetId) || Boolean(unit.enterTargetId) || (unit.pending?.length ?? 0) > 0;
-}
-
-function queueAction(unit, action, description) {
-  unit.pending = [...(unit.pending ?? []), action];
-  audio.play("move");
-  setStatus(`${unit.definition.name} will ${description} next (${unit.pending.length} queued, Esc clears).`);
-  renderInterface();
-}
-
-// When an operator has finished what they were doing, start the next queued order; one that can no longer be
-// done (the body is gone, the vehicle is wrecked, no route) is skipped with a message.
-function runPendingOrders() {
-  for (const unit of state.units) {
-    if (unit.side !== "team" || unit.disabled || !unit.pending?.length) continue;
-    if (unit.inVehicle) {
-      // A driver waits for the car to stop, then drives on or gets out.
-      const car = state.units.find((item) => item.id === unit.inVehicle);
-      if (!car || car.path.length > 0) continue;
-      const step = unit.pending.shift();
-      if (step.type === "drive") {
-        if (!driveTo(car, step.to, state.roadGrid)) setStatus(`${unit.definition.name}: no road to the next point, skipped.`);
-      } else if (step.type === "leave") {
-        const out = leaveVehicle(car, state.units, state.grid);
-        setStatus(`${out.length} left the ${car.definition.name}.`);
-      } else if (step.type === "drop") dropQueued(unit, step);
-      continue;
-    }
-    if (unit.path.length > 0 || unit.lootTargetId || unit.enterTargetId) continue;
-    const next = unit.pending.shift();
-    if (next.type === "drop") dropQueued(unit, next);
-    else if (next.type === "move") {
-      if (orderMove(unit, next.to, false, true) === 0) setStatus(`${unit.definition.name}: no route to the next point, skipped.`);
-    } else if (next.type === "loot") {
-      const body = state.drops.find((item) => item.id === next.id);
-      if (body && lootableBody(body)) sendLoot(unit, body, true);
-      else setStatus(`${unit.definition.name}: nothing left to pick up, skipped.`);
-    } else if (next.type === "follow") {
-      const target = state.units.find((item) => item.id === next.id);
-      if (target && !target.disabled) {
-        unit.tailId = target.id;
-        setStatus(`${unit.definition.name} follows ${target.definition.name}.`);
-      } else setStatus(`${unit.definition.name}: nobody left to follow, skipped.`);
-    } else if (next.type === "enter") {
-      const vehicle = state.units.find((item) => item.id === next.id);
-      if (vehicle && !vehicle.disabled) sendEnter(unit, vehicle, true);
-      else setStatus(`${unit.definition.name}: the vehicle is gone, skipped.`);
-    }
-  }
-}
-
-// A queued drop: the first thing the operative carries that matches what was chosen, if they still have it.
-function dropQueued(unit, step) {
-  const slot = unit.equipment.findIndex((item) => item.definition.id === step.item);
-  if (slot === -1) setStatus(`${unit.definition.name}: no ${step.name} left to drop, skipped.`);
-  else dropFromSlot(unit, slot);
 }
 
 // The unit under a screen point. Characters are tall, so the target is a generous box around the
@@ -4122,18 +3930,18 @@ canvas.addEventListener("pointerdown", (event) => {
   if (state.map && event.button === 2 && state.viewport && !state.modal && state.outcome === "active") {
     // Holding the right button keeps firing: an automatic weapon sprays for as long as it is held.
     const bounds = canvas.getBoundingClientRect();
-    state.holdFire = { x: event.clientX - bounds.left, y: event.clientY - bounds.top };
+    state.holdFireScreen = { x: event.clientX - bounds.left, y: event.clientY - bounds.top };
     state.firedOnDownAt = performance.now();
-    fireByHand(screenToGridExact(state.holdFire, state.viewport.cellSize, state.viewport.origin));
+    fireByHand(screenToGridExact(state.holdFireScreen, state.viewport.cellSize, state.viewport.origin));
     return;
   }
   if (!state.map || event.button !== 0) return;
   Object.assign(drag, { pointerId: event.pointerId, lastX: event.clientX, lastY: event.clientY, moved: 0, active: false });
 });
 canvas.addEventListener("pointermove", (event) => {
-  if (state.holdFire && state.viewport) {
+  if (state.holdFireScreen && state.viewport) {
     const bounds = canvas.getBoundingClientRect();
-    state.holdFire = { x: event.clientX - bounds.left, y: event.clientY - bounds.top };
+    state.holdFireScreen = { x: event.clientX - bounds.left, y: event.clientY - bounds.top };
   }
   if (drag.pointerId !== event.pointerId || !state.viewport) return;
   const deltaX = event.clientX - drag.lastX;
@@ -4151,7 +3959,7 @@ canvas.addEventListener("pointermove", (event) => {
 });
 for (const type of ["pointerup", "pointercancel"]) {
   canvas.addEventListener(type, (event) => {
-    if (event.button === 2 || type === "pointercancel") state.holdFire = null;
+    if (event.button === 2 || type === "pointercancel") state.holdFireScreen = null;
     if (drag.pointerId === event.pointerId) Object.assign(drag, { pointerId: null, active: false });
   });
 }
@@ -4175,7 +3983,7 @@ canvas.addEventListener("pointermove", (event) => {
   );
 });
 canvas.addEventListener("pointerleave", () => {
-  state.holdFire = null;
+  state.holdFireScreen = null;
   state.edge = { x: 0, y: 0 };
   state.pointer = null;
   setPointerCursor(null);
@@ -4188,43 +3996,6 @@ function setPointerCursor(kind) {
   canvas.classList.toggle("cursor-attack", kind === "attack");
   canvas.classList.toggle("cursor-attack-far", kind === "attack-far");
   canvas.classList.toggle("cursor-loot", kind === "loot");
-}
-
-// People the squad follows when clicked: civilians and anyone persuaded. Police, like the watchers, are engaged.
-function isFollowable(unit) {
-  if (isVehicle(unit) || unit.disabled) return false;
-  return unit.persuaded || unit.side === "civilian";
-}
-
-// Left-click on someone: the selected operatives, not in a vehicle, walk after them and stay beside them (no shooting).
-function issueFollow(targetId, queue = false) {
-  const target = state.units.find((unit) => unit.id === targetId);
-  const squad = selectedOperators().filter((unit) => !unit.inVehicle);
-  if (!target || squad.length === 0) return;
-  // With Shift held, whoever is busy follows after finishing what they are doing.
-  const waiting = queue ? squad.filter((unit) => isBusy(unit)) : [];
-  for (const unit of waiting) queueAction(unit, { type: "follow", id: target.id }, `follow ${target.definition.name}`);
-  if (waiting.length === squad.length) return;
-  for (const unit of squad.filter((item) => !waiting.includes(item))) {
-    unit.targetId = null;
-    unit.followId = null;
-    unit.lootTargetId = null;
-    unit.enterTargetId = null;
-    unit.pending = [];
-    unit.path = [];
-    unit.tailId = target.id;
-  }
-  const who = squad.length > 1 ? `${squad.length} operators` : squad[0].definition.name;
-  setStatus(`${who} following ${target.definition.name}.`);
-  audio.play("move");
-  renderInterface();
-  canvas.focus();
-}
-
-// Anyone the squad could fire on: watchers, civilians and police, but not people it has persuaded.
-function isAttackable(unit) {
-  if (isVehicle(unit)) return !isSquadVehicle(unit);
-  return ["opposition", "civilian", "police", "criminal"].includes(unit.side) && !unit.persuaded;
 }
 
 function pointerKindAt(position) {
@@ -4258,32 +4029,6 @@ canvas.addEventListener("pointermove", (event) => {
   setPointerCursor(pointerKindAt(state.pointer));
 });
 
-// Right-click: fire the selected weapon (or the best loaded one) in the direction of the pointer.
-function fireByHand(aim, held = false) {
-  const squad = selectedOperators();
-  if (squad.length === 0) {
-    if (!held) setStatus("Select an operator first, then right-click to fire.");
-    return;
-  }
-  const events = [];
-  const reasons = new Set();
-  for (const unit of squad) {
-    const result = fireManual(unit, aim, state.units, state.grid, state.props);
-    if (result.fired) events.push(...result.events);
-    else reasons.add(result.reason);
-  }
-  if (events.length > 0) {
-    handleCombatEvents(events);
-    renderInterface();
-    return;
-  }
-  if (held) return;
-  if (reasons.has("recharging")) setStatus("Weapon recharging.");
-  else if (reasons.has("no-rounds")) setStatus("Out of rounds. Select another weapon or loot one.");
-  else if (reasons.has("none-selected")) setStatus("No weapon selected. Click a weapon in the operator's inventory first.");
-  else if (reasons.has("no-weapon")) setStatus("No weapon equipped.");
-}
-
 canvas.addEventListener("contextmenu", (event) => {
   event.preventDefault();
   // A mouse already fired on button-down; a long press on touch reaches the context menu without one.
@@ -4294,33 +4039,6 @@ canvas.addEventListener("contextmenu", (event) => {
   fireByHand(screenToGridExact(position, state.viewport.cellSize, state.viewport.origin));
 });
 
-// Throw the armed charge to a spot on the ground, within range and on walkable ground.
-function throwArmedBomb(target) {
-  const { unitId, slot } = state.armedBomb;
-  const unit = state.units.find((item) => item.id === unitId);
-  const entry = unit?.equipment[slot];
-  if (!unit || unit.disabled || !entry || entry.definition.action !== "time-bomb" || entry.charges === 0) {
-    state.armedBomb = null;
-    return;
-  }
-  const tile = { x: Math.round(target.x), y: Math.round(target.y) };
-  if (Math.hypot(tile.x - unit.position.x, tile.y - unit.position.y) > THROW_RANGE) {
-    setStatus(`Too far: a charge can be thrown ${THROW_RANGE} tiles.`);
-    return;
-  }
-  if (!isWalkable(state.grid, tile.x, tile.y)) {
-    setStatus("It cannot land there.");
-    return;
-  }
-  state.armedBomb = null;
-  plantBomb(unit, entry, state.bombs, tile);
-  audio.play("tick");
-  setStatus(
-    `${unit.definition.name} throws a ${entry.definition.name}: ${entry.definition.effect.fuse} seconds. ` +
-      `Keep everyone ${entry.definition.effect.radius} tiles from it.`,
-  );
-  renderInterface();
-}
 // Escape first cancels what is half done (an armed charge, then the queued orders) before it deselects anyone.
 window.addEventListener(
   "keydown",
@@ -5057,23 +4775,6 @@ if (new URLSearchParams(location.search).has("e2e")) {
 document.querySelector("#about-button").addEventListener("click", () => aboutDialog.showModal());
 document.querySelector("#close-about").addEventListener("click", () => aboutDialog.close());
 
-// The eight item squares: a picture per item, and a click selects or uses it.
-// Right-click a slot (or Alt+Shift+1-8): the item leaves the slot and lies on the ground beside the operative, where it can
-// be picked up again (FreeSynd).
-function dropFromSlot(unit, slot, queue = false) {
-  const name = unit.equipment[slot]?.definition.name;
-  if (queue && name && isBusy(unit)) {
-    queueAction(unit, { type: "drop", item: unit.equipment[slot].definition.id, name }, `drop the ${name}`);
-    return;
-  }
-  if (state.armedBomb?.unitId === unit.id) state.armedBomb = null;
-  const drop = dropItem(unit, slot, state.drops, state.grid);
-  if (!drop) return;
-  audio.play("select");
-  setStatus(`${unit.definition.name} dropped the ${name}. Press F or click it to pick it up.`);
-  renderInterface();
-}
-
 function slotRow(unit, label) {
   const row = document.createElement("div");
   row.className = "slots";
@@ -5145,109 +4846,6 @@ function slotHint(definition) {
   }
 }
 
-// Weapons are selected (click again for automatic choice); consumables are used; worn gear explains itself.
-function pressSlot(unit, slot) {
-  const entry = unit.equipment[slot];
-  if (!entry || unit.disabled) return;
-  const definition = entry.definition;
-  // An item with nothing left in it is dead weight: clicking it puts it down, freeing the slot.
-  if (entry.charges === 0) {
-    dropFromSlot(unit, slot);
-    return;
-  }
-  if (definition.action === "disable-pulse") {
-    // With several operatives selected (and this one among them), the choice applies to all of
-    // them: each takes up their own copy of the same weapon, or puts it away together.
-    const squad = selectedOperators();
-    if (squad.length > 1 && squad.some((member) => member.id === unit.id)) {
-      if (unit.activeSlot === slot) {
-        clearWeaponForAll(squad, definition.id);
-        setStatus(`${squad.length} operators: weapons put away. Select one to fire.`);
-      } else {
-        const { selected, substituted, missing } = selectWeaponForAll(squad, definition.id);
-        raiseWeapon(unit, slot); // the operative clicked keeps the exact copy they clicked
-        setStatus(
-          `${selected.length + substituted.length} operators: ${definition.name} selected.` +
-            (substituted.length > 0 ? ` ${substituted.length} took the most similar weapon they carry.` : "") +
-            (missing.length > 0 ? ` ${missing.length} have nothing loaded.` : ""),
-        );
-      }
-      audio.play("select");
-      renderInterface();
-      return;
-    }
-    if (unit.activeSlot === slot) unit.activeSlot = null;
-    else raiseWeapon(unit, slot);
-    setStatus(
-      unit.activeSlot === slot
-        ? `${unit.definition.name}: ${definition.name} selected. It will be the only weapon that fires.`
-        : `${unit.definition.name}: weapon put away. Select one to fire.`,
-    );
-    audio.play("select");
-    renderInterface();
-  } else if (definition.action === "time-bomb") {
-    if (entry.charges === 0) {
-      setStatus("That charge is used up.");
-      return;
-    }
-    // The first click arms the charge: click the ground to throw it there. Clicking the slot again drops it underfoot.
-    if (state.armedBomb?.unitId !== unit.id || state.armedBomb.slot !== slot) {
-      state.armedBomb = { unitId: unit.id, slot };
-      audio.play("select");
-      setStatus(
-        `${unit.definition.name}: click the ground within ${THROW_RANGE} tiles to throw the ${definition.name}, ` +
-          "click its slot again to drop it here, Esc to cancel.",
-      );
-      return;
-    }
-    state.armedBomb = null;
-    plantBomb(unit, entry, state.bombs);
-    audio.play("tick");
-    setStatus(
-      `${unit.definition.name} plants a ${definition.name}: ${definition.effect.fuse} seconds. ` +
-        `Get everyone out of ${definition.effect.radius} tiles.`,
-    );
-    renderInterface();
-  } else if (definition.action === "shield") {
-    if (!raiseShield(unit)) {
-      setStatus(entry.charges === 0 ? "That shield is spent." : `${unit.definition.name} already has a shield up.`);
-      return;
-    }
-    audio.play("shield-up");
-    setStatus(`${unit.definition.name}: ${definition.name} up for ${definition.effect.duration} seconds.`);
-    renderInterface();
-  } else if (definition.action === "scan") {
-    if (!useScanner(unit)) {
-      setStatus(entry.charges === 0 ? "That scanner is spent." : `${unit.definition.name} is already scanning.`);
-      return;
-    }
-    audio.play("scan");
-    setStatus(
-      `${unit.definition.name}: ${definition.name} on for ${definition.effect.duration} seconds. ` +
-        "Everyone nearby shows on the map.",
-    );
-    renderInterface();
-  } else if (definition.action === "persuade") {
-    // Like weapons, with several operators selected the switch applies to all of them that carry one.
-    const squad = selectedOperators();
-    const group = squad.length > 1 && squad.some((member) => member.id === unit.id) ? squad : [unit];
-    const turnOn = !unit.persuading;
-    const carriers = setPersuader(group, turnOn);
-    setStatus(
-      turnOn
-        ? `${carriers.length > 1 ? `${carriers.length} operators` : unit.definition.name}: ${definition.name} on, weapon put away ` +
-            "(it is one or the other). Stand near people to win them over."
-        : `${carriers.length > 1 ? `${carriers.length} operators` : unit.definition.name}: ${definition.name} off.`,
-    );
-    audio.play("select");
-    renderInterface();
-  } else if (definition.action === "restore-vitality") {
-    useRepairOn(unit, entry);
-  } else {
-    setStatus(`${definition.name} is worn: ${definition.description}`);
-  }
-}
-
 // A drug slider shows the dose set; its tooltip explains what is actually in force and what the body has adapted to.
 function paintDrug(slider, unit) {
   const name = slider.dataset.drug;
@@ -5285,140 +4883,6 @@ function updateMeters() {
     const owner = state.units.find((candidate) => candidate.id === slider.dataset.unit);
     if (owner) paintDrug(slider, owner);
   }
-}
-
-// The vehicle the selected squad could use right now: the one they are in (to leave), or the nearest one a
-// selected operator is next to (to enter).
-function vehicleCandidate() {
-  const squad = selectedOperators();
-  const riding = squad.find((unit) => unit.inVehicle);
-  if (riding) return { vehicle: state.units.find((unit) => unit.id === riding.inVehicle), leaving: true };
-  let best = null;
-  for (const unit of state.units) {
-    if (!isVehicle(unit)) continue;
-    for (const operator of squad) {
-      if (!canEnter(operator, unit)) continue;
-      const distance = Math.hypot(operator.position.x - unit.position.x, operator.position.y - unit.position.y);
-      if (!best || distance < best.distance) best = { vehicle: unit, leaving: false, distance };
-    }
-  }
-  return best;
-}
-
-// Left-click a vehicle: the nearest selected operator walks to it and gets in (FreeSynd: a click on a car boards it).
-function goEnterVehicle(vehicle, queue = false) {
-  const squad = selectedOperators().filter((unit) => !unit.inVehicle);
-  if (squad.length === 0) {
-    setStatus("Select an operator first, then click the vehicle to get in.");
-    return;
-  }
-  // Everyone selected heads for the vehicle (FreeSynd: a click on a car sends the whole selection in).
-  for (const unit of squad) {
-    if (queue && isBusy(unit)) queueAction(unit, { type: "enter", id: vehicle.id }, `get into the ${vehicle.definition.name}`);
-    else sendEnter(unit, vehicle);
-  }
-  if (squad.length > 1) setStatus(`${squad.length} operators are heading for the ${vehicle.definition.name}.`);
-}
-
-// Where to stand to board a train: the walkable tile (the platform) nearest one of its carriages.
-function platformTile(from, train) {
-  let best = null;
-  for (const part of train.vehicle.train.body) {
-    for (let dy = -3; dy <= 3; dy += 1) {
-      for (let dx = -3; dx <= 3; dx += 1) {
-        const x = Math.round(part.x) + dx;
-        const y = Math.round(part.y) + dy;
-        if (!state.grid[y]?.[x]?.walkable) continue;
-        const cost = Math.hypot(x - part.x, y - part.y) + Math.hypot(x - from.position.x, y - from.position.y) * 0.05;
-        if (!best || cost < best.cost) best = { x, y, cost };
-      }
-    }
-  }
-  return best ? { x: best.x, y: best.y } : { x: Math.round(train.position.x), y: Math.round(train.position.y) };
-}
-
-function sendEnter(nearest, vehicle, keepPending = false) {
-  const gap = Math.hypot(nearest.position.x - vehicle.position.x, nearest.position.y - vehicle.position.y);
-  if (!isTrain(vehicle) && gap <= ENTER_RANGE && !canEnter(nearest, vehicle)) {
-    setStatus(`No room in the ${vehicle.definition.name}.`);
-    return;
-  }
-  const goal = isTrain(vehicle) ? platformTile(nearest, vehicle) : { x: Math.round(vehicle.position.x), y: Math.round(vehicle.position.y) };
-  const steps = orderMove(nearest, goal, false, keepPending);
-  nearest.enterTargetId = vehicle.id;
-  if (steps === 0 && !canEnter(nearest, vehicle)) {
-    nearest.enterTargetId = null;
-    setStatus("No safe route to that vehicle.");
-    return;
-  }
-  audio.play("move");
-  setStatus(`${nearest.definition.name} is heading for the ${vehicle.definition.name}.`);
-  renderInterface();
-}
-
-// Operators who were sent to a vehicle get in once they are close enough.
-function boardWaitingOperators() {
-  for (const operator of state.units) {
-    if (!operator.enterTargetId || operator.inVehicle || operator.disabled) continue;
-    const vehicle = state.units.find((unit) => unit.id === operator.enterTargetId);
-    if (!vehicle || vehicle.disabled) {
-      operator.enterTargetId = null;
-      continue;
-    }
-    if (!canEnter(operator, vehicle)) {
-      if (operator.path.length === 0) operator.enterTargetId = null;
-      continue;
-    }
-    operator.enterTargetId = null;
-    const { entered, thrownOut } = enterVehicle(vehicle, [operator], state.units, state.grid);
-    if (entered.length > 0) {
-      setStatus(
-        `${operator.definition.name} got into the ${vehicle.definition.name}` +
-          (thrownOut ? `; ${thrownOut.definition.name} was thrown out.` : ". Click a road to drive, V to get out."),
-      );
-      audio.play("move");
-      renderInterface();
-    }
-  }
-}
-
-function toggleVehicle(queue = false) {
-  const candidate = vehicleCandidate();
-  if (!candidate) {
-    setStatus("No vehicle within reach. Walk up to one and press V.");
-    return;
-  }
-  const { vehicle, leaving } = candidate;
-  if (leaving && isTrain(vehicle) && !(vehicle.vehicle.train?.waiting > 0)) {
-    setStatus("The train drops its passengers at the next station.");
-    return;
-  }
-  if (leaving && queue) {
-    const driver = state.units.find((unit) => unit.id === vehicle.vehicle.controlledBy) ?? selectedOperators().find((u) => u.inVehicle);
-    if (driver && isBusy(driver)) {
-      queueAction(driver, { type: "leave" }, `get out of the ${vehicle.definition.name}`);
-      return;
-    }
-  }
-  if (leaving) {
-    const out = leaveVehicle(vehicle, state.units, state.grid);
-    setStatus(`${out.length} left the ${vehicle.definition.name}.`);
-    audio.play("select");
-  } else {
-    const { entered, thrownOut } = enterVehicle(vehicle, selectedOperators(), state.units, state.grid);
-    if (entered.length === 0) {
-      setStatus(`No room in the ${vehicle.definition.name}.`);
-      return;
-    }
-    // Selected operators who were further off walk over and get in too.
-    for (const unit of selectedOperators()) if (!unit.inVehicle && !unit.disabled) sendEnter(unit, vehicle);
-    setStatus(
-      `${entered.length} got into the ${vehicle.definition.name}` +
-        (thrownOut ? `; ${thrownOut.definition.name} was thrown out.` : ". Click a road to drive, V to get out."),
-    );
-    audio.play("move");
-  }
-  renderInterface();
 }
 
 // The Enter/Leave vehicle button follows what is within reach (refreshed a few times a second).

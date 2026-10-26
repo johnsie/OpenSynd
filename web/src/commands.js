@@ -12,13 +12,14 @@ const SHAPES = Object.freeze({
   attack: { units: true, fields: { targetId: "id", queue: "bool?" } },
   follow: { units: true, fields: { targetId: "id", queue: "bool?" } },
   fire: { units: true, fields: { at: "point", held: "bool?" } },
-  holdFire: { units: true, fields: { at: "point?", on: "bool" } },
-  selectItem: { units: true, fields: { itemId: "id" } },
-  useItem: { units: true, fields: { itemId: "id", at: "point?" } },
-  board: { units: true, fields: { vehicleId: "id" } },
-  leave: { units: true, fields: {} },
-  loot: { units: true, fields: { bodyId: "id" } },
+  holdFire: { units: true, fields: { on: "bool", at: "point?" } },
+  useItem: { units: true, fields: { by: "id", slot: "slot", at: "point?", plant: "bool?" } },
+  dropItem: { units: true, fields: { by: "id", slot: "slot", queue: "bool?" } },
+  board: { units: true, fields: { vehicleId: "id", queue: "bool?" } },
+  vehicle: { units: true, fields: { queue: "bool?" } },
+  loot: { units: true, fields: { bodyId: "id?", queue: "bool?" } },
   interact: { units: true, fields: {} },
+  clearQueue: { units: true, fields: {} },
 });
 
 export const COMMAND_TYPES = Object.freeze(Object.keys(SHAPES));
@@ -46,6 +47,7 @@ const CHECKS = {
   point: (value, size) => isPoint(value, size),
   id: isId,
   bool: (value) => typeof value === "boolean",
+  slot: (value) => Number.isInteger(value) && value >= 0 && value < 8,
 };
 
 /**
@@ -62,6 +64,9 @@ export function validateCommand(command, context = {}) {
     if (!Array.isArray(ids) || ids.length === 0 || ids.length > MAX_COMMAND_UNITS) return { ok: false, error: "no agents named" };
     if (!ids.every(isId) || new Set(ids).size !== ids.length) return { ok: false, error: "bad agent list" };
     if (context.owns && !ids.every((id) => context.owns(id))) return { ok: false, error: "not your agent" };
+  }
+  if (command.by !== undefined && Array.isArray(command.unitIds) && !command.unitIds.includes(command.by)) {
+    return { ok: false, error: "by is not one of the agents named" };
   }
   const allowed = new Set(["type", "unitIds", ...Object.keys(shape.fields)]);
   for (const key of Object.keys(command)) {
@@ -89,10 +94,18 @@ export const commands = Object.freeze({
   follow: (unitIds, targetId, queue = false) => ({ type: "follow", unitIds: [...unitIds], targetId, queue }),
   fire: (unitIds, at, held = false) => ({ type: "fire", unitIds: [...unitIds], at: copy(at), held }),
   holdFire: (unitIds, on, at) => ({ type: "holdFire", unitIds: [...unitIds], on, ...(at ? { at: copy(at) } : {}) }),
-  selectItem: (unitIds, itemId) => ({ type: "selectItem", unitIds: [...unitIds], itemId }),
-  useItem: (unitIds, itemId, at) => ({ type: "useItem", unitIds: [...unitIds], itemId, ...(at ? { at: copy(at) } : {}) }),
-  board: (unitIds, vehicleId) => ({ type: "board", unitIds: [...unitIds], vehicleId }),
-  leave: (unitIds) => ({ type: "leave", unitIds: [...unitIds] }),
-  loot: (unitIds, bodyId) => ({ type: "loot", unitIds: [...unitIds], bodyId }),
+  useItem: (unitIds, by, slot, options = {}) => ({
+    type: "useItem",
+    unitIds: [...unitIds],
+    by,
+    slot,
+    ...(options.at ? { at: copy(options.at) } : {}),
+    ...(options.plant ? { plant: true } : {}),
+  }),
+  dropItem: (unitIds, by, slot, queue = false) => ({ type: "dropItem", unitIds: [...unitIds], by, slot, queue }),
+  board: (unitIds, vehicleId, queue = false) => ({ type: "board", unitIds: [...unitIds], vehicleId, queue }),
+  vehicle: (unitIds, queue = false) => ({ type: "vehicle", unitIds: [...unitIds], queue }),
+  loot: (unitIds, bodyId, queue = false) => ({ type: "loot", unitIds: [...unitIds], ...(bodyId ? { bodyId } : {}), queue }),
   interact: (unitIds) => ({ type: "interact", unitIds: [...unitIds] }),
+  clearQueue: (unitIds) => ({ type: "clearQueue", unitIds: [...unitIds] }),
 });

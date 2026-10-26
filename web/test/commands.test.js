@@ -17,15 +17,19 @@ test("every builder makes a command that validates, and nothing else does", () =
     commands.fire(["a"], { x: 3.5, y: 4.25 }, true),
     commands.holdFire(["a"], true, { x: 1, y: 2 }),
     commands.holdFire(["a"], false),
-    commands.selectItem(["a"], "pulse"),
-    commands.useItem(["a"], "medikit"),
+    commands.useItem(["a", "b"], "a", 2),
+    commands.useItem(["a"], "a", 3, { at: { x: 5.5, y: 6 } }),
+    commands.useItem(["a"], "a", 3, { plant: true }),
+    commands.dropItem(["a"], "a", 1, true),
     commands.board(["a"], "car-1"),
-    commands.leave(["a"]),
-    commands.loot(["a"], "body-1"),
+    commands.vehicle(["a"]),
+    commands.loot(["a"]),
+    commands.loot(["a"], "body-1", true),
     commands.interact(["a"]),
+    commands.clearQueue(["a"]),
   ];
   assert.deepEqual([...new Set(made.map((command) => command.type))].sort(), [...COMMAND_TYPES].sort(), "every type is built");
-  for (const command of made) assert.deepEqual(validateCommand(command, { size }), { ok: true }, command.type);
+  for (const command of made) assert.deepEqual(validateCommand(command, { size }), { ok: true }, JSON.stringify(command));
   assert.deepEqual(JSON.parse(JSON.stringify(made)), made, "commands are plain data that survive the wire");
 });
 
@@ -55,6 +59,9 @@ test("malformed or out-of-range commands are refused with a reason", () => {
   bad({ type: "move", unitIds: ["a"], to: { x: 1, y: 1 }, speed: 99 }, "unexpected field speed");
   bad({ type: "attack", unitIds: ["a"], targetId: "" }, "bad targetId");
   bad({ type: "move", unitIds: ["a"], to: { x: 1, y: 1 }, queue: "yes" }, "bad queue");
+  bad({ type: "useItem", unitIds: ["a"], by: "a", slot: 8 }, "bad slot");
+  bad({ type: "useItem", unitIds: ["a"], by: "a", slot: 1.5 }, "bad slot");
+  bad({ type: "useItem", unitIds: ["a"], by: "z", slot: 1 }, "by is not one of the agents named");
 });
 
 test("the server's context decides who may command whom and what exists", () => {
@@ -81,7 +88,7 @@ test("rules modules use no browser APIs, wall clocks or Math.random", () => {
   const rules = [
     "engine", "simulation", "mission", "inventory", "vehicles", "props", "drugs", "upgrades", "campaign", "bombs", "buildings",
     "random", "progress", "strategy", "death", "opstats", "debrief", "commands", "windows", "operations", "tutorial",
-    "core/hooks", "core/step",
+    "core/hooks", "core/step", "core/orders", "core/apply", "core/world",
   ];
   for (const name of rules) {
     const code = readFileSync(new URL(`../src/${name}.js`, import.meta.url), "utf8")

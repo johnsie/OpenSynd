@@ -106,7 +106,9 @@ export function handleCombatEvents(world, hooks, combatEvents, chance) {
       if (shooter && world.bombs.length > 0) {
         const struck = event.type === "damage" ? findUnit(world, event.targetId) : null;
         const to = struck?.position ?? event.end;
-        if (to && shootBombs(world.bombs, shooter.position, to) > 0) hooks.message("A shot hit a charge on the ground: it is about to go off.");
+        if (to && shootBombs(world.bombs, shooter.position, to) > 0) {
+          hooks.message("A shot hit a charge on the ground: it is about to go off.");
+        }
       }
       if (shooter && event.type === "shot" && event.end) breakWindowAt(world, hooks, shooter.position, event.end, chance());
       // Each weapon sounds like itself; fire further from the view is quieter.

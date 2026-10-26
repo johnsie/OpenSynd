@@ -11,6 +11,7 @@
 //   selectionChanged()           somebody went down: whoever is selected may need dropping from the selection
 //   looted(unit, items)          a unit picked something up
 //   penalise(amount, reason)     the city charges the squad for something
+//   queued(kind)                 an order was added to the end of a route already under way (Shift+click)
 
 export function silentHooks() {
   return {
@@ -21,6 +22,7 @@ export function silentHooks() {
     selectionChanged() {},
     looted() {},
     penalise() {},
+    queued() {},
   };
 }
 
@@ -37,5 +39,6 @@ export function recordingHooks() {
     selectionChanged: note("selectionChanged"),
     looted: (unit, items) => events.push({ type: "looted", unitId: unit.id, items: items.map((item) => item.definition.id) }),
     penalise: (amount, reason) => events.push({ type: "penalise", amount, reason }),
+    queued: (kind) => events.push({ type: "queued", kind }),
   };
 }
