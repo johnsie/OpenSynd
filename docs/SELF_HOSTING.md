@@ -2,9 +2,9 @@
 
 # Running your own copy
 
-OpenSynd today is a folder of static files. You do not need a database, an account, a container or any project service to run
-the game. The planned online modes add a game server you can also run yourself; this page will cover it when it exists
-(see [the multiplayer design](design/MULTIPLAYER.md)).
+OpenSynd is a folder of static files. You do not need a database, an account, a container or any project service to run the
+game. The online modes (daily operation, co-op, rival companies) need a game server, which you can also run yourself: see
+[Running a game server](#running-a-game-server) below. Single-player never needs it.
 
 ## The quickest way: any static file server
 
@@ -20,6 +20,28 @@ the game. The planned online modes add a game server you can also run yourself; 
    `audio/mpeg`), and `index.html` is the default page. HTTPS is recommended, and required for some browser features.
 
 Nothing else is needed. The game stores everything in the visitor's browser and sends nothing anywhere.
+
+## Running a game server
+
+The server needs Node.js 22 or newer and nothing else (no packages: it uses Node's own SQLite, WebSocket and scrypt).
+
+```sh
+cd freesynd/web
+node build.mjs                      # the site, with the content the server must also have
+OPENSYND_SERVER=https://play.example.org node build.mjs     # build the site so it offers online play on that server
+PORT=8787 HOST=0.0.0.0 DATABASE=/var/lib/opensynd/opensynd.sqlite ORIGINS=https://example.org node server/main.js
+```
+
+- Put it behind HTTPS (a reverse proxy that passes WebSocket upgrades on `/ws` and plain requests on `/api/`).
+- `ORIGINS` lists the sites whose pages may call the server; leave it unset only for trying things out.
+- The page's content security policy must allow the server's address (see `OPENSYND_SERVER` in `build.mjs`, and add the same
+  address to `connect-src` in `deploy/apache/opensynd-common.conf` if you use it).
+- The game and the server must have the same content: the server refuses a page whose content fingerprint differs.
+- Back up the SQLite file; it holds the accounts, scores, replays and the shared world.
+- **Moderation:** set `OPENSYND_ADMIN_TOKEN` to a long random secret to turn on `GET /api/admin/reports` and
+  `POST /api/admin/ban` (`{ "name": "...", "banned": true }`), both with the header `x-admin-token`. A closed account cannot sign
+  in and is disconnected at once. Without the token these endpoints refuse everything.
+- Players can try it at `https://example.org/?server=https://play.example.org`; the page remembers the address.
 
 ## Keeping the project's habits (optional)
 

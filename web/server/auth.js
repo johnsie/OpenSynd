@@ -24,10 +24,29 @@ export async function verifyPassword(password, record) {
 export const NAME_PATTERN = /^[A-Za-z0-9][A-Za-z0-9 _-]{1,18}[A-Za-z0-9]$/;
 
 /** Why a name or password is not acceptable, as a sentence for the person, or null if it is. */
+// Words that are kept out of names and out of what players say to each other. A short list of the plainly abusive: it is a first
+// line (reports and bans are the rest), not a promise that nothing unpleasant gets through.
+const BLOCKED = ["fuck", "shit", "cunt", "nigger", "nigga", "faggot", "retard", "whore", "bitch", "rapist", "nazi"];
+const squash = (text) => text.toLowerCase().replace(/[0@]/g, "o").replace(/[1!|]/g, "i").replace(/3/g, "e").replace(/[4]/g, "a").replace(/[5$]/g, "s").replace(/[^a-z]/g, "");
+
+export const isBlocked = (text) => {
+  const plain = squash(text);
+  return BLOCKED.some((word) => plain.includes(word));
+};
+
+/** What a player said, cleaned up for the others: trimmed, kept short, and nothing at all if it breaks the word list. */
+export function cleanSpeech(text) {
+  if (typeof text !== "string") return null;
+  // eslint-disable-next-line no-control-regex
+  const trimmed = text.replace(/[\u0000-\u001f]/g, " ").replace(/\s+/g, " ").trim().slice(0, 120);
+  return trimmed === "" || isBlocked(trimmed) ? null : trimmed;
+}
+
 export function problemWithName(name) {
   if (typeof name !== "string" || !NAME_PATTERN.test(name) || /  /.test(name)) {
     return "Names are 3 to 20 letters, numbers, spaces, dashes or underscores.";
   }
+  if (isBlocked(name)) return "Please choose a different name.";
   return null;
 }
 

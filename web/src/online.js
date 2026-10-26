@@ -76,6 +76,31 @@ export class OnlineClient {
     return this.call("/api/defence", { method: "POST", body: { territory, level } });
   }
 
+  /** Friends, requests made to the player and by them, and which friends are on now. */
+  async friends() {
+    const result = await this.call("/api/friends");
+    return result.ok ? result : null;
+  }
+
+  /** action: "request" (also accepts if they already asked), "accept" or "remove". */
+  friendAction(name, action) {
+    return this.call("/api/friends", { method: "POST", body: { name, action } });
+  }
+
+  async profile(name) {
+    const result = await this.call(`/api/profile/${encodeURIComponent(name)}`);
+    return result.ok ? result : null;
+  }
+
+  report(name, reason) {
+    return this.call("/api/report", { method: "POST", body: { name, reason } });
+  }
+
+  /** Say something to the others in the game or operation. What others say arrives as "chat" messages. */
+  say(text) {
+    this.send({ t: "say", text });
+  }
+
   /** Today's operation, its chores and the boards (and how the signed-in player is doing). */
   async daily() {
     const result = await this.call("/api/daily");

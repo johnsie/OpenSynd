@@ -5,6 +5,7 @@
 //   PORT      port to listen on (default 8787)          HOST     address to listen on (default 127.0.0.1)
 //   DATABASE  path of the SQLite file (default opensynd.sqlite, next to where it is started)
 //   ORIGINS   sites whose pages may call the accounts API, comma separated (default: any)
+//   OPENSYND_ADMIN_TOKEN  a secret that allows /api/admin/reports and /api/admin/ban (default: moderation endpoints off)
 //   CONTENT   the pack folder to play (default: the site's content folder)
 import { loadContent, CONTENT_ROOT } from "./content.js";
 import { createGameServer } from "./server.js";
@@ -15,7 +16,7 @@ const host = process.env.HOST ?? "127.0.0.1";
 const origins = process.env.ORIGINS ? process.env.ORIGINS.split(",").map((origin) => origin.trim()) : ["*"];
 const content = loadContent(process.env.CONTENT ?? CONTENT_ROOT);
 const store = openStore(process.env.DATABASE ?? "opensynd.sqlite");
-const server = createGameServer({ content, store, origins });
+const server = createGameServer({ content, store, origins, adminToken: process.env.OPENSYND_ADMIN_TOKEN || null });
 const address = await server.listen(port, host);
 console.log(`OpenSynd server listening on ${address} (content ${server.content.hash})`);
 

@@ -1678,6 +1678,11 @@ for (const [name, type, executablePath] of targets) {
       await ben.waitForSelector("#coop-waiting:not([hidden])");
       await ben.click("#coop-ready");
       await anna.waitForFunction(() => !document.querySelector("#coop-begin").disabled);
+      // They can talk with quick messages, and see each other's profiles.
+      await ben.click("#coop-quick-says button:has-text('Good luck')");
+      await anna.waitForFunction(() => document.querySelector("#coop-chat").innerText.includes("Good luck"));
+      await anna.click("#coop-players li button:has-text('Profile')");
+      await anna.waitForFunction(() => /territories held/.test(document.querySelector("#coop-message").textContent));
       await anna.click("#coop-begin");
       for (const page of [anna, ben]) {
         await page.waitForFunction(() => window.opensyndTest.online().running, null, { timeout: 8000 });

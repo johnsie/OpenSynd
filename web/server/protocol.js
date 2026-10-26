@@ -18,12 +18,14 @@ export { CORE_VERSION };
 //   ready    { on }                                say whether you are ready
 //   begin    {}                                    the host begins the game
 //   leave    {}                                    leave the game you are waiting in
+//   say      { text }                              say something to the others in your game or operation
 //   ping     { n }
 // From the server to the game.
 //   welcome  { v, core, account }                  the hello was accepted
 //   refused  { reason, message }                   the hello was not (reason: "protocol", "core", "content", "account")
 //   lobby    { games }                             the games waiting for players
 //   waiting  { game }                              the game you are in, with its players (sent again whenever it changes)
+//   chat     { from, text }                        something another player said
 //   closed   { reason }                            the game you were waiting in is gone
 //   start    { room, mission, variant, seed, squad, team, step, world, units }   an operation has begun (or you are back in it)
 //   update   { step, world, units, events, acks }  what changed since the last update
@@ -49,6 +51,9 @@ export function parseClientMessage(text) {
         return { ok: false, error: "hello needs v, core and content" };
       }
       if (message.token !== undefined && typeof message.token !== "string") return { ok: false, error: "bad token" };
+      return { ok: true, message };
+    case "say":
+      if (typeof message.text !== "string" || message.text.length > 400) return { ok: false, error: "bad text" };
       return { ok: true, message };
     case "lobby":
     case "quick":

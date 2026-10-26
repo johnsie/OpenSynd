@@ -24,7 +24,7 @@ export function createOnlinePlay({
   let holdFireSent = "";
   let holdFireAt = -Infinity;
   let asked = false; // the page has asked for an operation and is waiting for it, so its start is not announced to onStart
-  const listeners = { start: [], end: [], close: [], news: [] };
+  const listeners = { start: [], end: [], close: [], news: [], chat: [] };
   const emit = (type, payload) => listeners[type].forEach((listener) => listener(payload));
 
   // What the server says happened: through the same hooks as when the game runs here.
@@ -80,6 +80,12 @@ export function createOnlinePlay({
     daily: () => client?.daily() ?? Promise.resolve(null),
     world: () => client?.world() ?? Promise.resolve(null),
     upgradeDefence: (territory, level) => client.upgradeDefence(territory, level),
+    friends: () => client?.friends() ?? Promise.resolve(null),
+    friendAction: (name, action) => client.friendAction(name, action),
+    profile: (name) => client?.profile(name) ?? Promise.resolve(null),
+    report: (name, reason) => client.report(name, reason),
+    say: (text) => client.say(text),
+    onChat: (listener) => listeners.chat.push(listener),
     whoAmI: () => client?.whoAmI() ?? Promise.resolve(null),
     signIn: (name, password) => client.signIn(name, password),
     signUp: (name, password) => client.signUp(name, password),
@@ -102,6 +108,7 @@ export function createOnlinePlay({
       });
       for (const type of ["update", "feedback", "end"]) client.on(type, receive);
       client.on("close", (event) => emit("close", event));
+      client.on("chat", (message) => emit("chat", message));
     },
 
     /** Connect and ask for an operation of one's own (solo or the day's). Resolves with the server's start message. */

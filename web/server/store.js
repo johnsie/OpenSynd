@@ -61,6 +61,19 @@ export function openStore(path = ":memory:", { now = Date.now } = {}) {
       created INTEGER NOT NULL
     );
     CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS friends (
+      requester INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+      target INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+      accepted INTEGER NOT NULL DEFAULT 0,
+      PRIMARY KEY (requester, target)
+    );
+    CREATE TABLE IF NOT EXISTS reports (
+      id INTEGER PRIMARY KEY,
+      reporter INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+      reported INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+      reason TEXT NOT NULL,
+      created INTEGER NOT NULL
+    );
     CREATE TABLE IF NOT EXISTS sessions (
       token TEXT PRIMARY KEY,
       account INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
@@ -74,7 +87,38 @@ export function openStore(path = ":memory:", { now = Date.now } = {}) {
   if (!db.prepare("PRAGMA table_info(accounts)").all().some((column) => column.name === "collected")) {
     db.exec("ALTER TABLE accounts ADD COLUMN collected INTEGER NOT NULL DEFAULT 0");
   }
+  if (!db.prepare("PRAGMA table_info(accounts)").all().some((column) => column.name === "banned")) {
+    db.exec("ALTER TABLE accounts ADD COLUMN banned INTEGER NOT NULL DEFAULT 0");
+  }
   const statements = {
+    friendRows: db.prepare(`
+      SELECT friends.requester AS requester, friends.target AS target, friends.accepted AS accepted,
+             requester_account.name AS requester_name, target_account.name AS target_name
+      FROM friends JOIN accounts AS requester_account ON requester_account.id = friends.requester
+                   JOIN accounts AS target_account ON target_account.id = friends.target
+      WHERE friends.requester = ? OR friends.target = ?`),
+    friendLink: db.prepare("SELECT accepted FROM friends WHERE requester = ? AND target = ?"),
+    insertFriend: db.prepare("INSERT OR IGNORE INTO friends (requester, target, accepted) VALUES (?, ?, 0)"),
+    acceptFriend: db.prepare("UPDATE friends SET accepted = 1 WHERE requester = ? AND target = ?"),
+    removeFriend: db.prepare("DELETE FROM friends WHERE (requester = ? AND target = ?) OR (requester = ? AND target = ?)"),
+    insertReport: db.prepare("INSERT INTO reports (reporter, reported, reason, created) VALUES (?, ?, ?, ?)"),
+    reports: db.prepare(`
+      SELECT reports.id AS id, reporter.name AS reporter, reported.name AS reported, reports.reason AS reason, reports.created AS created
+      FROM reports JOIN accounts AS reporter ON reporter.id = reports.reporter JOIN accounts AS reported ON reported.id = reports.reported
+      ORDER BY reports.id DESC LIMIT ?`),
+    setBanned: db.prepare("UPDATE accounts SET banned = ? WHERE id = ?"),
+    banned: db.prepare("SELECT banned FROM accounts WHERE id = ?"),
+    profile: db.prepare(`
+      SELECT accounts.created AS created,
+        (SELECT count(*) FROM territories WHERE owner = accounts.id) AS territories,
+        (SELECT count(*) FROM raids WHERE attacker = accounts.id AND outcome = 'captured') AS raidsWon,
+        (SELECT count(*) FROM raids WHERE attacker = accounts.id AND outcome = 'defended') AS raidsLost,
+        (SELECT count(*) FROM raids WHERE defender = accounts.id AND outcome = 'defended') AS defended,
+        (SELECT count(*) FROM raids WHERE defender = accounts.id AND outcome = 'captured') AS lost,
+        (SELECT max(score) FROM runs WHERE account = accounts.id AND mode = 'daily') AS bestDaily,
+        (SELECT count(*) FROM runs WHERE account = accounts.id AND mode = 'daily' AND score > 0) AS dailyWins,
+        (SELECT count(*) FROM chores WHERE account = accounts.id) AS chores
+      FROM accounts WHERE accounts.id = ?`),
     holdings: db.prepare(
       "SELECT territories.id AS id, territories.owner AS owner, accounts.name AS name, territories.defence AS defence, territories.shield_until AS shield FROM territories LEFT JOIN accounts ON accounts.id = territories.owner",
     ),
@@ -120,7 +164,7 @@ export function openStore(path = ":memory:", { now = Date.now } = {}) {
     choreDays: db.prepare("SELECT DISTINCT day FROM chores WHERE account = ?"),
     choresOn: db.prepare("SELECT chore, reward FROM chores WHERE account = ? AND day = ?"),
     insertAccount: db.prepare("INSERT INTO accounts (name, salt, hash, created) VALUES (?, ?, ?, ?)"),
-    byName: db.prepare("SELECT id, name, salt, hash, created FROM accounts WHERE name = ?"),
+    byName: db.prepare("SELECT id, name, salt, hash, created, banned FROM accounts WHERE name = ?"),
     byId: db.prepare("SELECT id, name, created FROM accounts WHERE id = ?"),
     deleteAccount: db.prepare("DELETE FROM accounts WHERE id = ?"),
     insertSession: db.prepare("INSERT INTO sessions (token, account, expires) VALUES (?, ?, ?)"),
@@ -148,7 +192,7 @@ export function openStore(path = ":memory:", { now = Date.now } = {}) {
     /** The account with this name, with its password record (for checking a sign-in), or null. */
     findForLogin(name) {
       const row = statements.byName.get(name);
-      return row ? { ...publicAccount(row), salt: row.salt, hash: row.hash } : null;
+      return row ? { ...publicAccount(row), salt: row.salt, hash: row.hash, banned: Number(row.banned) === 1 } : null;
     },
 
     getAccount: (id) => publicAccount(statements.byId.get(id)),
@@ -168,6 +212,7 @@ export function openStore(path = ":memory:", { now = Date.now } = {}) {
       if (typeof token !== "string" || token.length < 20) return null;
       const row = statements.session.get(sha256(token));
       if (!row || Number(row.expires) < now()) return null;
+      if (Number(statements.banned.get(row.account)?.banned ?? 0) === 1) return null; // a closed account's sign-ins stop working
       return publicAccount(statements.byId.get(row.account));
     },
 
@@ -241,6 +286,65 @@ export function openStore(path = ":memory:", { now = Date.now } = {}) {
     newSeason(season) {
       statements.clearWorld.run();
       statements.setMeta.run("season", String(season));
+    },
+
+    // --------------------------------------------------------------------------------------- friends, reports, bans, profiles
+
+    /** Who is a friend, who has asked, and who has been asked, for an account. */
+    friends(account) {
+      const accepted = [];
+      const incoming = [];
+      const outgoing = [];
+      for (const row of statements.friendRows.all(account, account)) {
+        const mine = Number(row.requester) === account;
+        const other = mine ? row.target_name : row.requester_name;
+        if (Number(row.accepted) === 1) accepted.push(other);
+        else (mine ? outgoing : incoming).push(other);
+      }
+      return { friends: accepted.sort(), incoming: incoming.sort(), outgoing: outgoing.sort() };
+    },
+
+    /** Ask to be friends (or, if they have already asked you, become friends). Returns "asked", "friends" or "already". */
+    requestFriend(account, other) {
+      if (statements.friendLink.get(other, account)) {
+        statements.acceptFriend.run(other, account);
+        return "friends";
+      }
+      if (statements.friendLink.get(account, other)) return "already";
+      statements.insertFriend.run(account, other);
+      return "asked";
+    },
+
+    /** Accept a request somebody made to you. Returns whether there was one. */
+    acceptFriend(account, other) {
+      if (!statements.friendLink.get(other, account)) return false;
+      statements.acceptFriend.run(other, account);
+      return true;
+    },
+
+    removeFriend: (account, other) => statements.removeFriend.run(account, other, other, account),
+
+    report: (reporter, reported, reason) => statements.insertReport.run(reporter, reported, reason, now()),
+    reports: (limit = 50) => statements.reports.all(limit).map((row) => ({ ...row, id: Number(row.id), created: Number(row.created) })),
+    setBanned: (account, banned) => statements.setBanned.run(banned ? 1 : 0, account),
+    isBanned: (account) => Number(statements.banned.get(account)?.banned ?? 0) === 1,
+
+    /** What others may see of an account: when it began and how it has gone. */
+    profile(account) {
+      const row = statements.profile.get(account);
+      if (!row) return null;
+      const number = (value) => Number(value ?? 0);
+      return {
+        since: number(row.created),
+        territories: number(row.territories),
+        raidsWon: number(row.raidsWon),
+        raidsLost: number(row.raidsLost),
+        defended: number(row.defended),
+        lost: number(row.lost),
+        bestDaily: row.bestDaily === null ? null : number(row.bestDaily),
+        dailyWins: number(row.dailyWins),
+        chores: number(row.chores),
+      };
     },
 
     funds: (account) => Number(statements.funds.get(account)?.funds ?? 0),

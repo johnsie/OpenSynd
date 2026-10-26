@@ -89,9 +89,12 @@ Attack other players' territories, and defend your own, on a world map the serve
 
 ## Phase 4. Around it (M)
 
-- Profiles with a record of operations, and rankings per mode.
-- Server-hosted missions and campaign packs, with the editor publishing to the server ([ROADMAP_2.md](ROADMAP_2.md) G1 to G3).
-- Quick messages in lobbies; report, mute and ban tools; name filters. These come before raiding opens to the public.
+- **Done:** profiles (territories, raids won and defended, daily wins and best score); rankings are the daily and world boards;
+  a friends list (ask, accept, remove, see who is online, friends' games first in the lobby); quick messages and chat in lobbies;
+  reports, mute (in the browser) and bans (admin token); a word list on names and speech.
+- **Not done:** profile pages beyond the lobby, quick messages during an operation (what others say does show on screen),
+  rankings for co-op, and server-hosted missions and campaign packs with the editor publishing to the server
+  ([ROADMAP_2.md](ROADMAP_2.md) G1 to G3, which needs custom-mission loading first).
 
 ## Order
 

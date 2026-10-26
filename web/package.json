@@ -9,6 +9,7 @@
     "balance": "node tools/balance.mjs",
     "e2e": "node build.mjs && node e2e/smoke.mjs",
     "test": "node tools/test.mjs",
+    "server": "node server/main.js",
     "perf": "node build.mjs && node tools/perf.mjs"
   },
   "devDependencies": {

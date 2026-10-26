@@ -275,9 +275,20 @@
             <button id="coop-open" type="button" data-i18n="coop.open">Open a game</button>
           </div>
         </section>
+        <section id="coop-friends" aria-labelledby="coop-friends-heading">
+          <h3 id="coop-friends-heading" data-i18n="coop.friends">Friends</h3>
+          <ul id="coop-friend-list" class="daily-chores"></ul>
+          <div class="company-actions">
+            <label for="coop-friend-name" data-i18n="coop.friend_name">Add by name</label>
+            <input id="coop-friend-name" type="text" maxlength="20" autocomplete="off" />
+            <button id="coop-friend-add" type="button" data-i18n="coop.friend_add">Ask</button>
+          </div>
+        </section>
         <section id="coop-waiting" aria-labelledby="coop-waiting-heading" hidden>
           <h3 id="coop-waiting-heading"></h3>
           <ul id="coop-players" class="daily-chores"></ul>
+          <ul id="coop-chat" class="daily-chores" aria-live="polite"></ul>
+          <div id="coop-quick-says" class="company-actions"></div>
           <div class="company-actions">
             <button id="coop-leave" type="button" data-i18n="coop.leave">Leave</button>
             <button id="coop-ready" type="button" aria-pressed="false" data-i18n="coop.ready">Ready</button>

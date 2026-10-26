@@ -5,7 +5,7 @@
 import { createServer } from "node:http";
 
 import { FIXED_STEP_SECONDS } from "../src/simulation.js";
-import { createRateLimiter, hashPassword, newToken, problemWithName, problemWithPassword, verifyPassword } from "./auth.js";
+import { cleanSpeech, createRateLimiter, hashPassword, newToken, problemWithName, problemWithPassword, verifyPassword } from "./auth.js";
 import { contentHash } from "./content-hash.js";
 import {
   DAY_MS,
@@ -85,6 +85,7 @@ export function createGameServer({
   now = () => performance.now(),
   tickEvery = true,
   clock = () => Date.now(),
+  adminToken = null,
 }) {
   content.hash ??= contentHash(content.root);
   const rooms = new Map();
@@ -92,6 +93,8 @@ export function createGameServer({
   const perAddress = new Map();
   const signups = createRateLimiter({ max: 10, windowMs: 60_000 });
   const logins = createRateLimiter({ max: 20, windowMs: 60_000 });
+  const speech = createRateLimiter({ max: 8, windowMs: 10_000 });
+  const reports = createRateLimiter({ max: 5, windowMs: 3_600_000 });
   let roomCounter = 0;
 
   const allowed = (origin) => origins.includes("*") || (origin && origins.includes(origin));
@@ -144,6 +147,7 @@ export function createGameServer({
         const record = found ?? { salt: Buffer.alloc(16).toString("base64"), hash: Buffer.alloc(32).toString("base64") };
         const good = typeof password === "string" && (await verifyPassword(password, record)) && Boolean(found);
         if (!good) return reply(401, { error: "That name and password do not match." });
+        if (found.banned) return reply(403, { error: "This account has been closed." });
         const token = newToken();
         store.createSession(found.id, token);
         reply(200, { token, account: { id: found.id, name: found.name } });
@@ -161,6 +165,49 @@ export function createGameServer({
         const { territory, level } = await readBody(request);
         const result = upgradeDefence(account, territory, level);
         reply(result.status ?? 200, result.error ? { error: result.error } : result);
+      } else if (url.pathname === "/api/friends" && request.method === "GET") {
+        const account = accountOf(request);
+        if (!account) return reply(401, { error: "Not signed in." });
+        const online = new Set([...connections].filter((c) => c.account).map((c) => c.account.name));
+        const lists = store.friends(account.id);
+        reply(200, { ...lists, online: lists.friends.filter((name) => online.has(name)) });
+      } else if (url.pathname === "/api/friends" && request.method === "POST") {
+        const account = accountOf(request);
+        if (!account) return reply(401, { error: "Not signed in." });
+        const { name, action } = await readBody(request);
+        const other = typeof name === "string" ? store.findForLogin(name) : null;
+        if (!other || other.id === account.id) return reply(404, { error: "There is nobody called that." });
+        if (action === "remove") store.removeFriend(account.id, other.id);
+        else if (action === "accept") {
+          if (!store.acceptFriend(account.id, other.id)) return reply(404, { error: "They have not asked to be your friend." });
+        } else if (action === "request") store.requestFriend(account.id, other.id);
+        else return reply(400, { error: "Unknown action." });
+        reply(200, store.friends(account.id));
+      } else if (/^\/api\/profile\/[^/]+$/.test(url.pathname) && request.method === "GET") {
+        const found = store.findForLogin(decodeURIComponent(url.pathname.split("/").pop()));
+        const profile = found && store.profile(found.id);
+        if (!profile) return reply(404, { error: "There is nobody called that." });
+        reply(200, { name: found.name, ...profile });
+      } else if (url.pathname === "/api/report" && request.method === "POST") {
+        const account = accountOf(request);
+        if (!account) return reply(401, { error: "Not signed in." });
+        if (!reports.take(account.id)) return reply(429, { error: "You have sent several reports already. Try again later." });
+        const { name, reason } = await readBody(request);
+        const other = typeof name === "string" ? store.findForLogin(name) : null;
+        if (!other || other.id === account.id) return reply(404, { error: "There is nobody called that." });
+        store.report(account.id, other.id, String(reason ?? "").slice(0, 300));
+        reply(200, { ok: true });
+      } else if (url.pathname === "/api/admin/reports" && request.method === "GET") {
+        if (!adminToken || request.headers["x-admin-token"] !== adminToken) return reply(403, { error: "Not allowed." });
+        reply(200, { reports: store.reports() });
+      } else if (url.pathname === "/api/admin/ban" && request.method === "POST") {
+        if (!adminToken || request.headers["x-admin-token"] !== adminToken) return reply(403, { error: "Not allowed." });
+        const { name, banned = true } = await readBody(request);
+        const other = typeof name === "string" ? store.findForLogin(name) : null;
+        if (!other) return reply(404, { error: "There is nobody called that." });
+        store.setBanned(other.id, banned);
+        if (banned) for (const connection of connections) if (connection.account?.id === other.id) connection.socketConnection.close(1000, "closed");
+        reply(200, { ok: true });
       } else if (url.pathname === "/api/me" && request.method === "GET") {
         const account = accountOf(request);
         if (!account) return reply(401, { error: "Not signed in." });
@@ -646,6 +693,14 @@ export function createGameServer({
           if (connection.game?.host !== connection.key) return connection.error("Only the host can begin the game.");
           if (!connection.game.canBegin()) return connection.error("Everyone needs to be ready, and there must be two of you.");
           return beginGame(connection.game);
+        case "say": {
+          if (!connection.account) return connection.error("Sign in to talk to others.");
+          const text = cleanSpeech(message.text);
+          if (!text || !speech.take(connection.key)) return undefined;
+          const keys = connection.room ? [...connection.room.players.keys()] : (connection.game?.players.map((p) => p.id) ?? []);
+          for (const key of keys) byKey.get(key)?.send({ t: "chat", from: connection.account.name, text });
+          return undefined;
+        }
         case "leave":
           leaveGame(connection);
           return connection.send({ t: "closed", reason: "You left the game." });

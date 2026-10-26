@@ -2,13 +2,23 @@
 
 # Privacy
 
-OpenSynd collects nothing **today**. This describes the game as it is now: single-player, nothing sent anywhere.
+Single-player collects nothing: nothing is sent anywhere and no account is needed. The online modes (daily operation, co-op,
+rival companies) talk to a game server, and only if you sign in to one.
 
-The planned online modes ([the multiplayer design](docs/design/MULTIPLAYER.md)) will need a game server with accounts, and this
-page will be updated before any of them ships to say exactly what the server keeps (a display name, a password hash, scores and
-replays, and nothing more), how to delete your account, and that single-player never needs it.
+**What a game server keeps about you, and nothing more:**
 
-- **No accounts, no telemetry, no analytics, no advertising and no third-party scripts, fonts or images.** The page makes
+- your display name and a salted scrypt hash of your password (never the password itself);
+- your funds, the territories you hold and the raids you took part in;
+- your scores, the daily chores you completed, and the recorded replays of your daily and raid operations;
+- who your friends are, and any report you made or that was made about you (with the reason given);
+- while you play: the operation you are in and your connection. Things you say in a lobby are passed on and not stored.
+
+It keeps no email address, no real name and no tracking. **To delete your account** use the account deletion request
+(`DELETE /api/account`, with your password); it removes your account, sessions, friends, territories and scores. Muting someone is
+kept only in your own browser. Whoever runs a server can see all of the above for that server, so only sign in to servers you
+trust; you can run your own ([docs/SELF_HOSTING.md](docs/SELF_HOSTING.md)).
+
+- **No telemetry, no analytics, no advertising and no third-party scripts, fonts or images.** The page makes
   requests only to the site it came from, and a browser test checks that.
 - **Everything you do is kept in your own browser** (local storage): your campaign, settings, saves and the operation in
   progress. It never leaves your computer unless you export a save file yourself.

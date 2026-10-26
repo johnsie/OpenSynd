@@ -4769,8 +4769,70 @@ function missionName(path) {
   return state.missionList.find((entry) => entry.path === path)?.name ?? path;
 }
 
-function renderGames(games) {
+let friendNames = new Set();
+const smallButton = (label, onclick) => Object.assign(document.createElement("button"), { type: "button", textContent: label, onclick });
+const mutedKey = "opensynd.muted.v1";
+const mutedNames = () => {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(mutedKey) ?? "[]"));
+  } catch {
+    return new Set();
+  }
+};
+const QUICK_SAYS = ["Hello", "Ready", "Good luck", "Well played", "Thanks", "Wait for me"];
+
+async function showProfile(name) {
+  const profile = await onlinePlay.profile(name);
+  coopMessage(
+    profile
+      ? `${profile.name}: ${profile.territories} territories held, ${profile.raidsWon} raids won, ${profile.defended} defended, ` +
+          `${profile.dailyWins} daily wins${profile.bestDaily === null ? "" : `, best daily ${profile.bestDaily}`}.`
+      : `No profile for ${name}.`,
+  );
+}
+
+async function friendAction(name, action) {
+  const result = await onlinePlay.friendAction(name, action);
+  coopMessage(result.error ?? "");
+  await renderFriends();
+}
+
+async function renderFriends() {
+  const lists = await onlinePlay.friends();
+  if (!lists) return;
+  friendNames = new Set(lists.friends);
+  const button = (label, onClick) => smallButton(label, onClick);
+  const row = (text, ...buttons) => {
+    const item = document.createElement("li");
+    item.append(Object.assign(document.createElement("span"), { textContent: text }), ...buttons);
+    return item;
+  };
+  const rows = [
+    ...lists.incoming.map((name) =>
+      row(
+        `${name} asks to be your friend`,
+        button("Accept", () => friendAction(name, "accept")),
+        button("Decline", () => friendAction(name, "remove")),
+      ),
+    ),
+    ...lists.friends.map((name) =>
+      row(
+        `${name}${lists.online.includes(name) ? " · online" : ""}`,
+        button("Profile", () => showProfile(name)),
+        button("Remove", () => friendAction(name, "remove")),
+      ),
+    ),
+    ...lists.outgoing.map((name) => row(`${name} · asked`, button("Cancel", () => friendAction(name, "remove")))),
+  ];
+  document.querySelector("#coop-friend-list").replaceChildren(
+    ...(rows.length > 0 ? rows : [row("No friends yet. Add somebody by name.")]),
+  );
+}
+
+function renderGames(allGames) {
   const list = document.querySelector("#coop-games");
+  const withFriend = (game) => Number(game.players.some((p) => friendNames.has(p.name)));
+  const games = [...allGames].sort((a, b) => withFriend(b) - withFriend(a));
   list.replaceChildren(
     ...(games.length === 0
       ? [Object.assign(document.createElement("li"), { textContent: "No games are open. Open one, or take a quick match." })]
@@ -4779,7 +4841,9 @@ function renderGames(games) {
           item.append(
             Object.assign(document.createElement("span"), { textContent: "" }),
             Object.assign(document.createElement("span"), {
-              textContent: `${game.host}'s game: ${missionName(game.mission)} · ${game.players.length} of ${game.capacity}`,
+              textContent:
+                `${game.host}'s game: ${missionName(game.mission)} · ${game.players.length} of ${game.capacity}` +
+                (game.players.some((p) => friendNames.has(p.name)) ? " · a friend is in it" : ""),
             }),
           );
           const join = Object.assign(document.createElement("button"), { type: "button", textContent: "Join" });
@@ -4795,6 +4859,7 @@ function renderWaiting(game) {
   const me = onlinePlay.account?.name;
   const host = game.host === me;
   document.querySelector("#coop-lobby").hidden = true;
+  document.querySelector("#coop-friends").hidden = true;
   document.querySelector("#coop-waiting").hidden = false;
   document.querySelector("#coop-waiting-heading").textContent = `${game.host}'s game: ${missionName(game.mission)}`;
   document.querySelector("#coop-players").replaceChildren(
@@ -4805,6 +4870,27 @@ function renderWaiting(game) {
         Object.assign(document.createElement("span"), { textContent: player.name + (player.name === game.host ? " (host)" : "") }),
         Object.assign(document.createElement("span"), { textContent: player.ready ? "ready" : "not ready" }),
       );
+      if (player.name !== me) {
+        const small = smallButton;
+        item.append(
+          small("Profile", () => showProfile(player.name)),
+          small(friendNames.has(player.name) ? "Friend ✓" : "Add friend", () => friendAction(player.name, "request")),
+          small(mutedNames().has(player.name) ? "Unmute" : "Mute", () => {
+            const muted = mutedNames();
+            if (!muted.delete(player.name)) muted.add(player.name);
+            try {
+              localStorage.setItem(mutedKey, JSON.stringify([...muted]));
+            } catch {
+              // Muting then lasts only until the next page load.
+            }
+            renderWaiting(game);
+          }),
+          small("Report", async () => {
+            const reason = window.prompt(`Why are you reporting ${player.name}?`);
+            if (reason) coopMessage((await onlinePlay.report(player.name, reason)).error ?? "Thank you. The report has been sent.");
+          }),
+        );
+      }
       return item;
     }),
   );
@@ -4820,8 +4906,10 @@ function renderWaiting(game) {
 
 function showLobbyPanel() {
   document.querySelector("#coop-lobby").hidden = false;
+  document.querySelector("#coop-friends").hidden = false;
   document.querySelector("#coop-waiting").hidden = true;
-  onlinePlay.client.lobby();
+  document.querySelector("#coop-chat").replaceChildren();
+  renderFriends().then(() => onlinePlay.client.lobby());
 }
 
 async function showCoop() {
@@ -4837,6 +4925,22 @@ async function showCoop() {
       showLobbyPanel();
     });
     client.on("error", (message) => coopMessage(message.message));
+    // What others say: in the game's list while waiting, and as a line on screen during an operation.
+    onlinePlay.onChat(({ from, text }) => {
+      if (mutedNames().has(from)) return;
+      const chat = document.querySelector("#coop-chat");
+      if (coopDialog.open) {
+        chat.append(Object.assign(document.createElement("li"), { textContent: `${from}: ${text}` }));
+        while (chat.children.length > 20) chat.firstChild.remove();
+      } else {
+        setStatus(`${from}: ${text}`);
+      }
+    });
+    document.querySelector("#coop-quick-says").replaceChildren(
+      ...QUICK_SAYS.map((text) =>
+        Object.assign(document.createElement("button"), { type: "button", textContent: text, onclick: () => onlinePlay.say(text) }),
+      ),
+    );
   }
   coopMessage("");
   coopDialog.showModal();
@@ -4857,6 +4961,10 @@ document.querySelector("#coop-close").addEventListener("click", () => {
 document.querySelector("#coop-quick").addEventListener("click", () => onlinePlay.client.quickMatch());
 document.querySelector("#coop-open").addEventListener("click", () => {
   onlinePlay.client.openGame({ capacity: Number(document.querySelector("#coop-capacity").value) });
+});
+document.querySelector("#coop-friend-add").addEventListener("click", () => {
+  const input = document.querySelector("#coop-friend-name");
+  if (input.value.trim()) friendAction(input.value.trim(), "request").then(() => (input.value = ""));
 });
 document.querySelector("#coop-leave").addEventListener("click", () => onlinePlay.client.leaveGame());
 document.querySelector("#coop-ready").addEventListener("click", (event) => {
