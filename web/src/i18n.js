@@ -114,6 +114,24 @@ const TABLE = Object.freeze({
     "Libre de inspeccionar, modificar y compartir",
     "Libre d'inspecter, de modifier et de partager",
   ],
+  "menu.signin": ["Sign in", "Iniciar sesión", "Se connecter"],
+  "menu.signin_note": [
+    "An account keeps your name and scores on the server.",
+    "Una cuenta guarda tu nombre y tus puntuaciones en el servidor.",
+    "Un compte garde votre nom et vos scores sur le serveur.",
+  ],
+  "menu.online_test": ["Play on the server", "Jugar en el servidor", "Jouer sur le serveur"],
+  "menu.online_test_note": [
+    "A test operation run by the server, to check the connection.",
+    "Una operación de prueba del servidor, para comprobar la conexión.",
+    "Une opération d'essai gérée par le serveur, pour vérifier la connexion.",
+  ],
+  "signin.heading": ["Sign in", "Iniciar sesión", "Se connecter"],
+  "signin.name": ["Name", "Nombre", "Nom"],
+  "signin.password": ["Password", "Contraseña", "Mot de passe"],
+  "signin.cancel": ["Cancel", "Cancelar", "Annuler"],
+  "signin.create": ["Create account", "Crear cuenta", "Créer un compte"],
+  "signin.submit": ["Sign in", "Entrar", "Entrer"],
   "menu.continue": ["Continue", "Continuar", "Continuer"],
   "menu.campaign": ["Start campaign", "Empezar campaña", "Commencer la campagne"],
   "menu.campaign_note": [
@@ -123,7 +141,7 @@ const TABLE = Object.freeze({
   ],
   "menu.new_game": ["New campaign", "Nueva campaña", "Nouvelle campagne"],
   "menu.new_game_note": ["Wipe this one and begin again.", "Borra esta y empieza de nuevo.", "Effacez celle-ci et recommencez."],
-  "menu.online": ["Online (planned)", "En línea (previsto)", "En ligne (prévu)"],
+  "menu.online": ["Online", "En línea", "En ligne"],
   "menu.coop": ["Co-op operations", "Operaciones cooperativas", "Opérations en coopération"],
   "menu.coop_note": [
     "Two to four players, one squad each.",

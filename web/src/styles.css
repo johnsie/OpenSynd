@@ -1029,3 +1029,6 @@ dialog.company-dialog[open] {
 .map-region.alert-takeover .map-region-shape { fill: rgba(232, 107, 214, 0.28); stroke: #e86bd6; stroke-width: 2.6; }
 .map-region.alert-takeover .map-pin { fill: #e86bd6; }
 .map-region.alert-revolt .map-region-state, .map-region.alert-takeover .map-region-state { fill: #ffd7d3; }
+
+.menu-note { margin: 0; opacity: 0.8; font-size: 0.9rem; }
+.menu-note[hidden] { display: none; }

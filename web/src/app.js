@@ -35,6 +35,8 @@ import {
   syncWorldGates,
 } from "./core/step.js";
 import { applyCommand } from "./core/apply.js";
+import { applyServerMessage, equipmentLookup } from "./core/sync.js";
+import { createOnlinePlay } from "./online-play.js";
 import { createWorld } from "./core/create.js";
 import { commands } from "./commands.js";
 import {
@@ -567,11 +569,12 @@ async function loadGame(index = state.missionIndex, options = {}) {
   await loadSprites();
   const pack = await readJson("content/pack.json");
   const tutorialRun = Boolean(state.tutorial); // the training operation sits outside the campaign's list
+  const remote = options.remote ?? null; // an operation the server is running: built here the same way, then kept up to date by it
   if (pack.territories && !state.territories) state.territories = (await readJson(`content/${pack.territories}`)).territories;
-  let missionPath = tutorialRun ? pack.tutorial : pack.missions[index];
-  let variant = null;
+  let missionPath = tutorialRun ? pack.tutorial : remote ? remote.mission : pack.missions[index];
+  let variant = remote ? (remote.variant ?? null) : null;
   state.territoryId = null;
-  if (!tutorialRun) {
+  if (!tutorialRun && !remote) {
     const main = await readJson(`content/${missionPath}`);
     state.territoryId = main.id;
     const known = state.campaignLoaded ? state.campaign : parseCampaign(readStored(CAMPAIGN_KEY));
@@ -617,10 +620,14 @@ async function loadGame(index = state.missionIndex, options = {}) {
     map,
     content: { units: unitDefinitions, vehicles: vehicleDefinitions, equipment: equipmentDefinitions },
     campaign: state.campaign,
-    seed: 1,
-    options: { instantMoves: reduceMotion, harmless: tutorialRun },
+    seed: remote ? remote.seed : 1,
+    options: { instantMoves: reduceMotion && !remote, harmless: tutorialRun },
   });
   Object.assign(state, world);
+  if (remote) {
+    applyServerMessage(state, remote, equipmentLookup(equipmentDefinitions));
+    state.online = { room: remote.room, squad: remote.squad, mode: options.mode ?? "solo" };
+  }
   markRailBridges(map, state.grid);
   state.deathsSeeded = false;
   state.alertHold = 0;
@@ -747,7 +754,8 @@ function syncGates() {
 function describeMission(mission, map, index) {
   const number = String(index + 1).padStart(2, "0");
   const kind = state.variant ? ` · ${VARIANT_LABELS[state.variant]}` : "";
-  document.querySelector("#operation-eyebrow").textContent = state.tutorial ? "TRAINING" : `OPERATION ${number}${kind}`;
+  const label = state.tutorial ? "TRAINING" : state.online ? "ONLINE" : `OPERATION ${number}${kind}`;
+  document.querySelector("#operation-eyebrow").textContent = label;
   document.querySelector("#operation-title").textContent = mission.name;
   document.querySelector("#brief-title").textContent = mission.name;
   document.querySelector("#title-heading").textContent = `OpenSynd: ${mission.name}`;
@@ -3187,7 +3195,13 @@ function updateAlertMusic(deltaSeconds) {
 // ---- Orders. The player's clicks and keys become commands (see commands.js) for the game core (core/apply.js), the same way a
 // server or a replay would give them; what comes back is only for the interface (the cursor, which squares are armed).
 const selectedIds = () => selectedOperators().map((unit) => unit.id);
-const give = (command) => applyCommand(state, worldHooks, command);
+const give = (command) => {
+  if (state.online) {
+    onlinePlay?.give(command); // the server carries it out, and the news comes back in its updates
+    return { ok: true, moved: command.type === "move" };
+  }
+  return applyCommand(state, worldHooks, command);
+};
 // A point the pointer chose may lie outside the map; the core wants one inside it.
 const insideMap = (point) => ({
   x: Math.min(state.map.dimensions.width, Math.max(0, point.x)),
@@ -3292,6 +3306,13 @@ function pressSlot(unit, slot) {
   if (entry.definition.action === "time-bomb" && entry.charges !== 0) {
     // The first press arms the charge (the next click on the ground throws it); pressing its square again drops it underfoot.
     const armed = state.armedBomb?.unitId === unit.id && state.armedBomb.slot === slot;
+    if (state.online) {
+      // The server cannot see which square the player has picked: arming is kept here, throwing or planting is the order.
+      if (armed) give(commands.useItem(idsFor(unit), unit.id, slot, { plant: true }));
+      else setStatus(`${unit.definition.name}: click the ground to throw the charge, or click its square again to drop it here.`);
+      state.armedBomb = armed ? null : { unitId: unit.id, slot };
+      return;
+    }
     const result = give(commands.useItem(idsFor(unit), unit.id, slot, { plant: armed }));
     state.armedBomb = result.arm ? { unitId: unit.id, slot } : null;
     return;
@@ -3309,7 +3330,7 @@ function throwArmedBomb(target) {
     return;
   }
   const result = give(commands.useItem([unit.id], unit.id, slot, { at: insideMap(target) }));
-  if (result.thrown) state.armedBomb = null;
+  if (result.thrown || state.online) state.armedBomb = null;
 }
 
 function dropFromSlot(unit, slot, queue = false) {
@@ -3373,8 +3394,9 @@ function showOutcome(outcome) {
     : won
     ? debrief?.success ?? "The operation is complete."
     : reason ?? debrief?.failure ?? "Every operator has been disabled. Regroup and try a different approach.";
-  const hasNext = won && nextOperation() !== -1;
+  const hasNext = won && !state.online && nextOperation() !== -1;
   document.querySelector("#next-button").hidden = !hasNext;
+  document.querySelector("#replay-button").hidden = Boolean(state.online);
   const teamDown = state.units.filter((unit) => unit.side === "team" && unit.disabled).length;
   const watchersDown = state.units.filter((unit) => unit.side === "opposition" && unit.disabled).length;
   const stats = document.querySelector("#outcome-stats");
@@ -3419,7 +3441,7 @@ function showOutcome(outcome) {
     detail.textContent = value;
     stats.append(term, detail);
   }
-  clearAutosave();
+  if (!state.online) clearAutosave(); // an operation on the server is not the player's own saved game
   state.modal = true;
   outcomeDialog.showModal();
 }
@@ -3583,6 +3605,10 @@ function stampDeaths() {
 }
 
 function update(deltaSeconds) {
+  if (state.online) {
+    updateOnline(deltaSeconds);
+    return;
+  }
   if (state.paused || state.modal) {
     state.clock.accumulator = 0;
     return;
@@ -3607,6 +3633,13 @@ function update(deltaSeconds) {
     }
     if (state.campaign.funds !== state.shownFunds) updateFundsReadout();
   }
+  interfaceTick(deltaSeconds);
+  consumeFixedSteps(state.clock, deltaSeconds, simulationStep);
+  checkOutcome();
+}
+
+// What the page does each frame whoever is running the operation: the meters, the walking animation, the effects.
+function interfaceTick(deltaSeconds) {
   state.meterClock = (state.meterClock ?? 0) + deltaSeconds;
   if (state.meterClock >= 0.2) {
     state.meterClock = 0;
@@ -3622,8 +3655,17 @@ function update(deltaSeconds) {
     unit.walkPhase += deltaSeconds * legsPace(unit.upgrades) * adrenalineSpeed(unit.drugs);
   }
   advanceEffects(state.effects, deltaSeconds);
-  consumeFixedSteps(state.clock, deltaSeconds, simulationStep);
-  checkOutcome();
+}
+
+// An operation the server is running: nothing is stepped here. The server's updates are applied as they arrive (see online-play.js);
+// each frame people are shown walking between them and a held weapon is kept pointed.
+function updateOnline(deltaSeconds) {
+  stampDeaths();
+  const held = state.holdFireScreen && state.viewport && state.outcome === "active";
+  const aim = held ? insideMap(screenToGridExact(state.holdFireScreen, state.viewport.cellSize, state.viewport.origin)) : null;
+  onlinePlay.frame(selectedIds(), aim);
+  interfaceTick(deltaSeconds);
+  updateAlertMusic(deltaSeconds);
 }
 
 function completeObjectivesAt(position) {
@@ -3662,7 +3704,8 @@ function selectedUnit() {
 }
 
 function activeOperators() {
-  return state.units.filter((unit) => unit.side === "team" && !unit.disabled);
+  // Online, other players' agents are on the squad's side but not the player's to command.
+  return state.units.filter((unit) => unit.side === "team" && !unit.disabled && (!state.online || state.online.squad.includes(unit.id)));
 }
 
 function applySelection(selection) {
@@ -4082,6 +4125,10 @@ canvas.addEventListener("keyup", (event) => {
 canvas.addEventListener("blur", () => state.panKeys.clear());
 
 function togglePause() {
+  if (state.online) {
+    setStatus("An operation on the server cannot be paused.");
+    return;
+  }
   state.paused = !state.paused;
   pauseButton.setAttribute("aria-pressed", String(state.paused));
   pauseLabel.textContent = state.paused ? "Resume" : "Pause";
@@ -4169,6 +4216,11 @@ async function refreshOperation() {
 document.querySelector("#operations-button").addEventListener("click", async () => {
   if (state.tutorial) {
     leaveTutorial().catch(showFatalError);
+    return;
+  }
+  if (state.online) {
+    const leave = state.outcome !== "active" || (await confirmLeave("Leaving ends your operation on the server."));
+    if (leave) leaveOnline().catch(showFatalError);
     return;
   }
   await refreshOperation().catch(showFatalError);
@@ -4321,6 +4373,166 @@ document.querySelector("#tutorial-again").addEventListener("click", () => {
 });
 tutorialDoneDialog.addEventListener("cancel", (event) => event.preventDefault());
 
+// ---- Playing on a game server. Nothing here runs unless a server has been named (a `server` address in the page's link, kept for next
+// time); the game is the same without one. The play itself is in online-play.js.
+const SERVER_KEY = "opensynd.server.v1";
+let onlinePlay = null;
+let serverIsUp = false;
+const signinDialog = document.querySelector("#signin-dialog");
+
+function serverSettings() {
+  let kept = {};
+  try {
+    kept = JSON.parse(localStorage.getItem(SERVER_KEY) ?? "{}");
+  } catch {
+    // Nothing kept, or damaged: start over.
+  }
+  const named = new URLSearchParams(location.search).get("server");
+  if (named !== null) kept = named ? { url: named.replace(/\/+$/, ""), token: kept.url === named ? kept.token : null } : {};
+  return kept;
+}
+
+function keepServerSettings(settings) {
+  try {
+    if (settings.url) localStorage.setItem(SERVER_KEY, JSON.stringify(settings));
+    else localStorage.removeItem(SERVER_KEY);
+  } catch {
+    // The sign-in just lasts until the page is closed.
+  }
+}
+
+// The connection is made the first time it is wanted, once the game's own content has been read.
+async function setUpOnline() {
+  const settings = serverSettings();
+  if (!settings.url || !state.catalogPaths) return false;
+  if (!onlinePlay) {
+    onlinePlay = createOnlinePlay({ state, hooks: worldHooks, equipment: new Map(state.catalogPaths) });
+    onlinePlay.onEnd((message) => {
+      state.outcome = message.outcome === "success" ? "success" : "failure";
+      showOutcome(state.outcome);
+    });
+    onlinePlay.onClose(() => {
+      if (!state.online) return;
+      setStatus("The connection to the server was lost.");
+      leaveOnline().catch(showFatalError);
+    });
+    keepServerSettings(settings);
+  }
+  const fingerprint = await readJson("content/hash.json").catch(() => ({ hash: "" }));
+  onlinePlay.configure({ server: settings.url, content: fingerprint.hash, token: settings.token ?? null });
+  return true;
+}
+
+// The Online part of the menu: shown when a server has been named and answers; says who is signed in.
+async function refreshOnlineMenu() {
+  const note = document.querySelector("#menu-online-note");
+  const signin = document.querySelector("#menu-signin");
+  const test = document.querySelector("#menu-online-test");
+  signin.hidden = true;
+  test.hidden = true;
+  note.hidden = true;
+  if (!(await setUpOnline())) return;
+  note.hidden = false;
+  note.textContent = "Looking for the server…";
+  const health = await onlinePlay.health();
+  serverIsUp = Boolean(health);
+  if (!health) {
+    note.textContent = "The server cannot be reached.";
+    return;
+  }
+  const fingerprint = await readJson("content/hash.json").catch(() => ({ hash: "" }));
+  if (health.content !== fingerprint.hash) {
+    note.textContent = "This game and the server have different content. Reload the page to update.";
+    return;
+  }
+  const account = await onlinePlay.whoAmI();
+  note.textContent = account ? `Signed in as ${account.name}.` : "Not signed in.";
+  document.querySelector("#menu-signin-label").textContent = account ? `Sign out (${account.name})` : "Sign in";
+  document.querySelector("#menu-signin-note").hidden = Boolean(account);
+  signin.hidden = false;
+  test.hidden = false;
+}
+
+function showSignin() {
+  document.querySelector("#signin-server").textContent = `Server: ${serverSettings().url}`;
+  document.querySelector("#signin-error").hidden = true;
+  document.querySelector("#signin-password").value = "";
+  signinDialog.showModal();
+  document.querySelector("#signin-name").focus();
+}
+
+async function trySignin(create) {
+  const name = document.querySelector("#signin-name").value.trim();
+  const password = document.querySelector("#signin-password").value;
+  const error = document.querySelector("#signin-error");
+  const result = await (create ? onlinePlay.signUp(name, password) : onlinePlay.signIn(name, password));
+  if (!result.ok) {
+    error.textContent = result.error ?? "The server did not answer.";
+    error.hidden = false;
+    return;
+  }
+  keepServerSettings({ url: serverSettings().url, token: result.token });
+  signinDialog.close();
+  await refreshOnlineMenu();
+}
+
+async function startOnlineGame(mode = "solo") {
+  if (state.online || !onlinePlay) return;
+  const kept = state.campaign;
+  state.savedCampaign = kept;
+  state.campaign = emptyCampaign(); // what happens on the server is not part of the player's own campaign
+  const note = document.querySelector("#menu-online-note");
+  note.hidden = false;
+  note.textContent = "Connecting…";
+  try {
+    const start = await onlinePlay.start(mode);
+    await loadGame(state.missionIndex, { remote: start, mode });
+    onlinePlay.attach();
+  } catch (error) {
+    onlinePlay.stop();
+    state.online = null;
+    state.campaign = kept;
+    state.savedCampaign = null;
+    note.textContent = error.message;
+    return;
+  }
+  menuDialog.close();
+  if (titleDialog.open) titleDialog.close();
+  state.modal = false;
+  pauseButton.disabled = true;
+  resetButton.disabled = true;
+  canvas.focus();
+  setStatus("Connected: this operation is running on the server.");
+}
+
+// Back to the player's own game.
+async function leaveOnline() {
+  if (!state.online) return;
+  onlinePlay.stop();
+  state.online = null;
+  state.campaign = state.savedCampaign ?? state.campaign;
+  state.savedCampaign = null;
+  if (outcomeDialog.open) outcomeDialog.close();
+  pauseButton.disabled = false;
+  resetButton.disabled = false;
+  await loadGame(state.missionIndex);
+  showMainMenu();
+}
+
+document.querySelector("#menu-signin").addEventListener("click", async () => {
+  if (!onlinePlay?.account) return showSignin();
+  await onlinePlay.signOut();
+  keepServerSettings({ url: serverSettings().url, token: null });
+  await refreshOnlineMenu();
+});
+document.querySelector("#menu-online-test").addEventListener("click", () => startOnlineGame("solo").catch(showFatalError));
+document.querySelector("#signin-form").addEventListener("submit", (event) => {
+  event.preventDefault();
+  trySignin(false).catch(showFatalError);
+});
+document.querySelector("#signin-create").addEventListener("click", () => trySignin(true).catch(showFatalError));
+document.querySelector("#signin-cancel").addEventListener("click", () => signinDialog.close());
+
 // The company name is asked for the first time the player heads for the campaign, and can be changed from the menu.
 function showCompany() {
   const company = state.campaign.company;
@@ -4375,6 +4587,7 @@ function ensureCompany(rename = false) {
 
 function showMainMenu() {
   showCompany();
+  refreshOnlineMenu().catch(() => {});
   const tutorialNote = document.querySelector("#menu-tutorial-note");
   if (tutorialDone()) tutorialNote.textContent = "Done. Play the training again.";
   const target = currentContinueTarget();
@@ -4463,7 +4676,10 @@ document.querySelector("#next-button").addEventListener("click", () => {
     })
     .catch(showFatalError);
 });
-document.querySelector("#outcome-close").addEventListener("click", () => outcomeDialog.close());
+document.querySelector("#outcome-close").addEventListener("click", () => {
+  if (state.online) leaveOnline().catch(showFatalError);
+  else outcomeDialog.close();
+});
 showMainMenu();
 // Browser tests add ?e2e to reach states that take too long to play out.
 if (new URLSearchParams(location.search).has("e2e")) {
@@ -4500,6 +4716,26 @@ if (new URLSearchParams(location.search).has("e2e")) {
     setFunds(amount) {
       state.campaign = { ...state.campaign, funds: amount };
       updateFundsReadout();
+    },
+    openTileNear(id, distance = 5) {
+      const unit = state.units.find((item) => item.id === id);
+      const from = { x: Math.round(unit.position.x), y: Math.round(unit.position.y) };
+      for (let dx = -distance; dx <= distance; dx += 1) {
+        for (let dy = -distance; dy <= distance; dy += 1) {
+          const tile = { x: from.x + dx, y: from.y + dy };
+          if (Math.hypot(dx, dy) >= distance - 1 && findPath(state.grid, from, tile).length > 0) return tile;
+        }
+      }
+      return null;
+    },
+    online() {
+      return {
+        running: Boolean(state.online),
+        steps: state.steps,
+        squad: state.online?.squad ?? null,
+        signedInAs: onlinePlay?.account?.name ?? null,
+        serverIsUp,
+      };
     },
     tutorialStep() {
       const step = state.tutorial ? currentStep(state.tutorial) : null;
@@ -4947,7 +5183,7 @@ for (const type of ["pointerdown", "pointermove", "keydown", "wheel"]) {
 
 function operationActive() {
   const dialogOpen = menuDialog.open || titleDialog.open || outcomeDialog.open;
-  return !state.tutorial && !dialogOpen && state.outcome === "active" && Boolean(state.mission);
+  return !state.tutorial && !state.online && !dialogOpen && state.outcome === "active" && Boolean(state.mission);
 }
 
 // The operation in progress is kept in the browser as it is played (every few seconds, and when the page is hidden or left), so

@@ -160,3 +160,19 @@ export function changedUnits(world, known) {
   }
   return changes;
 }
+
+/**
+ * Bring a local copy of an operation up to date with what the server sent (a "start" or an "update" message): the people who
+ * changed, then the rest of the world. `smoother` (see online.js) is told where people were so they can be shown walking to
+ * their new places; leave it out for the first message.
+ */
+export function applyServerMessage(world, message, lookup, { smoother = null, now = 0 } = {}) {
+  for (const change of message.units) {
+    const unit = world.units.find((item) => item.id === change.id);
+    if (!unit) continue;
+    const shown = { ...unit.position };
+    applyUnit(unit, change.set ?? change, lookup, change.remove ?? []);
+    if (smoother && change.set?.position) smoother.observe(unit, shown, now);
+  }
+  applyWorld(world, message.world, lookup);
+}

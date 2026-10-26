@@ -3,6 +3,7 @@
 import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 import { dirname, resolve } from "node:path";
+import { contentHash } from "./server/content-hash.js";
 import { fileURLToPath } from "node:url";
 
 const projectRoot = dirname(fileURLToPath(import.meta.url));
@@ -16,6 +17,17 @@ await cp(
   resolve(output, "content"),
   { recursive: true },
 );
+// The game compares this with the server's own before it will play there, so the two never build different operations.
+await writeFile(resolve(output, "content/hash.json"), `${JSON.stringify({ hash: contentHash(resolve(projectRoot, "content")) })}\n`);
+// The page may only talk to its own site (and, for development, to a server on this machine). A deployed game that has a server of
+// its own names it when it is built: OPENSYND_SERVER="https://play.example.org" adds that site and its WebSocket address.
+if (process.env.OPENSYND_SERVER) {
+  const origins = process.env.OPENSYND_SERVER.split(",").map((item) => item.trim().replace(/\/+$/, "")).filter(Boolean);
+  const sockets = origins.map((origin) => origin.replace(/^http/, "ws"));
+  const page = resolve(output, "index.html");
+  const html = await readFile(page, "utf8");
+  await writeFile(page, html.replace("connect-src 'self'", `connect-src 'self' ${[...origins, ...sockets].join(" ")}`));
+}
 await cp(
   resolve(projectRoot, "public/assets"),
   resolve(output, "assets"),

@@ -14,6 +14,10 @@ import { fileURLToPath } from "node:url";
 
 import { chromium, firefox } from "playwright-core";
 
+import { loadContent } from "../server/content.js";
+import { createGameServer } from "../server/server.js";
+import { openStore } from "../server/store.js";
+
 const dist = resolve(dirname(fileURLToPath(import.meta.url)), "../dist");
 const types = {
   ".html": "text/html",
@@ -40,6 +44,10 @@ const server = createServer(async (request, response) => {
 });
 await new Promise((done) => server.listen(0, "127.0.0.1", done));
 const url = `http://127.0.0.1:${server.address().port}/`;
+
+// A game server of our own, on a spare port, playing the same content the page was built with.
+const gameServer = createGameServer({ content: loadContent(join(dist, "content")), store: openStore() });
+const gameUrl = `http://${await gameServer.listen(0)}`;
 
 const targets = [
   ["chromium", chromium, process.env.CHROMIUM_PATH],
@@ -1552,6 +1560,55 @@ for (const [name, type, executablePath] of targets) {
       await page.close();
     });
 
+    scenario("Playing on a server: sign up, start an operation that the server runs, give it an order, and leave", async () => {
+      const page = await (await browser.newContext()).newPage();
+      // Without a server named, none of the online part of the menu shows.
+      await page.goto(`${url}?e2e`);
+      await page.waitForSelector("#menu-dialog[open]");
+      assert.equal(await page.locator("#menu-signin").isVisible(), false);
+      assert.equal(await page.locator("#menu-online-test").isVisible(), false);
+      await page.goto(`${url}?e2e&server=${encodeURIComponent(gameUrl)}`);
+      await page.waitForSelector("#menu-dialog[open]");
+      await page.waitForSelector("#menu-signin:not([hidden])");
+      assert.match(await page.locator("#menu-online-note").innerText(), /Not signed in/);
+      await page.click("#menu-signin");
+      await page.fill("#signin-name", "Trainee");
+      await page.fill("#signin-password", "short");
+      await page.click("#signin-create");
+      await page.waitForSelector("#signin-error:not([hidden])");
+      assert.match(await page.locator("#signin-error").innerText(), /8 characters/, "the server's reason is shown");
+      await page.fill("#signin-password", "a good password");
+      await page.click("#signin-create");
+      await page.waitForFunction(() => document.querySelector("#menu-online-note").textContent.includes("Signed in as Trainee"));
+      await page.click("#menu-online-test");
+      await page.waitForFunction(() => window.opensyndTest.online().running, null, { timeout: 8000 });
+      assert.equal((await page.evaluate(() => window.opensyndTest.online())).squad.length, 4);
+      assert.match(await page.locator("#operation-eyebrow").innerText(), /ONLINE/);
+      assert.equal(await page.locator("#pause-button").isDisabled(), true, "an operation on the server cannot be paused");
+      // The order goes to the server, which carries it out; the page shows the agent walking there.
+      const tile = await page.evaluate(() => window.opensyndTest.openTileNear("operator-one", 6));
+      const before = await page.evaluate(() => window.opensyndTest.positionOf("operator-one"));
+      await page.locator("#game-canvas").focus();
+      await page.keyboard.press("1");
+      await page.evaluate((to) => window.opensyndTest.moveSelected(to.x, to.y), tile);
+      await page.waitForFunction(
+        (start) => {
+          const now = window.opensyndTest.positionOf("operator-one");
+          return Math.hypot(now.x - start.x, now.y - start.y) > 2;
+        },
+        before,
+        { timeout: 8000 },
+      );
+      assert.ok((await page.evaluate(() => window.opensyndTest.online().steps)) > 10, "the server's clock is running");
+      // Leaving asks first, then the page is back to its own game.
+      await page.click("#operations-button");
+      await page.click("#confirm-accept");
+      await page.waitForFunction(() => !window.opensyndTest.online().running);
+      await page.waitForSelector("#menu-dialog[open]");
+      assert.equal(await page.locator("#pause-button").isDisabled(), false);
+      await page.close();
+    });
+
     scenario("Permadeath and recruiting: a fallen operative is lost after a win, and a persuad", async () => {
       // Permadeath and recruiting: a fallen operative is lost after a win, and a persuaded enemy agent joins.
       const roster = await browser.newPage();
@@ -1622,5 +1679,6 @@ for (const [name, type, executablePath] of targets) {
     await browser.close();
   }
 }
+await gameServer.close();
 server.close();
 process.exit(failed ? 1 : 0);

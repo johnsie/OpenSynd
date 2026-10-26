@@ -3,7 +3,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self' http://127.0.0.1:* ws://127.0.0.1:* http://localhost:* ws://localhost:*; object-src 'none'; base-uri 'self'; form-action 'self'" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="theme-color" content="#10171c" />
     <meta
@@ -228,6 +228,23 @@
       </div>
     </dialog>
 
+    <dialog id="signin-dialog" class="company-dialog" aria-labelledby="signin-heading">
+      <form id="signin-form" method="dialog">
+        <h2 id="signin-heading" data-i18n="signin.heading">Sign in</h2>
+        <p id="signin-server" class="menu-note"></p>
+        <label for="signin-name" data-i18n="signin.name">Name</label>
+        <input id="signin-name" name="name" type="text" maxlength="20" autocomplete="username" />
+        <label for="signin-password" data-i18n="signin.password">Password</label>
+        <input id="signin-password" name="password" type="password" maxlength="200" autocomplete="current-password" />
+        <p id="signin-error" class="company-error" role="alert" hidden></p>
+        <div class="company-actions">
+          <button id="signin-cancel" type="button" data-i18n="signin.cancel">Cancel</button>
+          <button id="signin-create" type="button" data-i18n="signin.create">Create account</button>
+          <button id="signin-submit" type="submit" class="primary" data-i18n="signin.submit">Sign in</button>
+        </div>
+      </form>
+    </dialog>
+
     <dialog id="company-dialog" class="company-dialog" aria-labelledby="company-heading">
       <form id="company-form" method="dialog">
         <h2 id="company-heading" data-i18n="company.heading">Name your company</h2>
@@ -268,7 +285,16 @@
           <span data-i18n="menu.new_game">New game</span>
           <small data-i18n="menu.new_game_note">Start the whole campaign again.</small>
         </button>
-        <p class="menu-group" data-i18n="menu.online">Online (planned)</p>
+        <p class="menu-group" data-i18n="menu.online">Online</p>
+        <p id="menu-online-note" class="menu-note" hidden></p>
+        <button id="menu-signin" type="button" hidden>
+          <span id="menu-signin-label" data-i18n="menu.signin">Sign in</span>
+          <small id="menu-signin-note" data-i18n="menu.signin_note">An account keeps your name and scores on the server.</small>
+        </button>
+        <button id="menu-online-test" type="button" hidden>
+          <span data-i18n="menu.online_test">Play on the server</span>
+          <small data-i18n="menu.online_test_note">A test operation run by the server, to check the connection.</small>
+        </button>
         <button type="button" disabled>
           <span data-i18n="menu.coop">Co-op operations</span>
           <small data-i18n="menu.coop_note">Two to four players, one squad each.</small>
