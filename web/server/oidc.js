@@ -15,7 +15,25 @@ const KEYS_KEPT_MS = 10 * 60_000;
 const decode = (part) => Buffer.from(part, "base64url");
 const json = (part) => JSON.parse(decode(part).toString("utf8"));
 
-export function createOidc({ issuer = DEFAULT_ISSUER, client = DEFAULT_CLIENT, fetchFn = globalThis.fetch, now = () => Date.now() } = {}) {
+/**
+ * `internal` is an address the server can reach the identity service at when it cannot look up the public one (for example
+ * "http://127.0.0.1:8180" for a Keycloak on the same machine behind the web server). Requests go there, still asking for the public host
+ * name and saying they came over https, so the service answers exactly as it would to the public, and tokens carry the public issuer.
+ */
+export function createOidc({
+  issuer = DEFAULT_ISSUER,
+  client = DEFAULT_CLIENT,
+  fetchFn: publicFetch = globalThis.fetch,
+  now = () => Date.now(),
+  internal = null,
+} = {}) {
+  const fetchFn = internal
+    ? (address, options = {}) => {
+        const { host } = new URL(issuer);
+        const headers = { ...options.headers, Host: host, "X-Forwarded-Proto": "https", "X-Forwarded-Host": host };
+        return publicFetch(address.replace(issuer, `${internal.replace(/\/+$/, "")}${new URL(issuer).pathname}`), { ...options, headers });
+      }
+    : publicFetch;
   let keys = null;
   let keysAt = -Infinity;
 

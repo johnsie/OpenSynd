@@ -19,6 +19,9 @@ else
   RUNNER_USER=$OWNER sh "$HERE/deploy/setup-server.sh"
 fi
 
+# This machine cannot look up the public name of the identity service, but Keycloak is on it.
+grep -q '^OIDC_INTERNAL=' /etc/opensynd.env || echo "OIDC_INTERNAL=http://127.0.0.1:8180" >> /etc/opensynd.env
+
 sh "$HERE/deploy/deploy.sh" "$HERE/dist" "$RELEASE"
 (cd "$HERE" && sudo -u "$OWNER" sh deploy/deploy-server.sh)
 systemctl is-active opensynd-server

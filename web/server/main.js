@@ -7,6 +7,7 @@
 //   ORIGINS   sites whose pages may call the accounts API, comma separated (default: any)
 //   OPENSYND_ADMIN_TOKEN  a secret that allows /api/admin/reports and /api/admin/ban (default: moderation endpoints off)
 //   OIDC_ISSUER, OIDC_CLIENT  the Outiva sign-in (default https://accounts.outiva.com/realms/outiva, client opensynd-web); OIDC_ISSUER= turns it off
+//   OIDC_INTERNAL  where this machine reaches the identity service when it cannot look up the public name (e.g. http://127.0.0.1:8180)
 //   CONTENT   the pack folder to play (default: the site's content folder)
 import { loadContent, CONTENT_ROOT } from "./content.js";
 import { createOidc } from "./oidc.js";
@@ -23,7 +24,7 @@ const server = createGameServer({
   store,
   origins,
   adminToken: process.env.OPENSYND_ADMIN_TOKEN || null,
-  oidc: process.env.OIDC_ISSUER === "" ? null : createOidc({ issuer: process.env.OIDC_ISSUER, client: process.env.OIDC_CLIENT }),
+  oidc: process.env.OIDC_ISSUER === "" ? null : createOidc({ issuer: process.env.OIDC_ISSUER, client: process.env.OIDC_CLIENT, internal: process.env.OIDC_INTERNAL || null }),
 });
 const address = await server.listen(port, host);
 console.log(`NeuroReign server listening on ${address} (content ${server.content.hash})`);

@@ -13,4 +13,4 @@ ssh "$H" 'rm -rf ~/neuroreign-upload && mkdir -p ~/neuroreign-upload/web'
 scp -qr deploy "$H":neuroreign-upload/
 scp -qr web/dist "$H":neuroreign-upload/
 scp -qr web/server web/src web/content "$H":neuroreign-upload/web/
-ssh -t "$H" "sudo SITE=$SITE bash neuroreign-upload/deploy/remote-install.sh"
+ssh -t "$H" "sudo SITE=$SITE KEYCLOAK=${KEYCLOAK:-yes} bash neuroreign-upload/deploy/remote-install.sh"

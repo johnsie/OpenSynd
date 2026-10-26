@@ -46,6 +46,19 @@ test("an ID token is accepted only if it is signed by the issuer's key and is fo
   await assert.rejects(oidc.verifyToken(none, "n1"), /algorithm/);
 });
 
+test("an internal address is used for the identity service, still asking for the public name", async () => {
+  const seen = [];
+  const fetchFn = async (address, options = {}) => {
+    seen.push({ address, headers: options.headers });
+    return { ok: true, json: async () => ({ keys: [jwk] }) };
+  };
+  const oidc = createOidc({ issuer: ISSUER, client: CLIENT, fetchFn, internal: "http://127.0.0.1:8180/" });
+  await oidc.verifyToken(token({}), "n1");
+  assert.equal(seen[0].address, "http://127.0.0.1:8180/realms/outiva/protocol/openid-connect/certs");
+  assert.equal(seen[0].headers.Host, "id.example");
+  assert.equal(seen[0].headers["X-Forwarded-Proto"], "https");
+});
+
 test("display names are made from the username, kept allowed and unique", () => {
   const taken = new Set(["Anna"]);
   assert.equal(displayNameFor({ preferred_username: "ben@example.org" }, (n) => taken.has(n)), "ben");

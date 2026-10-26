@@ -48,7 +48,8 @@ PORT=8791 HOST=0.0.0.0 DATABASE=/var/lib/opensynd/opensynd.sqlite ORIGINS=https:
   `opensynd-web` (`OIDC_ISSUER`, `OIDC_CLIENT`; `OIDC_ISSUER=` switches it off). Register the client once with
   `sudo sh deploy/configure-outiva-client.sh` on the Keycloak machine, **before** deploying a server that offers it: the page tries a
   quiet sign-in on the first visit, and an unregistered client would send visitors to an error page. The server keeps only the
-  account's stable `sub` and a display name made from the username.
+  account's stable `sub` and a display name made from the username. If the server's machine cannot look up the identity
+  service's public name (a home network without hairpin DNS), set `OIDC_INTERNAL=http://127.0.0.1:8180` (where Keycloak listens there).
 - Players can try it at `https://example.org/?server=https://play.example.org`; the page remembers the address.
 
 ## Keeping the project's habits (optional)
