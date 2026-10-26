@@ -4413,6 +4413,8 @@ function serverSettings() {
   } catch {
     // Nothing kept, or damaged: start over.
   }
+  const built = document.querySelector('meta[name="opensynd-server"]')?.content;
+  if (built && kept.url === undefined) kept = { url: built, token: null };
   const named = new URLSearchParams(location.search).get("server");
   if (named !== null) kept = named ? { url: named.replace(/\/+$/, ""), token: kept.url === named ? kept.token : null } : {};
   return kept;

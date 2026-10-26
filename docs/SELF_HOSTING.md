@@ -41,6 +41,9 @@ PORT=8787 HOST=0.0.0.0 DATABASE=/var/lib/opensynd/opensynd.sqlite ORIGINS=https:
 - **Moderation:** set `OPENSYND_ADMIN_TOKEN` to a long random secret to turn on `GET /api/admin/reports` and
   `POST /api/admin/ban` (`{ "name": "...", "banned": true }`), both with the header `x-admin-token`. A closed account cannot sign
   in and is disconnected at once. Without the token these endpoints refuse everything.
+- On the project's own host: `sudo sh deploy/setup-server.sh` once (a service, its user, a database folder, a restart permission for the
+  runner), then the deploy job runs `deploy/deploy-server.sh` when the CI/CD variable `DEPLOY_SERVER` is set, and the site is built
+  offering that server when `OPENSYND_SERVER` is set. Apache passes `/api` and `/ws` to it (`deploy/apache/opensynd.outiva.com.conf`).
 - Players can try it at `https://example.org/?server=https://play.example.org`; the page remembers the address.
 
 ## Keeping the project's habits (optional)

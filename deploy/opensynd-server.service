@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: GPL-2.0-or-later
+[Unit]
+Description=OpenSynd game server
+After=network.target
+
+[Service]
+User=opensynd
+WorkingDirectory=/opt/opensynd/app/web
+EnvironmentFile=/etc/opensynd.env
+ExecStart=/usr/bin/env node server/main.js
+Restart=on-failure
+NoNewPrivileges=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/opensynd
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

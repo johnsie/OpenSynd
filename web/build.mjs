@@ -26,7 +26,9 @@ if (process.env.OPENSYND_SERVER) {
   const sockets = origins.map((origin) => origin.replace(/^http/, "ws"));
   const page = resolve(output, "index.html");
   const html = await readFile(page, "utf8");
-  await writeFile(page, html.replace("connect-src 'self'", `connect-src 'self' ${[...origins, ...sockets].join(" ")}`));
+  const named = `<meta name="opensynd-server" content="${origins[0]}" />`; // the server the page offers without ?server=
+  const allowed = `connect-src 'self' ${[...origins, ...sockets].join(" ")}`;
+  await writeFile(page, html.replace("connect-src 'self'", allowed).replace("</head>", `${named}</head>`));
 }
 await cp(
   resolve(projectRoot, "public/assets"),

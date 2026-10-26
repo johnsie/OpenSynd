@@ -45,7 +45,7 @@ build:
       PIN="${HOT_UPDATES:-}"
       if [ -z "$PIN" ] && grep -rqs "Alias /r/" /etc/apache2 2>/dev/null; then PIN=1; fi
       echo "pinning releases: ${PIN:-no}"
-      cd web && SOURCE_REVISION="$CI_COMMIT_SHORT_SHA" PIN_RELEASES="$PIN" node build.mjs
+      cd web && OPENSYND_SERVER="${OPENSYND_SERVER:-}" SOURCE_REVISION="$CI_COMMIT_SHORT_SHA" PIN_RELEASES="$PIN" node build.mjs
   artifacts:
     paths:
       - web/dist
@@ -56,6 +56,8 @@ deploy:
   needs: [check, build]
   script:
     - sh deploy/deploy.sh web/dist "$CI_COMMIT_SHORT_SHA"
+    # The game server (once deploy/setup-server.sh has been run): set the CI/CD variable DEPLOY_SERVER to 1 to turn this on.
+    - if [ -n "${DEPLOY_SERVER:-}" ]; then sh deploy/deploy-server.sh; fi
   environment:
     name: production
     url: https://opensynd.outiva.com
