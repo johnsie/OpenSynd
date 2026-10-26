@@ -70,7 +70,10 @@ test("a raid costs funds, and winning it makes the territory yours, shielded, lo
     assert.equal(end.outcome, "success");
     assert.deepEqual([end.raid.captured, end.raid.cost, end.raid.funds], [true, RAID_COST, SIGNUP_FUNDS - RAID_COST]);
     const page = await world(call, anna);
-    assert.deepEqual([row(page).holder, row(page).player, row(page).mine, row(page).defence], ["Anna", true, true, 1]);
+    assert.deepEqual(
+      [row(page).holder, row(page).player, row(page).mine, row(page).defence, row(page).defenceUpgradeCost],
+      ["Anna", true, true, 1, upgradeCost(2)],
+    );
     assert.ok(row(page).shieldedFor > 11 * 3600 && row(page).shieldedFor <= 12 * 3600);
     assert.equal(page.you.owned, 1);
     assert.equal(page.you.incomePerHour, incomePerHour(TARGET));

@@ -4867,7 +4867,11 @@ async function renderWorld() {
       item.append(words);
       if (territory.mine) {
         const next = territory.defence + 1;
-        const upgrade = Object.assign(document.createElement("button"), { type: "button", textContent: `Defence ${next}` });
+        const price = territory.defenceUpgradeCost;
+        const label = territory.defence >= page.maxDefence
+          ? "Defence at maximum"
+          : `Strengthen defence to level ${next} · ${price.toLocaleString()} funds`;
+        const upgrade = Object.assign(document.createElement("button"), { type: "button", textContent: label });
         upgrade.disabled = territory.defence >= page.maxDefence;
         upgrade.addEventListener("click", async () => {
           const result = await onlinePlay.upgradeDefence(territory.id, next);

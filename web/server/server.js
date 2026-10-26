@@ -383,6 +383,7 @@ export function createGameServer({
       territories: content.territories.map((entry) => {
         const held = holdings.get(entry.id);
         const holderId = held?.owner ?? null;
+        const defence = held?.defence ?? rivalDefence(entry);
         const allowed = account
           ? canRaid({
               raiderId: account.id,
@@ -401,7 +402,8 @@ export function createGameServer({
           holder: held?.name ?? entry.owner,
           player: Boolean(held?.name),
           mine: Boolean(account && holderId === account.id),
-          defence: held?.defence ?? rivalDefence(entry),
+          defence,
+          defenceUpgradeCost: defence < MAX_DEFENCE ? upgradeCost(defence + 1) : null,
           shieldedFor: Math.max(0, Math.round(((held?.shield ?? 0) - time) / 1000)),
           income: incomePerHour(entry),
           canRaid: allowed.ok,

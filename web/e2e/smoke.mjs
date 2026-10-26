@@ -1843,6 +1843,7 @@ for (const [name, type, executablePath] of targets) {
       assert.equal(await mine.count(), 1);
       assert.match(await mine.innerText(), /yours · defence 1/);
       assert.match(await page.locator("#world-log").innerText(), /Raidingrita took/);
+      assert.equal(await mine.locator("button").innerText(), "Strengthen defence to level 2 · 1,000 funds");
       await mine.locator("button").click(); // defence 2 costs 1000: the account has 1200 left
       await page.waitForFunction(() => document.querySelector("#world-message").textContent.includes("now has defence 2"));
       assert.match(await page.locator("#world-list li.mine").innerText(), /defence 2/);
