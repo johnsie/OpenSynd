@@ -2,7 +2,7 @@
 
 # Security policy
 
-OpenSynd is a hobby project. Today it is a static website that runs in your browser, with no accounts, no server code and no
+NeuroReign is a hobby project. Today it is a static website that runs in your browser, with no accounts, no server code and no
 database, so there is little to attack. A game server with accounts is planned ([the multiplayer design](docs/design/MULTIPLAYER.md));
 when it exists it is in scope here too, and this policy will be extended to cover it. Reports are welcome.
 

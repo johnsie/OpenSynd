@@ -21,7 +21,7 @@ import { MAX_DRUG_RECHARGE, sanitizeDrugs } from "./drugs.js";
 const MAX_ITEMS = 8;
 
 function fail(message) {
-  throw new Error(`Invalid OpenSynd save: ${message}`);
+  throw new Error(`Invalid NeuroReign save: ${message}`);
 }
 
 function isObject(value) {

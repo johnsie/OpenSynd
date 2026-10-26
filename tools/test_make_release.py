@@ -21,7 +21,7 @@ class ReleaseTests(unittest.TestCase):
         (self.dist / "assets" / "sprites").mkdir(parents=True)
         (self.dist / "content").mkdir()
         (self.dist / "licenses").mkdir()
-        (self.dist / "index.html").write_text("<!doctype html>OpenSynd", encoding="utf-8")
+        (self.dist / "index.html").write_text("<!doctype html>NeuroReign", encoding="utf-8")
         (self.dist / "app.js").write_text("// SPDX-License-Identifier: GPL-2.0-or-later\n", encoding="utf-8")
         (self.dist / "content" / "pack.json").write_text("{}", encoding="utf-8")
         (self.dist / "licenses" / "CC0-1.0.txt").write_text("text", encoding="utf-8")

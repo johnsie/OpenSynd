@@ -26,7 +26,7 @@ const server = createGameServer({
   oidc: process.env.OIDC_ISSUER === "" ? null : createOidc({ issuer: process.env.OIDC_ISSUER, client: process.env.OIDC_CLIENT }),
 });
 const address = await server.listen(port, host);
-console.log(`OpenSynd server listening on ${address} (content ${server.content.hash})`);
+console.log(`NeuroReign server listening on ${address} (content ${server.content.hash})`);
 
 for (const signal of ["SIGINT", "SIGTERM"]) {
   process.on(signal, async () => {

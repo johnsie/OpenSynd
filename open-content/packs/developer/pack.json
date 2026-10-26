@@ -1,17 +1,17 @@
 {
   "formatVersion": 1,
   "id": "opensynd.developer",
-  "name": "OpenSynd Geometric Developer Pack",
+  "name": "NeuroReign Geometric Developer Pack",
   "description": "Original procedural content for tests and the first playable prototype.",
   "status": "development",
   "license": "CC0-1.0",
   "authors": [
-    "OpenSynd contributors"
+    "NeuroReign contributors"
   ],
   "provenance": {
     "source": "created-for-opensynd",
     "createdDate": "2026-10-22",
-    "notes": "Created from the original OpenSynd design brief without imported media; pending maintainer provenance and similarity review."
+    "notes": "Created from the original NeuroReign design brief without imported media; pending maintainer provenance and similarity review."
   },
   "maps": [
     "maps/signal-yard.map.json",

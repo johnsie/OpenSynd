@@ -69,14 +69,14 @@ def classify(relative: str, registry: dict[str, dict]) -> dict:
             "status": entry["status"],
         }
     if relative.startswith("content/"):
-        return {"kind": "content", "license": "CC0-1.0", "creator": "OpenSynd contributors",
+        return {"kind": "content", "license": "CC0-1.0", "creator": "NeuroReign contributors",
                 "source": "open-content/packs/developer", "status": "open"}
     if relative.startswith("licenses/"):
         return {"kind": "licence-text", "license": "see the text itself", "creator": "licence author", "status": "open"}
     if relative == "build-meta.json":
         return {"kind": "generated", "license": "CC0-1.0", "creator": "the build", "status": "open"}
     if relative.endswith((".js", ".css", ".html")):
-        return {"kind": "code", "license": "GPL-2.0-or-later", "creator": "OpenSynd contributors", "status": "open"}
+        return {"kind": "code", "license": "GPL-2.0-or-later", "creator": "NeuroReign contributors", "status": "open"}
     raise ReleaseError(f"{relative} is a kind of file the release does not know how to account for")
 
 
@@ -132,7 +132,7 @@ def software_bom(revision: str, bom: list[dict], root: Path) -> dict:
             "component": {
                 "type": "application",
                 "bom-ref": "opensynd-web",
-                "name": "OpenSynd browser game",
+                "name": "NeuroReign browser game",
                 "version": revision,
                 "licenses": [{"license": {"id": "GPL-2.0-or-later"}}, {"license": {"id": "CC0-1.0"}}],
                 "description": "A static website: no server code, no runtime dependencies, no third-party requests.",

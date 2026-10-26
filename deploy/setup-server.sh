@@ -17,7 +17,7 @@ if [ ! -f /etc/opensynd.env ]; then
     echo "PORT=8791"
     echo "HOST=127.0.0.1"
     echo "DATABASE=/var/lib/opensynd/opensynd.sqlite"
-    echo "ORIGINS=https://opensynd.outiva.com"
+    echo "ORIGINS=https://neuroreign.outiva.com"
     echo "OPENSYND_ADMIN_TOKEN=$(head -c 24 /dev/urandom | od -An -tx1 | tr -d ' \n')"
   } > /etc/opensynd.env
   chmod 600 /etc/opensynd.env

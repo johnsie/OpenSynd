@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://opensynd.example/schema/mission-v1.json",
   "$comment": "SPDX-License-Identifier: GPL-2.0-or-later",
-  "title": "OpenSynd mission",
+  "title": "NeuroReign mission",
   "type": "object",
   "additionalProperties": false,
   "required": ["formatVersion", "id", "name", "license", "briefing", "map", "team", "opponents", "objectives"],

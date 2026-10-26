@@ -1,14 +1,14 @@
-# OpenSynd Roadmap
+# NeuroReign Roadmap
 
 ## Purpose
 
-Create **OpenSynd**, a browser-native, community-maintainable game derived from
+Create **NeuroReign**, a browser-native, community-maintainable game derived from
 the FreeSynd codebase while removing every runtime dependency on proprietary
 data from other games and avoiding use of protected branding or creative expression.
 
-OpenSynd is the project's final name, decided by the project owner. An initial exact-name web
-search found no obvious collision, but no formal trademark search or legal review has been done, and the
-project does not claim the name is registered or cleared.
+NeuroReign is the project's final name, decided by the project owner (it replaced an earlier working name). No
+trademark or web search and no legal review has been done for it yet, and the project does not claim the name is
+registered or cleared.
 
 This roadmap treats legal provenance, reproducible builds, and user freedom as
 release requirements. It is a project plan, not legal advice; an IP lawyer
@@ -24,8 +24,8 @@ registry; automated CI checks for unregistered assets and unknown source
 licenses; and regression coverage for the independently replaced CRC-32 code.
 
 All 13 current files under `data/` and `icon/` are conservatively classified:
-seven are excluded from OpenSynd and six are quarantined pending evidence or
-replacement. No legacy asset is currently approved for an OpenSynd release.
+seven are excluded from NeuroReign and six are quarantined pending evidence or
+replacement. No legacy asset is currently approved for a NeuroReign release.
 
 The remaining Phase 0 gates are the complete file-by-file source audit,
 resolution or replacement of third-party components with unclear notices,
@@ -300,19 +300,19 @@ provenance record, so it remains an open decision.
 ## What FreeSynd's source teaches us
 
 A detailed read of the FreeSynd source (`src/`, `data/ref/`, `TODO.txt`) for gameplay ideas. For every feature
-below the entry says (a) **how FreeSynd does it**, as exactly as the code shows, (b) **where OpenSynd stands**, and
-(c) **the OpenSynd design**: the rules, the data (content schema) changes, the interface, sound and art needs,
+below the entry says (a) **how FreeSynd does it**, as exactly as the code shows, (b) **where NeuroReign stands**, and
+(c) **the NeuroReign design**: the rules, the data (content schema) changes, the interface, sound and art needs,
 tests, and how to know it is done. Entries are numbered so work can be planned and referred to (F1, F2, ...).
 
 **Legal and design rules for all of it.** The code is GPL, so reading it to learn how a rule works is fine and we
 reimplement in our own structure with our own tests. FreeSynd's data tables (`data/ref/weapons.dat`, `research.dat`),
 sprites, sounds, text and mission files are legacy data and stay quarantined: we describe their numbers by ratio and
-role, and every value in an OpenSynd design below is a starting value to be balanced with the bot
+role, and every value in a NeuroReign design below is a starting value to be balanced with the bot
 (`npm run balance`), not a copy. Names are original (Machine Pistol, not Uzi). Content goes in the CC0 pack as JSON
 with schemas, validators and sync checks, exactly like today's content.
 
-**Legend.** *have* = in OpenSynd; *partly* = a version exists; *new* = not yet. **Units.** FreeSynd measures space
-in 256ths of a tile and time in milliseconds; OpenSynd uses tiles and seconds.
+**Legend.** *have* = in NeuroReign; *partly* = a version exists; *new* = not yet. **Units.** FreeSynd measures space
+in 256ths of a tile and time in milliseconds; NeuroReign uses tiles and seconds.
 
 **Contents.** A Weapons and items (F1-F16). B Upgrades and drugs (F17-F19). C Research (F20). D Missions and
 objectives (F21-F25). E Agents and the campaign (F26-F32). F Controls and interface (F33-F39). G The world (F40-F47).
@@ -383,7 +383,7 @@ targets only the owner, can only target people): the pistol and long range are p
 shotgun and minigun are point to many points; the gauss gun needs flight time and damages an area on arrival; the
 laser is instant with area damage; the flamer is a flying stream; the time bomb needs no target and self-destructs;
 the scanner, medikit, access card and shield target only their owner. This split is a good design: weapons are
-combinations of a few orthogonal properties, so OpenSynd's equipment schema should say the same things as data
+combinations of a few orthogonal properties, so NeuroReign's equipment schema should say the same things as data
 (`fire` mode, `spread`, `area`, `projectile`, `automatic`, `selfOnly`) instead of one-off code per weapon.
 
 #### F1. Spread weapon ("Scatter Emitter", FreeSynd's shotgun)
@@ -394,7 +394,7 @@ of fire is traced from the shooter to it, stopping at the first tile or object i
 Impacts are counted per target and damage is the number of impacts times the damage per pellet, so a target at point
 blank takes most of the pellets and a distant one takes few. Short range (about four fifths of the pistol's), cheap
 rounds, one of the first weapons available, weight 7 against the pistol's 1.
-*OpenSynd.* *New.* **Design:** equipment field `spread: { pellets: 6, cone: 40 }` (degrees). A shot traces `pellets`
+*NeuroReign.* *New.* **Design:** equipment field `spread: { pellets: 6, cone: 40 }` (degrees). A shot traces `pellets`
 rays inside the cone around the aim line (reuse `castShot`), each stopped by solid tiles, vehicles and the first
 person in its way within range; damage is `pellets hit x attack`, reported as one damage event with a `hits`
 count so the sound, spark and knockback fire once per target. Values to start from: range 6, attack 4 per pellet,
@@ -415,7 +415,7 @@ burn damage take a "burning walk" hit reaction (they stagger about alight for a 
 death unless they have a good Chest upgrade, which makes them die normally and drop their gear); trees are
 destroyed by burn, laser or explosion damage and burn for ten seconds; the stream also lights up whatever stands in
 its path. Burning is its own damage type, so resistance and death animations differ.
-*OpenSynd.* *New.* **Design:** `damageType: "burn"`, `automatic: true`, a stream of short projectiles that sweep
+*NeuroReign.* *New.* **Design:** `damageType: "burn"`, `automatic: true`, a stream of short projectiles that sweep
 a small circle around the aim point. A burning unit takes damage over time for 4 seconds (stacking refreshes, does
 not multiply), runs without orders in a random direction (civilians scatter, enemies keep their aim but at a wide
 spread), spreads fire to units within half a tile and to flammable props (F42), and dies "burning" (a distinct
@@ -432,7 +432,7 @@ penalties (F8, F27).
 a pistol round) with a small **area damage at the end of the beam** (a radius of about two tiles), very few and very
 expensive charges (5, each costing 2000 to refill), weight 10. Laser damage is its own type: a person killed by it
 leaves nothing (our own agents leave a special dead-agent graphic), and laser destroys trees and street lights.
-*OpenSynd.* *New.* **Design:** `fire: "beam"`, `damageType: "beam"`, instant ray with `area: { radius: 1.2 }` at
+*NeuroReign.* *New.* **Design:** `fire: "beam"`, `damageType: "beam"`, instant ray with `area: { radius: 1.2 }` at
 the end point, attack 30, range 12, 5 charges, refill cost per charge high (F11). Beam kills do not drop gear (F8).
 **Sound:** a rising whine then a sharp tearing crack. **Art:** a bright line drawn for 0.15 s from the muzzle to the
 end point (the one place a shot line is shown, as an effect, since the user asked for no aim lines; the beam is the
@@ -445,7 +445,7 @@ target and its price makes the refill a decision.
 *FreeSynd.* No shot; held by any agent of the squad it changes the **minimap zoom**: without a scanner the minimap
 shows a small area (zoom x3) centred on the selected agent; with one it shows a wide area (zoom x1). The minimap also
 blinks a signal at the current objective's target or the evacuation zone.
-*OpenSynd.* *New.* **Design:** the minimap normally shows only terrain, the squad, and enemies currently in line of
+*NeuroReign.* *New.* **Design:** the minimap normally shows only terrain, the squad, and enemies currently in line of
 sight (today it shows everyone, which gives away every patrol). An operator carrying the **Area Scanner** widens
 the radius and also reveals people and vehicles through walls within that radius, drawn as faint dots coloured by
 type. Starting values: normal radius 18 tiles, scanner radius 45; drains nothing. **Interface:** minimap draws a
@@ -458,7 +458,7 @@ is meaningfully blind and the scanner is worth a slot.
 *FreeSynd.* A self-targeted item: it does nothing by itself, but a door or gate that requires a card opens for an
 agent holding one, and the code only counts it when the holder has the top Brain upgrade (`hasAccessCard`). Doors
 otherwise open automatically for any living person standing next to them (F40).
-*OpenSynd.* *New.* **Design:** content marks a gate or door `lock: "clearance"`; it opens for any operator who has
+*NeuroReign.* *New.* **Design:** content marks a gate or door `lock: "clearance"`; it opens for any operator who has
 the Clearance Key in a slot and the Brain upgrade tier the key needs; otherwise it stays closed (and shows a red
 lock). Replaces some "interact with a panel" gates with a key hunt (take the key from a guard, F23). **Tests:** a
 keyholder walks through; a non-holder is blocked; the key does nothing in the hands of someone without the upgrade.
@@ -472,7 +472,7 @@ code actually implements is a flag (`pd_smShieldProtected`): while it is set, **
 wearer** (their fire action fails against a shielded target), so they stop and look for another target or wait.
 It does *not* absorb damage in the source (the damage function is a stub), so a squad-mate's stray shot or a blast
 still hurts. The pool is refilled between missions at a small price per unit.
-*OpenSynd.* *partly* (Deflector Shield: two timed uses of 8 s, blocks bullets). **Design:** change it to an energy
+*NeuroReign.* *partly* (Deflector Shield: two timed uses of 8 s, blocks bullets). **Design:** change it to an energy
 pool (`energy: 100`) drained at 6 per second while raised, switched on and off freely, with the wearer unable to fire
 while it is up. It keeps today's absorption of bullets and adds FreeSynd's rule: enemies refuse to fire at a shielded
 target and look for another (so a shield buys time, not safety). Blasts still hurt. **Tests:** energy drains only while on; switching off keeps the remainder; enemies
@@ -487,7 +487,7 @@ can take) and a ring of flames drawn in waves. The blast reaches every living pe
 **other bomb** within range **only if there is clear line from the centre** (walls and buildings shield), and
 people inside vehicles are safe. A bomb on the ground explodes if it is hit by a bullet, a laser or another blast, so
 shooting a bomb detonates it and blasts chain. Enemy agents are given a bomb too.
-*OpenSynd.* *have* the Delay Charge (6 s fuse, falloff damage). **New:** blast needs a clear line from the centre
+*NeuroReign.* *have* the Delay Charge (6 s fuse, falloff damage). **New:** blast needs a clear line from the centre
 (use `hasLineOfSight`), occupants of vehicles are shielded until the vehicle goes, a bomb or a charge on the ground
 explodes when hit by a shot or another blast, enemy agents sometimes carry and plant one, and a bomb can be thrown
 or dropped at a point (not only where the operator stands). **Tests:** a wall protects someone behind it; two bombs
@@ -502,7 +502,7 @@ has the second Chest upgrade and someone else did it, in which case they die nor
 persuasion "hit" is a reaction, not damage (they stop and are converted). Statics react to specific types only:
 trees to laser, burn and explosion; windows to bullets and explosions; street lights to laser and explosion
 (F42-F44). `getRealDamage` is a stub, so armour and resistance are an unfinished idea in the source.
-*OpenSynd.* *partly* (events carry weapon names, no damage types). **Design:** add `damageType` to every weapon
+*NeuroReign.* *partly* (events carry weapon names, no damage types). **Design:** add `damageType` to every weapon
 event; death style and loot rules follow it; resistances become data per unit (`resist: { burn: 0.5 }`) fed by
 Chest tiers (F17); statics declare which types affect them. **Tests:** loot drops only on bullet or burn kills in
 the chosen rules; a resistant unit takes less burn damage; a window breaks to a bullet but not to a flame.
@@ -518,7 +518,7 @@ maxed-out drug lowers accuracy through adrenaline but raises it through percepti
 limits how far a shot may miss, and one part of the miss is random and independent of everything. A shot waits a
 **reaction time** of 200 ms plus the weapon's reload before the next is allowed, and automatic weapons fire
 continuously at their fire rate until the button is released or the ammunition runs out.
-*OpenSynd.* *partly* (cooldown scaled by Brain; every shot hits exactly where aimed). **Design:** add a small
+*NeuroReign.* *partly* (cooldown scaled by Brain; every shot hits exactly where aimed). **Design:** add a small
 random miss: `miss = cone x (1 - accuracy)`, accuracy from weapon, unit type and upgrade tiers (F17) and the three
 drug levels (F18); a shot that misses a person lands nearby on the ground (existing `puff` effect). Fixed seeds keep
 tests deterministic (the simulation already has a clock; give it a seeded random generator in its state, as
@@ -533,7 +533,7 @@ upgrade; each upgrade tier doubles that part: `5 << (version + 1)`), so a fully 
 as much. Carrying more than capacity **halves walking speed**; more than twice capacity leaves them at a crawl
 (a fixed very low speed). The minigun weighs 25, the flamer 15, the shotgun 7, a pistol 1. Persuaded followers walk
 at a speed that follows their owner (F19).
-*OpenSynd.* *new.* **Design:** `weight` on each equipment item (pistol 1, machine pistol 4, scatter 7, flamer 15,
+*NeuroReign.* *new.* **Design:** `weight` on each equipment item (pistol 1, machine pistol 4, scatter 7, flamer 15,
 rotary 25, rifle 5, bomb 5, shield 8); capacity = 6 + 6 per Legs tier + 6 per Arms tier; over capacity -35 percent
 speed, over twice -65 percent. **Interface:** the inventory shows total/capacity and turns amber/red; the armoury
 warns before purchase. **Tests:** speed multiplier by weight; capacity by tier; dropping an item restores speed.
@@ -545,7 +545,7 @@ warns before purchase. **Tests:** speed multiplier by weight; capacity by tier; 
 has a Reload button whose price is `(capacity - rounds left) x price per round`, and a weapon that is not yet
 researched cannot be reloaded. Weapons carried home are kept for the next mission (the agent keeps their gear) and
 the **pistol is refilled for free** after each mission.
-*OpenSynd.* *partly* (rounds exist; refills are free at mission start). **Design:** a per-round price in content,
+*NeuroReign.* *partly* (rounds exist; refills are free at mission start). **Design:** a per-round price in content,
 a Reload button in the armoury charging the difference, free pistol refills, and inventories that persist across
 missions (F26). **Tests:** cost arithmetic; reloading is refused when funds are short; pistol refills free.
 
@@ -554,7 +554,7 @@ missions (F26). **Tests:** cost arithmetic; reloading is refused when funds are 
 *FreeSynd.* After a mission each weapon the squad carried that is **not yet available** is "submitted to research"
 exactly once: if a research for it is currently open it gets a **25 percent bonus** (finishing at once if that
 brings it to 100), and a message tells the player. A weapon can only boost its own research once.
-*OpenSynd.* *partly* (looting a weapon makes it usable at once, which bypasses research). **Design:** replace the
+*NeuroReign.* *partly* (looting a weapon makes it usable at once, which bypasses research). **Design:** replace the
 instant unlock with the boost: looted gear can be used in the mission (as today) but only becomes purchasable after
 research, and bringing it home gives `+25 percent` to its open research, once per item. **Tests:** boost applies
 once; completing by boost unlocks and opens the next in the chain (F20); use in the mission still works.
@@ -564,7 +564,7 @@ once; completing by boost unlocks and opens the next in the chain (F20); use in 
 *FreeSynd.* At mission start every enemy agent without a weapon gets one of **the two best weapons the player has
 researched** (the best with about 78 percent probability, the second otherwise, ranked by the `rank` value in the
 data) and a time bomb if the player has researched one.
-*OpenSynd.* *new.* **Design:** an option "enemies match your arsenal" (default on for the campaign, off for fixed
+*NeuroReign.* *new.* **Design:** an option "enemies match your arsenal" (default on for the campaign, off for fixed
 missions): enemy agents and guards draw their weapons from the player's available set by rank, so the arms race
 tracks progress and old missions stay hard for a well-armed squad. Rank is a number in content. **Tests:** with
 only the pistol researched, nobody carries more than a pistol; with the rifle researched some do; seeded.
@@ -574,20 +574,20 @@ only the pistol researched, nobody carries more than a pistol; with the rifle re
 *FreeSynd.* A hit makes the target flinch (a recoil animation that also turns them toward the shooter); a
 person being hit **cannot be persuaded** until it ends; killed people play a death by damage type; a burning person
 walks about alight; a car hit by an agent ejects its driver.
-*OpenSynd.* *partly* (knockback, ejection). **New:** recoil turns the target to face the shooter; persuasion
+*NeuroReign.* *partly* (knockback, ejection). **New:** recoil turns the target to face the shooter; persuasion
 fails during a hit reaction; burning walk (F2).
 
 #### F15. Everything is lethal
 
 Health is deliberately low relative to damage: an agent has 16 health, a pistol round does 2, so eight hits kill; a
-laser round does 32 and a gauss round or bomb 64, so one is enough. OpenSynd's ratios (vitality 100, pistol 12) are
+laser round does 32 and a gauss round or bomb 64, so one is enough. NeuroReign's ratios (vitality 100, pistol 12) are
 already in this spirit; new weapons should keep it (a beam or bomb kills an unarmoured person at once, a pistol takes
 about eight rounds).
 
 #### F16. Medikit
 
 *FreeSynd.* One-use, self only: restores the user to full health and takes as long as a shot to apply.
-*OpenSynd.* *done:* the Field Repair Kit restores the user to full integrity, one use, only when hurt (an equipment item may still
+*NeuroReign.* *done:* the Field Repair Kit restores the user to full integrity, one use, only when hurt (an equipment item may still
 restore a fixed amount with `restoreVitality`).
 
 ---
@@ -615,7 +615,7 @@ brain) must be **researched** (version 3 only after version 2). Purchase prices 
   and when killed by fire or a blast they die normally and **keep their weapons** (they drop them) rather than
   burning. This is the survivability part.
 - **Heart.** Only the same small accuracy bonus is coded. A stamina or recovery role is not implemented in the
-  source. (OpenSynd now follows this: Heart is a small aim bonus.)
+  source. (NeuroReign now follows this: Heart is a small aim bonus.)
 - **Eyes.** The same small accuracy bonus. Sight range is a fixed seven tiles for everyone; Eyes do not extend it
   in the source (the TODO suggests they might).
 - **Brain.** The accuracy bonus, a **big cut in the persuasion points needed** (F29: with no brain upgrade a guard
@@ -625,7 +625,7 @@ brain) must be **researched** (version 3 only after version 2). Purchase prices 
   so they scale with the player's research as their weapons do (F13).
 - The squad's accuracy bonus is capped (the comments say 0.59 from upgrades alone and 0.99 with drugs).
 
-*OpenSynd.* *partly*: we have **Heart** (stamina) and **Brain** (focus and pulse speed) as research, and Legs and
+*NeuroReign.* *partly*: we have **Heart** (stamina) and **Brain** (focus and pulse speed) as research, and Legs and
 Brain as training bars with a points budget. **Design:** make the six parts first-class, per operator, with three
 tiers each, researched (tier 2 and 3) and bought and fitted per operator in the Armoury, with effects scaled to our
 game: Legs +20 percent speed per tier and capacity; Arms +capacity, +accuracy, and a faster weapon cooldown (-6
@@ -653,7 +653,7 @@ neutral when they come down. The multiplier the rest of the game reads is `1 + m
 multiplies walking speed (so up to double speed) and *lowers* accuracy as it rises; **Perception** raises
 accuracy; **Intelligence** is stored and drawn but nothing reads it yet (the TODO says it should affect reaction,
 sight and health recovery). Persuaded followers move at a speed set by the owner's adrenaline (F19).
-*OpenSynd.* *partly*: Legs (speed) and Brain (pulse speed) bars with stamina and focus meters that drain and
+*NeuroReign.* *partly*: Legs (speed) and Brain (pulse speed) bars with stamina and focus meters that drain and
 recover. **Design:** model the three drugs exactly as above with our time scale (effect step every 1 s, dependency
 every 4.5 s) and bind them to: Adrenaline -> speed and reaction (and a worse aim), Perception -> accuracy and sight
 range, Intelligence -> weapon cooldown and persuasion success speed. The existing Legs and Brain bars become the
@@ -669,7 +669,7 @@ of power that costs you afterward.
 
 *FreeSynd.* A persuaded person's speed is `their own speed x ownerBoost / 2`, where the owner's boost is 4
 when the owner's adrenaline multiplier is above 1, 1 when below, and 2 otherwise. A hyped-up owner drags a faster
-flock; a sluggish one a slower. *OpenSynd.* *partly* (followers run at 1.5x their own pace). **New:** tie follower
+flock; a sluggish one a slower. *NeuroReign.* *partly* (followers run at 1.5x their own pace). **New:** tie follower
 speed to the owner's current speed multiplier.
 
 ---
@@ -690,7 +690,7 @@ Energy Shield). At the start only the first item of each chain is open (plus ver
 one **opens the next** in its chain and removes the finished item. Body-part research is version 2, then version 3,
 cost doubling. The weapon-discovery bonus (F12) adds 25 percent. Costs are in money, so research and tax revenue
 (F28) trade off against buying gear.
-*OpenSynd.* *partly* (instant, fixed price per item; a Research and Armoury screen with tracks for Heart and Brain and
+*NeuroReign.* *partly* (instant, fixed price per item; a Research and Armoury screen with tracks for Heart and Brain and
 items). **Design:** replace instant research with a **research queue on the campaign clock** (F30): each research
 has `minFunding`, `chain` (category and next), `tier`; one active at a time, others suspended with progress kept; a
 funding dial of ten steps; a progress bar with percent, projected finish and the money spent per day; funds are
@@ -730,7 +730,7 @@ The types in the code (`objectivedesc.*`, with the data codes from `leveldata.h`
   completes when every one of them that is still alive is in it.
 - **Action** (0): listed for non-agent scripted triggers; its purpose is unclear in the source.
 
-*OpenSynd.* *partly*: **interact, disable (named targets), hold, reach-zone, extract**, all required in any order
+*NeuroReign.* *partly*: **interact, disable (named targets), hold, reach-zone, extract**, all required in any order
 except extraction last. **Design:** add a `sequence` mode to missions (default stays "any order"): objectives
 listed in order, only the current one active and shown first, the rest dimmed; and `failOn` rules per objective.
 New objective types in content (extend `objective.type` and the validator and the schema):
@@ -755,7 +755,7 @@ within range (a trigger, 6 tiles by default)`; `repeat from the start` (a patrol
 assassination target has escaped` (a run for the exit, F21); `the protected target reached its destination`; `a
 train stops and waits`. Triggers make enemies stand still until the squad approaches, then run to a position
 (ambushes and reinforcements). Each person also has a default action when nothing is happening.
-*OpenSynd.* *partly*: placements have `patrol` (waypoints and loop). **Design:** add a general `script` list to any
+*NeuroReign.* *partly*: placements have `patrol` (waypoints and loop). **Design:** add a general `script` list to any
 placement: steps `walk {to}`, `wait {seconds}`, `drive {vehicle, to}`, `enter {vehicle}`, `exit`, `trigger {within,
 of: "squad"}` (the script blocks until an operator is within the distance, then continues), `escape {zone}` (run to the
 edge and leave the map: used by the assassination rule), `say {text}` (a caption and voice line) and `loop`. `patrol` stays as
@@ -767,7 +767,7 @@ load (store the step index). **Done when** an ambush mission can be written with
 #### F23. Mission-critical items carried by enemies
 
 *FreeSynd.* Weapons are map objects with owners; an enemy who dies drops what they hold (bullet kills), and a
-"take weapon" objective can point at one such item. Persuaded followers will go and fetch dropped weapons (done, see H). *OpenSynd.* *partly* (loot from disabled enemies). **New:** content can say an enemy carries a named
+"take weapon" objective can point at one such item. Persuaded followers will go and fetch dropped weapons (done, see H). *NeuroReign.* *partly* (loot from disabled enemies). **New:** content can say an enemy carries a named
 key item (`carries: ["item.briefcase"]`); killing them drops it as a pickup with a glow; `take-item` completes on
 pickup. This is how the Clearance Key (F5) and the objective items travel.
 
@@ -776,7 +776,7 @@ pickup. This is how the Clearance Key (F5) and the objective items travel.
 *FreeSynd.* When an objective starts, the minimap draws a blinking **signal** at its target's position (a person,
 vehicle or weapon) or at the evacuation zone, and clears it when the objective ends. Without a scanner the minimap is
 a tight zoom around the selected agent, so the signal is the guide to the target.
-*OpenSynd.* *new* (zones are drawn on the minimap permanently; nothing points at the current one). **Design:**
+*NeuroReign.* *new* (zones are drawn on the minimap permanently; nothing points at the current one). **Design:**
 mark the current objective's zone or target with a pulsing ring and an arrow at the minimap edge when it is off the
 visible part (F4), and a short "objective updated" line in the status bar and a sound when the next one starts (F21).
 **Tests:** the signal follows the current objective and clears on completion; moving targets update it.
@@ -790,7 +790,7 @@ and brought out; they become recruits, F27), and **shooting accuracy** as hits o
 squad member counts as a shot; a hit counts when a shot lands on a person, and persuadotron uses count as shots).
 It also announces **new weapons found** (F12). A comment in the code notes civilian and police deaths were meant to
 reduce a country's happiness (F31) and persuaded civilians were meant to earn money.
-*OpenSynd.* *partly*: the debrief shows time, operators and enemies disabled, bystanders killed, achievements.
+*NeuroReign.* *partly*: the debrief shows time, operators and enemies disabled, bystanders killed, achievements.
 **New:** count shots and hits per operator, kills by type (enemy agents, guards, criminals, civilians, police),
 persuaded and brought out, captured enemy agents, weapons found (and research boosted), money earned and lost this
 mission (research and funds spent, bystander penalties), and a per-operator line (shots, accuracy, kills,
@@ -809,7 +809,7 @@ pistol. **Four** go on each mission (the squad slots). Agents **keep their weapo
 (whatever they carried out is transferred back to them, and the pistol is topped up), and **an agent who dies is
 deleted for good**: their slot empties, and the only source of new agents is capture (F27). A squad can therefore
 run out, and every death costs the player what they had invested in that person.
-*OpenSynd.* *new* (a fixed squad of four operators who are restored every mission). **Design:** a persistent
+*NeuroReign.* *new* (a fixed squad of four operators who are restored every mission). **Design:** a persistent
 `roster` in the campaign record: id, surname, portrait, upgrades (F17), inventory (F11), kill count, missions flown,
 status (alive, dead, in reserve). A pre-mission "Squad" step picks four from the roster. Death is permanent by
 default with an optional **"insurance"** difficulty setting (a fallen operator is revived for a price) for players who
@@ -825,7 +825,7 @@ across missions; a campaign with an empty roster ends in a clear game-over; a sq
 counted as "captured": a new agent is created in the roster **with their weapons and body upgrades** (these are the
 top-tier parts enemy agents were given, F17). Persuaded civilians, police and guards only count as "convinced" in the
 statistics (a comment says money per persuaded person was planned). If the mission fails nothing is kept.
-*OpenSynd.* *new*, and it gives the Persuader its purpose. **Design:** on success, each enemy agent (not guards or
+*NeuroReign.* *new*, and it gives the Persuader its purpose. **Design:** on success, each enemy agent (not guards or
 police) persuaded and alive at extraction joins the roster with their carried weapons and a set of upgrades
 that matches what their placement had (content: `upgrades: {legs: 3, ...}` on enemy-agent placements). The debrief
 announces "Recruited: <surname>". Guards and police are converted for the mission only. **Tests:** only survivors
@@ -838,7 +838,7 @@ recruits nobody; the roster cap (F26) is respected.
 missions), and the date is shown as `HH:DDD:YYYY NC` (a year counter starting in year 85 of a new calendar, 365-day
 years). **Research progresses hourly and is paid hourly; tax is collected and population and mood update once per
 day** (F30). Whole days passing at once are processed day by day so nothing is skipped.
-*OpenSynd.* *partly* (funds accrue per real second during a mission only). **Design:** a campaign clock with the same
+*NeuroReign.* *partly* (funds accrue per real second during a mission only). **Design:** a campaign clock with the same
 shape and our own calendar (a made-up year count), run from the operation and the between-missions screens, paused on
 the title and in dialogs. Missions advance it by their duration so a long operation costs research time and income
 loses its "per second of play" shortcut: income becomes tax (F30). **Tests:** hours and days arithmetic; daily hooks run
@@ -856,9 +856,9 @@ agent's 32 + 1; a guard adds 3 + 4 + 32 + 1), so harder people are worth far mor
 slip, the intent being "the tougher the person, the more they count". A person **mid-hit-reaction cannot be
 persuaded** (F14). A persuaded person: joins the owner's group, becomes **immune to panic**, replaces its behaviour
 with the follower behaviour, and shares the owner's enemies; if the owner dies their people are passed to another
-living agent and the points are re-assigned (done in OpenSynd, see H). The Persuadatron has no ammunition and is
+living agent and the points are re-assigned (done in NeuroReign, see H). The Persuadatron has no ammunition and is
 used by selecting it: every agent holding one persuades everyone in range every frame it is selected.
-*OpenSynd.* *partly:* our Persuader has counts rather than points, a charge pool, and fixed thresholds (3 civilians
+*NeuroReign.* *partly:* our Persuader has counts rather than points, a charge pool, and fixed thresholds (3 civilians
 for a guard, 6 for police, 4 police for an enemy agent). **Design:** convert to **points**: each persuaded person is
 worth points by type (civilian and criminal 1, guard 3, police 6, enemy agent 12), a person needs a points total
 (guard 4, police 8, enemy agent 32 with no Brain upgrade, falling with Brain tiers F17), so upgrades and persuading
@@ -888,7 +888,7 @@ finished and unlocks its neighbours.
 - A comment says civilians and police killed in a territory's mission should make its people unhappier, and
   persuaded civilians should earn money; neither is coded.
 
-*OpenSynd.* *partly:* five operations on a flat world map (the target is **50 territories and 50 main missions**, F45);
+*NeuroReign.* *partly:* five operations on a flat world map (the target is **50 territories and 50 main missions**, F45);
 the unlock graph, tax and mood are built. **Design:** give each map region (already positioned by longitude and latitude) a
 `territory` record: population, default population, tax, mood, status, neighbours it unlocks (replacing "locked until
 the one before is done" with a graph), owner (a named rival company). Implement the daily tick,
@@ -906,7 +906,7 @@ creates a revolt mission; neighbours unlock. **Done when** setting taxes is a pu
 several levels: **information** (each level adds more briefing text about the target and the opposition) and
 **enhancement** (each level adds detail to the briefing map; at the **last** level the map shows the **enemies**).
 Levels are stored per territory and persist.
-*OpenSynd.* *new* (the briefing is fixed text). **Design:** content per mission lists `intel: [{price, text}]` levels
+*NeuroReign.* *new* (the briefing is fixed text). **Design:** content per mission lists `intel: [{price, text}]` levels
 and `survey: [{price, reveals}]` levels (reveal objective zones, then patrol routes, then individual enemy positions
 and vehicle spawns on a preview map). The preview map is the real map drawn small, so no extra art is needed.
 The player decides what to spend before deploying; unspent money funds research. **Tests:** prices debit funds;
@@ -919,7 +919,7 @@ available to buy, shows the selected item's cost, rounds, price per round, range
 player **buy** (money is debited), **sell** (the item's full purchase price is returned), **reload** (F11) and
 **fit or replace body parts** (F17) per agent, with a price on everything. Only researched items are listed, plus the
 agent's own gear that is not yet researched (it can be carried but not reloaded).
-*OpenSynd.* *have* the Research and Armoury with eight squares per operator, purchase, sale and loadouts. **New:**
+*NeuroReign.* *have* the Research and Armoury with eight squares per operator, purchase, sale and loadouts. **New:**
 reload costs (F11), body parts (F17), weight (F10), the item stats panel with every field, and keeping unresearched
 captured gear usable but not refillable (F12).
 
@@ -932,7 +932,7 @@ territory.** This is the size of the finished campaign, and every system above (
 research chains F20, intelligence F31, the roster F26) is built to carry it. FreeSynd's world is likewise 50 territories
 ("blocks") with a mission each; the *shape* (a graph of territories on a world map, each opened by winning its
 neighbour) is a mechanic, while the territories, names, maps and missions here are original.
-*OpenSynd.* *open:* five operations on five regions (Northern Europe, and four more). **Design:**
+*NeuroReign.* *open:* five operations on five regions (Northern Europe, and four more). **Design:**
 - **Territory records.** 50 `region` records (own names, longitude and latitude on the existing world map, a default
   population of a few million, a rival owner from a short list of invented companies) in a content file of their own
   (`territories.json` in the pack), separate from the missions, so the map and the campaign can be checked without
@@ -971,7 +971,7 @@ previous ones, and the world map shows a 50-territory conquest in progress.
 dropping an item, entering or leaving a vehicle and driving to a point can all be queued, so a squad can be told in one
 sweep to walk to A, pick up that rifle, walk to B and get into the van. Dropping a time bomb from the inventory while
 queued plants it at that point in the route.
-*OpenSynd.* *new* (an order replaces the last). **Design:** `unit.orders` becomes a list; Shift (our key, Ctrl is used
+*NeuroReign.* *new* (an order replaces the last). **Design:** `unit.orders` becomes a list; Shift (our key, Ctrl is used
 for multi-select in browsers on some systems) appends; the path is drawn as a faint line through the queued points
 with numbers; Escape clears the queue. Orders are data (`{type: "move" | "follow" | "pickup" | "drop" | "enter" |
 "leave" | "drive", target}`) so saves can store them. **Tests:** queue order; replace on a plain order; a failed step
@@ -984,7 +984,7 @@ pick it up; a **person** makes them follow and attack (they stop when in range o
 at about two thirds of its range); a **vehicle** gets them in or out; **ground** walks them (in squad formation).
 **Right click** shoots at the clicked point or target; **holding** it keeps firing automatic weapons, and releasing
 stops. Clicking the **minimap** sends the squad there (no shooting or object use through it).
-*OpenSynd.* *partly* (move, follow-and-fight, right-click fire, loot by clicking ground, V for vehicles). **New:**
+*NeuroReign.* *partly* (move, follow-and-fight, right-click fire, loot by clicking ground, V for vehicles). **New:**
 click a vehicle to enter or leave it (with V as the key); click a dropped weapon to fetch it; **hold** the right button
 for automatic weapons (F9); stop distance of two thirds of the selected weapon's range (we use nine tenths today).
 **Tests:** click targets resolve in the stated priority; the follow stop distance.
@@ -993,7 +993,7 @@ for automatic weapons (F9); stop distance of two thirds of the selected weapon's
 
 *FreeSynd.* When several agents are sent to one point they stand in a **two by two grid** at the destination (each
 agent has a slot offset inside the tile), so four agents do not pile on one spot.
-*OpenSynd.* *have* (formation tiles around the destination). Keep.
+*NeuroReign.* *have* (formation tiles around the destination). Keep.
 
 #### F36. Selection and hotkeys
 
@@ -1003,7 +1003,7 @@ weapon choice and position the group copies; if the leader is deselected another
 carried item in each of the eight inventory squares for the leader and, with Ctrl, for the whole group; choosing a
 weapon for the group deselects weapons of the same category on the others. **P** pauses. **F1** and **F2** toggle
 music and sound.
-*OpenSynd.* *partly* (A selects all; clicking portraits selects; weapon selection for the group). **New:** 1-4 and 0,
+*NeuroReign.* *partly* (A selects all; clicking portraits selects; weapon selection for the group). **New:** 1-4 and 0,
 Shift plus number for toggling, a **leader**, and **F5-F12 (or 5-8, 1-4 rows)** slot hotkeys; the slot keys are
 rebindable like the rest. **Tests:** every key's effect; leader reassignment on deselect.
 
@@ -1012,7 +1012,7 @@ rebindable like the rest. **Tests:** every key's effect; leader reassignment on 
 *FreeSynd.* Per agent: portrait and health, a **row of up to eight carried items** with ammo bars, and the three
 drug sliders. A weapon selector shows what the leader holds. The minimap sits in the corner. Mission text (the
 current objective) and warnings (an agent is being targeted by police) come as short messages.
-*OpenSynd.* *have* most of this. **New:** the drug sliders (F18) on the portraits, ammo bars on each item square,
+*NeuroReign.* *have* most of this. **New:** the drug sliders (F18) on the portraits, ammo bars on each item square,
 the current-objective banner (F21), and a "being targeted" warning sound and flash when police begin their warning
 (the police warning voice, F38).
 
@@ -1022,7 +1022,7 @@ the current-objective banner (F21), and a "being targeted" warning sound and fla
 explosions, time bomb tick, door, breaking glass, flaming death), the game has **voices**: "agent selected",
 **"put down your weapon"** (the police warning, played once when police begin to warn), mission completed and mission
 failed announcements, and a "tracking pong" for the scanner.
-*OpenSynd.* *partly* (synthesized weapon and effect sounds). **New:** door open/close, glass breaking, flaming
+*NeuroReign.* *partly* (synthesized weapon and effect sounds). **New:** door open/close, glass breaking, flaming
 death, a scanner ping, spoken or caption-and-tone cues (selected, mission complete, mission failed, the police
 warning). Voices can be synthesized or text-to-speech free of licence (or captions only) and always captioned.
 
@@ -1036,7 +1036,7 @@ warning). Voices can be synthesized or text-to-speech free of licence (or captio
 door **opens when a living person stands on either side of it** (checked along the door's axis) and **closes again
 when nobody is there**; while closed it blocks movement and sight and is a blocker for shots; while open it does
 not. The person walking through is held for the moment it takes. Some doors are locked (F5).
-*OpenSynd.* *partly* (gates opened by a panel). **Design:** a `door` map object with the same four states and an
+*NeuroReign.* *partly* (gates opened by a panel). **Design:** a `door` map object with the same four states and an
 optional `lock`; open for anyone (people and cars alike) who stands next to it unless locked; blocks sight, shots
 and blasts while closed. Buildings gain doors (entrances) that civilians use, giving indoor spaces later. **Tests:**
 open on approach, close after leaving, block `hasLineOfSight` while closed, locked doors refuse non-holders.
@@ -1046,7 +1046,7 @@ open on approach, close after leaving, block `hasLineOfSight` while closed, lock
 *FreeSynd.* **Windows** have health; **bullets and explosions break them** (a breaking animation, then a damaged
 state) and a broken window **no longer blocks** shots or sight; **animated windows** (lit, flickering) are purely
 decoration and do not block. A "glass breaking" sound plays.
-*OpenSynd.* *new* (building windows are drawn, not objects). **Design:** ground-floor windows along building faces
+*NeuroReign.* *new* (building windows are drawn, not objects). **Design:** ground-floor windows along building faces
 are breakable props: a bullet breaks one, an enemy can then see or shoot through it, glass sound and fragments,
 and a short-lived "alarm" that makes nearby enemy agents investigate. **Tests:** breaks to a bullet and not a flame;
 no longer blocks sight; the alarm radius.
@@ -1056,7 +1056,7 @@ no longer blocks sight; the alarm radius.
 *FreeSynd.* **Trees** are hurt **only by laser, burn or explosion**; when destroyed they **burn for ten seconds** and
 stop blocking; they have a damaged sprite. Street furniture (bins, phone boxes, post boxes) has burning and damaged
 animations and the TODO list wants them destructible; **advertisement boards** are drawn specially.
-*OpenSynd.* *new* (props are decoration). **Design:** vegetation and furniture props with health, material and
+*NeuroReign.* *new* (props are decoration). **Design:** vegetation and furniture props with health, material and
 `flammable`; fire (F2) and beam or blast damage burn them for ten seconds; burning props light nearby units. Billboards
 are tall props that fall when a blast hits them (a cover change). **Tests:** burn timing; fire spreading to a
 neighbouring flammable prop; non-flammable ignores flame.
@@ -1065,7 +1065,7 @@ neighbouring flammable prop; non-flammable ignores flame.
 
 *FreeSynd.* **Semaphores** (hanging street lights and traffic signals) sway and cycle a state; a **laser or an
 explosion** brings one down (it falls to the ground and stops). **Neon signs** are decoration with an animation.
-*OpenSynd.* *new.* **Design:** traffic lights that cars obey at crossings (they stop on red, giving the player a
+*NeuroReign.* *new.* **Design:** traffic lights that cars obey at crossings (they stop on red, giving the player a
 rhythm to exploit and ambush), street lights that can be shot to darken an area (reducing enemy sight at night, a
 stealth tool), and neon signs as light sources that matter for a night-vision/sight rule if we add one. **Tests:**
 cars stop on red; a broken light stops cycling.
@@ -1080,7 +1080,7 @@ and explodes with an area of two tiles; destroyed cars also exist from the start
 scenery. **Collision damage** is its own type (cars and doors hurt people). Vehicle health, speed, capacity,
 damage and blast radius per kind are on the original TODO list. Passengers (persuaded followers) get in with the owner
 and are dropped with them.
-*OpenSynd.* *have* cars on roads with drivers, hits, explosions, wrecks, taking and driving (done, see H).
+*NeuroReign.* *have* cars on roads with drivers, hits, explosions, wrecks, taking and driving (done, see H).
 **New:** **lane direction** (one-way streets and two-lane traffic so cars do not drive through each other), **run-over
 damage** (a moving car at speed hurts people it overlaps, civilians jump aside), the **fire engine** and **small
 armored car** kinds, **trains** on a track with stations that wait (a hazard and a set piece), and **burnt wreck
@@ -1092,7 +1092,7 @@ a train stops at a station and waits.
 *FreeSynd.* `src/editor` is a **data browser**: it lists missions, searches them (for example by which ped types
 appear) and previews fonts and animations; it is not a map editor. The TODO list names a mission editor and map editor
 as wanted.
-*OpenSynd.* *new.* **Design:** an in-browser editor that loads a content pack, shows a map, and lets a creator place
+*NeuroReign.* *new.* **Design:** an in-browser editor that loads a content pack, shows a map, and lets a creator place
 zones, enemies (with patrols and scripts F22), vehicles, props and objectives by clicking, validates against the
 schemas live, and exports the JSON. Built on the renderer that already draws maps; the generator and validator remain
 the source of truth in CI. **Done when** a person can build and share a mission without touching a text editor.
@@ -1179,14 +1179,14 @@ agents only: guards, police and criminals seeing the squad do not bring it in.
    documentation debt.
 8. **FreeSynd's gameplay rules win.** Where a FreeSynd feature or rule (behaviours,
    weapon and item rules, research, persuasion, campaign and strategic rules,
-   controls) conflicts with an existing OpenSynd feature or rule, FreeSynd's
-   takes priority and the OpenSynd one is changed or removed, with the tests,
+   controls) conflicts with an existing NeuroReign feature or rule, FreeSynd's
+   takes priority and the NeuroReign one is changed or removed, with the tests,
    saves and balance updated to match. This covers mechanics only: principles
    1-7 still apply, so values, names, art, audio and text stay our own.
 
 ## Game objectives and creative direction
 
-OpenSynd is a real-time, pause-capable squad tactics game about restoring civic
+NeuroReign is a real-time, pause-capable squad tactics game about restoring civic
 autonomy in a near-future city. The player leads a small field team working with
 district communities to reconnect essential services, expose systems of
 control, and replace remote private administration with durable local
@@ -1286,7 +1286,7 @@ Every accepted asset record should contain:
 - Produce an “original-IP exclusion list” covering names, logos, characters,
   factions, mission text, map layouts, sprites, sounds, music, cinematics, and
   other recognizable expression.
-- OpenSynd is the final name (the owner's decision). If the project ever grows beyond a hobby, search relevant trademark
+- NeuroReign is the final name (the owner's decision). If the project ever grows beyond a hobby, search relevant trademark
   registers and the web, assess possible confusion with other games and FreeSynd, and obtain legal review for the intended
   markets; until then the project does not claim the name is registered or cleared.
 - Adopt the repository controls above and publish the decision-making and
@@ -1331,7 +1331,7 @@ Every accepted asset record should contain:
   tools or data.
 - The developer pack passes provenance checks and can be rebuilt from included
   editable sources.
-- OpenSynd is cleared as the permanent public name or is replaced before public
+- NeuroReign is cleared as the permanent public name or is replaced before public
   branding begins.
 
 ## Phase 2 — Browser foundation

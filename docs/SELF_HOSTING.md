@@ -2,7 +2,7 @@
 
 # Running your own copy
 
-OpenSynd is a folder of static files. You do not need a database, an account, a container or any project service to run the
+NeuroReign is a folder of static files. You do not need a database, an account, a container or any project service to run the
 game. The online modes (daily operation, co-op, rival companies) need a game server, which you can also run yourself: see
 [Running a game server](#running-a-game-server) below. Single-player never needs it.
 
@@ -43,7 +43,7 @@ PORT=8791 HOST=0.0.0.0 DATABASE=/var/lib/opensynd/opensynd.sqlite ORIGINS=https:
   in and is disconnected at once. Without the token these endpoints refuse everything.
 - On the project's own host: `sudo sh deploy/setup-server.sh` once (a service, its user, a database folder, a restart permission for the
   runner), then the deploy job runs `deploy/deploy-server.sh` when the CI/CD variable `DEPLOY_SERVER` is set, and the site is built
-  offering that server when `OPENSYND_SERVER` is set. Apache passes `/api` and `/ws` to it (`deploy/apache/opensynd.outiva.com.conf`).
+  offering that server when `OPENSYND_SERVER` is set. Apache passes `/api` and `/ws` to it (`deploy/apache/neuroreign.outiva.com.conf`).
 - **Sign in with Outiva** (OpenID Connect): on by default against `https://accounts.outiva.com/realms/outiva` with the client
   `opensynd-web` (`OIDC_ISSUER`, `OIDC_CLIENT`; `OIDC_ISSUER=` switches it off). Register the client once with
   `sudo sh deploy/configure-outiva-client.sh` on the Keycloak machine, **before** deploying a server that offers it: the page tries a

@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
-# GitLab CI for the OpenSynd browser game: check it, build it, and publish it to https://opensynd.outiva.com.
+# GitLab CI for the NeuroReign browser game: check it, build it, and publish it to https://neuroreign.outiva.com.
 #
 # It expects the GitLab runner that lives on the web server, using the shell executor, with Node.js 20+ and Python 3
 # installed there and write access to the site folder (deploy/setup-apache.sh sets that up). The game needs no
@@ -19,9 +19,9 @@ stages:
   - deploy
 
 variables:
-  DOCROOT: /var/www/opensynd.outiva.com
+  DOCROOT: /var/www/neuroreign.outiva.com
   # The game server the built site offers (see docs/SELF_HOSTING.md); a CI/CD variable of the same name overrides it.
-  OPENSYND_SERVER: https://opensynd.outiva.com
+  OPENSYND_SERVER: https://neuroreign.outiva.com
 
 check:
   stage: check
@@ -62,7 +62,7 @@ deploy:
     - if [ -n "${DEPLOY_SERVER:-}" ]; then sh deploy/deploy-server.sh; fi
   environment:
     name: production
-    url: https://opensynd.outiva.com
+    url: https://neuroreign.outiva.com
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
     - when: manual

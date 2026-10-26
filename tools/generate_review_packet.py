@@ -32,7 +32,7 @@ def render() -> str:
         "",
         "# Legal review packet",
         "",
-        "Everything a reviewer needs to decide whether OpenSynd's web release may be called cleared. It gathers facts; it approves",
+        "Everything a reviewer needs to decide whether NeuroReign's web release may be called cleared. It gathers facts; it approves",
         "nothing. Approval is a person's decision (ideally a qualified reviewer's), recorded in `provenance/assets.json` and in the",
         "release notes (see `docs/RELEASING.md`, \"The legal gate\").",
         "",
@@ -62,7 +62,7 @@ def render() -> str:
         "separate audio file?",
         "2. **Licence expression.** The inherited FreeSynd tree is audited as GPL-2.0-or-later; the web code is new work under the same "
         "terms. Is any inherited file GPL-2.0-only? (`docs/legal/IP_AUDIT.md`, \"Open questions\".)",
-        "3. **Name.** \"OpenSynd\" is the final name (the project owner's decision). No formal trademark search has been done and the "
+        "3. **Name.** \"NeuroReign\" is the final name (the project owner's decision). No formal trademark search has been done and the "
         "project claims the name is neither registered nor cleared. Is that posture acceptable for a free hobby game, and what would a "
         "search against other games and FreeSynd be needed for? (`TRADEMARKS.md`.)",
         "4. **Fan-game posture.** The game takes rules and values from the FreeSynd source (GPL) but no art, sound, text or maps from "

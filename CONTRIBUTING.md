@@ -1,8 +1,8 @@
 <!-- SPDX-License-Identifier: GPL-2.0-or-later -->
 
-# Contributing to OpenSynd
+# Contributing to NeuroReign
 
-OpenSynd is being built as a free and open-source game that does not require or
+NeuroReign is being built as a free and open-source game that does not require or
 redistribute data from other games. Contributions must be both technically
 useful and legally redistributable.
 

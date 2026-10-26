@@ -1,8 +1,8 @@
 <!-- SPDX-License-Identifier: GPL-2.0-or-later -->
 
-# OpenSynd save format
+# NeuroReign save format
 
-OpenSynd saves are UTF-8 JSON documents intended to remain readable, editable,
+NeuroReign saves are UTF-8 JSON documents intended to remain readable, editable,
 and portable between compatible builds. They are player-owned data: the web
 client stores one optional slot in browser-local storage and transmits nothing.
 

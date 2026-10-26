@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: GPL-2.0-or-later -->
 
-# OpenSynd
+# NeuroReign
 
 **A small squad-tactics game that runs in your web browser.** You lead four cybernetic operatives through the streets of
 a dark, pressured, near-future world, taking one district at a time from the people who run it.
@@ -75,8 +75,8 @@ contributors, including Tomas Jakobsson, Mark (mentor66), Michael Schubeck, Ryan
 Roland Haeder and Luboš Novák. The full list is in the [AUTHORS](AUTHORS) file. FreeSynd also builds on work by Tomasz
 Lis (level files), Paul Chavent ("libsyndicate"), Richard J. Wagner (the config reader) and Nemanja Trifunovic (UTF8-CPP).
 
-**To be clear: this is not FreeSynd, it is not "OpenSynd" as any official project, and the FreeSynd team has nothing to do
-with it and has not seen or approved any of it.** "OpenSynd" is the final name of this personal browser game, chosen by me
+**To be clear: this is not FreeSynd, it is not "NeuroReign" as any official project, and the FreeSynd team has nothing to do
+with it and has not seen or approved any of it.** "NeuroReign" is the final name of this personal browser game, chosen by me
 (it is not a name used by the FreeSynd project), and any mistakes in it are mine, not theirs.
 
 What I took from FreeSynd:
@@ -103,7 +103,7 @@ because of your work and generosity.
 Other things I'm grateful for: the human model that all the characters are drawn from is by **Quaternius** (CC0), and
 the music is **"Electric Stream"** by Alexander Ehlers (CC0) and **"The Core"** by p0ss. Everything else I made myself.
 
-OpenSynd is an unofficial, non-profit fan game, made as a hobby. It is inspired by other games and is not affiliated with or
+NeuroReign is an unofficial, non-profit fan game, made as a hobby. It is inspired by other games and is not affiliated with or
 endorsed by their makers or owners.
 
 ## Finding your way around the repository

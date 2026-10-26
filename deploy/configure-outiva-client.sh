@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
-# Once only, on the machine that runs Keycloak (accounts.outiva.com): register OpenSynd as a client of the "outiva" realm so that
+# Once only, on the machine that runs Keycloak (accounts.outiva.com): register NeuroReign as a client of the "outiva" realm so that
 # "Sign in with Outiva" works. It is a public client (authorisation code with PKCE, no secret), like Outiva's other web games.
 # Run as root; it asks for a Keycloak administrator. Safe to run again (it updates the client).
 set -euo pipefail
 
 KCADM=${KCADM:-/opt/keycloak/bin/kcadm.sh}
 KEYCLOAK_SERVER=${KEYCLOAK_SERVER:-http://127.0.0.1:8180}
-ORIGIN=${ORIGIN:-https://opensynd.outiva.com}
+ORIGIN=${ORIGIN:-https://neuroreign.outiva.com}
 CLIENT=${CLIENT:-opensynd-web}
 
 [ -x "$KCADM" ] || { echo "Cannot execute $KCADM. Set KCADM to the path of kcadm.sh." >&2; exit 1; }
@@ -23,7 +23,7 @@ uuid=$("$KCADM" get clients --config "$config_file" -r outiva -q "clientId=$CLIE
   'import json, sys; found = json.load(sys.stdin); print(found[0]["id"] if found else "")')
 
 settings=(
-  -s "clientId=$CLIENT" -s "name=OpenSynd" -s enabled=true -s publicClient=true -s protocol=openid-connect
+  -s "clientId=$CLIENT" -s "name=NeuroReign" -s enabled=true -s publicClient=true -s protocol=openid-connect
   -s standardFlowEnabled=true -s implicitFlowEnabled=false -s directAccessGrantsEnabled=false -s serviceAccountsEnabled=false
   -s "rootUrl=$ORIGIN" -s "baseUrl=$ORIGIN/" -s "redirectUris=[\"$ORIGIN/\"]" -s "webOrigins=[\"$ORIGIN\"]"
   -s 'attributes={"pkce.code.challenge.method":"S256"}'

@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: GPL-2.0-or-later -->
 
-# OpenSynd Roadmap 2.0: more game
+# NeuroReign Roadmap 2.0: more game
 
 [ROADMAP.md](ROADMAP.md) got the game to FreeSynd's rules: every feature row in it is done. This roadmap is about what
 makes it **better to play**. It is a wish list in a sensible order, not a promise, for a hobby project that is allowed to

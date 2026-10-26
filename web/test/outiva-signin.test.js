@@ -14,7 +14,7 @@ const memory = () => {
     removeItem: (key) => items.delete(key),
   };
 };
-const site = { origin: "https://opensynd.outiva.com", search: "" };
+const site = { origin: "https://neuroreign.outiva.com", search: "" };
 const settings = { issuer: "https://accounts.outiva.com/realms/outiva", client: "opensynd-web" };
 
 test("the address sent to Outiva asks for a code with PKCE, and a quiet attempt adds prompt=none", async () => {
@@ -37,7 +37,7 @@ test("coming back with a code gives what the server needs, once, and only for th
   await signInAddress(settings, { silent: false, location: site, storage });
   const kept = JSON.parse(storage.getItem("opensynd.oidc.v1"));
   const back = comeBack({ location: { ...site, search: `?code=abc&state=${kept.state}&session_state=x` }, storage });
-  assert.deepEqual(back, { code: "abc", verifier: kept.verifier, nonce: kept.nonce, redirectUri: "https://opensynd.outiva.com/" });
+  assert.deepEqual(back, { code: "abc", verifier: kept.verifier, nonce: kept.nonce, redirectUri: "https://neuroreign.outiva.com/" });
   assert.equal(storage.getItem("opensynd.oidc.v1"), null, "used up");
   assert.equal(comeBack({ location: { ...site, search: `?code=abc&state=${kept.state}` }, storage }).failed, true, "not twice");
 });

@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: GPL-2.0-or-later -->
 
-# OpenSynd multiplayer architecture
+# NeuroReign multiplayer architecture
 
 This is the design the online modes (co-op operations, the daily operation and rival companies) are built on. It assumes there is a
 game server and that the server is the authority.

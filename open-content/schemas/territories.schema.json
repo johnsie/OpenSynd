@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "OpenSynd territories",
+  "title": "NeuroReign territories",
   "description": "The campaign's world: 50 territories on the world map, each with at most one main mission.",
   "type": "object",
   "additionalProperties": false,

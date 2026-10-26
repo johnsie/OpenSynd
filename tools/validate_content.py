@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-"""Validate OpenSynd v1 content packs using only the Python standard library."""
+"""Validate NeuroReign v1 content packs using only the Python standard library."""
 
 from __future__ import annotations
 

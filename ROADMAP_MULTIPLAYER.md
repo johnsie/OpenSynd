@@ -1,8 +1,8 @@
 <!-- SPDX-License-Identifier: GPL-2.0-or-later -->
 
-# OpenSynd Multiplayer Roadmap
+# NeuroReign Multiplayer Roadmap
 
-OpenSynd gets a **game server**. The server holds accounts, the day's tasks, the shared map and the scores; the browser is the
+NeuroReign gets a **game server**. The server holds accounts, the day's tasks, the shared map and the scores; the browser is the
 client. Three things are built on it:
 
 1. **Daily chores**: short tasks that renew every day and pay out, with a daily operation everyone plays and a board to rank on.

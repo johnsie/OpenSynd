@@ -2,7 +2,7 @@
 
 // A flat atlas of the Earth: simplified coastlines of the continents and main islands as
 // [longitude, latitude] points, drawn on an equirectangular projection. The outlines are original
-// simplifications made for OpenSynd (a few dozen points per landmass), not copied from any map data.
+// simplifications made for NeuroReign (a few dozen points per landmass), not copied from any map data.
 export const MAP_WIDTH = 1000;
 export const LAT_TOP = 84;
 export const LAT_BOTTOM = -58;

@@ -1,9 +1,9 @@
 <!-- SPDX-License-Identifier: GPL-2.0-or-later -->
 
-# OpenSynd Open Content
+# NeuroReign Open Content
 
 This directory contains the documented, engine-independent content formats for
-OpenSynd. It must never contain data extracted or transcribed from other games.
+NeuroReign. It must never contain data extracted or transcribed from other games.
 
 ## Layout
 

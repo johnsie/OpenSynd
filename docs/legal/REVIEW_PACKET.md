@@ -3,7 +3,7 @@
 
 # Legal review packet
 
-Everything a reviewer needs to decide whether OpenSynd's web release may be called cleared. It gathers facts; it approves
+Everything a reviewer needs to decide whether NeuroReign's web release may be called cleared. It gathers facts; it approves
 nothing. Approval is a person's decision (ideally a qualified reviewer's), recorded in `provenance/assets.json` and in the
 release notes (see `docs/RELEASING.md`, "The legal gate").
 
@@ -61,7 +61,7 @@ release notes (see `docs/RELEASING.md`, "The legal gate").
 
 1. **Assets.** Is each source and licence above adequately evidenced (a page that states the licence, the author, the date)? Note the music track offered under `GPL-3.0-only OR CC-BY-SA-3.0`: the project uses it under CC-BY-SA-3.0 with attribution (see the About box); is that the right reading, and is the share-alike requirement satisfied by how it is shipped as a separate audio file?
 2. **Licence expression.** The inherited FreeSynd tree is audited as GPL-2.0-or-later; the web code is new work under the same terms. Is any inherited file GPL-2.0-only? (`docs/legal/IP_AUDIT.md`, "Open questions".)
-3. **Name.** "OpenSynd" is the final name (the project owner's decision). No formal trademark search has been done and the project claims the name is neither registered nor cleared. Is that posture acceptable for a free hobby game, and what would a search against other games and FreeSynd be needed for? (`TRADEMARKS.md`.)
+3. **Name.** "NeuroReign" is the final name (the project owner's decision). No formal trademark search has been done and the project claims the name is neither registered nor cleared. Is that posture acceptable for a free hobby game, and what would a search against other games and FreeSynd be needed for? (`TRADEMARKS.md`.)
 4. **Fan-game posture.** The game takes rules and values from the FreeSynd source (GPL) but no art, sound, text or maps from other games. Is the public statement of that in the README and About box sufficient?
 5. **Unresolved source files** (not part of the web build): see section 3.
 
@@ -71,7 +71,7 @@ These legacy engine files have no usable licence notice. None is built into or s
 
 - `src/SDLMain.m` (`d21f9fb45d6c`): Identifies itself as SDL Cocoa entry-point code but contains no license notice in this copy. Locate authoritative SDL 1.2 provenance or remove it.
 - `src/cp437.h` (`ec73d04f13ea`): Contains a Unicode-to-CP437 lookup table without authorship, generation source, or license metadata. Regenerate from a documented open standard.
-- `src/menus/widget.cpp` (`23dd37956e2e`): Compiled project source with no file-level copyright or license notice. Establish provenance before reuse in OpenSynd.
+- `src/menus/widget.cpp` (`23dd37956e2e`): Compiled project source with no file-level copyright or license notice. Establish provenance before reuse in NeuroReign.
 
 ## 4. What the project already does
 

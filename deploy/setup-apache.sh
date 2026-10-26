@@ -1,7 +1,7 @@
 #!/bin/sh
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
-# One-time set-up of the web server for https://opensynd.outiva.com. Run it on the server as root:
+# One-time set-up of the web server for https://neuroreign.outiva.com. Run it on the server as root:
 #
 #     sudo sh deploy/setup-apache.sh
 #
@@ -12,7 +12,7 @@
 #   - installs the virtual host from deploy/apache/ and reloads Apache.
 set -eu
 
-HOST=${HOST:-opensynd.outiva.com}
+HOST=${HOST:-neuroreign.outiva.com}
 DOCROOT=${DOCROOT:-/var/www/$HOST}
 RUNNER_USER=${RUNNER_USER:-gitlab-runner}
 HERE=$(cd "$(dirname "$0")" && pwd)
@@ -57,7 +57,7 @@ id "$RUNNER_USER" >/dev/null 2>&1 || { echo "user $RUNNER_USER does not exist: s
 mkdir -p "$DOCROOT/releases"
 if [ ! -e "$DOCROOT/current" ]; then
   mkdir -p "$DOCROOT/releases/placeholder"
-  printf '%s\n' '<!doctype html><title>OpenSynd</title><p>Nothing deployed yet.</p>' > "$DOCROOT/releases/placeholder/index.html"
+  printf '%s\n' '<!doctype html><title>NeuroReign</title><p>Nothing deployed yet.</p>' > "$DOCROOT/releases/placeholder/index.html"
   ln -sfn "$DOCROOT/releases/placeholder" "$DOCROOT/current"
 fi
 chown -R "$RUNNER_USER:$WEB_GROUP" "$DOCROOT"
@@ -88,13 +88,13 @@ fill() {
 }
 fill "$HERE/apache/opensynd-common.conf" > "$CONF_DIR/$HOST-common.inc"
 if [ "$FLAVOUR" = debian ]; then
-  fill "$HERE/apache/opensynd.outiva.com.conf" > "$CONF_DIR/sites-available/$HOST.conf"
+  fill "$HERE/apache/neuroreign.outiva.com.conf" > "$CONF_DIR/sites-available/$HOST.conf"
   a2ensite "$HOST.conf" >/dev/null
   apache2ctl configtest
   systemctl enable apache2 >/dev/null 2>&1 || true
   systemctl reload apache2 || systemctl restart apache2
 else
-  fill "$HERE/apache/opensynd.outiva.com.conf" > "$CONF_DIR/conf.d/$HOST.conf"
+  fill "$HERE/apache/neuroreign.outiva.com.conf" > "$CONF_DIR/conf.d/$HOST.conf"
   httpd -t
   systemctl enable httpd >/dev/null 2>&1 || true
   systemctl reload httpd || systemctl restart httpd

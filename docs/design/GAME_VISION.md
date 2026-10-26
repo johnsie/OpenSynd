@@ -1,10 +1,10 @@
 <!-- SPDX-License-Identifier: GPL-2.0-or-later -->
 
-# OpenSynd Game Vision
+# NeuroReign Game Vision
 
 ## Premise
 
-OpenSynd is a real-time, pause-capable squad tactics game set in a dense
+NeuroReign is a real-time, pause-capable squad tactics game set in a dense
 near-future city whose essential services have been enclosed by competing
 private administrations. The player coordinates a small field team for the
 Open Assembly, a public-interest network trying to return communications,
@@ -109,7 +109,7 @@ quiet restoration, contested restoration, or withdrawal.
 
 ### Visual identity
 
-OpenSynd should look like a living municipal diagram under stress: precise,
+NeuroReign should look like a living municipal diagram under stress: precise,
 layered, luminous, and human rather than grim for its own sake.
 
 - Use a three-quarter isometric camera with clean geometric architecture and
@@ -180,7 +180,7 @@ that every resident is either an enemy or a resource.
 
 ## Boundaries
 
-OpenSynd is not a recreation of any other game with renamed assets. The following
+NeuroReign is not a recreation of any other game with renamed assets. The following
 must be original: geography, missions, faction identities, characters,
 equipment catalogue, narrative, audiovisual presentation, interface, and
 content data. Similarity reviews should consider the total impression, not only

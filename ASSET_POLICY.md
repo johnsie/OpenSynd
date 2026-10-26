@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: GPL-2.0-or-later -->
 
-# OpenSynd Asset Policy
+# NeuroReign Asset Policy
 
 This policy applies to artwork, animation, audio, fonts, maps, level data,
 localization, narrative text, and other non-code content distributed by the
@@ -48,12 +48,12 @@ fields in their content-pack manifest and are checked by
 registry.
 
 Set `status` to `approved` only after review. `quarantined` files remain solely
-for audit and migration work. `excluded` files must not enter an OpenSynd build,
+for audit and migration work. `excluded` files must not enter a NeuroReign build,
 test fixture, screenshot, demo, or release.
 
 ## Original-IP exclusion rule
 
-OpenSynd may implement independently designed squad tactics, research,
+NeuroReign may implement independently designed squad tactics, research,
 territory control, cybernetic upgrades, and other general mechanics. It must not
 copy or closely reproduce other games' audiovisual or literary expression,
 including its sprites, maps, missions, dialogue, music, sound effects,

@@ -762,9 +762,9 @@ function describeMission(mission, map, index) {
   document.querySelector("#operation-eyebrow").textContent = label;
   document.querySelector("#operation-title").textContent = mission.name;
   document.querySelector("#brief-title").textContent = mission.name;
-  document.querySelector("#title-heading").textContent = `OpenSynd: ${mission.name}`;
+  document.querySelector("#title-heading").textContent = `NeuroReign: ${mission.name}`;
   document.querySelector("#title-story").textContent = mission.story ?? mission.briefing;
-  document.title = `OpenSynd — ${mission.name}`;
+  document.title = `NeuroReign — ${mission.name}`;
   canvas.setAttribute("aria-label", `Isometric view of ${map.name}. Select an operator and choose a destination.`);
   minimap.setAttribute("aria-label", `Minimap of ${map.name}. Click to move the view.`);
 }

@@ -64,7 +64,7 @@ try {
 }
 
 const metadata = {
-  name: "OpenSynd browser prototype",
+  name: "NeuroReign browser prototype",
   revision,
   // SOURCE_DATE_EPOCH (seconds) makes the build reproducible: the same sources give the same bytes.
   builtAt: new Date(process.env.SOURCE_DATE_EPOCH ? Number(process.env.SOURCE_DATE_EPOCH) * 1000 : Date.now()).toISOString(),
@@ -77,8 +77,8 @@ await writeFile(
 );
 
 let index = await readFile(resolve(output, "index.html"), "utf8");
-if (!index.includes("OpenSynd")) {
-  throw new Error("Built index is missing the OpenSynd identity");
+if (!index.includes("NeuroReign")) {
+  throw new Error("Built index is missing the NeuroReign identity");
 }
 // Hot updates: when the site keeps every release under /r/<revision>/ (PIN_RELEASES=1, as the deploy build does), the page
 // loads its style sheet and code from its own release's folder, so a running game is never changed by a newer deploy.
@@ -91,4 +91,4 @@ if (process.env.PIN_RELEASES) {
   await writeFile(resolve(output, "index.html"), index, "utf8");
 }
 
-console.log(`Built OpenSynd static site at ${output}`);
+console.log(`Built NeuroReign static site at ${output}`);

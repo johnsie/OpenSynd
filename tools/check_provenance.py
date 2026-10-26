@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-2.0-or-later
 
-"""Validate OpenSynd's asset provenance registry without external packages."""
+"""Validate NeuroReign's asset provenance registry without external packages."""
 
 from __future__ import annotations
 

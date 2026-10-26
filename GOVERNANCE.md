@@ -2,7 +2,7 @@
 
 # How the project is run
 
-OpenSynd is a fan game built by John McCourt and the open source community, on top of rules and ideas from FreeSynd. It is a
+NeuroReign is a fan game built by John McCourt and the open source community, on top of rules and ideas from FreeSynd. It is a
 hobby project and is run lightly.
 
 ## Decisions

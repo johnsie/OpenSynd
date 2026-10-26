@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: GPL-2.0-or-later -->
 
-# OpenSynd: technical notes
+# NeuroReign: technical notes
 
 The plain-language overview is in the [main README](../README.md). This file is for anyone who wants to build, test or
 change the game. It is a hobby project, so expect rough edges.
@@ -112,7 +112,7 @@ vector shapes.
 
 ## Rules taken from FreeSynd's source
 
-Where FreeSynd's behaviour differed from an earlier OpenSynd rule, FreeSynd's won (ROADMAP principle 8), with values,
+Where FreeSynd's behaviour differed from an earlier NeuroReign rule, FreeSynd's won (ROADMAP principle 8), with values,
 names and art kept original. Examples: persuasion by points, a two-second police warning, permadeath, tax-funded income,
 the three drugs, accuracy as a random miss inside a cone, chest regeneration from tier 2, death drops, no seat limit in
 vehicles, and city cars that never run anyone down. The roadmap lists each one.

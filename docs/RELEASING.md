@@ -23,7 +23,7 @@ who can follow this page can make one; a second maintainer should do it once to 
 
 1. **Tag** the commit with a version and a signature (a key that is listed in `AUTHORS` or `GOVERNANCE.md`):
    ```sh
-   git tag -s v0.1.0 -m "OpenSynd 0.1.0"
+   git tag -s v0.1.0 -m "NeuroReign 0.1.0"
    git push gitlab v0.1.0
    ```
    `git tag -v v0.1.0` shows the signature; do not release from an unsigned tag.

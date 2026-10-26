@@ -57,11 +57,11 @@ const TABLE = Object.freeze({
   "about.eyebrow": ["ABOUT OPENSYND", "ACERCA DE OPENSYND", "À PROPOS D'OPENSYND"],
   "about.heading": ["An unofficial fan game", "Un juego de fans no oficial", "Un jeu de fans non officiel"],
   "about.lead": [
-    "OpenSynd is an unofficial, non-profit fan game, made as a hobby. It is inspired by other games and is not affiliated with " +
+    "NeuroReign is an unofficial, non-profit fan game, made as a hobby. It is inspired by other games and is not affiliated with " +
       "or endorsed by their makers or owners. It is free, has no adverts and sells nothing.",
-    "OpenSynd es un juego de fans no oficial y sin ánimo de lucro, hecho como afición. Se inspira en otros juegos y no está " +
+    "NeuroReign es un juego de fans no oficial y sin ánimo de lucro, hecho como afición. Se inspira en otros juegos y no está " +
       "afiliado ni respaldado por sus creadores o propietarios. Es gratis, no tiene anuncios y no vende nada.",
-    "OpenSynd est un jeu de fans non officiel et sans but lucratif, fait par passion. Il s'inspire d'autres jeux, sans affiliation " +
+    "NeuroReign est un jeu de fans non officiel et sans but lucratif, fait par passion. Il s'inspire d'autres jeux, sans affiliation " +
       "ni soutien de leurs créateurs ou propriétaires. Il est gratuit, sans publicité, et ne vend rien.",
   ],
   "about.scratch": [

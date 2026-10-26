@@ -2,7 +2,7 @@
 
 # Format versions and compatibility policy
 
-Everything OpenSynd writes or reads has an explicit version, so a new release never silently misreads an old file.
+Everything NeuroReign writes or reads has an explicit version, so a new release never silently misreads an old file.
 
 | Thing | Where | Version field | Policy |
 | --- | --- | --- | --- |
