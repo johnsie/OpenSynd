@@ -2565,6 +2565,33 @@ function drawScorch(center, size) {
 // How large a person is drawn against the tile (and against vehicles and buildings): the sprites are scaled down from their frames.
 const UNIT_SCALE = 0.72;
 
+// Operatives inside a car are not drawn, so their numbers (the same gold as above anyone on foot) ride above it, in order.
+function drawRiderNumbers(vehicle, viewport) {
+  const riders = state.units
+    .filter((unit) => unit.inVehicle === vehicle.id && unit.number)
+    .sort((left, right) => left.number - right.number);
+  if (riders.length === 0) return;
+  const { cellSize, origin } = viewport;
+  const tile = state.grid[Math.round(vehicle.position.y)]?.[Math.round(vehicle.position.x)];
+  const spot = gridToScreen(vehicle.position, cellSize, origin, tile?.elevation ?? 0);
+  const fontSize = Math.max(14, cellSize.height * 0.62);
+  const gap = fontSize * 0.95;
+  context.save();
+  context.font = `800 ${fontSize}px ui-sans-serif, sans-serif`;
+  context.textAlign = "center";
+  context.textBaseline = "alphabetic";
+  context.lineWidth = 4;
+  riders.forEach((rider, index) => {
+    const x = spot.x + (index - (riders.length - 1) / 2) * gap;
+    const y = spot.y - cellSize.height * 1.5;
+    context.strokeStyle = "rgba(0, 0, 0, .9)";
+    context.strokeText(String(rider.number), x, y);
+    context.fillStyle = rider.disabled ? "rgba(225, 179, 90, .45)" : "#f2c14e";
+    context.fillText(String(rider.number), x, y);
+  });
+  context.restore();
+}
+
 function drawUnit(unit, viewport) {
   if (unit.escaped) return;
   if (unit.inVehicle) return;
@@ -2576,6 +2603,7 @@ function drawUnit(unit, viewport) {
   if (isVehicle(unit)) {
     const controlled = Boolean(unit.vehicle.controlledBy) && state.selectedIds.includes(unit.vehicle.controlledBy);
     drawVehicle(context, propProjector(viewport, 0), unit, viewport.cellSize.height, performance.now(), { controlled });
+    drawRiderNumbers(unit, viewport);
     return;
   }
   const tile = state.grid[Math.round(unit.position.y)]?.[Math.round(unit.position.x)];
