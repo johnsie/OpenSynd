@@ -14,27 +14,29 @@ promise.
   server is reachable and say plainly when it is not.
 - **FreeSynd's rules still win** for anything the original defines (weapons, damage, agents). Multiplayer adds modes; it does not
   change rules.
-- **One simulation, two places.** The server runs the same simulation code as the browser, as a Node module (the code is already
-  dependency-free ES modules). That is how it can run games, verify scores and replay reports without a second implementation.
+- **One core, three places.** The same headless game core runs locally for single-player, on the server for online games, and in the
+  browser for prediction. That is how the server runs games, verifies scores and replays reports without a second implementation.
 - **Sizes:** S a day, M a few days, L a week or more.
 
 ## Phase 0. The foundation (L)
 
-Everything else stands on this.
+Everything else stands on this. The design is in [docs/design/MULTIPLAYER.md](docs/design/MULTIPLAYER.md); the short version is
+that the game becomes a headless **core** that takes commands and returns state and events, and the browser and the server are both
+clients of it.
 
-- **Server project** in `server/`: Node, one process to start, WebSocket for live play and plain HTTP for everything else. Storage
-  begins as SQLite and can move to Postgres when there is a reason.
-- **Accounts:** sign up with a name and password (or a sign-in provider later), sessions, a profile with a chosen display name.
-  Passwords are hashed; no email is needed to play.
-- **Protocol:** a versioned message format shared by client and server (`protocol.js`), with a version check on connect so a stale
-  browser is told to update instead of misbehaving. The existing hot-update flow carries the new client to players.
-- **Deterministic simulation:** all randomness goes through the seeded generator in `random.js`, orders are small serialisable
-  records stamped with a tick, and a game can be recorded and replayed to the identical final state. This powers verification,
-  reports and replays (Roadmap 2.0 F5), not just cheating prevention.
-- **Deployment:** the GitLab pipeline that publishes the static site also builds and releases the server, with a health check and
-  a one-page guide in [docs/SELF_HOSTING.md](docs/SELF_HOSTING.md) so anyone can run their own.
-- *Test:* a recorded game replays identically in Node twice; a client and server complete a handshake; an old client is refused
-  with a clear message.
+- **0a. Extract the core (L).** Commands and events replace direct calls to the status line, sound and effects inside the step;
+  the step stops reading the screen; `core/` moves out of `app.js` with no DOM. The single-player game, driven through a
+  `LocalSession`, behaves as before. *Test:* the existing tests and browser tests still pass; the core plays an operation in Node
+  with no `document` defined.
+- **0b. Deterministic and replayable (M).** All rules randomness is seeded; commands are stamped with a tick; a recorder and a
+  replay runner exist. *Test:* a recorded game replays to the identical state hash twice in Node and once in Firefox.
+- **0c. Server skeleton (M).** `server/`: Node, WebSocket and HTTP, SQLite, accounts and sessions, a versioned handshake that
+  refuses an out-of-date client with a clear message, a health check, and the GitLab pipeline that releases it with the site.
+  *Test:* a client and server complete a handshake; a stale client is refused; sign-up, sign-in and deletion work.
+- **0d. A room (M).** One player in one server room through a `RemoteSession`, with prediction, interpolation and reconnects.
+  *Test:* a bot client and a browser each finish the same operation; a forced disconnect rejoins without losing state.
+- **Deploy and docs:** a self-hosting guide for the server next to [docs/SELF_HOSTING.md](docs/SELF_HOSTING.md), and
+  [PRIVACY.md](PRIVACY.md) updated for what the server keeps before anything is public.
 
 ## Phase 1. Daily operation (M)
 
@@ -44,7 +46,7 @@ One operation for everyone each day, with a real leaderboard.
 - A finished run is submitted with its orders. The server **re-runs it** and only then records the score, so a faked number cannot
   get on the board.
 - Score = time, casualties and funds kept. Boards for today, this week and all time; friends-only view once Phase 4 adds friends.
-- A result card with a short link others can open to watch the replay.
+- A result card, and a replay of any board entry that you can watch from the board itself.
 - *Test:* two accounts get the same day; a tampered submission is rejected; the board ranks as expected.
 
 ## Phase 2. Co-op operations, two to four players (L)
@@ -54,8 +56,9 @@ One operation, each player commanding their own agents.
 - **Server-authoritative.** The server runs the simulation and ticks it; clients send orders and receive state updates. There is no
   desync to chase and no peer-to-peer connection to set up, so firewalls and home routers do not matter. A cheating client can only
   issue orders, which the server checks like any other.
-- **Lobby:** create or browse open games from the menu's Co-op entry, pick the operation and difficulty, invite by link or friend
-  list, ready up.
+- **Lobby:** create or browse open games from the menu's Co-op entry, pick the operation and difficulty, then either **quick match**
+  (the server fills a room) or open a game for friends, who see it in their friends list and join with one click. No codes or links
+  to pass around. Ready up.
 - **Feel:** clients predict their own agents' movement and interpolate everyone else's, so orders respond at once even on a slow
   link. Updates send only what changed.
 - Agents split between players (2 players: 2 each; 4 players: 1 each). Shared funds and a shared outcome.
@@ -81,7 +84,7 @@ Raid other players' territories, with the server holding the shared state.
 
 ## Phase 4. The community around it (M)
 
-- Friends, invites and simple chat or quick messages in lobbies.
+- A friends list (request and accept by display name), a "join" button on a friend who is in a lobby, and simple chat or quick messages in lobbies.
 - Shared mission lists and uploaded missions (Roadmap 2.0 G1 to G3) hosted by the server, with the editor publishing straight to it.
 - Profiles with a record of operations, and rankings per mode.
 - Moderation basics: report, mute, ban, and name filters.
