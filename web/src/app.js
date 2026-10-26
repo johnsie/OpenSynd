@@ -4705,7 +4705,7 @@ function renderDailyBoard() {
   const me = onlinePlay?.account?.name;
   board.replaceChildren(
     ...(rows.length === 0
-      ? [Object.assign(document.createElement("li"), { textContent: "Nobody has won this one yet." })]
+      ? [Object.assign(document.createElement("li"), { className: "none", textContent: "Nobody has won this one yet." })]
       : rows.map((row) => {
           const item = document.createElement("li");
           item.classList.toggle("me", row.name === me);
