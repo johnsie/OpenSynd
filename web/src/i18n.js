@@ -31,7 +31,6 @@ const TABLE = Object.freeze({
   "title.how_to_play": ["How to play", "Cómo jugar", "Comment jouer"],
   "title.resume": ["Resume the operation", "Reanudar la operación", "Reprendre l'opération"],
   "title.discard": ["Discard it", "Descartarla", "L'abandonner"],
-  "title.new_game": ["New game", "Nueva partida", "Nouvelle partie"],
   "title.research": ["Research & Armoury", "Investigación y armería", "Recherche et armurerie"],
   "title.menu": ["Main menu", "Menú principal", "Menu principal"],
   "company.heading": ["Name your company", "Nombra tu empresa", "Nommez votre société"],

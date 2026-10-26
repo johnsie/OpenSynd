@@ -12,8 +12,8 @@ export const STEPS = Object.freeze([
   },
   {
     id: "all",
-    text: "Click Select all in the squad panel, or press A, to give orders to the whole squad at once.",
-    point: () => ({ button: "#select-all-button" }),
+    text: "Click Select all, or the diamond between the squad cards, or press A, to give orders to the whole squad at once.",
+    point: () => [{ button: "#select-all-button" }, { button: "#select-all-hub" }],
     done: (seen) => seen.allSelected,
   },
   {
@@ -48,7 +48,9 @@ export const STEPS = Object.freeze([
   },
   {
     id: "persuade",
-    text: "Click the Persuader in operator 1's inventory to switch it on, then stand next to the civilian until they follow you.",
+    text:
+      "Click the Persuader in operator 1's inventory: switching it on puts the weapon away (it is one or the other). " +
+      "Then stand next to the civilian until they follow you.",
     point: () => [{ slotAction: "persuade" }, { unit: "civilian-1" }],
     done: (seen) => seen.persuaded,
   },

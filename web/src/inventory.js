@@ -215,10 +215,27 @@ export function selectWeaponForAll(units, definitionId) {
       missing.push(unit.id);
       continue;
     }
-    unit.activeSlot = slot;
+    raiseWeapon(unit, slot);
     (unit.equipment[slot].definition.id === definitionId ? selected : substituted).push(unit.id);
   }
   return { selected, substituted, missing };
+}
+
+// The Persuader and a weapon are one or the other: raising a weapon switches the Persuader off, and switching the Persuader on
+// puts the weapon away.
+export function raiseWeapon(unit, slot) {
+  unit.activeSlot = slot;
+  unit.persuading = false;
+}
+
+// Switch the Persuader on or off for every operative in the group who carries one; returns who did. Switching on puts their weapon away.
+export function setPersuader(units, on) {
+  const carriers = units.filter((unit) => unit.equipment.some((item) => item.definition.action === "persuade"));
+  for (const unit of carriers) {
+    unit.persuading = on;
+    if (on) unit.activeSlot = null;
+  }
+  return carriers;
 }
 
 // Put the weapon away for several operatives: whoever raised it (or its stand-in) goes back to automatic.

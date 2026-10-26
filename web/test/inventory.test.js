@@ -7,6 +7,8 @@ import {
   LOOT_RANGE,
   clearWeaponForAll,
   selectWeaponForAll,
+  raiseWeapon,
+  setPersuader,
   weaponDistance,
   findLoot,
   freeSlots,
@@ -258,4 +260,31 @@ test("with several operators selected, the one carrying the fewest items collect
   assert.equal(pickLooter([at("a", 1, 2), at("b", 2, 2)], body).id, "a", "a tie goes to the nearer");
   const found = findLoot([loaded, light], [body]);
   assert.equal(found.operator.id, "far", "within reach of both: the lighter one takes it");
+});
+
+test("the Persuader and a weapon are one or the other", () => {
+  const persuader = item("persuader", "persuade");
+  const gun = () => item("pistol");
+  const agent = (id) => ({ ...operator(0, 0, [gun(), persuader]), id });
+  const lone = agent("a");
+  raiseWeapon(lone, 0);
+  assert.equal(lone.activeSlot, 0);
+  setPersuader([lone], true);
+  assert.equal(lone.persuading, true);
+  assert.equal(lone.activeSlot, null, "switching the Persuader on puts the weapon away");
+  raiseWeapon(lone, 0);
+  assert.equal(lone.persuading, false, "raising a weapon switches the Persuader off");
+  assert.equal(lone.activeSlot, 0);
+  setPersuader([lone], false);
+  assert.equal(lone.activeSlot, 0, "switching it off leaves the weapon alone");
+
+  const squad = [agent("b"), agent("c")];
+  setPersuader(squad, true);
+  assert.deepEqual(squad.map((unit) => unit.persuading), [true, true]);
+  selectWeaponForAll(squad, "pistol");
+  assert.deepEqual(squad.map((unit) => [unit.activeSlot, unit.persuading]), [[0, false], [0, false]], "a group weapon choice too");
+
+  const unarmed = { ...operator(0, 0, [gun()]), id: "d", activeSlot: 0 };
+  assert.deepEqual(setPersuader([unarmed], true), [], "someone with no Persuader is left as they are");
+  assert.equal(unarmed.activeSlot, 0);
 });

@@ -605,21 +605,22 @@ for (const [name, type, executablePath] of targets) {
 
 
     // New game: wipes the campaign and what was won, keeps the settings, and asks first.
-    const fresh = await browser.newPage();
+    const fresh = await (await browser.newContext()).newPage();
     await fresh.goto(`${url}?e2e`);
-    await fresh.waitForSelector(".roster-select");
+    await fresh.waitForSelector("#menu-dialog[open]");
+    assert.equal(await fresh.locator("#new-game-button").count(), 0, "the world map has no New game button");
     await fresh.evaluate(() => {
       window.opensyndTest.setFunds(777);
       localStorage.setItem("opensynd.progress.v1", JSON.stringify({ completed: ["developer.restore-relay"] }));
       localStorage.setItem("opensynd.settings.v1", JSON.stringify({ muted: true }));
     });
     await fresh.reload();
-    await fresh.waitForSelector("#new-game-button");
-    await fresh.click("#new-game-button");
+    await fresh.waitForSelector("#menu-new-game:not([hidden])");
+    await fresh.click("#menu-new-game");
     assert.match(await fresh.locator("#confirm-heading").innerText(), /Start a new game/);
     await fresh.click("#confirm-cancel");
     assert.ok((await fresh.evaluate(() => localStorage.getItem("opensynd.progress.v1"))) !== null, "cancelling changes nothing");
-    await fresh.click("#new-game-button");
+    await fresh.click("#menu-new-game");
     await Promise.all([fresh.waitForEvent("load"), fresh.click("#confirm-accept")]);
     await fresh.waitForSelector(".roster-select");
     assert.equal(await fresh.evaluate(() => localStorage.getItem("opensynd.progress.v1")), null);
@@ -1066,7 +1067,8 @@ for (const [name, type, executablePath] of targets) {
     await trainee.click('.roster-item[data-unit="operator-two"] .roster-select'); // the squad panel, as a player would
     await waitStep("all");
     assert.equal(await trainee.locator("#select-all-button.tutorial-point").count(), 1, "an arrow marks Select all");
-    await trainee.keyboard.press("a");
+    assert.equal(await trainee.locator("#select-all-hub.tutorial-point").count(), 1, "and the diamond between the cards");
+    await trainee.click("#select-all-hub");
     await waitStep("walk");
     await trainee.evaluate(() => window.opensyndTest.moveSelected(11, 20));
     await waitStep("weapon");
@@ -1086,6 +1088,12 @@ for (const [name, type, executablePath] of targets) {
     await trainee.keyboard.down("Shift");
     await trainee.mouse.click(farther.x, farther.y);
     await trainee.keyboard.up("Shift");
+    // One or the other: the Persuader on puts the weapon away, and raising a weapon switches it off.
+    await trainee.evaluate(() => window.opensyndTest.selectWeapon("operator-one"));
+    await trainee.click('.roster-item[data-unit="operator-one"] .slot[data-action="persuade"]');
+    assert.deepEqual(await trainee.evaluate(() => window.opensyndTest.arms("operator-one")), { activeSlot: null, persuading: true });
+    await trainee.click('.roster-item[data-unit="operator-one"] .slot[data-action="disable-pulse"]');
+    assert.deepEqual(await trainee.evaluate(() => window.opensyndTest.arms("operator-one")), { activeSlot: 0, persuading: false });
     await waitStep("persuade");
     await trainee.evaluate(() => window.opensyndTest.persuade("civilian-1", "operator-one"));
     await waitStep("drive");

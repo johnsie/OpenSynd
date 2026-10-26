@@ -84,7 +84,7 @@ test("arrows point at everything the step wants clicked or walked to", () => {
     return pointerFor(tutorial, seen);
   };
   assert.deepEqual(pointerFor(tutorial, NOTHING_SEEN), [{ unit: "operator-two" }, { roster: "operator-two" }]);
-  assert.deepEqual(at("all"), [{ button: "#select-all-button" }], "the Select all button");
+  assert.deepEqual(at("all"), [{ button: "#select-all-button" }, { button: "#select-all-hub" }], "Select all and the diamond");
   assert.deepEqual(at("walk"), [{ zone: "walk-pad" }]);
   assert.deepEqual(at("weapon"), [{ slotAction: "disable-pulse" }], "the item to click");
   assert.deepEqual(at("shoot"), [{ unit: "practice-target" }]);

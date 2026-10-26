@@ -172,7 +172,9 @@ import {
   lootableAt,
   lootableBody,
   nearestLootable,
+  raiseWeapon,
   selectWeaponForAll,
+  setPersuader,
 } from "./inventory.js";
 import {
   advanceCombat,
@@ -4827,7 +4829,6 @@ async function startNewGame() {
   }
   location.reload();
 }
-document.querySelector("#new-game-button").addEventListener("click", startNewGame);
 
 // The main menu comes first: what kind of game, the settings, the editor. The world map is the Campaign choice.
 function currentContinueTarget() {
@@ -5145,7 +5146,11 @@ if (new URLSearchParams(location.search).has("e2e")) {
     },
     selectWeapon(id) {
       const unit = state.units.find((item) => item.id === id);
-      unit.activeSlot = unit.equipment.findIndex((item) => item.definition.action === "disable-pulse");
+      raiseWeapon(unit, unit.equipment.findIndex((item) => item.definition.action === "disable-pulse"));
+    },
+    arms(id) {
+      const unit = state.units.find((item) => item.id === id);
+      return { activeSlot: unit.activeSlot, persuading: Boolean(unit.persuading) };
     },
     disableUnit(id) {
       const unit = state.units.find((item) => item.id === id);
@@ -5342,9 +5347,9 @@ function slotRow(unit, label) {
 function slotHint(definition) {
   switch (definition.action) {
     case "disable-pulse":
-      return "weapon, click to select";
+      return "weapon, click to select (switches the Persuader off)";
     case "persuade":
-      return "click to switch on";
+      return "click to switch on (puts the weapon away)";
     case "time-bomb":
       return "click to plant";
     case "shield":
@@ -5380,7 +5385,7 @@ function pressSlot(unit, slot) {
         setStatus(`${squad.length} operators: weapons put away. Select one to fire.`);
       } else {
         const { selected, substituted, missing } = selectWeaponForAll(squad, definition.id);
-        unit.activeSlot = slot; // the operative clicked keeps the exact copy they clicked
+        raiseWeapon(unit, slot); // the operative clicked keeps the exact copy they clicked
         setStatus(
           `${selected.length + substituted.length} operators: ${definition.name} selected.` +
             (substituted.length > 0 ? ` ${substituted.length} took the most similar weapon they carry.` : "") +
@@ -5391,7 +5396,8 @@ function pressSlot(unit, slot) {
       renderInterface();
       return;
     }
-    unit.activeSlot = unit.activeSlot === slot ? null : slot;
+    if (unit.activeSlot === slot) unit.activeSlot = null;
+    else raiseWeapon(unit, slot);
     setStatus(
       unit.activeSlot === slot
         ? `${unit.definition.name}: ${definition.name} selected. It will be the only weapon that fires.`
@@ -5446,12 +5452,11 @@ function pressSlot(unit, slot) {
     const squad = selectedOperators();
     const group = squad.length > 1 && squad.some((member) => member.id === unit.id) ? squad : [unit];
     const turnOn = !unit.persuading;
-    const carriers = group.filter((member) => member.equipment.some((item) => item.definition.action === "persuade"));
-    for (const member of carriers) member.persuading = turnOn;
+    const carriers = setPersuader(group, turnOn);
     setStatus(
       turnOn
-        ? `${carriers.length > 1 ? `${carriers.length} operators` : unit.definition.name}: ${definition.name} on. ` +
-            "Stand near people to win them over."
+        ? `${carriers.length > 1 ? `${carriers.length} operators` : unit.definition.name}: ${definition.name} on, weapon put away ` +
+            "(it is one or the other). Stand near people to win them over."
         : `${carriers.length > 1 ? `${carriers.length} operators` : unit.definition.name}: ${definition.name} off.`,
     );
     audio.play("select");
