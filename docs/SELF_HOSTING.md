@@ -2,7 +2,9 @@
 
 # Running your own copy
 
-OpenSynd is a folder of static files. You do not need a database, an account, a container or any project service.
+OpenSynd today is a folder of static files. You do not need a database, an account, a container or any project service to run
+the game. The planned online modes add a game server you can also run yourself; this page will cover it when it exists
+(see [ROADMAP_MULTIPLAYER.md](../ROADMAP_MULTIPLAYER.md)).
 
 ## The quickest way: any static file server
 

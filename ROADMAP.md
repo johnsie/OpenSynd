@@ -1563,7 +1563,7 @@ with a badge, long covered sleeves with cuff stripes, armour and shoulder light 
 
 - Complete accessibility, localization, performance, privacy, and security
   reviews.
-- Keep the default deployment static and privacy-preserving: no account,
+- Keep the single-player game static and privacy-preserving: no account,
   telemetry, advertising, or third-party tracking. Any later telemetry must be
   off by default, documented, consent-based, and independently removable.
 - Publish reproducible release instructions, checksums, signed tags, release
