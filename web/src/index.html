@@ -209,6 +209,44 @@
       </footer>
     </div>
 
+    <dialog id="menu-dialog" class="main-menu" aria-labelledby="menu-heading">
+      <header class="menu-head">
+        <p class="eyebrow">OPEN CIVIC OPERATIONS NETWORK</p>
+        <h2 id="menu-heading">OpenSynd</h2>
+      </header>
+      <nav class="menu-list" aria-label="Main menu">
+        <button id="menu-continue" type="button" class="primary" hidden>
+          <span data-i18n="menu.continue">Continue</span>
+          <small id="menu-continue-note"></small>
+        </button>
+        <button id="menu-campaign" type="button">
+          <span data-i18n="menu.campaign">Campaign</span>
+          <small data-i18n="menu.campaign_note">Fight for the territories on the world map.</small>
+        </button>
+        <button id="menu-new-game" type="button">
+          <span data-i18n="menu.new_game">New game</span>
+          <small data-i18n="menu.new_game_note">Start the whole campaign again.</small>
+        </button>
+        <p class="menu-group" data-i18n="menu.online">Online (planned)</p>
+        <button type="button" disabled>
+          <span data-i18n="menu.coop">Co-op operations</span>
+          <small data-i18n="menu.coop_note">Two to four players, one squad each.</small>
+        </button>
+        <button type="button" disabled>
+          <span data-i18n="menu.daily">Daily operation</span>
+          <small data-i18n="menu.daily_note">The same operation for everyone, ranked.</small>
+        </button>
+        <button type="button" disabled>
+          <span data-i18n="menu.rivals">Rival syndicates</span>
+          <small data-i18n="menu.rivals_note">Raid other players' territories.</small>
+        </button>
+        <p class="menu-group" data-i18n="menu.more">More</p>
+        <button id="menu-settings" type="button" data-i18n="menu.settings">Settings</button>
+        <a id="menu-editor" class="button" href="editor.html" data-i18n="menu.editor">Mission editor</a>
+        <button id="menu-about" type="button" data-i18n="menu.about">About &amp; licenses</button>
+      </nav>
+    </dialog>
+
     <dialog id="title-dialog" class="title-screen" aria-labelledby="title-heading">
       <header class="title-head">
         <p class="eyebrow">OPEN CIVIC OPERATIONS NETWORK</p>
@@ -283,6 +321,7 @@
             <button id="resume-discard" data-i18n="title.discard" type="button">Discard it</button>
           </div>
           <div class="title-actions">
+            <button id="menu-button" data-i18n="title.menu" type="button">Main menu</button>
             <button id="new-game-button" data-i18n="title.new_game" type="button">New game</button>
             <button id="open-research" data-i18n="title.research" type="button">Research &amp; Armoury</button>
             <button id="begin-button" data-i18n="title.begin" type="button" class="primary">Begin operation</button>

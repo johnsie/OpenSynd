@@ -22,6 +22,7 @@ import {
 } from "./vehicles.js";
 import { createOverlay, createTileSprites } from "./textures.js";
 import { renderWorldMap } from "./worldmap.js";
+import { continueNote, continueTarget } from "./menu.js";
 import { DRUG_HINTS, DRUG_LABELS, DRUG_NAMES, adrenalineSpeed, advanceDrugs, drugMultiplier, newDrugs, setDrug } from "./drugs.js";
 import { advanceProps, damageProp, newProp, propsNear } from "./props.js";
 import {
@@ -260,6 +261,7 @@ const briefingText = document.querySelector("#briefing-text");
 const selectedReadout = document.querySelector("#selected-readout");
 const statusMessage = document.querySelector("#status-message");
 const aboutDialog = document.querySelector("#about-dialog");
+const menuDialog = document.querySelector("#menu-dialog");
 const titleDialog = document.querySelector("#title-dialog");
 const outcomeDialog = document.querySelector("#outcome-dialog");
 const saveButton = document.querySelector("#save-button");
@@ -4722,7 +4724,7 @@ document.querySelector("#operations-button").addEventListener("click", () => {
   state.modal = true;
   titleDialog.showModal();
 });
-document.querySelector("#new-game-button").addEventListener("click", async () => {
+async function startNewGame() {
   const sure = await confirmLeave(
     "This wipes your campaign: funds, upgrades, the roster, territories, research, the operations you have won and every saved " +
       "game in this browser. Your settings are kept. There is no undo.",
@@ -4735,6 +4737,48 @@ document.querySelector("#new-game-button").addEventListener("click", async () =>
     // Storage blocked: reloading still starts from what is in memory being dropped.
   }
   location.reload();
+}
+document.querySelector("#new-game-button").addEventListener("click", startNewGame);
+
+// The main menu comes first: what kind of game, the settings, the editor. The world map is the Campaign choice.
+function currentContinueTarget() {
+  return continueTarget({ hasAutosave: Boolean(readAutosave()), completedCount: state.progress?.completed.length ?? 0 });
+}
+
+function showMainMenu() {
+  const target = currentContinueTarget();
+  const saved = target === "operation" ? readAutosave() : null;
+  const entry = saved ? state.missionList?.find((item) => item.id === saved.missionId) : null;
+  const button = document.querySelector("#menu-continue");
+  button.hidden = target === null;
+  document.querySelector("#menu-continue-note").textContent = continueNote(target, {
+    operationName: entry?.name,
+    completedCount: state.progress?.completed.length ?? 0,
+  });
+  state.modal = true;
+  if (!menuDialog.open) menuDialog.showModal();
+  (button.hidden ? document.querySelector("#menu-campaign") : button).focus();
+}
+
+function showCampaign() {
+  menuDialog.close();
+  state.modal = true;
+  if (!titleDialog.open) titleDialog.showModal();
+}
+
+// Escape must not drop the player onto a half-started game behind the menu.
+menuDialog.addEventListener("cancel", (event) => event.preventDefault());
+document.querySelector("#menu-campaign").addEventListener("click", showCampaign);
+document.querySelector("#menu-continue").addEventListener("click", async () => {
+  if (currentContinueTarget() === "operation" && (await resumeAutosave())) return;
+  showCampaign();
+});
+document.querySelector("#menu-new-game").addEventListener("click", startNewGame);
+document.querySelector("#menu-settings").addEventListener("click", showSettings);
+document.querySelector("#menu-about").addEventListener("click", () => aboutDialog.showModal());
+document.querySelector("#menu-button").addEventListener("click", () => {
+  titleDialog.close();
+  showMainMenu();
 });
 document.querySelector("#reset-progress").addEventListener("click", () => {
   state.progress = emptyProgress();
@@ -4782,8 +4826,7 @@ document.querySelector("#next-button").addEventListener("click", () => {
     .catch(showFatalError);
 });
 document.querySelector("#outcome-close").addEventListener("click", () => outcomeDialog.close());
-titleDialog.showModal();
-state.modal = true;
+showMainMenu();
 // Browser tests add ?e2e to reach states that take too long to play out.
 if (new URLSearchParams(location.search).has("e2e")) {
   window.opensyndTest = {
@@ -5492,7 +5535,7 @@ for (const type of ["pointerdown", "pointermove", "keydown", "wheel"]) {
 }
 
 function operationActive() {
-  return !titleDialog.open && !outcomeDialog.open && state.outcome === "active" && Boolean(state.mission);
+  return !menuDialog.open && !titleDialog.open && !outcomeDialog.open && state.outcome === "active" && Boolean(state.mission);
 }
 
 // The operation in progress is kept in the browser as it is played (every few seconds, and when the page is hidden or left), so
@@ -5542,6 +5585,7 @@ async function resumeAutosave() {
     setStatus(`The saved operation could not be restored: ${error.message}`);
     return false;
   }
+  menuDialog.close();
   titleDialog.close();
   setStatus("Operation resumed where you left it.");
   return true;
@@ -5616,5 +5660,8 @@ document.querySelector("#update-later").addEventListener("click", () => {
 });
 document.querySelector("#update-now").addEventListener("click", () => applyUpdate()); // an operation in progress is saved and resumes
 
-loadGame().then(offerResume).catch(showFatalError);
+loadGame()
+  .then(offerResume)
+  .then(() => menuDialog.open && showMainMenu()) // the saved game and the wins are known now
+  .catch(showFatalError);
 requestAnimationFrame(frame);

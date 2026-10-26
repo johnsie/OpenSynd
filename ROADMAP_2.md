@@ -195,5 +195,5 @@ adds a sprite or a sound goes through the provenance register like the rest.
 
 ## What is deliberately not here
 
-Multiplayer, accounts, leaderboards, a store, real-money anything, and any art, sound, text or map from the original game. This is
-a single-player fan game that runs from a folder of files.
+Accounts, a store, real-money anything, and any art, sound, text or map from the original game. This is
+a fan game that runs from a folder of files. Multiplayer is planned separately in [ROADMAP_MULTIPLAYER.md](ROADMAP_MULTIPLAYER.md).

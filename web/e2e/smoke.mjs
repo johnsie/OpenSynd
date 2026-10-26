@@ -50,6 +50,14 @@ for (const [name, type, executablePath] of targets) {
   let browser;
   try {
     browser = await type.launch({ executablePath });
+    // The main menu comes before the world map. Pages from browser.newPage() step through it to the campaign map as soon as they
+    // load; the menu test below uses a context page, which is left alone.
+    const rawNewPage = browser.newPage.bind(browser);
+    browser.newPage = async (options) => {
+      const made = await rawNewPage(options);
+      made.on("load", () => made.evaluate(() => document.querySelector("#menu-dialog[open] #menu-campaign")?.click()).catch(() => {}));
+      return made;
+    };
   } catch (error) {
     console.log(`skip ${name}: ${error.message.split("\n")[0]}`);
     // E2E_STRICT makes a missing browser a failure, so CI cannot pass vacuously.
@@ -976,6 +984,36 @@ for (const [name, type, executablePath] of targets) {
     await returning.waitForSelector(".roster-select");
     assert.equal(await returning.locator("#resume-box").isVisible(), false, "discarded");
     await returning.close();
+
+    // The main menu: a fresh browser has only the new choices, Escape does not dismiss it, settings open from it, and the world map
+    // is the Campaign choice (with a way back). Once something is won, Continue appears.
+    const menuPage = await (await browser.newContext()).newPage();
+    await menuPage.goto(`${url}?e2e`);
+    await menuPage.waitForSelector("#menu-dialog[open]");
+    assert.equal(await menuPage.locator("#title-dialog").evaluate((dialog) => dialog.open), false, "the map is not the first screen");
+    assert.equal(await menuPage.locator("#menu-continue").isVisible(), false, "nothing to continue yet");
+    assert.equal(await menuPage.locator("#menu-dialog button:disabled").count(), 3, "the online modes are listed but planned");
+    await menuPage.keyboard.press("Escape");
+    assert.equal(await menuPage.locator("#menu-dialog").evaluate((dialog) => dialog.open), true, "Escape leaves the menu up");
+    await menuPage.click("#menu-settings");
+    await menuPage.waitForSelector("#settings-dialog[open]");
+    await menuPage.click("#close-settings");
+    await menuPage.click("#menu-campaign");
+    await menuPage.waitForSelector("#title-dialog[open]");
+    assert.equal(await menuPage.locator("#menu-dialog").evaluate((dialog) => dialog.open), false);
+    await menuPage.click("#menu-button");
+    await menuPage.waitForSelector("#menu-dialog[open]");
+    assert.equal(await menuPage.locator("#title-dialog").evaluate((dialog) => dialog.open), false);
+    await menuPage.evaluate(() => {
+      localStorage.removeItem("opensynd.autosave.v1");
+      localStorage.setItem("opensynd.progress.v1", JSON.stringify({ completed: ["developer.restore-relay"] }));
+    });
+    await menuPage.reload();
+    await menuPage.waitForSelector("#menu-continue:not([hidden])");
+    assert.match(await menuPage.locator("#menu-continue-note").innerText(), /1 operation won/);
+    await menuPage.click("#menu-continue");
+    await menuPage.waitForSelector("#title-dialog[open]");
+    await menuPage.close();
 
     // Gear bought before the operation begins is on the operative when it does (the operation is set up again on closing).
     const buyer = await browser.newPage();
