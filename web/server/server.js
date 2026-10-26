@@ -7,6 +7,17 @@ import { createServer } from "node:http";
 import { FIXED_STEP_SECONDS } from "../src/simulation.js";
 import { createRateLimiter, hashPassword, newToken, problemWithName, problemWithPassword, verifyPassword } from "./auth.js";
 import { contentHash } from "./content-hash.js";
+import {
+  DAY_MS,
+  choresEarned,
+  dailyOperation,
+  describeChore,
+  dayNumber,
+  resultOf,
+  rewardWithStreak,
+  scoreOf,
+  streakOf,
+} from "./daily.js";
 import { CORE_VERSION, PROTOCOL_VERSION, checkVersions, parseClientMessage } from "./protocol.js";
 import { Room } from "./rooms.js";
 import { upgrade } from "./ws.js";
@@ -50,7 +61,14 @@ function readBody(request) {
  * Make the server. `content` is the loaded pack (server/content.js) and `store` the database (server/store.js). Nothing listens until
  * `listen()`. `origins` is the list of sites whose pages may call the accounts API ("*" for any); `clock` is for tests.
  */
-export function createGameServer({ content, store, origins = ["*"], now = () => performance.now(), tickEvery = true }) {
+export function createGameServer({
+  content,
+  store,
+  origins = ["*"],
+  now = () => performance.now(),
+  tickEvery = true,
+  clock = () => Date.now(),
+}) {
   content.hash ??= contentHash(content.root);
   const rooms = new Map();
   const connections = new Set();
@@ -111,6 +129,12 @@ export function createGameServer({ content, store, origins = ["*"], now = () => 
         const token = newToken();
         store.createSession(found.id, token);
         reply(200, { token, account: { id: found.id, name: found.name } });
+      } else if (url.pathname === "/api/daily" && request.method === "GET") {
+        reply(200, dailyPage(accountOf(request)));
+      } else if (/^\/api\/run\/\d+$/.test(url.pathname) && request.method === "GET") {
+        const kept = store.runRecording(Number(url.pathname.split("/").pop()));
+        if (!kept) return reply(404, { error: "No such run." });
+        reply(200, kept);
       } else if (url.pathname === "/api/me" && request.method === "GET") {
         const account = accountOf(request);
         if (!account) return reply(401, { error: "Not signed in." });
@@ -138,17 +162,88 @@ export function createGameServer({ content, store, origins = ["*"], now = () => 
     }
   }
 
+  // ------------------------------------------------------------------------------------------------------ the daily operation
+
+  const today = () => dayNumber(clock());
+
+  function boardsFor(day) {
+    return {
+      today: store.board("daily", day, day, 10),
+      week: store.board("daily", day - 6, day, 10),
+      all: store.board("daily", 0, day, 10),
+    };
+  }
+
+  /** Today's operation, its chores, the boards, and (for a signed-in player) how they are doing. */
+  function dailyPage(account) {
+    const day = today();
+    const operation = dailyOperation(content, day);
+    const done = account ? new Set(store.choresOn(account.id, day)) : new Set();
+    const days = account ? store.choreDays(account.id) : new Set();
+    const mission = content.read(operation.mission);
+    return {
+      date: operation.date,
+      day,
+      mission: operation.mission,
+      name: operation.name,
+      title: mission.title ?? mission.name,
+      resetsIn: Math.max(0, Math.round(((day + 1) * DAY_MS - clock()) / 1000)),
+      chores: operation.chores.map((chore) => ({ ...describeChore(chore), done: done.has(chore.id) })),
+      boards: boardsFor(day),
+      you: account && {
+        best: store.bestRun(account.id, "daily", day),
+        streak: streakOf(days, day),
+        funds: store.funds(account.id),
+      },
+    };
+  }
+
+  /** An operation played as the day's has ended: it is kept, scored, and its chores paid. Returns what the player is told. */
+  function finishDaily(room) {
+    const { operation, account } = room.daily;
+    const result = resultOf(room.world, room.squad);
+    const score = scoreOf(result);
+    const run = store.recordRun({
+      account,
+      day: operation.day,
+      mode: "daily",
+      mission: operation.mission,
+      seed: operation.seed,
+      outcome: result.outcome,
+      seconds: result.seconds,
+      lost: result.lost,
+      score,
+      recording: room.toRecording(),
+    });
+    const earned = choresEarned(operation, result);
+    const streak = streakOf(new Set([...store.choreDays(account), ...(earned.length > 0 ? [operation.day] : [])]), operation.day);
+    const paid = [];
+    for (const chore of earned) {
+      const reward = rewardWithStreak(chore.reward, streak);
+      if (store.claimChore(account, operation.day, chore.id, reward)) paid.push({ id: chore.id, title: chore.title, reward });
+    }
+    const ranking = store.board("daily", operation.day, operation.day, 1000);
+    const place = ranking.find((row) => row.run === store.bestRun(account, "daily", operation.day)?.id);
+    return { daily: { run, score, chores: paid, streak, funds: store.funds(account), rank: place?.rank ?? null, players: ranking.length } };
+  }
+
   // ------------------------------------------------------------------------------------------------------------- games
 
   const missionPaths = () => new Set([...content.pack.missions, ...(content.pack.variants ?? [])]);
 
-  function startSolo(connection, mission) {
+  function startRoom(connection, mode, mission) {
     if (rooms.size >= MAX_ROOMS) return connection.error("The server is full. Try again in a moment.");
-    const chosen = mission ?? content.pack.missions[0];
+    if (mode === "daily" && !connection.account) return connection.error("Sign in to play the daily operation.");
+    const operation = mode === "daily" ? dailyOperation(content, today()) : null;
+    const chosen = operation?.mission ?? mission ?? content.pack.missions[0];
     if (!missionPaths().has(chosen)) return connection.error("There is no such operation.");
     leaveRoom(connection);
     roomCounter += 1;
-    const room = new Room({ id: `room-${roomCounter}`, content, mission: chosen, seed: roomCounter * 7919 + 13 });
+    const room = new Room({ id: `room-${roomCounter}`, content, mission: chosen, seed: operation?.seed ?? roomCounter * 7919 + 13 });
+    if (operation) {
+      room.daily = { operation, account: connection.account.id };
+      room.onFinish = finishDaily;
+    }
     room.startedAt = now();
     room.owner = connection.account?.id ?? null;
     rooms.set(room.id, room);
@@ -218,7 +313,7 @@ export function createGameServer({ content, store, origins = ["*"], now = () => 
           account: connection.account && { id: connection.account.id, name: connection.account.name },
         });
       }
-      if (message.t === "create") return startSolo(connection, message.mission);
+      if (message.t === "create") return startRoom(connection, message.mode, message.mission);
       if (message.t === "command") {
         const result = connection.room?.receive(connection.id, message.seq, message.command) ?? { ok: false, error: "no operation" };
         if (!result.ok) connection.send({ t: "feedback", events: [], refused: { seq: message.seq, error: result.error } });

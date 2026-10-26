@@ -76,6 +76,7 @@ export function createOnlinePlay({
     },
 
     health: () => client?.health() ?? Promise.resolve(null),
+    daily: () => client?.daily() ?? Promise.resolve(null),
     whoAmI: () => client?.whoAmI() ?? Promise.resolve(null),
     signIn: (name, password) => client.signIn(name, password),
     signUp: (name, password) => client.signUp(name, password),

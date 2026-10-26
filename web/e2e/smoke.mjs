@@ -1609,6 +1609,47 @@ for (const [name, type, executablePath] of targets) {
       await page.close();
     });
 
+    scenario("The daily operation: read the day's page, play it on the server, win, and be on the board with the chores paid", async () => {
+      const page = await (await browser.newContext()).newPage();
+      await page.goto(`${url}?e2e&server=${encodeURIComponent(gameUrl)}`);
+      await page.waitForSelector("#menu-signin:not([hidden])");
+      // Anyone can read the day's page; playing needs an account.
+      await page.waitForFunction(() => !document.querySelector("#menu-daily").disabled);
+      await page.click("#menu-daily");
+      await page.waitForSelector("#daily-dialog[open]");
+      assert.match(await page.locator("#daily-date").innerText(), /^\d{4}-\d\d-\d\d$/);
+      assert.equal(await page.locator("#daily-chores li").count(), 3, "three chores");
+      assert.equal(await page.locator("#daily-play").innerText(), "Sign in to play");
+      await page.click("#daily-play");
+      await page.waitForSelector("#signin-dialog[open]");
+      await page.fill("#signin-name", "Dailyplayer");
+      await page.fill("#signin-password", "a good password");
+      await page.click("#signin-create");
+      await page.waitForFunction(() => document.querySelector("#menu-online-note").textContent.includes("Signed in as Dailyplayer"));
+      await page.click("#menu-daily");
+      await page.waitForSelector("#daily-dialog[open]");
+      assert.equal(await page.locator("#daily-play").innerText(), "Play today's operation");
+      await page.click("#daily-play");
+      await page.waitForFunction(() => window.opensyndTest.online().running, null, { timeout: 8000 });
+      // The squad wins at once (the server's own world is in this process, so the test can finish it).
+      const room = [...gameServer.rooms.values()].find((item) => item.daily);
+      assert.ok(room, "the server is running the day's operation");
+      for (const objective of room.world.objectives) objective.complete = true;
+      await page.waitForSelector("#outcome-dialog[open]", { timeout: 8000 });
+      const stats = await page.locator("#outcome-stats").innerText();
+      assert.match(stats, /Score\s+\d+/);
+      assert.match(stats, /Place today\s+1 of 1/);
+      assert.match(stats, /Chores paid/);
+      await page.click("#outcome-close");
+      await page.waitForSelector("#menu-dialog[open]");
+      await page.click("#menu-daily");
+      await page.waitForSelector("#daily-dialog[open]");
+      assert.match(await page.locator("#daily-board li.me").innerText(), /Dailyplayer/);
+      assert.ok((await page.locator("#daily-chores li.done").count()) >= 1, "the chores earned are ticked");
+      assert.match(await page.locator("#daily-you").innerText(), /Streak: 1 day/);
+      await page.close();
+    });
+
     scenario("Permadeath and recruiting: a fallen operative is lost after a win, and a persuad", async () => {
       // Permadeath and recruiting: a fallen operative is lost after a win, and a persuaded enemy agent joins.
       const roster = await browser.newPage();

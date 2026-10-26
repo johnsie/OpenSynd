@@ -65,6 +65,12 @@ export class OnlineClient {
     return { ok: response.ok, status: response.status, ...data };
   }
 
+  /** Today's operation, its chores and the boards (and how the signed-in player is doing). */
+  async daily() {
+    const result = await this.call("/api/daily");
+    return result.ok ? result : null;
+  }
+
   /** What the server is running, or null if it cannot be reached. */
   async health() {
     try {

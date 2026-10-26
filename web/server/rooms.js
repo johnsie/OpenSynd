@@ -38,6 +38,7 @@ export class Room {
     this.stepHooks = recordingHooks();
     this.finished = false;
     this.result = null;
+    this.onFinish = null; // called once when the operation ends; what it returns is added to the message the players get
   }
 
   get squad() {
@@ -137,7 +138,8 @@ export class Room {
       stats: this.world.opStats,
       debrief: this.world.debrief,
     };
-    for (const player of this.players.values()) player.send({ t: "end", ...this.result });
+    const extra = this.onFinish?.(this) ?? {};
+    for (const player of this.players.values()) player.send({ t: "end", ...this.result, ...extra });
   }
 
   /** The recording, with what is needed to play it back and check the result. */

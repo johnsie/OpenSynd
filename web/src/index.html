@@ -228,6 +228,35 @@
       </div>
     </dialog>
 
+    <dialog id="daily-dialog" class="daily-dialog" aria-labelledby="daily-heading">
+      <div class="daily-body">
+        <header>
+          <p class="eyebrow" id="daily-date"></p>
+          <h2 id="daily-heading" data-i18n="daily.heading">Daily operation</h2>
+          <p id="daily-operation"></p>
+          <p id="daily-resets" class="menu-note"></p>
+        </header>
+        <section aria-labelledby="daily-chores-heading">
+          <h3 id="daily-chores-heading" data-i18n="daily.chores">Today's chores</h3>
+          <ul id="daily-chores" class="daily-chores"></ul>
+          <p id="daily-you" class="menu-note"></p>
+        </section>
+        <section aria-labelledby="daily-board-heading">
+          <h3 id="daily-board-heading" data-i18n="daily.board">Board</h3>
+          <div class="daily-tabs" role="group" aria-label="Board range">
+            <button type="button" data-range="today" aria-pressed="true" data-i18n="daily.today">Today</button>
+            <button type="button" data-range="week" aria-pressed="false" data-i18n="daily.week">This week</button>
+            <button type="button" data-range="all" aria-pressed="false" data-i18n="daily.all">All time</button>
+          </div>
+          <ol id="daily-board" class="daily-board"></ol>
+        </section>
+        <div class="company-actions">
+          <button id="daily-close" type="button" data-i18n="daily.close">Close</button>
+          <button id="daily-play" type="button" class="primary" data-i18n="daily.play">Play today's operation</button>
+        </div>
+      </div>
+    </dialog>
+
     <dialog id="signin-dialog" class="company-dialog" aria-labelledby="signin-heading">
       <form id="signin-form" method="dialog">
         <h2 id="signin-heading" data-i18n="signin.heading">Sign in</h2>
@@ -299,9 +328,9 @@
           <span data-i18n="menu.coop">Co-op operations</span>
           <small data-i18n="menu.coop_note">Two to four players, one squad each.</small>
         </button>
-        <button type="button" disabled>
+        <button id="menu-daily" type="button" disabled>
           <span data-i18n="menu.daily">Daily operation</span>
-          <small data-i18n="menu.daily_note">The same operation for everyone, ranked.</small>
+          <small id="menu-daily-note" data-i18n="menu.daily_note">The same operation for everyone, ranked.</small>
         </button>
         <button type="button" disabled>
           <span data-i18n="menu.rivals">Rival companies</span>

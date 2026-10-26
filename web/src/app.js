@@ -3366,6 +3366,10 @@ function fundsChange(before, after) {
   return `${Math.floor(before)} → ${Math.floor(after)} (${change >= 0 ? "+" : "−"}${Math.abs(change)})`;
 }
 
+function paidChores(chores) {
+  return chores.length > 0 ? chores.map((chore) => `${chore.title} (+${chore.reward})`).join(", ") : "none new";
+}
+
 function showOutcome(outcome) {
   const won = outcome === "success";
   audio.play(won ? "victory" : "failed");
@@ -3430,7 +3434,16 @@ function showOutcome(outcome) {
       : []),
     ...(state.opStats.discovered?.length > 0 ? [["Discovered", state.opStats.discovered.join(", ")]] : []),
     ...(state.opStats.resupply > 0 ? [["Resupply bill", `${state.opStats.resupply} funds`]] : []),
-    ["Funds", fundsChange(state.fundsAtStart ?? state.campaign.funds, state.campaign.funds)],
+    ...(state.online && state.dailyResult
+      ? [
+          ["Score", String(state.dailyResult.score)],
+          ...(state.dailyResult.rank ? [["Place today", `${state.dailyResult.rank} of ${state.dailyResult.players}`]] : []),
+          ["Chores paid", paidChores(state.dailyResult.chores)],
+          ["Streak", `${state.dailyResult.streak} day${state.dailyResult.streak === 1 ? "" : "s"}`],
+          ["Funds on the server", String(state.dailyResult.funds)],
+        ]
+      : []),
+    ...(state.online ? [] : [["Funds", fundsChange(state.fundsAtStart ?? state.campaign.funds, state.campaign.funds)]]),
     ...(state.opStats.civiliansHarmed + state.opStats.policeHarmed > 0
       ? [["Bystanders killed", String(state.opStats.civiliansHarmed + state.opStats.policeHarmed)]]
       : []),
@@ -4409,6 +4422,7 @@ async function setUpOnline() {
     onlinePlay = createOnlinePlay({ state, hooks: worldHooks, equipment: new Map(state.catalogPaths) });
     onlinePlay.onEnd((message) => {
       state.outcome = message.outcome === "success" ? "success" : "failure";
+      state.dailyResult = message.daily ?? null;
       showOutcome(state.outcome);
     });
     onlinePlay.onClose(() => {
@@ -4431,6 +4445,7 @@ async function refreshOnlineMenu() {
   signin.hidden = true;
   test.hidden = true;
   note.hidden = true;
+  document.querySelector("#menu-daily").disabled = true;
   if (!(await setUpOnline())) return;
   note.hidden = false;
   note.textContent = "Looking for the server…";
@@ -4451,6 +4466,11 @@ async function refreshOnlineMenu() {
   document.querySelector("#menu-signin-note").hidden = Boolean(account);
   signin.hidden = false;
   test.hidden = false;
+  const daily = document.querySelector("#menu-daily");
+  daily.disabled = false;
+  document.querySelector("#menu-daily-note").textContent = account
+    ? "The same operation for everyone, ranked."
+    : "The same operation for everyone, ranked. Sign in to play.";
 }
 
 function showSignin() {
@@ -4518,6 +4538,81 @@ async function leaveOnline() {
   await loadGame(state.missionIndex);
   showMainMenu();
 }
+
+// The daily operation: what today's is, the chores, how the player is doing, and the boards.
+let dailyPage = null;
+let dailyRange = "today";
+
+function renderDailyBoard() {
+  const board = document.querySelector("#daily-board");
+  const rows = dailyPage?.boards[dailyRange] ?? [];
+  const me = onlinePlay?.account?.name;
+  board.replaceChildren(
+    ...(rows.length === 0
+      ? [Object.assign(document.createElement("li"), { textContent: "Nobody has won this one yet." })]
+      : rows.map((row) => {
+          const item = document.createElement("li");
+          item.classList.toggle("me", row.name === me);
+          for (const text of [`${row.rank}.`, row.name, String(row.score), formatDuration(row.seconds)]) {
+            item.append(Object.assign(document.createElement("span"), { textContent: text }));
+          }
+          return item;
+        })),
+  );
+  for (const button of document.querySelectorAll(".daily-tabs button")) {
+    button.setAttribute("aria-pressed", String(button.dataset.range === dailyRange));
+  }
+}
+
+async function showDaily() {
+  const page = await onlinePlay.daily();
+  if (!page) {
+    document.querySelector("#menu-online-note").textContent = "The server did not answer.";
+    return;
+  }
+  dailyPage = page;
+  dailyRange = "today";
+  document.querySelector("#daily-date").textContent = page.date;
+  document.querySelector("#daily-operation").textContent = `${page.name}: ${page.title}`;
+  const hours = Math.floor(page.resetsIn / 3600);
+  const minutes = Math.floor((page.resetsIn % 3600) / 60);
+  document.querySelector("#daily-resets").textContent = `The next one begins in ${hours} h ${minutes} min.`;
+  document.querySelector("#daily-chores").replaceChildren(
+    ...page.chores.map((chore) => {
+      const item = document.createElement("li");
+      item.classList.toggle("done", chore.done);
+      const tick = Object.assign(document.createElement("span"), { textContent: chore.done ? "✓" : "○", className: "tick" });
+      const words = document.createElement("span");
+      words.textContent = `${chore.title}: ${chore.description}`;
+      const reward = Object.assign(document.createElement("span"), { textContent: `${chore.reward} funds` });
+      item.append(tick, words, reward);
+      return item;
+    }),
+  );
+  const you = page.you;
+  document.querySelector("#daily-you").textContent = you
+    ? `${you.best ? `Your best today: ${you.best.score}. ` : "You have not won today's yet. "}` +
+      `Streak: ${you.streak} day${you.streak === 1 ? "" : "s"}. Funds on the server: ${you.funds}.`
+    : "Sign in to play, to earn the chores and to be on the board.";
+  document.querySelector("#daily-play").textContent = you ? "Play today's operation" : "Sign in to play";
+  renderDailyBoard();
+  dailyDialog.showModal();
+}
+
+const dailyDialog = document.querySelector("#daily-dialog");
+document.querySelector("#menu-daily").addEventListener("click", () => showDaily().catch(showFatalError));
+document.querySelector("#daily-close").addEventListener("click", () => dailyDialog.close());
+for (const button of document.querySelectorAll(".daily-tabs button")) {
+  button.addEventListener("click", () => {
+    dailyRange = button.dataset.range;
+    renderDailyBoard();
+  });
+}
+document.querySelector("#daily-play").addEventListener("click", () => {
+  dailyDialog.close();
+  if (!onlinePlay.account) showSignin();
+  else startOnlineGame("daily").catch(showFatalError);
+});
 
 document.querySelector("#menu-signin").addEventListener("click", async () => {
   if (!onlinePlay?.account) return showSignin();
