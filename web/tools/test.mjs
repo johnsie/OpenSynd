@@ -18,7 +18,12 @@ const run = (args, options = {}) =>
     child.on("exit", (code) => done({ code, errors, args }));
   });
 
-const files = readdirSync(join(root, "src")).filter((name) => name.endsWith(".js")).sort();
+// Every .js file under src/, folders included (the game core lives in src/core/).
+const sourceFiles = (folder) =>
+  readdirSync(join(root, "src", folder), { withFileTypes: true }).flatMap((entry) =>
+    entry.isDirectory() ? sourceFiles(join(folder, entry.name)) : entry.name.endsWith(".js") ? [join(folder, entry.name)] : [],
+  );
+const files = sourceFiles("").sort();
 const tests = readdirSync(join(root, "test")).filter((name) => name.endsWith(".test.js")).sort();
 const [unit, ...checks] = await Promise.all([
   run(["--test", ...tests.map((name) => join("test", name))]),

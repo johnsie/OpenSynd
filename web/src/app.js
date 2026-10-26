@@ -23,6 +23,18 @@ import {
 import { createOverlay, createTileSprites } from "./textures.js";
 import { renderWorldMap } from "./worldmap.js";
 import { continueNote, continueTarget } from "./menu.js";
+import {
+  advanceWorld,
+  announceProp as coreAnnounceProp,
+  breakWindowAt as coreBreakWindowAt,
+  collectFallenGear as coreCollectFallenGear,
+  completeObjectivesAt as coreCompleteObjectivesAt,
+  countDisabled as coreCountDisabled,
+  handleCombatEvents as coreHandleCombatEvents,
+  knockBack as coreKnockBack,
+  lootNow as coreLootNow,
+  syncWorldGates,
+} from "./core/step.js";
 import { markerFor } from "./minimap.js";
 import { VARIANT_LABELS, operationPath, territoryAlert, variantFor } from "./operations.js";
 import { createTutorial, currentStep, observeTutorial, pointerFor, skipStep, tutorialProgress } from "./tutorial.js";
@@ -844,16 +856,7 @@ function doorSlide(tile) {
 }
 
 function syncGates() {
-  const doors = (state.map.objects ?? []).filter((object) => object.kind === "door");
-  const wasOpen = doors.map((door) => state.grid[door.position.y]?.[door.position.x]?.door?.open);
-  syncMissionGates(state.grid, state.map, state.objectives, state.units ?? []);
-  // A door that has just opened or closed near the view is heard.
-  doors.forEach((door, index) => {
-    const now = state.grid[door.position.y]?.[door.position.x]?.door?.open;
-    if (wasOpen[index] === undefined || now === wasOpen[index]) return;
-    const away = Math.hypot(door.position.x - state.camera.x, door.position.y - state.camera.y);
-    audio.play("door", { volume: shotVolume(away, false) });
-  });
+  syncWorldGates(state, worldHooks);
 }
 
 // Show the loaded mission's name and story wherever the page mentions it.
@@ -3225,131 +3228,58 @@ function drawEffects(viewport) {
   }
 }
 
+// The game core reports what happens through these; here they become the status line, sound and effects (see core/hooks.js).
+const worldHooks = {
+  message: (text) => setStatus(text),
+  sound(name, where = {}) {
+    const cue = name === "shot" ? shotCue(where.weapon) : name;
+    if (!where.at) {
+      audio.play(cue);
+      return;
+    }
+    // Sounds further from the view are quieter.
+    const away = Math.hypot(where.at.x - state.camera.x, where.at.y - state.camera.y);
+    audio.play(cue, { volume: shotVolume(away, Boolean(where.friendly)) });
+  },
+  effect(kind, data = {}) {
+    // How a puff or an impact spins is only for show, so it is not part of the game's own chances.
+    addEffect(state.effects, kind, kind === "puff" || kind === "impact" ? { ...data, spin: visualChance() * 3 } : data);
+  },
+  changed: () => renderInterface(),
+  selectionChanged: () => pruneSelection(),
+  looted() {
+    if (state.tutorialFlags) state.tutorialFlags.looted = true;
+  },
+  penalise(amount) {
+    state.campaign = penalise(state.campaign, amount);
+    updateFundsReadout();
+    persistCampaign();
+  },
+};
+
 // Throw a unit that was just hit back, away from whoever hit it (drawn only; the unit stays put).
 function knockBack(victim, shooter) {
-  const dx = victim.position.x - shooter.position.x;
-  const dy = victim.position.y - shooter.position.y;
-  const x = dx - dy;
-  const y = dx + dy;
-  const length = Math.hypot(x, y) || 1;
-  victim.hitAt = state.elapsed;
-  victim.hitDirection = { x: x / length, y: y / length };
+  coreKnockBack(state, victim, shooter);
 }
 
 // Keep the record of who has been put out of action, and charge for bystanders.
 function countDisabled(down) {
-  if (down.side === "vehicle") return;
-  if (down.side === "opposition") state.opStats.enemiesDisabled += 1;
-  else if (down.side === "civilian") harmBystander(down, CIVILIAN_PENALTY, "civiliansHarmed");
-  else if (down.side === "police") harmBystander(down, POLICE_PENALTY, "policeHarmed");
-  else state.opStats.operatorsDisabled += 1;
-}
-
-// A civilian or police officer has been killed: it goes on the record (FreeSynd charges nothing for it).
-function harmBystander(unit, cost, counter) {
-  state.opStats[counter] += 1;
-  if (cost > 0) {
-    state.campaign = penalise(state.campaign, cost);
-    updateFundsReadout();
-    persistCampaign();
-  }
+  coreCountDisabled(state, worldHooks, down);
 }
 
 // Scenery that caught fire or broke: a puff of debris and a line in the status.
-const PROP_NAMES = { tree: "A tree", streetlight: "A street light", bin: "A bin", billboard: "A billboard" };
 function announceProp(event) {
-  const prop = state.props.find((item) => item.id === event.propId);
-  if (!prop) return;
-  addEffect(state.effects, "puff", { to: prop.position, spin: visualChance() * 3 });
-  if (event.state === "burning") setStatus(`${PROP_NAMES[prop.kind]} catches fire.`);
-  else audio.play("hit");
+  coreAnnounceProp(state, worldHooks, event);
 }
 
 // A shot that ends against a building's visible wall breaks a window; the noise draws guards and enemy agents to look.
 function breakWindowAt(from, to) {
-  for (const building of state.buildings ?? []) {
-    const key = windowShot(building, from, { x: to.x + (to.x - from.x) * 0.02, y: to.y + (to.y - from.y) * 0.02 }, worldChance());
-    if (key && !state.windowsBroken.has(key)) {
-      state.windowsBroken.add(key);
-      audio.play("glass");
-      investigateNoise(state.units, to, 14);
-      return;
-    }
-  }
+  coreBreakWindowAt(state, worldHooks, from, to, worldChance());
 }
 
 // Effects, counters and messages for shots, from automatic combat and from shots fired by hand.
 function handleCombatEvents(combatEvents) {
-  for (const event of combatEvents) {
-    if (event.type === "damage" || event.type === "shot") {
-      const shooter = state.units.find((item) => item.id === event.attackerId);
-      addEffect(state.effects, "muzzle", { unitId: event.attackerId });
-      if (shooter?.side === "team") {
-        recordShot(state.debrief, shooter.id, event.type === "damage");
-        const victim = event.type === "damage" ? state.units.find((item) => item.id === event.targetId) : null;
-        if (victim && event.remaining === 0 && victim.side !== "team") recordKill(state.debrief, shooter.id, victim.definition.role);
-      }
-      // A bomb on the ground goes off when a shot passes it.
-      if (shooter && state.bombs.length > 0) {
-        const struck = event.type === "damage" ? state.units.find((item) => item.id === event.targetId) : null;
-        const to = struck?.position ?? event.end;
-        if (to && shootBombs(state.bombs, shooter.position, to) > 0) setStatus("A shot hit a charge on the ground: it is about to go off.");
-      }
-      if (shooter && event.type === "shot" && event.end) breakWindowAt(shooter.position, event.end);
-      // Each weapon sounds like itself; fire further from the view is quieter.
-      if (shooter) {
-        const away = Math.hypot(shooter.position.x - state.camera.x, shooter.position.y - state.camera.y);
-        audio.play(shotCue(event.sound), { volume: shotVolume(away, shooter.side === "team") });
-      }
-      if (event.type === "damage" && event.blocked) {
-        // The shield took it: sparks off the field, no knockback.
-        const victim = state.units.find((item) => item.id === event.targetId);
-        audio.play("shield-hit");
-        addEffect(state.effects, "puff", { to: victim.position, spin: visualChance() * 3 });
-      } else if (event.type === "damage") {
-        const victim = state.units.find((item) => item.id === event.targetId);
-        audio.play("hit");
-        addEffect(state.effects, "impact", { unitId: event.targetId, spin: visualChance() * 3 });
-        if (shooter && victim) knockBack(victim, shooter);
-      } else {
-        addEffect(state.effects, "puff", { to: event.end, spin: visualChance() * 3 });
-      }
-      if (shooter) shooter.firedAt = state.elapsed;
-      if (event.outOfRounds && shooter?.side === "team") {
-        setStatus(`${shooter.definition.name}: ${event.weapon} is out of rounds.`);
-        audio.play("alert");
-      }
-    } else if (event.type === "prop") {
-      announceProp(event);
-    } else if (event.type === "burn") {
-      addEffect(state.effects, "flame", { unitId: event.targetId });
-    } else if (event.type === "disabled") {
-      countDisabled(state.units.find((item) => item.id === event.unitId));
-    } else if (event.type === "ejected") {
-      const out = state.units.find((item) => item.id === event.unitId);
-      const car = state.units.find((item) => item.id === event.vehicleId);
-      setStatus(`${out.definition.name} is thrown out of the ${car.definition.name}.`);
-    }
-  }
-  const latest = combatEvents.at(-1);
-  if (latest.type === "burn") return;
-  if (latest.type === "disabled") {
-    audio.play("disabled");
-    const unit = state.units.find((item) => item.id === latest.unitId);
-    if (unit.side === "civilian" || unit.side === "police") {
-      setStatus(`${unit.definition.name} killed. The city notices.`);
-    } else {
-      setStatus(
-        unit.side === "opposition"
-          ? `${unit.definition.name} disabled. Route is clearer.`
-          : `${unit.definition.name} disabled. Select another operator.`,
-      );
-    }
-    pruneSelection();
-  } else if (latest.type === "damage") {
-    const target = state.units.find((item) => item.id === latest.targetId);
-    setStatus(`${target.definition.name} integrity: ${latest.remaining}.`);
-  }
+  coreHandleCombatEvents(state, worldHooks, combatEvents, worldChance);
 }
 
 // The intense score plays only while an enemy agent (a watcher) has seen the squad, and for a few
@@ -3368,217 +3298,12 @@ function updateAlertMusic(deltaSeconds) {
 }
 
 function simulationStep(deltaSeconds) {
-  state.missionSeconds += deltaSeconds;
-  let interfaceChanged = false;
+  // A weapon held down by the pointer keeps firing while the button is held.
   if (state.holdFire && state.viewport && state.outcome === "active") {
     fireByHand(screenToGridExact(state.holdFire, state.viewport.cellSize, state.viewport.origin), true);
   }
-  for (const event of advancePursuit(state.units, state.grid)) {
-    if (event.reason === "none-selected") {
-      const unit = state.units.find((item) => item.id === event.unitId);
-      setStatus(`${unit.definition.name} has no weapon selected and stops the pursuit.`);
-      interfaceChanged = true;
-    } else if (event.reason === "no-rounds") {
-      const unit = state.units.find((item) => item.id === event.unitId);
-      setStatus(`${unit.definition.name} is out of rounds and stops the pursuit.`);
-      audio.play("alert");
-      interfaceChanged = true;
-    }
-  }
-  for (const event of advanceTails(state.units, state.grid)) {
-    const unit = state.units.find((item) => item.id === event.unitId);
-    setStatus(`${unit.definition.name} stops following: ${event.reason === "disabled" ? "they are down" : "they are gone"}.`);
-    interfaceChanged = true;
-  }
-  const arrivals = advanceUnits(state.units, deltaSeconds);
-  advanceRegeneration(state.units, deltaSeconds);
-  collectFallenGear();
-  for (const unit of state.units) {
-    if (!unit.lootTargetId || unit.path.length > 0) continue;
-    const body = state.drops.find((item) => item.id === unit.lootTargetId);
-    unit.lootTargetId = null;
-    if (body && lootableBody(body) && inLootReach(unit, body)) {
-      lootNow(unit, body);
-      interfaceChanged = true;
-    }
-  }
-  for (const arrival of arrivals) {
-    interfaceChanged = true;
-    interfaceChanged = completeObjectivesAt(arrival.position) || interfaceChanged;
-  }
-  for (const event of advancePatrols(state.units, deltaSeconds, state.grid, state.elapsed, state.drops)) {
-    const watcher = state.units.find((unit) => unit.id === event.unitId);
-    if (event.type === "pickup") {
-      setStatus(`${watcher.definition.name} takes ${event.items.join(" and ")} from the fallen.`);
-      audio.play("select");
-      interfaceChanged = true;
-      continue;
-    }
-    if (event.type === "say") {
-      setStatus(`${watcher.definition.name}: “${event.text}”`);
-      audio.play("select");
-      interfaceChanged = true;
-      continue;
-    }
-    if (event.type === "plant-bomb") {
-      const charge = watcher.equipment.find((item) => item.definition.action === "time-bomb" && item.charges !== 0);
-      if (charge && plantBomb(watcher, charge, state.bombs)) {
-        setStatus(`${watcher.definition.name} plants a ${charge.definition.name}! Get clear: ${charge.definition.effect.fuse} seconds.`);
-        audio.play("tick");
-        interfaceChanged = true;
-      }
-      continue;
-    }
-    if (event.type === "warning") {
-      setStatus(`${watcher.definition.name}: "Put down your weapon!" Holster it, or they open fire in two seconds.`);
-      audio.play("police-warning");
-      // The portrait of whoever is being warned flashes red for the two seconds before the police shoot.
-      state.targeted[event.targetId] = state.elapsed + 2;
-      interfaceChanged = true;
-      continue;
-    }
-    const spotted = state.units.find((unit) => unit.id === event.targetId);
-    setStatus(`${watcher.definition.name} spotted ${spotted.definition.name}! It is closing in.`);
-    audio.play("alert");
-    state.opStats.spotted += 1;
-    interfaceChanged = true;
-  }
+  advanceWorld(state, deltaSeconds, worldHooks, worldChance);
   updateAlertMusic(deltaSeconds);
-  advanceShields(state.units, deltaSeconds);
-  advanceScanners(state.units, deltaSeconds);
-  advanceDrugs(state.units, deltaSeconds);
-  for (const bomb of state.bombs) {
-    const second = Math.ceil(bomb.left);
-    if (bomb.tickedAt !== second) {
-      bomb.tickedAt = second;
-      audio.play("tick");
-    }
-  }
-  const vehicleEvents = advanceVehicles(state.units, deltaSeconds, state.roadGrid, state.grid, state.missionSeconds);
-  // A train sounds its horn as it pulls into a station and as it leaves (quieter the further it is from the view).
-  for (const event of vehicleEvents.filter((item) => item.type === "train-drop")) {
-    const names = event.unitIds.map((id) => state.units.find((unit) => unit.id === id)?.definition.name ?? id);
-    setStatus(`${names.join(", ")} got off the train at the platform.`);
-    interfaceChanged = true;
-  }
-  for (const event of vehicleEvents.filter((item) => item.type === "train-stops" || item.type === "train-leaves")) {
-    const away = Math.hypot(event.at.x - state.camera.x, event.at.y - state.camera.y);
-    audio.play("train-horn", { volume: shotVolume(away, false) });
-  }
-  for (const hit of vehicleEvents.filter((event) => event.type === "runover")) {
-    const victim = state.units.find((unit) => unit.id === hit.unitId);
-    const car = state.units.find((unit) => unit.id === hit.vehicleId);
-    addEffect(state.effects, "impact", { unitId: hit.unitId, spin: visualChance() * 3 });
-    audio.play("hit");
-    knockBack(victim, car);
-    if (hit.disabled) {
-      // The city does not bill the squad for a stranger's bad driving: only the squad's own car counts against it.
-      const bystander = victim.side === "civilian" || victim.side === "police";
-      if (!bystander || car.vehicle.controlledBy) countDisabled(victim);
-      pruneSelection();
-      interfaceChanged = true;
-    }
-  }
-  const blasts = [
-    ...vehicleEvents.filter((event) => event.type === "blast"),
-    ...advanceBombs(state.bombs, state.units, deltaSeconds, state.grid),
-  ];
-  for (const blast of blasts) {
-    for (const prop of propsNear(state.props, blast.at, blast.radius)) {
-      const change = damageProp(prop, 40, "explosion");
-      if (change) announceProp(change);
-    }
-    addEffect(state.effects, "blast", { at: blast.at, radius: blast.radius });
-    audio.play("blast");
-    let glassBroken = 0;
-    for (const building of state.buildings ?? []) {
-      for (const key of windowsInBlast(building, blast.at, blast.radius + 2)) {
-        if (!state.windowsBroken.has(key)) glassBroken += 1;
-        state.windowsBroken.add(key);
-      }
-    }
-    if (glassBroken > 0) audio.play("glass");
-    startPanic(state.units, blast.at, state.grid);
-    for (const hit of blast.hits) {
-      const victim = state.units.find((unit) => unit.id === hit.unitId);
-      addEffect(state.effects, "impact", { unitId: hit.unitId, spin: visualChance() * 3 });
-      knockBack(victim, { position: blast.at });
-      if (hit.disabled) countDisabled(victim);
-    }
-    const harmed = blast.hits.filter((hit) => hit.disabled).length;
-    const source = blast.source ? state.units.find((unit) => unit.id === blast.source) : null;
-    setStatus(
-      `${source ? `The ${source.definition.name} explodes` : "The Delay Charge goes off"}: ` +
-        `${blast.hits.length} caught in the blast` +
-        (harmed > 0 ? `, ${harmed} down.` : "."),
-    );
-    pruneSelection();
-    interfaceChanged = true;
-  }
-  for (const event of advancePersuasion(state.units, deltaSeconds, state.grid)) {
-    const agent = state.units.find((unit) => unit.id === event.agentId);
-    const target = state.units.find((unit) => unit.id === event.targetId);
-    if (event.type === "persuaded") {
-      addEffect(state.effects, "persuade", { unitId: event.targetId });
-      audio.play("persuade");
-      const kinds = { civilian: "civilians", criminal: "criminals", guard: "guards", police: "police", opposition: "enemy agents" };
-      const counted = event.kind === "criminal" ? "civilians" : kinds[event.kind];
-      setStatus(
-        `${target.definition.name} now follows ${agent.definition.name} ` +
-          `(${event.count} ${counted} persuaded, ${persuadePoints(agent)} points).` +
-          (event.outOfCharges ? " The Persuader is spent." : ""),
-      );
-    } else if (event.type === "refused") {
-      setStatus(`${agent.definition.name} cannot persuade ${target.definition.name} yet: ${event.needs} needed.`);
-    } else if (event.type === "reassigned") {
-      setStatus(`${state.units.find((unit) => unit.id === event.unitId).definition.name} now follows ${agent.definition.name}.`);
-    }
-    interfaceChanged = true;
-  }
-  const fires = advanceProps(state.props, state.units, deltaSeconds);
-  for (const change of fires.events) announceProp(change);
-  for (const id of fires.ignited) {
-    const unit = state.units.find((item) => item.id === id);
-    if (unit) setStatus(`${unit.definition.name} catches fire from the flames nearby.`);
-  }
-  const combatEvents = advanceCombat(state.units, deltaSeconds, state.grid, state.elapsed);
-  if (combatEvents.length > 0) {
-    interfaceChanged = true;
-    handleCombatEvents(combatEvents);
-  }
-  for (const event of [
-    ...resolveDisabled(state.objectives, state.units),
-    ...resolveUnitObjectives(state.objectives, state.map.zones, state.units),
-    ...advanceHold(state.objectives, state.map.zones, state.units, deltaSeconds),
-    ...resolveExtraction(state.objectives, state.map.zones, state.units),
-  ]) {
-    state.opStats.objectivesCompleted += 1;
-    syncGates();
-    audio.play("objective");
-    setStatus(`${event.objective.description} Commitment fulfilled.`);
-    interfaceChanged = true;
-  }
-  announceHolds();
-  if (interfaceChanged) renderInterface();
-}
-
-// Tell the player when they start and stop holding a position (progress building or draining).
-function announceHolds() {
-  state.holdWas ??= {};
-  for (const objective of state.objectives) {
-    if (objective.type !== "hold" || objective.complete) continue;
-    const before = state.holdWas[objective.id] ?? 0;
-    const now = objective.progress ?? 0;
-    if (now > before + 1e-9 && before === 0) {
-      setStatus(`Holding the position: stay inside the marked square for ${objective.holdSeconds} seconds.`);
-    } else if (now < before - 1e-9 && before >= objective.holdSeconds * 0.1 && !state.holdWarned?.[objective.id]) {
-      setStatus("Nobody is inside the marked square: the hold is slipping away. Get back in.");
-      (state.holdWarned ??= {})[objective.id] = true;
-    } else if (now > before + 1e-9 && state.holdWarned?.[objective.id]) {
-      state.holdWarned[objective.id] = false;
-    }
-    state.holdWas[objective.id] = now;
-  }
 }
 
 function formatDuration(seconds) {
@@ -3878,33 +3603,7 @@ function update(deltaSeconds) {
 }
 
 function completeObjectivesAt(position) {
-  let changed = false;
-  for (const event of resolveArrival(state.objectives, state.map.zones, position, state.units)) {
-    if (event.type === "waiting") {
-      setStatus(`Extraction needs everyone: ${event.outside} operative${event.outside > 1 ? "s" : ""} still to reach the zone.`);
-      continue;
-    }
-    if (event.type === "blocked") {
-      setStatus("Extraction is available after all other commitments are fulfilled.");
-      continue;
-    }
-    const { objective } = event;
-    state.opStats.objectivesCompleted += 1;
-    syncGates();
-    changed = true;
-    audio.play("objective");
-    const zone = state.map.zones.find((item) => item.id === objective.targetZone);
-    const restoredBy = state.units.find(
-      (unit) => unit.side === "team" && zoneContains(zone, unit.position),
-    );
-    if (restoredBy) addEffect(state.effects, "restore", { unitId: restoredBy.id });
-    setStatus(
-      objective.type === "extract" && isMissionComplete(state.objectives)
-        ? "Operation complete. Every commitment is fulfilled."
-        : `${objective.description} Commitment fulfilled.`,
-    );
-  }
-  return changed;
+  return coreCompleteObjectivesAt(state, worldHooks, position);
 }
 
 // The operator who can interact right now (any group member in group mode) and what with.
@@ -4234,13 +3933,7 @@ function useRepairKit() {
 // Anyone who has just been put down drops what they carried, scattered around where they fell (FreeSynd), unless a
 // beam, or fire or a blast without a strong chest, took it with them.
 function collectFallenGear() {
-  const events = collectFallen(state.units, state.drops, state.grid);
-  for (const event of events) {
-    const who = state.units.find((unit) => unit.id === event.unitId);
-    if (event.type === "destroyed" && who?.side === "opposition") setStatus(`${who.definition.name}'s gear was destroyed with them.`);
-  }
-  if (state.drops.some((drop) => !lootableBody(drop))) state.drops = state.drops.filter(lootableBody);
-  if (events.some((event) => event.type === "dropped")) renderInterface();
+  coreCollectFallenGear(state, worldHooks);
 }
 
 // The nearest gear lying within `within` tiles of a point, or null.
@@ -4255,23 +3948,7 @@ function nearestDrop(position, within) {
 
 // Pick up gear lying on the ground with one of the selected operators.
 function lootNow(operator, body) {
-  const { taken, left } = lootBody(operator, body);
-  operator.lootTargetId = null;
-  state.drops = state.drops.filter(lootableBody);
-  if (taken.length === 0) {
-    setStatus(`${operator.definition.name} has no free slots (${SLOTS_PER_OPERATIVE} items maximum), so cannot pick anything up.`);
-    return;
-  }
-  state.opStats.itemsLooted += taken.length;
-  if (state.tutorialFlags) state.tutorialFlags.looted = true;
-  const names = taken.map((item) => item.definition.name).join(", ");
-  setStatus(
-    `${operator.definition.name} picked up ${names}.` +
-      (left > 0 ? ` ${left} item${left > 1 ? "s" : ""} left behind: no free slots.` : ""),
-  );
-  audio.play("objective");
-  addEffect(state.effects, "restore", { unitId: operator.id });
-  renderInterface();
+  coreLootNow(state, worldHooks, operator, body);
 }
 
 // F: pick up what is within reach, otherwise send the nearest selected operator to the
