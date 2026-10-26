@@ -4,7 +4,7 @@
 
 OpenSynd collects nothing **today**. This describes the game as it is now: single-player, nothing sent anywhere.
 
-The planned online modes ([ROADMAP_MULTIPLAYER.md](ROADMAP_MULTIPLAYER.md)) will need a game server with accounts, and this
+The planned online modes ([the multiplayer design](docs/design/MULTIPLAYER.md)) will need a game server with accounts, and this
 page will be updated before any of them ships to say exactly what the server keeps (a display name, a password hash, scores and
 replays, and nothing more), how to delete your account, and that single-player never needs it.
 

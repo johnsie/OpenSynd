@@ -2,7 +2,7 @@
 
 # OpenSynd multiplayer architecture
 
-This is the design the online modes in [ROADMAP_MULTIPLAYER.md](../../ROADMAP_MULTIPLAYER.md) are built on. It assumes there is a
+This is the design the online modes (co-op operations, the daily operation and rival syndicates) are built on. It assumes there is a
 game server and that the server is the authority.
 
 ## The central idea
@@ -134,7 +134,7 @@ server is released in step with it by the same pipeline.
 - Rate limits on commands per second per connection, on sign-ups, and on submissions.
 - Messages are size-limited and schema-checked before use.
 - Passwords are hashed with a slow hash; sessions are random tokens that expire.
-- Chat, where it exists, is filtered and reportable (roadmap Phase 4).
+- Chat, where it exists, is filtered and reportable.
 - Privacy: the server stores the display name, password hash, scores, replays and online-campaign state, and nothing else. This is
   to be stated in [PRIVACY.md](../../PRIVACY.md) before any online mode ships, with account deletion.
 
