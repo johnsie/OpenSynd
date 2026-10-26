@@ -10,8 +10,15 @@ import { createRandom } from "./random.js";
 
 // The simulation's source of chance (shot accuracy). Reseed it at the start of an operation for a repeatable run.
 let random = createRandom(1);
+// A second stream for chance that is not about shots (which window a bullet breaks), so drawing from it never changes where shots land.
+let worldRandom = createRandom(0x9e3779b9);
 export function seedSimulation(seed = 1) {
   random = createRandom(seed);
+  worldRandom = createRandom((seed ^ 0x9e3779b9) >>> 0);
+}
+/** A chance from the operation's seeded world stream (0 to 1). Rules must use this or the shot stream, never Math.random. */
+export function worldChance() {
+  return worldRandom();
 }
 /** Replace the source of chance (a function returning 0 to 1); tests use it to aim exactly (always 0.5). */
 export function setRandomSource(source) {

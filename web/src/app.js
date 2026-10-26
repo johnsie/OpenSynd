@@ -198,6 +198,7 @@ import {
   advanceUnits,
   consumeFixedSteps,
   investigateNoise,
+  worldChance,
 } from "./simulation.js";
 import {
   LEGACY_LOCAL_SAVE_KEYS,
@@ -278,6 +279,9 @@ const actionLabel = document.querySelector("#action-label");
 const repairButton = document.querySelector("#repair-button");
 const repairLabel = document.querySelector("#repair-label");
 let settings = parseSettings(readStored(SETTINGS_KEY));
+// Chance for how things look only (the spin of a puff of smoke). It never affects a result, so it is not seeded; anything that does
+// affect a result uses the simulation's seeded streams instead, so a recorded operation replays the same everywhere.
+const visualChance = Math.random;
 const reduceMotion = prefersReducedMotion(
   settings,
   window.matchMedia("(prefers-reduced-motion: reduce)").matches,
@@ -3119,7 +3123,7 @@ const PROP_NAMES = { tree: "A tree", streetlight: "A street light", bin: "A bin"
 function announceProp(event) {
   const prop = state.props.find((item) => item.id === event.propId);
   if (!prop) return;
-  addEffect(state.effects, "puff", { to: prop.position, spin: Math.random() * 3 });
+  addEffect(state.effects, "puff", { to: prop.position, spin: visualChance() * 3 });
   if (event.state === "burning") setStatus(`${PROP_NAMES[prop.kind]} catches fire.`);
   else audio.play("hit");
 }
@@ -3127,7 +3131,7 @@ function announceProp(event) {
 // A shot that ends against a building's visible wall breaks a window; the noise draws guards and enemy agents to look.
 function breakWindowAt(from, to) {
   for (const building of state.buildings ?? []) {
-    const key = windowShot(building, from, { x: to.x + (to.x - from.x) * 0.02, y: to.y + (to.y - from.y) * 0.02 }, Math.random());
+    const key = windowShot(building, from, { x: to.x + (to.x - from.x) * 0.02, y: to.y + (to.y - from.y) * 0.02 }, worldChance());
     if (key && !state.windowsBroken.has(key)) {
       state.windowsBroken.add(key);
       audio.play("glass");
@@ -3164,14 +3168,14 @@ function handleCombatEvents(combatEvents) {
         // The shield took it: sparks off the field, no knockback.
         const victim = state.units.find((item) => item.id === event.targetId);
         audio.play("shield-hit");
-        addEffect(state.effects, "puff", { to: victim.position, spin: Math.random() * 3 });
+        addEffect(state.effects, "puff", { to: victim.position, spin: visualChance() * 3 });
       } else if (event.type === "damage") {
         const victim = state.units.find((item) => item.id === event.targetId);
         audio.play("hit");
-        addEffect(state.effects, "impact", { unitId: event.targetId, spin: Math.random() * 3 });
+        addEffect(state.effects, "impact", { unitId: event.targetId, spin: visualChance() * 3 });
         if (shooter && victim) knockBack(victim, shooter);
       } else {
-        addEffect(state.effects, "puff", { to: event.end, spin: Math.random() * 3 });
+        addEffect(state.effects, "puff", { to: event.end, spin: visualChance() * 3 });
       }
       if (shooter) shooter.firedAt = state.elapsed;
       if (event.outOfRounds && shooter?.side === "team") {
@@ -3327,7 +3331,7 @@ function simulationStep(deltaSeconds) {
   for (const hit of vehicleEvents.filter((event) => event.type === "runover")) {
     const victim = state.units.find((unit) => unit.id === hit.unitId);
     const car = state.units.find((unit) => unit.id === hit.vehicleId);
-    addEffect(state.effects, "impact", { unitId: hit.unitId, spin: Math.random() * 3 });
+    addEffect(state.effects, "impact", { unitId: hit.unitId, spin: visualChance() * 3 });
     audio.play("hit");
     knockBack(victim, car);
     if (hit.disabled) {
@@ -3360,7 +3364,7 @@ function simulationStep(deltaSeconds) {
     startPanic(state.units, blast.at, state.grid);
     for (const hit of blast.hits) {
       const victim = state.units.find((unit) => unit.id === hit.unitId);
-      addEffect(state.effects, "impact", { unitId: hit.unitId, spin: Math.random() * 3 });
+      addEffect(state.effects, "impact", { unitId: hit.unitId, spin: visualChance() * 3 });
       knockBack(victim, { position: blast.at });
       if (hit.disabled) countDisabled(victim);
     }
