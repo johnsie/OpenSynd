@@ -55,7 +55,18 @@ for (const [name, type, executablePath] of targets) {
     const rawNewPage = browser.newPage.bind(browser);
     browser.newPage = async (options) => {
       const made = await rawNewPage(options);
-      made.on("load", () => made.evaluate(() => document.querySelector("#menu-dialog[open] #menu-campaign")?.click()).catch(() => {}));
+      made.on("load", () =>
+        made
+          .evaluate(() => {
+            document.querySelector("#menu-dialog[open] #menu-campaign")?.click();
+            // A first visit asks for the company name before the map; the dialog opens synchronously.
+            if (document.querySelector("#company-dialog[open]")) {
+              document.querySelector("#company-name").value = "Test Company";
+              document.querySelector("#company-save").click();
+            }
+          })
+          .catch(() => {}),
+      );
       return made;
     };
   } catch (error) {
@@ -999,7 +1010,14 @@ for (const [name, type, executablePath] of targets) {
     await menuPage.waitForSelector("#settings-dialog[open]");
     await menuPage.click("#close-settings");
     await menuPage.click("#menu-campaign");
+    await menuPage.waitForSelector("#company-dialog[open]");
+    assert.equal(await menuPage.locator("#title-dialog").evaluate((dialog) => dialog.open), false, "the company comes before the map");
+    await menuPage.click("#company-save"); // empty: refused
+    assert.equal(await menuPage.locator("#company-error").isVisible(), true, "a blank name is refused");
+    await menuPage.fill("#company-name", "  Grey   Harbour <b> ");
+    await menuPage.click("#company-save");
     await menuPage.waitForSelector("#title-dialog[open]");
+    assert.equal(await menuPage.locator("#title-company").innerText(), "Grey Harbour b", "the name is cleaned and shown");
     assert.equal(await menuPage.locator("#menu-dialog").evaluate((dialog) => dialog.open), false);
     await menuPage.click("#menu-button");
     await menuPage.waitForSelector("#menu-dialog[open]");
@@ -1010,6 +1028,11 @@ for (const [name, type, executablePath] of targets) {
     });
     await menuPage.reload();
     await menuPage.waitForSelector("#menu-continue:not([hidden])");
+    assert.equal(await menuPage.locator("#menu-company-name").innerText(), "Grey Harbour b", "the name is remembered");
+    await menuPage.click("#menu-company-edit");
+    await menuPage.fill("#company-name", "Harbour Group");
+    await menuPage.click("#company-save");
+    assert.equal(await menuPage.locator("#menu-company-name").innerText(), "Harbour Group", "it can be renamed");
     assert.match(await menuPage.locator("#menu-continue-note").innerText(), /1 operation won/);
     await menuPage.click("#menu-continue");
     await menuPage.waitForSelector("#title-dialog[open]");

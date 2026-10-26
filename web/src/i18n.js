@@ -34,6 +34,16 @@ const TABLE = Object.freeze({
   "title.new_game": ["New game", "Nueva partida", "Nouvelle partie"],
   "title.research": ["Research & Armoury", "Investigación y armería", "Recherche et armurerie"],
   "title.menu": ["Main menu", "Menú principal", "Menu principal"],
+  "company.heading": ["Name your company", "Nombra tu empresa", "Nommez votre société"],
+  "company.intro": [
+    "Every operation is run in its name. Other players will see it online.",
+    "Cada operación se lleva a cabo en su nombre. Otros jugadores lo verán en línea.",
+    "Chaque opération est menée en son nom. Les autres joueurs le verront en ligne.",
+  ],
+  "company.label": ["Company name", "Nombre de la empresa", "Nom de la société"],
+  "company.cancel": ["Back", "Volver", "Retour"],
+  "company.save": ["Confirm", "Confirmar", "Confirmer"],
+  "company.rename": ["Rename company", "Cambiar nombre", "Renommer la société"],
   "menu.continue": ["Continue", "Continuar", "Continuer"],
   "menu.campaign": ["Campaign", "Campaña", "Campagne"],
   "menu.campaign_note": [

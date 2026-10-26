@@ -277,6 +277,7 @@ test("the campaign round-trips and damaged data is repaired or ignored", () => {
     items: ["a", 4, "a", ""], loadouts: { op: ["x", 5, "y"], bad: "no" },
   }));
   assert.deepEqual(repaired, {
+    company: "",
     funds: 200,
     upgrades: {
       op: { legs: 3, arms: 0, chest: 0, heart: 0, eyes: 0, brain: 0 },
@@ -576,4 +577,19 @@ test("tier 2 and 3 of a part must be researched, the second before the third, at
   assert.deepEqual(done.campaign.items, ["part.legs.2"]);
   assert.equal(canFit(done.campaign, "op1", "legs"), true);
   assert.equal(canResearchItem(done.campaign, third, catalog), true);
+});
+
+test("the company name is cleaned, limited, and survives saving", async () => {
+  const { cleanCompanyName, setCompany, emptyCampaign, parseCampaign, serializeCampaign, COMPANY_NAME_MAX } =
+    await import("../src/campaign.js");
+  assert.equal(emptyCampaign().company, "", "not chosen yet");
+  assert.equal(cleanCompanyName("  Grey   Harbour\tLtd \n"), "Grey Harbour Ltd");
+  assert.equal(cleanCompanyName("<b>Evil</b>"), "b Evil /b", "angle brackets never reach the page");
+  assert.equal(cleanCompanyName("x".repeat(100)).length, COMPANY_NAME_MAX);
+  assert.equal(cleanCompanyName(42), "");
+  assert.equal(cleanCompanyName("   "), "");
+  const named = setCompany(emptyCampaign(), "Grey Harbour");
+  assert.equal(parseCampaign(serializeCampaign(named)).company, "Grey Harbour");
+  assert.equal(setCompany(named, "  ").company, "Grey Harbour", "an empty name changes nothing");
+  assert.equal(parseCampaign('{"company": 7}').company, "", "damaged names fall back");
 });

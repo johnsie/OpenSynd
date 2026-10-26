@@ -61,6 +61,7 @@ export const STARTING_FUNDS = 30000;
 
 export function emptyCampaign() {
   return {
+    company: "",
     funds: STARTING_FUNDS,
     upgrades: {},
     items: [],
@@ -74,6 +75,20 @@ export function emptyCampaign() {
     intel: {},
     ended: false,
   };
+}
+
+export const COMPANY_NAME_MAX = 32;
+
+// The player's company name: single spaces, no control characters, at most COMPANY_NAME_MAX characters. Empty means not chosen yet.
+export function cleanCompanyName(value) {
+  if (typeof value !== "string") return "";
+  const text = value.replace(/[\u0000-\u001f\u007f<>]/g, " ").replace(/\s+/g, " ").trim();
+  return [...text].slice(0, COMPANY_NAME_MAX).join("").trim();
+}
+
+export function setCompany(campaign, name) {
+  const company = cleanCompanyName(name);
+  return company ? { ...campaign, company } : campaign;
 }
 
 // Funds can carry a fraction (tax and hourly research costs are not whole numbers); two places are kept.
@@ -132,6 +147,7 @@ export function parseCampaign(text) {
     ? [...new Set(value.squad.filter((id) => aliveIds.includes(id)))].slice(0, SQUAD_MAX)
     : aliveIds.slice(0, SQUAD_MAX);
   return {
+    company: cleanCompanyName(value.company),
     funds: money(value.funds) + refundOldTrack(value.heart) + refundOldTrack(value.brain),
     upgrades,
     items: ids(value.items),

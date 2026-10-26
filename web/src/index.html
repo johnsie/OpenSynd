@@ -209,10 +209,28 @@
       </footer>
     </div>
 
+    <dialog id="company-dialog" class="company-dialog" aria-labelledby="company-heading">
+      <form id="company-form" method="dialog">
+        <h2 id="company-heading" data-i18n="company.heading">Name your company</h2>
+        <p data-i18n="company.intro">Every operation is run in its name. Other players will see it online.</p>
+        <label for="company-name" data-i18n="company.label">Company name</label>
+        <input id="company-name" name="company" type="text" maxlength="32" autocomplete="off" />
+        <p id="company-error" class="company-error" role="alert" hidden></p>
+        <div class="company-actions">
+          <button id="company-cancel" type="button" data-i18n="company.cancel">Back</button>
+          <button id="company-save" type="submit" class="primary" data-i18n="company.save">Confirm</button>
+        </div>
+      </form>
+    </dialog>
+
     <dialog id="menu-dialog" class="main-menu" aria-labelledby="menu-heading">
       <header class="menu-head">
         <p class="eyebrow">OPEN CIVIC OPERATIONS NETWORK</p>
         <h2 id="menu-heading">OpenSynd</h2>
+        <p class="menu-company">
+          <span id="menu-company-name"></span>
+          <button id="menu-company-edit" type="button" class="link-button" data-i18n="company.rename">Rename company</button>
+        </p>
       </header>
       <nav class="menu-list" aria-label="Main menu">
         <button id="menu-continue" type="button" class="primary" hidden>
@@ -251,6 +269,7 @@
       <header class="title-head">
         <p class="eyebrow">OPEN CIVIC OPERATIONS NETWORK</p>
         <h2 id="title-heading">OpenSynd</h2>
+        <p id="title-company" class="title-company"></p>
       </header>
       <div class="title-grid">
         <section class="title-map" aria-label="World map of operations">

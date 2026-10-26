@@ -132,6 +132,8 @@ import {
   fitUpgrade,
   removeUpgrade,
   upgradesOf,
+  cleanCompanyName,
+  setCompany,
 } from "./campaign.js";
 import {
   MOODS,
@@ -262,6 +264,7 @@ const selectedReadout = document.querySelector("#selected-readout");
 const statusMessage = document.querySelector("#status-message");
 const aboutDialog = document.querySelector("#about-dialog");
 const menuDialog = document.querySelector("#menu-dialog");
+const companyDialog = document.querySelector("#company-dialog");
 const titleDialog = document.querySelector("#title-dialog");
 const outcomeDialog = document.querySelector("#outcome-dialog");
 const saveButton = document.querySelector("#save-button");
@@ -4745,7 +4748,60 @@ function currentContinueTarget() {
   return continueTarget({ hasAutosave: Boolean(readAutosave()), completedCount: state.progress?.completed.length ?? 0 });
 }
 
+// The company name is asked for the first time the player heads for the campaign, and can be changed from the menu.
+function showCompany() {
+  const company = state.campaign.company;
+  document.querySelector("#menu-company-name").textContent = company;
+  document.querySelector("#menu-company-edit").hidden = !company;
+  document.querySelector("#menu-company-name").parentElement.hidden = !company;
+  document.querySelector("#title-company").textContent = company;
+}
+
+// Resolves true once the company has a name; false if the player backs out. Opens the dialog synchronously.
+function ensureCompany(rename = false) {
+  if (state.campaign.company && !rename) return Promise.resolve(true);
+  const input = document.querySelector("#company-name");
+  const error = document.querySelector("#company-error");
+  input.value = state.campaign.company;
+  error.hidden = true;
+  companyDialog.showModal();
+  input.focus();
+  input.select();
+  return new Promise((resolve) => {
+    const form = document.querySelector("#company-form");
+    const finish = (named) => {
+      form.removeEventListener("submit", onSubmit);
+      cancel.removeEventListener("click", onCancel);
+      companyDialog.removeEventListener("cancel", onCancel);
+      if (companyDialog.open) companyDialog.close();
+      resolve(named);
+    };
+    const onSubmit = (event) => {
+      event.preventDefault();
+      const name = cleanCompanyName(input.value);
+      if (!name) {
+        error.textContent = "Give the company a name.";
+        error.hidden = false;
+        return;
+      }
+      state.campaign = setCompany(state.campaign, name);
+      persistCampaign();
+      showCompany();
+      finish(true);
+    };
+    const onCancel = (event) => {
+      event.preventDefault?.();
+      finish(Boolean(state.campaign.company));
+    };
+    const cancel = document.querySelector("#company-cancel");
+    form.addEventListener("submit", onSubmit);
+    cancel.addEventListener("click", onCancel);
+    companyDialog.addEventListener("cancel", onCancel);
+  });
+}
+
 function showMainMenu() {
+  showCompany();
   const target = currentContinueTarget();
   const saved = target === "operation" ? readAutosave() : null;
   const entry = saved ? state.missionList?.find((item) => item.id === saved.missionId) : null;
@@ -4768,11 +4824,14 @@ function showCampaign() {
 
 // Escape must not drop the player onto a half-started game behind the menu.
 menuDialog.addEventListener("cancel", (event) => event.preventDefault());
-document.querySelector("#menu-campaign").addEventListener("click", showCampaign);
+document.querySelector("#menu-campaign").addEventListener("click", async () => {
+  if (await ensureCompany()) showCampaign();
+});
 document.querySelector("#menu-continue").addEventListener("click", async () => {
   if (currentContinueTarget() === "operation" && (await resumeAutosave())) return;
-  showCampaign();
+  if (await ensureCompany()) showCampaign();
 });
+document.querySelector("#menu-company-edit").addEventListener("click", () => ensureCompany(true));
 document.querySelector("#menu-new-game").addEventListener("click", startNewGame);
 document.querySelector("#menu-settings").addEventListener("click", showSettings);
 document.querySelector("#menu-about").addEventListener("click", () => aboutDialog.showModal());
