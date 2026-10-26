@@ -20,6 +20,8 @@ stages:
 
 variables:
   DOCROOT: /var/www/opensynd.outiva.com
+  # The game server the built site offers (see docs/SELF_HOSTING.md); a CI/CD variable of the same name overrides it.
+  OPENSYND_SERVER: https://opensynd.outiva.com
 
 check:
   stage: check
