@@ -4483,7 +4483,11 @@ async function signInWithOutiva() {
   } catch {
     quiet = false; // no storage: a quiet attempt could never be remembered, so none is made
   }
-  if (back) history.replaceState(null, "", location.pathname);
+  if (back) {
+    const query = new URLSearchParams(location.search);
+    for (const name of ["code", "state", "session_state", "iss", "error", "error_description"]) query.delete(name);
+    history.replaceState(null, "", `${location.pathname}${query.size > 0 ? `?${query}` : ""}${location.hash}`);
+  }
   if (back?.code) {
     const result = await onlinePlay.oidcCode(back).catch(() => ({ ok: false }));
     if (result.ok) {
@@ -4499,7 +4503,15 @@ async function signInWithOutiva() {
   return null;
 }
 
-async function refreshOnlineMenu() {
+// Refreshes run one at a time: the page asks for one from several places as it starts, and a second one beginning while the first is
+// still signing in (coming back from Outiva) would replace its connection with one that has no account yet.
+let onlineRefreshing = Promise.resolve();
+function refreshOnlineMenu() {
+  onlineRefreshing = onlineRefreshing.catch(() => {}).then(refreshOnlineMenuNow);
+  return onlineRefreshing;
+}
+
+async function refreshOnlineMenuNow() {
   const note = document.querySelector("#menu-online-note");
   const signin = document.querySelector("#menu-signin");
   const test = document.querySelector("#menu-online-test");

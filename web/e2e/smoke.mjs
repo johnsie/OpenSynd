@@ -1602,7 +1602,18 @@ for (const [name, type, executablePath] of targets) {
         await page.waitForFunction(() => document.querySelector("#menu-online-note")?.textContent.includes("Signed in as Casey"), null, {
           timeout: 15000,
         });
-        assert.equal(new URL(page.url()).search, "", "the answer from Outiva is cleaned from the address");
+        assert.equal(new URL(page.url()).searchParams.has("code"), false, "the answer from Outiva is cleaned from the address");
+        // Signed in this way, the daily operation starts without asking to sign in again.
+        await page.click("#menu-daily");
+        await page.waitForSelector("#daily-dialog[open]");
+        await page.click("#daily-play");
+        await page.waitForFunction(() => /ONLINE/.test(document.querySelector("#operation-eyebrow")?.textContent ?? ""), null, {
+          timeout: 20000,
+        });
+        assert.equal(await page.locator("#signin-dialog[open]").count(), 0, "no sign-in dialog");
+        await page.evaluate(() => document.querySelector("#pause-button")?.click());
+        await page.reload();
+        await page.waitForSelector("#menu-signin:not([hidden])", { timeout: 15000 });
         // Signing out stays signed out, even though they are still signed in to Outiva.
         await page.click("#menu-signin");
         await page.waitForFunction(() => document.querySelector("#menu-online-note").textContent.includes("Not signed in"));
