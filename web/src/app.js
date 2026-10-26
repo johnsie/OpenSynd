@@ -4867,7 +4867,8 @@ async function renderWorld() {
       item.append(words);
       if (territory.mine) {
         const next = territory.defence + 1;
-        const price = territory.defenceUpgradeCost;
+        // An older game server does not send defenceUpgradeCost; its established price is still level × 500.
+        const price = Number.isFinite(territory.defenceUpgradeCost) ? territory.defenceUpgradeCost : next * 500;
         const label = territory.defence >= page.maxDefence
           ? "Defence at maximum"
           : `Strengthen defence to level ${next} · ${price.toLocaleString()} funds`;
