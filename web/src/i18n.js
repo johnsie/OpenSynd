@@ -64,6 +64,51 @@ const TABLE = Object.freeze({
     "OpenSynd est un jeu de fans non officiel et sans but lucratif, fait par passion. Il s'inspire d'autres jeux, sans affiliation " +
       "ni soutien de leurs créateurs ou propriétaires. Il est gratuit, sans publicité, et ne vend rien.",
   ],
+  "about.scratch": [
+    "The game, its art, maps, missions and writing were developed from scratch for this project. " +
+      "Its rules and numbers come from the open source FreeSynd project.",
+    "El juego, su arte, mapas, misiones y textos se desarrollaron desde cero para este proyecto. " +
+      "Sus reglas y cifras provienen del proyecto de código abierto FreeSynd.",
+    "Le jeu, ses graphismes, cartes, missions et textes ont été développés de zéro pour ce projet. " +
+      "Ses règles et ses chiffres viennent du projet libre FreeSynd.",
+  ],
+  "about.thanks": [
+    "Thank you to the FreeSynd team and to the whole open source community, whose work and generosity made this possible.",
+    "Gracias al equipo de FreeSynd y a toda la comunidad de código abierto, cuyo trabajo y generosidad lo hicieron posible.",
+    "Merci à l'équipe de FreeSynd et à toute la communauté open source, dont le travail et la générosité ont tout rendu possible.",
+  ],
+  "about.fs_heading": ["How FreeSynd was used", "Cómo se usó FreeSynd", "Comment FreeSynd a été utilisé"],
+  "about.fs_fork": [
+    "This project began as a copy (a fork) of the FreeSynd repository. The old engine code is still in the repository for " +
+      "reference, but the browser game does not use it.",
+    "Este proyecto empezó como una copia (un fork) del repositorio de FreeSynd. El código del motor antiguo sigue en el " +
+      "repositorio como referencia, pero el juego de navegador no lo usa.",
+    "Ce projet est parti d'une copie (un fork) du dépôt de FreeSynd. L'ancien code du moteur reste dans le dépôt pour " +
+      "référence, mais le jeu en navigateur ne l'utilise pas.",
+  ],
+  "about.fs_rules": [
+    "FreeSynd's source code is where the rules were learned: how persuading works, the cybernetic upgrades, the drugs, how " +
+      "accurate a shot is, carrying weight, refilling ammunition, research, territories with tax, mood and revolt, and how " +
+      "police, guards, vehicles and traffic behave. They were rebuilt from scratch in the browser, and where our first idea and " +
+      "FreeSynd's rule disagreed, FreeSynd's won.",
+    "El código fuente de FreeSynd es donde se aprendieron las reglas: cómo funciona la persuasión, las mejoras cibernéticas, " +
+      "las drogas, la precisión de un disparo, el peso que se carga, la recarga de munición, la investigación, los territorios " +
+      "con impuestos, ánimo y revuelta, y el comportamiento de policías, guardias, vehículos y tráfico. Se reconstruyeron " +
+      "desde cero en el navegador y, cuando nuestra primera idea y la regla de FreeSynd diferían, ganó la de FreeSynd.",
+    "Le code source de FreeSynd est la source des règles : la persuasion, les améliorations cybernétiques, les drogues, la " +
+      "précision d'un tir, le poids porté, le réapprovisionnement en munitions, la recherche, les territoires avec impôts, " +
+      "moral et révolte, et le comportement de la police, des gardes, des véhicules et de la circulation. Elles ont été " +
+      "reconstruites de zéro dans le navigateur et, en cas de désaccord, la règle de FreeSynd l'a emporté.",
+  ],
+  "about.fs_not": [
+    "Nothing else was taken: no graphics, sounds, music, maps, missions, writing, names or data files. The FreeSynd team has " +
+      "nothing to do with this game and has not seen or approved it.",
+    "No se tomó nada más: ni gráficos, sonidos, música, mapas, misiones, textos, nombres ni archivos de datos. El equipo de " +
+      "FreeSynd no tiene nada que ver con este juego y no lo ha visto ni aprobado.",
+    "Rien d'autre n'a été pris : ni graphismes, sons, musique, cartes, missions, textes, noms ou fichiers de données. " +
+      "L'équipe de FreeSynd n'a rien à voir avec ce jeu et ne l'a ni vu ni approuvé.",
+  ],
+  "about.fs_link": ["Visit the FreeSynd project", "Visitar el proyecto FreeSynd", "Visiter le projet FreeSynd"],
   "about.free": [
     "Free to inspect, modify, and share",
     "Libre de inspeccionar, modificar y compartir",

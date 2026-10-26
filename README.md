@@ -94,6 +94,10 @@ What I took from FreeSynd:
 What I did **not** take: none of the graphics, sounds, music, maps, missions, writing, names or data
 files of other games. All of that here is made again (the source of every picture and sound is listed in [PROVENANCE.md](PROVENANCE.md) and [provenance/assets.json](provenance/assets.json)), and the numbers are my own or re-used under the terms of the GPL.
 
+The game itself, its art, maps, missions and writing, was developed from scratch for this project; only the rules and numbers
+come from FreeSynd's open source. Thank you to the FreeSynd team and to the whole open source community: this was only possible
+because of your work and generosity.
+
 Other things I'm grateful for: the human model that all the characters are drawn from is by **Quaternius** (CC0), and
 the music is **"Electric Stream"** by Alexander Ehlers (CC0) and **"The Core"** by p0ss. Everything else I made myself.
 

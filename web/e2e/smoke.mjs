@@ -1013,6 +1013,10 @@ for (const [name, type, executablePath] of targets) {
     await menuPage.waitForSelector("#about-dialog[open]");
     const about = await menuPage.locator("#about-dialog").innerText();
     assert.match(about, /unofficial, non-profit fan game, made as a hobby/);
+    assert.match(about, /Thank you to the FreeSynd team and to the whole open source community/);
+    assert.match(about, /developed from scratch/);
+    assert.match(about, /How FreeSynd was used/);
+    assert.equal(await menuPage.locator('#about-dialog a[href="http://freesynd.sourceforge.net/"]').count(), 1, "links to FreeSynd");
     assert.doesNotMatch(about, /syndicate|original game/i, "the About screen names no other game");
     await menuPage.click("#close-about");
     await menuPage.click("#menu-settings");
