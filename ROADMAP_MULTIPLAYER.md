@@ -57,8 +57,7 @@ One operation, each player commanding their own agents.
   desync to chase and no peer-to-peer connection to set up, so firewalls and home routers do not matter. A cheating client can only
   issue orders, which the server checks like any other.
 - **Lobby:** create or browse open games from the menu's Co-op entry, pick the operation and difficulty, then either **quick match**
-  (the server fills a room) or open a game for friends, who see it in their friends list and join with one click. No codes or links
-  to pass around. Ready up.
+  (the server fills a room) or open a game for friends, who see it in their friends list and join with one click. Ready up.
 - **Feel:** clients predict their own agents' movement and interpolate everyone else's, so orders respond at once even on a slow
   link. Updates send only what changed.
 - Agents split between players (2 players: 2 each; 4 players: 1 each). Shared funds and a shared outcome.

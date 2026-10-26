@@ -103,8 +103,7 @@ extra code.
 - **Rooms:** a room is one operation in progress, with a core instance, its players and its command log. Rooms are independent, so
   they can run on worker threads or separate processes as load grows. A room ends when the operation does, and writes its result and
   replay.
-- **Lobby and matchmaking:** lists open co-op games, offers quick match, and lets friends see and join each other's games from the friends list. Joining is
-  always through the server's lists; there are no invite codes or links to share.
+- **Lobby and matchmaking:** lists open co-op games, offers quick match, and lets friends see and join each other's games from the friends list.
 - **World service:** the shared rival-syndicate map: ownership, defence layouts, shields, income, seasons. It creates a raid room
   and applies the verified result. It is the only writer of that state.
 - **Verifier:** takes a replay (version, seed, commands), runs it headless in a worker, and returns the result. The daily board and
