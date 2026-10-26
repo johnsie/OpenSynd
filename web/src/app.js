@@ -1164,10 +1164,8 @@ function renderArmoury() {
     const buy = document.createElement("button");
     buy.type = "button";
     const defaultsFor = (target) => startingLoadout(target);
-    const buyable = targets.filter(
-      (target) => canBuy(campaign, target.id, choice.slot, item, state.catalog, defaultsFor(target)) &&
-        slotItem(campaign, target.id, choice.slot, state.catalog, defaultsFor(target))?.id !== item.id,
-    );
+    const buyable = targets.filter((target) =>
+      canBuy(campaign, target.id, choice.slot, item, state.catalog, defaultsFor(target)));
     const net = netCost(campaign, placement.id, choice.slot, item, state.catalog, defaults);
     if (targets.length > 1) {
       const total = buyable.reduce(
@@ -1177,7 +1175,7 @@ function renderArmoury() {
       buy.textContent = `Buy for ${targets.length} · ${total} funds`;
       buy.setAttribute("aria-label", `Buy ${item.name} for ${targets.length} operators, ${total} funds`);
     } else {
-      buy.textContent = net < 0 ? `Swap · +${-net} funds` : `Buy · ${net} funds`;
+      buy.textContent = `Buy · ${net} funds`;
       buy.setAttribute(
         "aria-label",
         `Buy ${item.name} for Operator ${choice.operator + 1} slot ${choice.slot + 1}, ${net} funds`,
@@ -1185,7 +1183,7 @@ function renderArmoury() {
     }
     buy.disabled = !available || buyable.length === 0;
     buy.addEventListener("click", () => {
-      // Each picked operative gets it, in the chosen slot; those who cannot afford it are left out.
+      // Each picked operative gets it in the first free slot; full or unaffordable operatives are left out.
       let bought = 0;
       for (const target of targets) {
         const before = state.campaign;

@@ -553,14 +553,23 @@ for (const [name, type, executablePath] of targets) {
       await page.getByRole("button", { name: "Buy Civic Pulse Emitter for Operator 1 slot 7, 0 funds" }).click();
       assert.equal(await labFunds(), base - 500);
       assert.equal(await squads.first().locator(".slot:not(.empty)").count(), 7);
-      // Swapping refunds the full price of what it replaces (FreeSynd sells at cost).
+      // Buying with an occupied slot selected keeps its item and uses the next empty slot.
       await page.getByLabel("Operator 1 slot 7: Civic Pulse Emitter", { exact: true }).click();
       await page.getByRole("button", { name: "Buy Field Repair Kit for Operator 1 slot 7, 500 funds" }).click();
       assert.equal(await labFunds(), base - 1000);
-      // Selling returns the whole price again.
+      assert.equal(await page.getByLabel("Operator 1 slot 7: Civic Pulse Emitter", { exact: true }).count(), 1);
+      assert.equal(await page.getByLabel("Operator 1 slot 8: Field Repair Kit", { exact: true }).count(), 1);
+      assert.equal(await squads.first().locator(".slot:not(.empty)").count(), 8);
+      assert.equal(
+        await page.getByRole("button", { name: "Buy Scanner for Operator 1 slot 7, 500 funds" }).isDisabled(),
+        true,
+        "a full inventory refuses another purchase",
+      );
+      // Selling still returns the whole price and frees a slot.
+      await page.getByLabel("Operator 1 slot 8: Field Repair Kit", { exact: true }).click();
       await page.getByRole("button", { name: /Sell Field Repair Kit · \+500 funds/ }).click();
       assert.equal(await labFunds(), base - 500);
-      assert.equal(await squads.first().locator(".slot:not(.empty)").count(), 6);
+      assert.equal(await squads.first().locator(".slot:not(.empty)").count(), 7);
 
       // The roster: four operatives deploy; benching one takes them out of the Armoury until they are put back.
       assert.equal(await page.locator("#roster-list .roster-card").count(), 4);
@@ -597,6 +606,7 @@ for (const [name, type, executablePath] of targets) {
         "developer.scanner",
         "developer.scanner",
         "developer.civic-pulse-emitter",
+        "developer.civic-pulse-emitter",
       ]);
       await page.click("#close-research");
       await page.waitForFunction(() => !document.querySelector("#research-dialog").open);
@@ -609,10 +619,11 @@ for (const [name, type, executablePath] of targets) {
       await page.waitForFunction(() =>
         document.querySelector("#status-message").textContent.includes("Local map established"),
       );
-      // The purchases are in operator 1's squares when the operation starts: six items.
-      assert.equal(await page.locator(".roster-item").first().locator(".slot:not(.empty)").count(), 6);
+      // The purchases are in operator 1's squares when the operation starts: seven items.
+      assert.equal(await page.locator(".roster-item").first().locator(".slot:not(.empty)").count(), 7);
       assert.equal(await page.getByLabel("Field Operator 1 slot 5: Scanner", { exact: false }).count(), 1);
       assert.equal(await page.getByLabel("Field Operator 1 slot 6: Civic Pulse Emitter", { exact: false }).count(), 1);
+      assert.equal(await page.getByLabel("Field Operator 1 slot 7: Civic Pulse Emitter", { exact: false }).count(), 1);
       await page.close();
       assert.deepEqual(errors, []);
     });

@@ -321,14 +321,23 @@ test("buying an item costs its price and fills the slot", () => {
   assert.deepEqual(loadoutFor(packed, "op1", defaults), ["pulse", "kit", "stim"]);
 });
 
-test("replacing an item refunds its full price, as FreeSynd sells at cost", () => {
+test("buying with an occupied slot selected uses the next free slot without replacing anything", () => {
   const defaults = ["pulse", "kit"];
   const funds = { ...emptyCampaign(), funds: 20, items: ["stim"] };
   assert.equal(sellValue(shop[1]), 10);
-  assert.equal(netCost(funds, "op1", 1, shop[3], shop, defaults), 10, "stim 20 minus the kit's 10");
-  const swapped = buyIntoSlot(funds, "op1", 1, shop[3], shop, defaults);
-  assert.equal(swapped.funds, 10);
-  assert.deepEqual(loadoutFor(swapped, "op1", defaults), ["pulse", "stim"]);
+  assert.equal(netCost(funds, "op1", 1, shop[3], shop, defaults), 20, "the existing kit is not sold");
+  const bought = buyIntoSlot(funds, "op1", 1, shop[3], shop, defaults);
+  assert.equal(bought.funds, 0);
+  assert.deepEqual(loadoutFor(bought, "op1", defaults), ["pulse", "kit", "stim"]);
+});
+
+test("buying with an occupied slot selected is refused without charging when the operative is full", () => {
+  const defaults = Array(SLOTS_PER_OPERATIVE).fill("kit");
+  const funds = { ...emptyCampaign(), funds: 100, items: ["stim"] };
+  assert.equal(canBuy(funds, "op1", 0, shop[3], shop, defaults), false);
+  assert.equal(buyIntoSlot(funds, "op1", 0, shop[3], shop, defaults), funds);
+  assert.equal(funds.funds, 100);
+  assert.deepEqual(loadoutFor(funds, "op1", defaults), defaults);
 });
 
 test("purchases need funds and a researched item", () => {

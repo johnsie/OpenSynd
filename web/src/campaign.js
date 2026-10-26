@@ -554,8 +554,9 @@ export function captureItems(campaign, operatorId, itemIds, catalog, defaults) {
   return next;
 }
 
-// Buying and selling in the Armoury. Items cost their price; a replaced or sold item is
-// bought back at half price, so swapping a weapon costs the difference.
+// Buying and selling in the Armoury. Items cost their price and sold items return their price.
+// A purchase never replaces equipment: choosing an occupied slot puts the new item in the first
+// free slot instead, or refuses the purchase when all eight slots are full.
 export const SELL_SHARE = 1;
 
 export function sellValue(item) {
@@ -567,14 +568,15 @@ export function slotItem(campaign, operatorId, slot, catalog, defaults) {
   return id === undefined ? null : catalog.find((entry) => entry.id === id) ?? null;
 }
 
-// What buying `item` into the slot would cost after the refund for any item it replaces.
-export function netCost(campaign, operatorId, slot, item, catalog, defaults) {
-  return (item.price ?? 0) - sellValue(slotItem(campaign, operatorId, slot, catalog, defaults));
+// Purchases do not replace or sell what is in the selected slot, so they always cost the item's price.
+export function netCost(_campaign, _operatorId, _slot, item, _catalog, _defaults) {
+  return item.price ?? 0;
 }
 
 export function canBuy(campaign, operatorId, slot, item, catalog, defaults) {
   if (!Number.isInteger(slot) || slot < 0 || slot >= SLOTS_PER_OPERATIVE) return false;
   if (!isItemAvailable(campaign, item)) return false;
+  if (loadoutFor(campaign, operatorId, defaults).length >= SLOTS_PER_OPERATIVE) return false;
   return campaign.funds >= netCost(campaign, operatorId, slot, item, catalog, defaults);
 }
 
@@ -583,8 +585,7 @@ export function buyIntoSlot(campaign, operatorId, slot, item, catalog, defaults)
   if (!canBuy(campaign, operatorId, slot, item, catalog, defaults)) return campaign;
   const cost = netCost(campaign, operatorId, slot, item, catalog, defaults);
   const loadout = [...loadoutFor(campaign, operatorId, defaults)];
-  if (slot >= loadout.length) loadout.push(item.id);
-  else loadout[slot] = item.id;
+  loadout.push(item.id);
   return {
     ...campaign,
     funds: campaign.funds - cost,
