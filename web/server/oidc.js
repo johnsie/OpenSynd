@@ -3,10 +3,8 @@
 // Signing in with an Outiva account (OpenID Connect, https://accounts.outiva.com). The page sends the server the authorisation code it
 // got back; the server swaps it for an ID token (a public client with PKCE, so there is no secret), checks the token's signature
 // against the issuer's published keys and its issuer, audience, expiry and nonce, and takes the player's identity from the token's
-// stable `sub`. Nothing else about the account is kept: the display name is made from the preferred username once.
+// stable `sub`. Nothing else about the account is kept: the display name is a made-up codename, never taken from the account.
 import { createPublicKey, randomBytes, verify } from "node:crypto";
-
-import { problemWithName } from "./auth.js";
 
 export const DEFAULT_ISSUER = "https://accounts.outiva.com/realms/outiva";
 export const DEFAULT_CLIENT = "opensynd-web";
@@ -92,14 +90,18 @@ export function createOidc({
   };
 }
 
-/** A display name for a new account, from what the identity service says, that is allowed and not taken. */
-export function displayNameFor(claims, taken) {
-  const source = String(claims.preferred_username ?? claims.name ?? claims.given_name ?? "").split("@")[0];
-  let base = source.replace(/[^A-Za-z0-9 _-]/g, "").replace(/\s+/g, " ").trim().slice(0, 16);
-  if (base.length < 3 || problemWithName(base)) base = "Agent";
-  for (let attempt = 0; attempt < 50; attempt += 1) {
-    const name = attempt === 0 ? base : `${base} ${1 + Math.floor(Math.random() * 9999)}`;
-    if (!problemWithName(name) && !taken(name)) return name;
+const ADJECTIVES = ["Silent", "Cold", "Quick", "Grey", "Iron", "Pale", "Hollow", "Bright", "Lone", "Rapid", "Dark", "Steady"];
+const NOUNS = ["Signal", "Relay", "Operative", "Cipher", "Warden", "Echo", "Ghost", "Vector", "Circuit", "Beacon", "Courier", "Shade"];
+
+/**
+ * A display name for a new Outiva account: a made-up codename. Nothing from the identity (username, name, email) is used, because the
+ * display name is shown to other players; the player can choose their own afterwards.
+ */
+export function displayNameFor(taken, random = Math.random) {
+  const pick = (list) => list[Math.floor(random() * list.length)];
+  for (let attempt = 0; attempt < 200; attempt += 1) {
+    const name = `${pick(ADJECTIVES)} ${pick(NOUNS)} ${10 + Math.floor(random() * 90)}`;
+    if (!taken(name)) return name;
   }
-  return `Agent ${randomBytes(4).toString("hex")}`.slice(0, 20);
+  return `Agent ${randomBytes(5).toString("hex")}`;
 }

@@ -16,9 +16,10 @@ test("a password is kept only as a salted hash, and only the right one verifies"
 });
 
 test("names and passwords are checked with a sentence for the person", () => {
-  for (const good of ["Anna", "Grey Harbour", "op_7-x", "Ab1"]) assert.equal(problemWithName(good), null, good);
-  for (const bad of ["", "ab", " Anna", "Anna ", "A  B", "x".repeat(21), "bad<name>", "emoji😀", 7, null]) {
-    assert.match(problemWithName(bad), /3 to 20/, String(bad));
+  const good = ["Anna", "Grey Harbour", "op_7-x", "Ab1", "Skels Team", "O'Neil & Sons Ltd.", "x".repeat(32)];
+  for (const name of good) assert.equal(problemWithName(name), null, name);
+  for (const bad of ["", "ab", " Anna", "Anna ", "A  B", "x".repeat(33), "bad<name>", "emoji😀", 7, null]) {
+    assert.match(problemWithName(bad), /3 to 32/, String(bad));
   }
   assert.equal(problemWithPassword("longenough"), null);
   assert.match(problemWithPassword("short"), /8 characters/);

@@ -76,6 +76,13 @@ export class OnlineClient {
     return this.call("/api/defence", { method: "POST", body: { territory, level } });
   }
 
+  /** Change the player's display name (shown to other players). */
+  async rename(name) {
+    const result = await this.call("/api/rename", { method: "POST", body: { name } });
+    if (result.ok) this.account = result.account;
+    return result;
+  }
+
   /** Friends, requests made to the player and by them, and which friends are on now. */
   async friends() {
     const result = await this.call("/api/friends");

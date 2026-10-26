@@ -178,7 +178,7 @@ export function createGameServer({
         if (!account) {
           const salt = randomBytes(16).toString("base64");
           // A password nobody knows: this account signs in through Outiva only.
-          account = store.createAccount(displayNameFor(claims, store.nameTaken), { salt, hash: randomBytes(32).toString("base64") });
+          account = store.createAccount(displayNameFor(store.nameTaken), { salt, hash: randomBytes(32).toString("base64") });
           store.linkSubject(claims.sub, account.id);
           store.addFunds(account.id, SIGNUP_FUNDS);
         }
@@ -243,6 +243,16 @@ export function createGameServer({
         store.setBanned(other.id, banned);
         if (banned) for (const connection of connections) if (connection.account?.id === other.id) connection.socketConnection.close(1000, "closed");
         reply(200, { ok: true });
+      } else if (url.pathname === "/api/rename" && request.method === "POST") {
+        const account = accountOf(request);
+        if (!account) return reply(401, { error: "Not signed in." });
+        if (!logins.take(address)) return reply(429, { error: "Too many tries. Wait a minute." });
+        const { name } = await readBody(request);
+        const problem = problemWithName(name);
+        if (problem) return reply(400, { error: problem });
+        if (!store.renameAccount(account.id, name)) return reply(409, { error: "That name is taken." });
+        for (const connection of connections) if (connection.account?.id === account.id) connection.account = { ...connection.account, name };
+        reply(200, { account: { id: account.id, name } });
       } else if (url.pathname === "/api/me" && request.method === "GET") {
         const account = accountOf(request);
         if (!account) return reply(401, { error: "Not signed in." });

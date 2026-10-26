@@ -59,13 +59,17 @@ test("an internal address is used for the identity service, still asking for the
   assert.equal(seen[0].headers["X-Forwarded-Proto"], "https");
 });
 
-test("display names are made from the username, kept allowed and unique", () => {
-  const taken = new Set(["Anna"]);
-  assert.equal(displayNameFor({ preferred_username: "ben@example.org" }, (n) => taken.has(n)), "ben");
-  assert.match(displayNameFor({ preferred_username: "Anna" }, (n) => taken.has(n)), /^Anna \d+$/);
-  assert.equal(displayNameFor({ preferred_username: "x" }, () => false), "Agent");
-  assert.equal(displayNameFor({}, () => false), "Agent");
-  assert.equal(displayNameFor({ preferred_username: "F_u_c_k" }, () => false), "Agent");
+test("a new Outiva account gets a made-up codename, never anything from the identity, and it is unique", () => {
+  const taken = new Set();
+  const names = new Set();
+  for (let i = 0; i < 40; i += 1) {
+    const name = displayNameFor((n) => taken.has(n));
+    assert.match(name, /^[A-Z][a-z]+ [A-Z][a-z]+ \d\d$/);
+    taken.add(name);
+    names.add(name);
+  }
+  assert.equal(names.size, 40);
+  assert.match(displayNameFor(() => true), /^Agent [0-9a-f]+$/, "when every codename is taken");
 });
 
 test("signing in with Outiva makes an account once, and the same identity gets it back", async () => {
@@ -78,7 +82,8 @@ test("signing in with Outiva makes an account once, and the same identity gets i
       state.idToken = token({ preferred_username: "Casey" });
       const first = await context.call("/api/oidc/code", { method: "POST", body });
       assert.equal(first.status, 200);
-      assert.equal(first.body.account.name, "Casey");
+      assert.doesNotMatch(first.body.account.name, /Casey/i, "the display name is not taken from the Outiva username");
+      const codename = first.body.account.name;
       assert.equal(state.requests[0].code_verifier, "v");
       assert.equal(state.requests[0].client_id, CLIENT);
       assert.equal((await context.call("/api/me", { token: first.body.token })).status, 200);
@@ -86,7 +91,16 @@ test("signing in with Outiva makes an account once, and the same identity gets i
       state.idToken = token({ preferred_username: "Changed Name" });
       const again = await context.call("/api/oidc/code", { method: "POST", body });
       assert.equal(again.body.account.id, first.body.account.id, "the same identity is the same account");
-      assert.equal(again.body.account.name, "Casey");
+      assert.equal(again.body.account.name, codename);
+      // They choose their own name; it must be allowed and free.
+      const rename = (name) => context.call("/api/rename", { method: "POST", token: again.body.token, body: { name } });
+      assert.equal((await rename("x")).status, 400);
+      assert.equal((await rename("Big Sh1t")).status, 400);
+      const taken = await context.call("/api/signup", { method: "POST", body: { name: "Taken Name", password: "a good password" } });
+      assert.equal(taken.status, 201);
+      assert.equal((await rename("taken name")).status, 409);
+      assert.equal((await rename("Casey")).status, 200);
+      assert.equal((await context.call("/api/me", { token: again.body.token })).body.account.name, "Casey");
       // It has no password to sign in with, and deleting it is confirmed by name.
       const login = await context.call("/api/login", { method: "POST", body: { name: "Casey", password: "anything at all" } });
       assert.equal(login.status, 401);

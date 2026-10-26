@@ -1599,9 +1599,20 @@ for (const [name, type, executablePath] of targets) {
       try {
         const page = await (await browser.newContext()).newPage();
         await page.goto(`${url}?e2e&server=${encodeURIComponent(ownUrl)}`);
-        await page.waitForFunction(() => document.querySelector("#menu-online-note")?.textContent.includes("Signed in as Casey"), null, {
+        await page.waitForFunction(() => document.querySelector("#menu-online-note")?.textContent.includes("Signed in as "), null, {
           timeout: 15000,
         });
+        // Until a company is named, the name other players see is a made-up one, never the Outiva username.
+        const shown = await page.locator("#menu-online-note").innerText();
+        assert.doesNotMatch(shown, /Casey/i);
+        assert.match(shown, /Signed in as [A-Z][a-z]+ [A-Z][a-z]+ \d\d/);
+        // Naming the company makes it the player's name online.
+        await page.click("#menu-campaign");
+        await page.fill("#company-name", "Skels Team");
+        await page.click("#company-save");
+        await page.waitForFunction(() => document.querySelector("#menu-online-note").textContent.includes("Signed in as Skels Team"));
+        await page.click("#menu-button");
+        await page.waitForSelector("#menu-dialog[open]");
         assert.equal(new URL(page.url()).searchParams.has("code"), false, "the answer from Outiva is cleaned from the address");
         // Signed in this way, the daily operation starts without asking to sign in again.
         await page.click("#menu-daily");
@@ -1623,7 +1634,7 @@ for (const [name, type, executablePath] of targets) {
         // The button signs in again.
         await page.click("#menu-signin");
         await page.click("#signin-outiva");
-        await page.waitForFunction(() => document.querySelector("#menu-online-note")?.textContent.includes("Signed in as Casey"), null, {
+        await page.waitForFunction(() => document.querySelector("#menu-online-note")?.textContent.includes("Signed in as "), null, {
           timeout: 15000,
         });
         // Not signed in at Outiva: the quiet attempt brings nothing back, and the page is still usable.

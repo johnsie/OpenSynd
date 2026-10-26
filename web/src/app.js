@@ -3374,6 +3374,30 @@ function paidChores(chores) {
   return chores.length > 0 ? chores.map((chore) => `${chore.title} (+${chore.reward})`).join(", ") : "none new";
 }
 
+// What the ending of an operation that ran on the server says. Nothing from the campaign applies: the daily operation can be tried again
+// (the best score counts and each chore pays once a day), and a raid has a price and a result.
+function onlineEnding(won) {
+  const daily = state.dailyResult;
+  const raid = state.raidResult;
+  if (daily) {
+    return won
+      ? { heading: "Today's operation is done", text: "Your score is on the board. Chores you completed are paid, once a day each." }
+      : {
+          heading: "Your squad was lost",
+          text: "Nothing is lost but the attempt. You can try today's operation again from the Daily screen: your best score counts.",
+        };
+  }
+  if (raid) {
+    return won
+      ? { heading: `${raid.name} is yours`, text: "Its income is yours now, until somebody takes it from you." }
+      : {
+          heading: "The raid failed",
+          text: `The defences of ${raid.name} held. The raid cost ${raid.cost} funds; you can try again once its shield ends.`,
+        };
+  }
+  return won ? {} : { heading: "Your squad was lost", text: "The operation failed. You can start another from the menu." };
+}
+
 function showOutcome(outcome) {
   const won = outcome === "success";
   audio.play(won ? "victory" : "failed");
@@ -3402,6 +3426,14 @@ function showOutcome(outcome) {
     : won
     ? debrief?.success ?? "The operation is complete."
     : reason ?? debrief?.failure ?? "Every operator has been disabled. Regroup and try a different approach.";
+  if (state.online) {
+    // An operation on the server is not a campaign one: no regrouping, no armoury, nothing to review on the map.
+    const online = onlineEnding(won);
+    if (online.heading) document.querySelector("#outcome-heading").textContent = online.heading;
+    if (online.text) document.querySelector("#outcome-text").textContent = reason ? `${reason} ${online.text}` : online.text;
+  }
+  document.querySelector("#outcome-research").hidden = Boolean(state.online);
+  document.querySelector("#outcome-close").textContent = state.online ? "Back to the menu" : "Review the map";
   const hasNext = won && !state.online && nextOperation() !== -1;
   document.querySelector("#next-button").hidden = !hasNext;
   document.querySelector("#replay-button").hidden = Boolean(state.online);
@@ -4503,6 +4535,24 @@ async function signInWithOutiva() {
   return null;
 }
 
+// The name other players see is the player's company name (not their Outiva or sign-in name). When the two differ, the server is asked
+// to change it; if the company name cannot be used (taken, or characters a name may not have) the account keeps its name, and says so.
+const companyFailed = new Map(); // "account:company" -> why it could not be used, so a refusal is not asked again
+let companyNote = "";
+async function useCompanyName(account) {
+  const company = state.campaign.company;
+  const key = `${account.id}:${company}`;
+  companyNote = "";
+  if (!company || company === account.name) return account;
+  if (!companyFailed.has(key)) {
+    const result = await onlinePlay.rename(company).catch(() => ({ ok: false }));
+    if (result.ok) return result.account;
+    companyFailed.set(key, result.error ?? "the server did not answer");
+  }
+  companyNote = ` Your company name "${company}" could not be used online: ${companyFailed.get(key)}`;
+  return account;
+}
+
 // Refreshes run one at a time: the page asks for one from several places as it starts, and a second one beginning while the first is
 // still signing in (coming back from Outiva) would replace its connection with one that has no account yet.
 let onlineRefreshing = Promise.resolve();
@@ -4538,7 +4588,8 @@ async function refreshOnlineMenuNow() {
   outivaSettings = health.oidc;
   let account = await onlinePlay.whoAmI();
   if (!account && health.oidc) account = await signInWithOutiva(health.oidc);
-  note.textContent = account ? `Signed in as ${account.name}.` : "Not signed in.";
+  if (account) account = await useCompanyName(account);
+  note.textContent = account ? `Signed in as ${account.name}.${companyNote}` : "Not signed in.";
   document.querySelector("#menu-signin-label").textContent = account ? `Sign out (${account.name})` : "Sign in";
   document.querySelector("#menu-signin-note").hidden = Boolean(account);
   signin.hidden = false;
@@ -5090,6 +5141,7 @@ function ensureCompany(rename = false) {
       state.campaign = setCompany(state.campaign, name);
       persistCampaign();
       showCompany();
+      refreshOnlineMenu().catch(() => {}); // online, the company name is also the player's name
       finish(true);
     };
     const onCancel = (event) => {

@@ -21,7 +21,7 @@ export async function verifyPassword(password, record) {
   return expected.length === actual.length && timingSafeEqual(expected, actual);
 }
 
-export const NAME_PATTERN = /^[A-Za-z0-9][A-Za-z0-9 _-]{1,18}[A-Za-z0-9]$/;
+export const NAME_PATTERN = /^[A-Za-z0-9][A-Za-z0-9 _&'.-]{1,30}[A-Za-z0-9.]$/;
 
 /** Why a name or password is not acceptable, as a sentence for the person, or null if it is. */
 // Words that are kept out of names and out of what players say to each other. A short list of the plainly abusive: it is a first
@@ -44,7 +44,7 @@ export function cleanSpeech(text) {
 
 export function problemWithName(name) {
   if (typeof name !== "string" || !NAME_PATTERN.test(name) || /  /.test(name)) {
-    return "Names are 3 to 20 letters, numbers, spaces, dashes or underscores.";
+    return "Names are 3 to 32 letters, numbers, spaces, dashes, underscores, dots, ampersands or apostrophes.";
   }
   if (isBlocked(name)) return "Please choose a different name.";
   return null;

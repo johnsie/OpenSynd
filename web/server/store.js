@@ -99,6 +99,7 @@ export function openStore(path = ":memory:", { now = Date.now } = {}) {
     oidcLink: db.prepare("INSERT INTO oidc_links (subject, account) VALUES (?, ?)"),
     oidcOf: db.prepare("SELECT subject FROM oidc_links WHERE account = ?"),
     nameTaken: db.prepare("SELECT 1 FROM accounts WHERE name = ?"),
+    rename: db.prepare("UPDATE accounts SET name = ? WHERE id = ?"),
     friendRows: db.prepare(`
       SELECT friends.requester AS requester, friends.target AS target, friends.accepted AS accepted,
              requester_account.name AS requester_name, target_account.name AS target_name
@@ -305,6 +306,16 @@ export function openStore(path = ":memory:", { now = Date.now } = {}) {
     },
     linkSubject: (subject, account) => statements.oidcLink.run(subject, account),
     isLinked: (account) => Boolean(statements.oidcOf.get(account)),
+    /** Change an account's display name. Returns false if somebody else has it. */
+    renameAccount(account, name) {
+      try {
+        statements.rename.run(name, account);
+        return true;
+      } catch (error) {
+        if (/UNIQUE/.test(error.message)) return false;
+        throw error;
+      }
+    },
     nameTaken: (name) => Boolean(statements.nameTaken.get(name)),
 
     // --------------------------------------------------------------------------------------- friends, reports, bans, profiles
