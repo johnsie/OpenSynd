@@ -116,6 +116,20 @@ test("the smoother walks people between updates and does not drag them across th
   assert.deepEqual(jumper.position, { x: 40, y: 5 }, "a long way at once is shown at once");
 });
 
+test("the smoother takes as long as updates have been taking, so people do not stop between slower ones", () => {
+  const smoother = createSmoother({ interval: 100 });
+  const unit = { id: "u", position: { x: 0, y: 0 } };
+  let shown = { x: 0, y: 0 };
+  // Updates arrive every 130 ms: after a few, a person is still moving 120 ms into the next one.
+  for (let step = 1; step <= 8; step += 1) {
+    unit.position = { x: step, y: 0 };
+    smoother.observe(unit, shown, step * 130);
+    smoother.show([unit], step * 130 + 120);
+    shown = { ...unit.position };
+  }
+  assert.ok(unit.position.x < 8 && unit.position.x > 7.5, `still on the way at 120 ms of 130: ${unit.position.x}`);
+});
+
 // ---- The page's side of playing online (src/online-play.js), with a plain object standing in for the page's state
 
 import { recordingHooks } from "../src/core/hooks.js";

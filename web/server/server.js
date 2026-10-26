@@ -807,7 +807,7 @@ export function createGameServer({
     listen(port = 0, host = "127.0.0.1") {
       return new Promise((done) => {
         http.listen(port, host, () => {
-          if (tickEvery) ticker = setInterval(tickRooms, 1000 * FIXED_STEP_SECONDS * 2);
+          if (tickEvery) ticker = setInterval(tickRooms, 1000 * FIXED_STEP_SECONDS);
           // Quiet connections are checked on and, if they have gone, let go.
           upkeep = setInterval(() => {
             for (const connection of connections) {

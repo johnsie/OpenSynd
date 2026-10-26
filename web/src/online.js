@@ -259,33 +259,46 @@ export class OnlineClient {
 }
 
 /**
- * Smooths what the server sends. Updates arrive ten times a second, so people would jump a little each time; instead each one
- * walks from where it is shown to where the server says it is over the next interval. `show(units, now)` sets their positions for
- * drawing. A person who has moved a long way at once (out of a car, say) is shown there straight away.
+ * Smooths what the server sends. Updates arrive about ten times a second, so people would jump a little each time; instead each one
+ * walks from where it is shown to where the server says it is, taking as long as updates have been taking to arrive (measured, so a
+ * server or connection that is a little slower does not leave everyone standing still between updates). `show(units, now)` sets their
+ * positions for drawing. A person who has moved a long way at once (out of a car, say) is shown there straight away.
  */
-export function createSmoother({ interval = 100, snapDistance = 3 } = {}) {
+export function createSmoother({ interval = 100, snapDistance = 3, shortest = 80, longest = 300 } = {}) {
   const tracks = new Map();
+  let batchAt = null;
+  let typical = interval;
   return {
     /** Call when the server has told us where a unit now is, with where it is being shown (before the news was applied). */
     observe(unit, shown, now) {
+      if (batchAt !== null && now !== batchAt) {
+        const gap = now - batchAt;
+        if (gap < 1000) typical = typical * 0.7 + gap * 0.3;
+      }
+      batchAt = now;
       const target = unit.position;
       if (Math.hypot(target.x - shown.x, target.y - shown.y) > snapDistance) {
         tracks.delete(unit.id);
         return;
       }
-      tracks.set(unit.id, { from: { ...shown }, to: { ...target }, at: now });
+      const duration = Math.min(longest, Math.max(shortest, typical));
+      tracks.set(unit.id, { from: { ...shown }, to: { ...target }, at: now, duration });
       unit.position = { ...shown };
     },
     show(units, now) {
       for (const unit of units) {
         const track = tracks.get(unit.id);
         if (!track) continue;
-        const progress = Math.min(1, (now - track.at) / interval);
+        const progress = Math.min(1, (now - track.at) / track.duration);
         const along = (from, to) => from + (to - from) * progress;
         unit.position = { x: along(track.from.x, track.to.x), y: along(track.from.y, track.to.y) };
         if (progress >= 1) tracks.delete(unit.id);
       }
     },
-    clear: () => tracks.clear(),
+    clear() {
+      tracks.clear();
+      batchAt = null;
+      typical = interval;
+    },
   };
 }
