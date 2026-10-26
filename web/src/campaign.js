@@ -93,6 +93,14 @@ export function setCompany(campaign, name) {
   return company ? { ...campaign, company } : campaign;
 }
 
+// A signed-in player's account name is their company name (it is what other players see), so on a browser that has none yet it is taken
+// from the account. A made-up codename given to a new Outiva account ("Grey Relay 42") is not a choice, so it does not count.
+const CODENAME = /^[A-Z][a-z]+ [A-Z][a-z]+ \d\d$/;
+export function companyFromAccount(campaign, accountName) {
+  if (campaign.company || CODENAME.test(accountName ?? "")) return campaign;
+  return setCompany(campaign, accountName);
+}
+
 // Funds can carry a fraction (tax and hourly research costs are not whole numbers); two places are kept.
 function money(value) {
   return Number.isFinite(value) && value >= 0 ? Math.round(value * 100) / 100 : 0;

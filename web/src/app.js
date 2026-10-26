@@ -163,6 +163,7 @@ import {
   removeUpgrade,
   upgradesOf,
   cleanCompanyName,
+  companyFromAccount,
   defendInCampaign,
   setCompany,
 } from "./campaign.js";
@@ -278,6 +279,7 @@ import {
   parseProgress,
   serializeProgress,
   clearGameStorage,
+  COMPANY_KEY,
 } from "./progress.js";
 import { createMusic } from "./music.js";
 import { createAudio, setVictoryTheme, shotCue, shotVolume } from "./audio.js";
@@ -612,6 +614,8 @@ async function loadGame(index = state.missionIndex, options = {}) {
   state.catalogPaths = [...equipmentDefinitions.entries()];
   if (!state.campaignLoaded) {
     state.campaign = sanitizeLoadouts(parseCampaign(readStored(CAMPAIGN_KEY)), state.catalog);
+    // The company name outlives the campaign (a new game, a damaged save): it is kept on its own.
+    if (!state.campaign.company) state.campaign = setCompany(state.campaign, readStored(COMPANY_KEY) ?? "");
     state.campaignLoaded = true;
   }
   const definitionsById = new Map(state.catalog.map((definition) => [definition.id, definition]));
@@ -3554,6 +3558,7 @@ function persistCampaign() {
   if (state.tutorial) return; // the training campaign is a scratch copy
   try {
     localStorage.setItem(CAMPAIGN_KEY, serializeCampaign(state.campaign));
+    if (state.campaign.company) localStorage.setItem(COMPANY_KEY, state.campaign.company); // remembered whatever happens to the campaign
   } catch {
     // The campaign still counts for this session when storage is unavailable.
   }
@@ -4587,6 +4592,14 @@ async function signInWithOutiva() {
 const companyFailed = new Map(); // "account:company" -> why it could not be used, so a refusal is not asked again
 let companyNote = "";
 async function useCompanyName(account) {
+  if (!state.campaign.company) {
+    const restored = companyFromAccount(state.campaign, account.name);
+    if (restored !== state.campaign) {
+      state.campaign = restored; // signed in on a browser that does not know the company yet: the account does
+      persistCampaign();
+      showCompany();
+    }
+  }
   const company = state.campaign.company;
   const key = `${account.id}:${company}`;
   companyNote = "";

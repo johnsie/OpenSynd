@@ -92,3 +92,25 @@ test("a new game wipes the campaign, progress and saves but keeps the settings a
   assert.deepEqual([...data.keys()].sort(), ["opensynd.settings.v1", "somebody.else"]);
   assert.equal(clearGameStorage(storage), 0);
 });
+
+test("a new game keeps the company name, the sign-in to a server and the settings, and wipes the rest", async () => {
+  const { COMPANY_KEY, clearGameStorage } = await import("../src/progress.js");
+  const { SETTINGS_KEY } = await import("../src/settings.js");
+  const items = new Map([
+    [COMPANY_KEY, "Skels Team"],
+    [SETTINGS_KEY, "{}"],
+    ["opensynd.server.v1", '{"url":"https://x","token":"t"}'],
+    ["opensynd.campaign.v1", "{}"],
+    ["opensynd.save.slot1", "{}"],
+    ["somebody.else", "kept"],
+  ]);
+  const storage = {
+    get length() {
+      return items.size;
+    },
+    key: (index) => [...items.keys()][index] ?? null,
+    removeItem: (key) => items.delete(key),
+  };
+  clearGameStorage(storage);
+  assert.deepEqual([...items.keys()].sort(), [COMPANY_KEY, SETTINGS_KEY, "opensynd.server.v1", "somebody.else"].sort());
+});

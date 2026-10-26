@@ -54,11 +54,15 @@ export function isUnlocked(progress, entries, index) {
 
 // A new game forgets the campaign (funds, upgrades, roster, territories, research), the operations won and every saved
 // game kept in this browser; the settings (sound, keys) stay. Returns how many entries it removed.
+// The company name and the sign-in to a game server belong to the player, not to the campaign, so a new game keeps them.
+export const COMPANY_KEY = "opensynd.company.v1";
+const KEPT_KEYS = new Set([SETTINGS_KEY, COMPANY_KEY, "opensynd.server.v1", "opensynd.outiva.off.v1"]);
+
 export function clearGameStorage(storage) {
   const doomed = [];
   for (let index = 0; index < storage.length; index += 1) {
     const key = storage.key(index);
-    if (key?.startsWith("opensynd.") && key !== SETTINGS_KEY) doomed.push(key);
+    if (key?.startsWith("opensynd.") && !KEPT_KEYS.has(key)) doomed.push(key);
   }
   for (const key of doomed) storage.removeItem(key);
   return doomed.length;

@@ -630,3 +630,13 @@ test("rival companies move on held territories, at most two at once, and an unan
   const quiet = { ...emptyCampaign(), territories: { a: { ...newTerritory("a"), status: "finished" } } };
   assert.equal(defendInCampaign(quiet, "a"), quiet);
 });
+
+test("a signed-in player's company name comes from their account when this browser has none", async () => {
+  const { companyFromAccount, emptyCampaign, setCompany } = await import("../src/campaign.js");
+  const fresh = emptyCampaign();
+  assert.equal(companyFromAccount(fresh, "Skels Team").company, "Skels Team");
+  assert.equal(companyFromAccount(fresh, "Grey Relay 42").company, "", "a made-up codename is not a company name");
+  assert.equal(companyFromAccount(fresh, undefined).company, "");
+  const named = setCompany(fresh, "Mine");
+  assert.equal(companyFromAccount(named, "Skels Team"), named, "the one already chosen here stays");
+});
