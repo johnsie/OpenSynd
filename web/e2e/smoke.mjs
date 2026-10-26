@@ -1689,6 +1689,10 @@ for (const [name, type, executablePath] of targets) {
         { timeout: 8000 },
       );
       assert.ok((await page.evaluate(() => window.opensyndTest.online().steps)) > 10, "the server's clock is running");
+      // The server changes things ten times a second; the weapon buttons must not be replaced each time (a click would be lost).
+      await page.evaluate(() => document.querySelector(".roster-item .slot")?.setAttribute("data-mark", "kept"));
+      await page.waitForTimeout(1200);
+      assert.equal(await page.locator('.roster-item .slot[data-mark="kept"]').count(), 1, "the same buttons are still there");
       // Leaving asks first, then the page is back to its own game.
       await page.click("#operations-button");
       await page.click("#confirm-accept");

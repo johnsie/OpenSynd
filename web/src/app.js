@@ -5570,6 +5570,18 @@ function updateVehicleButton() {
   document.querySelector("#vehicle-label").textContent = ride?.leaving ? "Leave vehicle" : ride ? "Take vehicle" : "Enter vehicle";
 }
 
+const unitSerials = new WeakMap(); // which unit object a button was made for: a new game's units are new objects
+let lastSerial = 0;
+const serialOf = (unit) => {
+  if (!unitSerials.has(unit)) {
+    lastSerial += 1;
+    unitSerials.set(unit, lastSerial);
+  }
+  return unitSerials.get(unit);
+};
+let shownRosterKey = "";
+let shownThreatsKey = "";
+
 function renderInterface() {
   if (!state.mission) return;
   objectiveList.replaceChildren(
@@ -5602,99 +5614,131 @@ function renderInterface() {
     String(activeOperators().length > 1 && selectedOperators().length === activeOperators().length),
   );
   const operators = state.units.filter((unit) => unit.side === "team");
-  rosterElement.replaceChildren(
-    ...operators.map((unit, index) => {
-      const label = `${unit.definition.name} ${index + 1}`;
-      const picked = isSelected({ ids: state.selectedIds }, unit.id) && !unit.disabled;
-      const item = document.createElement("div");
-      item.className = "roster-item";
-      item.dataset.unit = unit.id;
-      item.classList.toggle("selected", picked);
-      item.classList.toggle("down", unit.disabled);
-      item.classList.toggle("targeted", (state.targeted[unit.id] ?? 0) > state.elapsed && !unit.disabled);
-
-      const checkbox = document.createElement("input");
-      checkbox.type = "checkbox";
-      checkbox.checked = picked;
-      checkbox.disabled = unit.disabled || !controlled(unit);
-      checkbox.setAttribute("aria-label", `Include ${label} in the selection`);
-      checkbox.addEventListener("change", () => toggleSelect(unit.id));
-
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "roster-select";
-      button.disabled = unit.disabled || !controlled(unit);
-      button.setAttribute("aria-pressed", String(picked));
-      button.title = "Click: select only this operator. Ctrl/Shift-click: add to the selection.";
-      button.addEventListener("click", (event) => {
-        if (event.ctrlKey || event.shiftKey || event.metaKey) toggleSelect(unit.id);
-        else selectUnit(unit.id);
-      });
+  // The roster's buttons are only replaced when something they show (other than numbers) changes: an operation on a server changes
+  // every tenth of a second, and a button replaced between the press and the release of a click would swallow it.
+  const rosterKey = JSON.stringify([
+    operators.map((unit) => [
+      unit.id,
+      serialOf(unit),
+      unit.disabled,
+      isSelected({ ids: state.selectedIds }, unit.id) && !unit.disabled,
+      (state.targeted[unit.id] ?? 0) > state.elapsed && !unit.disabled,
+      controlled(unit),
+      state.online?.owners?.[unit.id] ?? null,
+      unit.activeSlot,
+      Boolean(unit.persuading),
+      unit.equipment.map((entry) => (entry ? [entry.definition.name, entry.charges] : null)),
+    ]),
+    Boolean(state.online),
+  ]);
+  if (rosterKey === shownRosterKey && rosterElement.children.length === operators.length) {
+    for (const unit of operators) {
+      const item = rosterElement.querySelector(`[data-unit="${unit.id}"]`);
+      if (!item) continue;
       const pad = (value) => Math.round(value).toString().padStart(2, "0");
-      const glyph = document.createElement("span");
-      glyph.className = "operator-glyph";
-      glyph.setAttribute("aria-hidden", "true");
-      glyph.textContent = "◇";
-      const name = document.createElement("span");
-      name.textContent = controlled(unit) ? `Op ${index + 1}` : `Op ${index + 1} · ${state.online.owners?.[unit.id] ?? "another player"}`;
-      name.title = label;
-      const health = document.createElement("small");
-      health.className = "hp";
-      health.textContent = `${unit.health}/${maxHealth(unit)}`;
-      name.append(" ", health);
-      const position = document.createElement("span");
-      position.className = "operator-position";
-      position.textContent = `${pad(unit.position.x)}:${pad(unit.position.y)}`;
-      button.append(glyph, name, position);
+      item.querySelector(".hp").textContent = `${unit.health}/${maxHealth(unit)}`;
+      item.querySelector(".operator-position").textContent = `${pad(unit.position.x)}:${pad(unit.position.y)}`;
+    }
+  } else {
+    shownRosterKey = rosterKey;
+    rosterElement.replaceChildren(
+      ...operators.map((unit, index) => {
+        const label = `${unit.definition.name} ${index + 1}`;
+        const picked = isSelected({ ids: state.selectedIds }, unit.id) && !unit.disabled;
+        const item = document.createElement("div");
+        item.className = "roster-item";
+        item.dataset.unit = unit.id;
+        item.classList.toggle("selected", picked);
+        item.classList.toggle("down", unit.disabled);
+        item.classList.toggle("targeted", (state.targeted[unit.id] ?? 0) > state.elapsed && !unit.disabled);
 
-            const chemistry = document.createElement("div");
-      chemistry.className = "drugs";
-      for (const name of DRUG_NAMES) {
-        const row = document.createElement("label");
-        row.className = `drug drug-${name}`;
-        const text = document.createElement("span");
-        text.textContent = DRUG_LABELS[name].slice(0, 3);
-        const slider = document.createElement("input");
-        slider.type = "range";
-        slider.min = "0";
-        slider.max = "100";
-        slider.step = "5";
-        slider.dataset.unit = unit.id;
-        slider.dataset.drug = name;
-        slider.disabled = unit.disabled;
-        slider.setAttribute("aria-label", `${DRUG_LABELS[name]} of ${label}`);
-        slider.disabled = Boolean(state.online); // drugs are set on the squad's own game, not on a server's
-        slider.addEventListener("input", () => setDrugForGroup(unit, name, Number(slider.value)));
-        row.append(text, slider);
-        chemistry.append(row);
-        paintDrug(slider, unit);
-      }
-      item.append(checkbox, button, slotRow(unit, label), chemistry);
-      return item;
-    }),
-  );
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.checked = picked;
+        checkbox.disabled = unit.disabled || !controlled(unit);
+        checkbox.setAttribute("aria-label", `Include ${label} in the selection`);
+        checkbox.addEventListener("change", () => toggleSelect(unit.id));
+
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "roster-select";
+        button.disabled = unit.disabled || !controlled(unit);
+        button.setAttribute("aria-pressed", String(picked));
+        button.title = "Click: select only this operator. Ctrl/Shift-click: add to the selection.";
+        button.addEventListener("click", (event) => {
+          if (event.ctrlKey || event.shiftKey || event.metaKey) toggleSelect(unit.id);
+          else selectUnit(unit.id);
+        });
+        const pad = (value) => Math.round(value).toString().padStart(2, "0");
+        const glyph = document.createElement("span");
+        glyph.className = "operator-glyph";
+        glyph.setAttribute("aria-hidden", "true");
+        glyph.textContent = "◇";
+        const name = document.createElement("span");
+        name.textContent = controlled(unit) ? `Op ${index + 1}` : `Op ${index + 1} · ${state.online.owners?.[unit.id] ?? "another player"}`;
+        name.title = label;
+        const health = document.createElement("small");
+        health.className = "hp";
+        health.textContent = `${unit.health}/${maxHealth(unit)}`;
+        name.append(" ", health);
+        const position = document.createElement("span");
+        position.className = "operator-position";
+        position.textContent = `${pad(unit.position.x)}:${pad(unit.position.y)}`;
+        button.append(glyph, name, position);
+
+              const chemistry = document.createElement("div");
+        chemistry.className = "drugs";
+        for (const name of DRUG_NAMES) {
+          const row = document.createElement("label");
+          row.className = `drug drug-${name}`;
+          const text = document.createElement("span");
+          text.textContent = DRUG_LABELS[name].slice(0, 3);
+          const slider = document.createElement("input");
+          slider.type = "range";
+          slider.min = "0";
+          slider.max = "100";
+          slider.step = "5";
+          slider.dataset.unit = unit.id;
+          slider.dataset.drug = name;
+          slider.disabled = unit.disabled;
+          slider.setAttribute("aria-label", `${DRUG_LABELS[name]} of ${label}`);
+          slider.disabled = Boolean(state.online); // drugs are set on the squad's own game, not on a server's
+          slider.addEventListener("input", () => setDrugForGroup(unit, name, Number(slider.value)));
+          row.append(text, slider);
+          chemistry.append(row);
+          paintDrug(slider, unit);
+        }
+        item.append(checkbox, button, slotRow(unit, label), chemistry);
+        return item;
+      }),
+    );
+  }
 
   const threats = state.units.filter((unit) => unit.side === "opposition" && !unit.persuaded);
   enemyCount.textContent = String(threats.filter((unit) => !unit.disabled).length);
-  threatsElement.replaceChildren(
-    ...threats.map((unit) => {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.dataset.disabled = String(unit.disabled);
-      button.addEventListener("click", () => issueAttack(unit.id));
-      const name = document.createElement("span");
-      // Numbered within its own kind: Enemy Agent 3, Guard 2.
-      const sameKind = threats.filter((other) => other.definition === unit.definition);
-      name.textContent = `${unit.definition.name} ${sameKind.indexOf(unit) + 1}`;
-      const vitality = document.createElement("span");
-      vitality.className = "vitality";
-      vitality.textContent = unit.disabled
-        ? "DISABLED"
-        : `${unit.health}/${maxHealth(unit)}`;
-      button.append(name, vitality);
-      return button;
-    }),
-  );
+  const threatsKey = JSON.stringify(threats.map((unit) => [unit.id, serialOf(unit), unit.disabled, unit.health]));
+  if (threatsKey !== shownThreatsKey || threatsElement.children.length !== threats.length) {
+    shownThreatsKey = threatsKey;
+    threatsElement.replaceChildren(
+      ...threats.map((unit) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.dataset.disabled = String(unit.disabled);
+        button.addEventListener("click", () => issueAttack(unit.id));
+        const name = document.createElement("span");
+        // Numbered within its own kind: Enemy Agent 3, Guard 2.
+        const sameKind = threats.filter((other) => other.definition === unit.definition);
+        name.textContent = `${unit.definition.name} ${sameKind.indexOf(unit) + 1}`;
+        const vitality = document.createElement("span");
+        vitality.className = "vitality";
+        vitality.textContent = unit.disabled
+          ? "DISABLED"
+          : `${unit.health}/${maxHealth(unit)}`;
+        button.append(name, vitality);
+        return button;
+      }),
+    );
+  }
 
   const unit = selectedUnit();
   const interaction = nearbyInteraction();
