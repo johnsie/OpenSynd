@@ -19,12 +19,14 @@ import {
   streakOf,
 } from "./daily.js";
 import { CORE_VERSION, PROTOCOL_VERSION, checkVersions, parseClientMessage } from "./protocol.js";
+import { WAITING_SECONDS, WaitingGame, splitSquad } from "./lobby.js";
 import { Room } from "./rooms.js";
 import { upgrade } from "./ws.js";
 
 const MAX_BODY_BYTES = 4096;
 const IDLE_SECONDS = 90;
 const PING_SECONDS = 20;
+export const AWAY_SECONDS = 120; // how long a signed-in player's place is kept after their connection goes
 export const MAX_ROOMS = 200;
 export const MAX_CONNECTIONS_PER_ADDRESS = 8;
 
@@ -231,12 +233,23 @@ export function createGameServer({
 
   const missionPaths = () => new Set([...content.pack.missions, ...(content.pack.variants ?? [])]);
 
+  // The people connected, by who they are (an account, or a connection for a guest). A running operation sends to a player through
+  // this, so a player who reconnects is simply found again.
+  const byKey = new Map();
+  const games = new Map(); // waiting games
+  const seated = new Map(); // account id -> the running operation they are in (even while they are away)
+  let gameCounter = 0;
+  const keyOf = (connection) => (connection.account ? `a${connection.account.id}` : connection.id);
+  const sendTo = (key) => (message) => byKey.get(key)?.send(message);
+  const playerOf = (connection) => ({ id: connection.key, name: connection.account.name, account: connection.account.id });
+
   function startRoom(connection, mode, mission) {
     if (rooms.size >= MAX_ROOMS) return connection.error("The server is full. Try again in a moment.");
     if (mode === "daily" && !connection.account) return connection.error("Sign in to play the daily operation.");
     const operation = mode === "daily" ? dailyOperation(content, today()) : null;
     const chosen = operation?.mission ?? mission ?? content.pack.missions[0];
     if (!missionPaths().has(chosen)) return connection.error("There is no such operation.");
+    leaveGame(connection);
     leaveRoom(connection);
     roomCounter += 1;
     const room = new Room({ id: `room-${roomCounter}`, content, mission: chosen, seed: operation?.seed ?? roomCounter * 7919 + 13 });
@@ -245,31 +258,146 @@ export function createGameServer({
       room.onFinish = finishDaily;
     }
     room.startedAt = now();
-    room.owner = connection.account?.id ?? null;
     rooms.set(room.id, room);
+    seat(connection, room, room.squad);
+  }
+
+  /** Put a player into a room with these agents (the room tells them how it starts). */
+  function seat(connection, room, unitIds, { start = true } = {}) {
     connection.room = room;
-    connection.player = room.addPlayer(connection.id, {
-      send: (message) => connection.send(message),
+    if (connection.account) seated.set(connection.account.id, { room, key: connection.key });
+    room.addPlayer(connection.key, {
+      send: sendTo(connection.key),
       name: connection.account?.name ?? "Guest",
+      account: connection.account?.id ?? null,
+      unitIds,
+      start,
     });
   }
 
-  function leaveRoom(connection) {
+  /** Leave an operation. With `keep`, a signed-in player's place is held for a while, as if they had stepped away. */
+  function leaveRoom(connection, { keep = false } = {}) {
     const room = connection.room;
     if (!room) return;
-    room.removePlayer(connection.id);
     connection.room = null;
+    if (keep && connection.account && !room.finished) {
+      room.detach(connection.key, now());
+      return;
+    }
+    room.removePlayer(connection.key);
+    if (connection.account) seated.delete(connection.account.id);
     if (room.players.size === 0) rooms.delete(room.id);
+  }
+
+  // ------------------------------------------------------------------------------------------------------------ co-op
+
+  const announce = (game) => {
+    for (const player of game.players) byKey.get(player.id)?.send({ t: "waiting", game: game.summary() });
+  };
+
+  function leaveGame(connection) {
+    const game = connection.game;
+    if (!game) return;
+    connection.game = null;
+    if (game.leave(connection.key)) games.delete(game.id);
+    else announce(game);
+  }
+
+  function needAccount(connection) {
+    if (connection.account) return true;
+    connection.error("Sign in to play with others.");
+    return false;
+  }
+
+  function openGame(connection, { mission, capacity = 2, quick = false } = {}) {
+    if (!needAccount(connection)) return;
+    if (connection.room) return connection.error("You are in an operation already.");
+    const chosen = mission ?? content.pack.missions[0];
+    if (!content.pack.missions.includes(chosen)) return connection.error("There is no such operation.");
+    leaveGame(connection);
+    gameCounter += 1;
+    const game = new WaitingGame({ id: `game-${gameCounter}`, host: playerOf(connection), mission: chosen, capacity, quick, now: now() });
+    games.set(game.id, game);
+    connection.game = game;
+    announce(game);
+  }
+
+  function joinGame(connection, id) {
+    if (!needAccount(connection)) return;
+    if (connection.room) return connection.error("You are in an operation already.");
+    const game = games.get(id);
+    if (!game || game.full) return connection.error("That game is not open any more.");
+    leaveGame(connection);
+    game.join(playerOf(connection));
+    connection.game = game;
+    announce(game);
+    if (game.quick && game.full) beginGame(game);
+  }
+
+  function quickMatch(connection) {
+    if (!needAccount(connection)) return;
+    const waiting = [...games.values()].find((game) => game.quick && !game.full && !game.players.some((p) => p.id === connection.key));
+    if (waiting) joinGame(connection, waiting.id);
+    else openGame(connection, { capacity: 2, quick: true });
+  }
+
+  /** The game has what it needs: an operation starts and the agents are shared out. */
+  function beginGame(game) {
+    if (rooms.size >= MAX_ROOMS) return;
+    roomCounter += 1;
+    const room = new Room({ id: `room-${roomCounter}`, content, mission: game.mission, seed: roomCounter * 7919 + 13 });
+    room.startedAt = now();
+    room.onFinish = finishCoop;
+    rooms.set(room.id, room);
+    games.delete(game.id);
+    const shares = splitSquad(room.squad, game.players.length);
+    game.players.forEach((player, index) => {
+      const connection = byKey.get(player.id);
+      if (!connection) return;
+      connection.game = null;
+      seat(connection, room, shares[index], { start: false });
+    });
+    room.startAll();
+  }
+
+  /** A cooperative operation has ended: a win pays every signed-in player the same. */
+  function finishCoop(room) {
+    const result = resultOf(room.world, room.squad);
+    const reward = result.outcome === "success" ? Math.min(3000, 1500 + 50 * result.enemiesDisabled) : 0;
+    if (reward > 0) for (const player of room.players.values()) if (player.account) store.addFunds(player.account, reward);
+    return { coop: { reward } };
   }
 
   /** Run the rooms up to the present: each is stepped as often as time says it should have been (never a long burst). */
   function tickRooms() {
     for (const room of rooms.values()) {
       if (room.finished) continue;
-      const due = Math.min(5, Math.floor(((now() - room.startedAt) / 1000 / FIXED_STEP_SECONDS)) - room.world.steps);
+      const due = Math.min(5, Math.floor((now() - room.startedAt) / 1000 / FIXED_STEP_SECONDS) - room.world.steps);
       for (let index = 0; index < due; index += 1) room.tick();
+      // Somebody who has been away too long is not coming back.
+      for (const player of [...room.players.values()]) {
+        if (player.away && now() - player.awaySince > AWAY_SECONDS * 1000) {
+          room.removePlayer(player.id);
+          if (player.account) seated.delete(player.account);
+        }
+      }
     }
-    for (const [id, room] of rooms) if (room.finished && room.players.size === 0) rooms.delete(id);
+    for (const [id, room] of rooms) {
+      if (room.players.size === 0 || (room.finished && room.present === 0)) rooms.delete(id);
+    }
+    for (const [id, seat] of seated) if (!rooms.has(seat.room.id) || seat.room.finished) seated.delete(id);
+    for (const [id, game] of games) {
+      if (now() - game.createdAt > WAITING_SECONDS * 1000) {
+        for (const player of game.players) {
+          const connection = byKey.get(player.id);
+          if (connection) {
+            connection.game = null;
+            connection.send({ t: "closed", reason: "Nobody joined in time." });
+          }
+        }
+        games.delete(id);
+      }
+    }
   }
 
   let connectionCounter = 0;
@@ -277,10 +405,11 @@ export function createGameServer({
     connectionCounter += 1;
     const connection = {
       id: `c${connectionCounter}`,
+      key: null,
       socketConnection,
       account: null,
       room: null,
-      player: null,
+      game: null,
       greeted: false,
       lastHeard: now(),
       send: (message) => socketConnection.send(JSON.stringify(message)),
@@ -306,21 +435,60 @@ export function createGameServer({
           return socketConnection.close(1000, "refused");
         }
         connection.greeted = true;
-        return connection.send({
+        connection.key = keyOf(connection);
+        // Signed in on another page: that one is let go, and this one takes over (and goes back into an operation they were in).
+        byKey.get(connection.key)?.socketConnection.close(1000, "signed in elsewhere");
+        byKey.set(connection.key, connection);
+        connection.send({
           t: "welcome",
           v: PROTOCOL_VERSION,
           core: CORE_VERSION,
           account: connection.account && { id: connection.account.id, name: connection.account.name },
         });
+        const seatHeld = connection.account && seated.get(connection.account.id);
+        if (seatHeld && !seatHeld.room.finished && rooms.has(seatHeld.room.id)) {
+          connection.room = seatHeld.room;
+          seatHeld.room.attach(connection.key, sendTo(connection.key));
+        }
+        return undefined;
       }
-      if (message.t === "create") return startRoom(connection, message.mode, message.mission);
-      if (message.t === "command") {
-        const result = connection.room?.receive(connection.id, message.seq, message.command) ?? { ok: false, error: "no operation" };
-        if (!result.ok) connection.send({ t: "feedback", events: [], refused: { seq: message.seq, error: result.error } });
+      switch (message.t) {
+        case "create":
+          return startRoom(connection, message.mode, message.mission);
+        case "lobby":
+          return connection.send({ t: "lobby", games: [...games.values()].map((game) => game.summary()) });
+        case "open":
+          return openGame(connection, message);
+        case "join":
+          return joinGame(connection, message.game);
+        case "quick":
+          return quickMatch(connection);
+        case "ready":
+          if (connection.game) {
+            connection.game.setReady(connection.key, message.on);
+            announce(connection.game);
+          }
+          return undefined;
+        case "begin":
+          if (connection.game?.host !== connection.key) return connection.error("Only the host can begin the game.");
+          if (!connection.game.canBegin()) return connection.error("Everyone needs to be ready, and there must be two of you.");
+          return beginGame(connection.game);
+        case "leave":
+          leaveGame(connection);
+          return connection.send({ t: "closed", reason: "You left the game." });
+        case "command": {
+          const result = connection.room?.receive(connection.key, message.seq, message.command) ?? { ok: false, error: "no operation" };
+          if (!result.ok) connection.send({ t: "feedback", events: [], refused: { seq: message.seq, error: result.error } });
+          return undefined;
+        }
+        default:
+          return undefined;
       }
     };
     socketConnection.onClose = () => {
-      leaveRoom(connection);
+      leaveGame(connection);
+      leaveRoom(connection, { keep: true });
+      if (byKey.get(connection.key) === connection) byKey.delete(connection.key);
       connections.delete(connection);
       perAddress.set(address, Math.max(0, (perAddress.get(address) ?? 1) - 1));
     };

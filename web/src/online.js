@@ -160,6 +160,36 @@ export class OnlineClient {
     if (this.socket?.readyState === 1) this.socket.send(JSON.stringify(message));
   }
 
+  // ---- Playing with others (see server/lobby.js): the server answers with "lobby", "waiting" and "closed" messages, and with
+  // "start" for everyone when the host begins.
+  lobby() {
+    this.send({ t: "lobby" });
+  }
+
+  openGame({ mission, capacity = 2 } = {}) {
+    this.send({ t: "open", capacity, ...(mission ? { mission } : {}) });
+  }
+
+  joinGame(game) {
+    this.send({ t: "join", game });
+  }
+
+  quickMatch() {
+    this.send({ t: "quick" });
+  }
+
+  ready(on) {
+    this.send({ t: "ready", on });
+  }
+
+  begin() {
+    this.send({ t: "begin" });
+  }
+
+  leaveGame() {
+    this.send({ t: "leave" });
+  }
+
   /** Start an operation on the server. The "start" message follows. */
   create(mode = "solo", mission) {
     this.send({ t: "create", mode, ...(mission ? { mission } : {}) });

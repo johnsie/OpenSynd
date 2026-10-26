@@ -626,7 +626,9 @@ async function loadGame(index = state.missionIndex, options = {}) {
   Object.assign(state, world);
   if (remote) {
     applyServerMessage(state, remote, equipmentLookup(equipmentDefinitions));
-    state.online = { room: remote.room, squad: remote.squad, mode: options.mode ?? "solo" };
+    const owners = {};
+    for (const member of remote.team ?? []) for (const id of member.squad) owners[id] = member.name;
+    state.online = { room: remote.room, squad: remote.squad, mode: options.mode ?? "solo", owners };
   }
   markRailBridges(map, state.grid);
   state.deathsSeeded = false;
@@ -702,6 +704,7 @@ async function loadGame(index = state.missionIndex, options = {}) {
         const entry = await readJson(`content/${path}`);
         return {
           id: entry.id,
+          path,
           name: entry.name,
           owner: state.territories?.find((territory) => territory.mission === path)?.owner ?? "A rival company",
           objectives: entry.objectives.length,
@@ -3716,9 +3719,11 @@ function selectedUnit() {
   return state.units.find((unit) => unit.id === state.selectedId) ?? null;
 }
 
+// Online, other players' agents are on the squad's side but not the player's to command.
+const controlled = (unit) => !state.online || state.online.squad.includes(unit.id);
+
 function activeOperators() {
-  // Online, other players' agents are on the squad's side but not the player's to command.
-  return state.units.filter((unit) => unit.side === "team" && !unit.disabled && (!state.online || state.online.squad.includes(unit.id)));
+  return state.units.filter((unit) => unit.side === "team" && !unit.disabled && controlled(unit));
 }
 
 function applySelection(selection) {
@@ -3745,7 +3750,7 @@ function pruneSelection() {
 
 function selectUnit(id) {
   const requested = state.units.find((unit) => unit.id === id);
-  if (!requested || requested.side !== "team" || requested.disabled) {
+  if (!requested || requested.side !== "team" || requested.disabled || !controlled(requested)) {
     setStatus("That operator is unavailable.");
     return;
   }
@@ -3764,7 +3769,7 @@ function selectUnit(id) {
 // Add or remove one operator from the selection (Ctrl/Shift-click or the roster checkbox).
 function toggleSelect(id) {
   const requested = state.units.find((unit) => unit.id === id);
-  if (!requested || requested.side !== "team" || requested.disabled) {
+  if (!requested || requested.side !== "team" || requested.disabled || !controlled(requested)) {
     setStatus("That operator is unavailable.");
     return;
   }
@@ -4425,6 +4430,9 @@ async function setUpOnline() {
       state.dailyResult = message.daily ?? null;
       showOutcome(state.outcome);
     });
+    onlinePlay.onStart((start) => {
+      enterOnlineOperation(start, start.team?.length > 1 ? "coop" : "solo").catch(showFatalError);
+    });
     onlinePlay.onClose(() => {
       if (!state.online) return;
       setStatus("The connection to the server was lost.");
@@ -4446,6 +4454,7 @@ async function refreshOnlineMenu() {
   test.hidden = true;
   note.hidden = true;
   document.querySelector("#menu-daily").disabled = true;
+  document.querySelector("#menu-coop").disabled = true;
   if (!(await setUpOnline())) return;
   note.hidden = false;
   note.textContent = "Looking for the server…";
@@ -4468,6 +4477,10 @@ async function refreshOnlineMenu() {
   test.hidden = false;
   const daily = document.querySelector("#menu-daily");
   daily.disabled = false;
+  document.querySelector("#menu-coop").disabled = false;
+  document.querySelector("#menu-coop-note").textContent = account
+    ? "Two to four players, one squad each."
+    : "Two to four players, one squad each. Sign in to play.";
   document.querySelector("#menu-daily-note").textContent = account
     ? "The same operation for everyone, ranked."
     : "The same operation for everyone, ranked. Sign in to play.";
@@ -4496,33 +4509,55 @@ async function trySignin(create) {
   await refreshOnlineMenu();
 }
 
-async function startOnlineGame(mode = "solo") {
-  if (state.online || !onlinePlay) return;
+// An operation that the server has begun: build it here, then let the server's updates drive it. If the player is already in it (they
+// reconnected), it is just built again from how it stands now.
+async function enterOnlineOperation(start, mode) {
+  const resuming = Boolean(state.online);
   const kept = state.campaign;
-  state.savedCampaign = kept;
-  state.campaign = emptyCampaign(); // what happens on the server is not part of the player's own campaign
+  if (!resuming) {
+    state.savedCampaign = kept;
+    state.campaign = emptyCampaign(); // what happens on the server is not part of the player's own campaign
+  }
   const note = document.querySelector("#menu-online-note");
-  note.hidden = false;
-  note.textContent = "Connecting…";
   try {
-    const start = await onlinePlay.start(mode);
     await loadGame(state.missionIndex, { remote: start, mode });
     onlinePlay.attach();
   } catch (error) {
     onlinePlay.stop();
     state.online = null;
-    state.campaign = kept;
-    state.savedCampaign = null;
+    if (!resuming) {
+      state.campaign = kept;
+      state.savedCampaign = null;
+    }
+    note.hidden = false;
     note.textContent = error.message;
     return;
   }
-  menuDialog.close();
-  if (titleDialog.open) titleDialog.close();
+  for (const dialog of [menuDialog, titleDialog, document.querySelector("#coop-dialog"), document.querySelector("#daily-dialog")]) {
+    if (dialog.open) dialog.close();
+  }
+  if (outcomeDialog.open) outcomeDialog.close();
   state.modal = false;
   pauseButton.disabled = true;
   resetButton.disabled = true;
   canvas.focus();
-  setStatus("Connected: this operation is running on the server.");
+  setStatus(resuming ? "Back in the operation." : "Connected: this operation is running on the server.");
+}
+
+async function startOnlineGame(mode = "solo") {
+  if (state.online || !onlinePlay) return;
+  const note = document.querySelector("#menu-online-note");
+  note.hidden = false;
+  note.textContent = "Connecting…";
+  let start;
+  try {
+    start = await onlinePlay.start(mode);
+  } catch (error) {
+    onlinePlay.stop();
+    note.textContent = error.message;
+    return;
+  }
+  await enterOnlineOperation(start, mode);
 }
 
 // Back to the player's own game.
@@ -4613,6 +4648,115 @@ document.querySelector("#daily-play").addEventListener("click", () => {
   if (!onlinePlay.account) showSignin();
   else startOnlineGame("daily").catch(showFatalError);
 });
+
+// ---- Co-op: the lobby. Games waiting for players are listed; a player opens one, takes a quick match or joins one, says they are ready,
+// and the host begins. The operation itself then arrives like any other (see enterOnlineOperation).
+const coopDialog = document.querySelector("#coop-dialog");
+let coopTimer = null;
+let coopWired = false;
+
+function coopMessage(text) {
+  document.querySelector("#coop-message").textContent = text ?? "";
+}
+
+function missionName(path) {
+  return state.missionList.find((entry) => entry.path === path)?.name ?? path;
+}
+
+function renderGames(games) {
+  const list = document.querySelector("#coop-games");
+  list.replaceChildren(
+    ...(games.length === 0
+      ? [Object.assign(document.createElement("li"), { textContent: "No games are open. Open one, or take a quick match." })]
+      : games.map((game) => {
+          const item = document.createElement("li");
+          item.append(
+            Object.assign(document.createElement("span"), { textContent: "" }),
+            Object.assign(document.createElement("span"), {
+              textContent: `${game.host}'s game: ${missionName(game.mission)} · ${game.players.length} of ${game.capacity}`,
+            }),
+          );
+          const join = Object.assign(document.createElement("button"), { type: "button", textContent: "Join" });
+          join.disabled = game.players.length >= game.capacity;
+          join.addEventListener("click", () => onlinePlay.client.joinGame(game.id));
+          item.append(join);
+          return item;
+        })),
+  );
+}
+
+function renderWaiting(game) {
+  const me = onlinePlay.account?.name;
+  const host = game.host === me;
+  document.querySelector("#coop-lobby").hidden = true;
+  document.querySelector("#coop-waiting").hidden = false;
+  document.querySelector("#coop-waiting-heading").textContent = `${game.host}'s game: ${missionName(game.mission)}`;
+  document.querySelector("#coop-players").replaceChildren(
+    ...game.players.map((player) => {
+      const item = document.createElement("li");
+      item.append(
+        Object.assign(document.createElement("span"), { textContent: player.ready ? "✓" : "○", className: "tick" }),
+        Object.assign(document.createElement("span"), { textContent: player.name + (player.name === game.host ? " (host)" : "") }),
+        Object.assign(document.createElement("span"), { textContent: player.ready ? "ready" : "not ready" }),
+      );
+      return item;
+    }),
+  );
+  const mine = game.players.find((player) => player.name === me);
+  const ready = document.querySelector("#coop-ready");
+  ready.hidden = host;
+  ready.setAttribute("aria-pressed", String(Boolean(mine?.ready)));
+  document.querySelector("#coop-begin").hidden = !host;
+  document.querySelector("#coop-begin").disabled =
+    game.players.length < 2 || game.players.some((player) => !player.ready && player.name !== game.host);
+  coopMessage(game.quick ? "Waiting for another player…" : `${game.players.length} of ${game.capacity} players.`);
+}
+
+function showLobbyPanel() {
+  document.querySelector("#coop-lobby").hidden = false;
+  document.querySelector("#coop-waiting").hidden = true;
+  onlinePlay.client.lobby();
+}
+
+async function showCoop() {
+  if (!onlinePlay.account) return showSignin();
+  await onlinePlay.connect();
+  if (!coopWired) {
+    coopWired = true;
+    const client = onlinePlay.client;
+    client.on("lobby", (message) => renderGames(message.games));
+    client.on("waiting", (message) => renderWaiting(message.game));
+    client.on("closed", (message) => {
+      coopMessage(message.reason);
+      showLobbyPanel();
+    });
+    client.on("error", (message) => coopMessage(message.message));
+  }
+  coopMessage("");
+  coopDialog.showModal();
+  showLobbyPanel();
+  clearInterval(coopTimer);
+  coopTimer = setInterval(() => {
+    if (coopDialog.open && !document.querySelector("#coop-lobby").hidden) onlinePlay.client.lobby();
+  }, 3000);
+  return undefined;
+}
+
+coopDialog.addEventListener("close", () => clearInterval(coopTimer));
+document.querySelector("#menu-coop").addEventListener("click", () => showCoop().catch(showFatalError));
+document.querySelector("#coop-close").addEventListener("click", () => {
+  if (!document.querySelector("#coop-waiting").hidden) onlinePlay.client.leaveGame();
+  coopDialog.close();
+});
+document.querySelector("#coop-quick").addEventListener("click", () => onlinePlay.client.quickMatch());
+document.querySelector("#coop-open").addEventListener("click", () => {
+  onlinePlay.client.openGame({ capacity: Number(document.querySelector("#coop-capacity").value) });
+});
+document.querySelector("#coop-leave").addEventListener("click", () => onlinePlay.client.leaveGame());
+document.querySelector("#coop-ready").addEventListener("click", (event) => {
+  onlinePlay.client.ready(event.currentTarget.getAttribute("aria-pressed") !== "true");
+});
+document.querySelector("#coop-begin").addEventListener("click", () => onlinePlay.client.begin());
 
 document.querySelector("#menu-signin").addEventListener("click", async () => {
   if (!onlinePlay?.account) return showSignin();
@@ -4991,7 +5135,7 @@ function slotRow(unit, label) {
     square.dataset.slot = String(slot);
     if (!entry) {
       square.classList.add("empty");
-      square.disabled = unit.disabled;
+      square.disabled = unit.disabled || !controlled(unit);
       square.setAttribute("aria-label", `${label} slot ${slot + 1}: empty`);
       square.title = "Empty slot. Buy gear in the Armoury before an operation.";
       row.append(square);
@@ -5017,7 +5161,7 @@ function slotRow(unit, label) {
     square.setAttribute("aria-label", `${label} slot ${slot + 1}: ${definition.name}, ${detail}`);
     square.setAttribute("aria-pressed", String(active));
     square.title = `${definition.name}: ${definition.description} Right-click to drop it (or click it once it is used up).`;
-    square.disabled = unit.disabled;
+    square.disabled = unit.disabled || !controlled(unit);
     square.addEventListener("click", () => pressSlot(unit, slot));
     square.addEventListener("contextmenu", (event) => {
       event.preventDefault();
@@ -5141,14 +5285,14 @@ function renderInterface() {
       const checkbox = document.createElement("input");
       checkbox.type = "checkbox";
       checkbox.checked = picked;
-      checkbox.disabled = unit.disabled;
+      checkbox.disabled = unit.disabled || !controlled(unit);
       checkbox.setAttribute("aria-label", `Include ${label} in the selection`);
       checkbox.addEventListener("change", () => toggleSelect(unit.id));
 
       const button = document.createElement("button");
       button.type = "button";
       button.className = "roster-select";
-      button.disabled = unit.disabled;
+      button.disabled = unit.disabled || !controlled(unit);
       button.setAttribute("aria-pressed", String(picked));
       button.title = "Click: select only this operator. Ctrl/Shift-click: add to the selection.";
       button.addEventListener("click", (event) => {
@@ -5161,7 +5305,7 @@ function renderInterface() {
       glyph.setAttribute("aria-hidden", "true");
       glyph.textContent = "◇";
       const name = document.createElement("span");
-      name.textContent = `Op ${index + 1}`;
+      name.textContent = controlled(unit) ? `Op ${index + 1}` : `Op ${index + 1} · ${state.online.owners?.[unit.id] ?? "another player"}`;
       name.title = label;
       const health = document.createElement("small");
       health.className = "hp";
@@ -5188,6 +5332,7 @@ function renderInterface() {
         slider.dataset.drug = name;
         slider.disabled = unit.disabled;
         slider.setAttribute("aria-label", `${DRUG_LABELS[name]} of ${label}`);
+        slider.disabled = Boolean(state.online); // drugs are set on the squad's own game, not on a server's
         slider.addEventListener("input", () => setDrugForGroup(unit, name, Number(slider.value)));
         row.append(text, slider);
         chemistry.append(row);

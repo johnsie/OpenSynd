@@ -1650,6 +1650,62 @@ for (const [name, type, executablePath] of targets) {
       await page.close();
     });
 
+    scenario("Co-op: one player opens a game, another joins and readies, the host begins, and each commands their own agents", async () => {
+      const browse = async (name) => {
+        const page = await (await browser.newContext()).newPage();
+        await page.goto(`${url}?e2e&server=${encodeURIComponent(gameUrl)}`);
+        await page.waitForSelector("#menu-signin:not([hidden])");
+        await page.click("#menu-signin");
+        await page.fill("#signin-name", name);
+        await page.fill("#signin-password", "a good password");
+        await page.click("#signin-create");
+        await page.waitForFunction((who) => document.querySelector("#menu-online-note").textContent.includes(`Signed in as ${who}`), name);
+        return page;
+      };
+      const anna = await browse("Coopanna");
+      const ben = await browse("Coopben");
+      await anna.waitForFunction(() => !document.querySelector("#menu-coop").disabled);
+      await anna.click("#menu-coop");
+      await anna.waitForSelector("#coop-dialog[open]");
+      await anna.click("#coop-open");
+      await anna.waitForSelector("#coop-waiting:not([hidden])");
+      assert.equal(await anna.locator("#coop-begin").isDisabled(), true, "nobody to play with yet");
+      await ben.waitForFunction(() => !document.querySelector("#menu-coop").disabled);
+      await ben.click("#menu-coop");
+      await ben.waitForSelector("#coop-games li button");
+      assert.match(await ben.locator("#coop-games").innerText(), /Coopanna's game/);
+      await ben.click("#coop-games li button");
+      await ben.waitForSelector("#coop-waiting:not([hidden])");
+      await ben.click("#coop-ready");
+      await anna.waitForFunction(() => !document.querySelector("#coop-begin").disabled);
+      await anna.click("#coop-begin");
+      for (const page of [anna, ben]) {
+        await page.waitForFunction(() => window.opensyndTest.online().running, null, { timeout: 8000 });
+      }
+      const squads = await Promise.all([anna, ben].map((page) => page.evaluate(() => window.opensyndTest.online().squad)));
+      assert.deepEqual([squads[0].length, squads[1].length], [2, 2], "two agents each");
+      assert.equal(new Set([...squads[0], ...squads[1]]).size, 4, "nobody is shared");
+      assert.match(await anna.locator(".roster-item .roster-select").nth(2).innerText(), /Coopben/, "teammates' agents are named");
+      assert.equal(await anna.locator(".roster-item .roster-select").nth(2).isDisabled(), true, "and not hers to command");
+      // Ben walks one of his agents: the server moves it and Anna sees it move.
+      const mine = squads[1][0];
+      const tile = await ben.evaluate((id) => window.opensyndTest.openTileNear(id, 6), mine);
+      const before = await anna.evaluate((id) => window.opensyndTest.positionOf(id), mine);
+      await ben.locator("#game-canvas").focus();
+      await ben.keyboard.press("3");
+      await ben.evaluate((to) => window.opensyndTest.moveSelected(to.x, to.y), tile);
+      await anna.waitForFunction(
+        ([id, start]) => {
+          const now = window.opensyndTest.positionOf(id);
+          return Math.hypot(now.x - start.x, now.y - start.y) > 2;
+        },
+        [mine, before],
+        { timeout: 8000 },
+      );
+      await anna.close();
+      await ben.close();
+    });
+
     scenario("Permadeath and recruiting: a fallen operative is lost after a win, and a persuad", async () => {
       // Permadeath and recruiting: a fallen operative is lost after a win, and a persuaded enemy agent joins.
       const roster = await browser.newPage();

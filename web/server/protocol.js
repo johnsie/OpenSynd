@@ -11,11 +11,21 @@ export { CORE_VERSION };
 //   hello    { v, core, content, token }          first message: who this is, and which versions the game has
 //   create   { mode: "solo" | "daily", mission? }   start an operation
 //   command  { seq, command }                      an order for the player's agents (see commands.js)
+//   lobby    {}                                    list the games waiting for players
+//   open     { mission?, capacity? }               open a cooperative game and wait in it
+//   join     { game }                              join a waiting game
+//   quick    {}                                    join a waiting quick-match game, or open one
+//   ready    { on }                                say whether you are ready
+//   begin    {}                                    the host begins the game
+//   leave    {}                                    leave the game you are waiting in
 //   ping     { n }
 // From the server to the game.
 //   welcome  { v, core, account }                  the hello was accepted
 //   refused  { reason, message }                   the hello was not (reason: "protocol", "core", "content", "account")
-//   start    { room, mission, variant, seed, squad, step, snapshot }   an operation has begun; build it and apply the snapshot
+//   lobby    { games }                             the games waiting for players
+//   waiting  { game }                              the game you are in, with its players (sent again whenever it changes)
+//   closed   { reason }                            the game you were waiting in is gone
+//   start    { room, mission, variant, seed, squad, team, step, world, units }   an operation has begun (or you are back in it)
 //   update   { step, world, units, events, acks }  what changed since the last update
 //   feedback { events }                            lines and sounds for what this player's own orders did
 //   end      { outcome, stats }                    the operation is over
@@ -39,6 +49,23 @@ export function parseClientMessage(text) {
         return { ok: false, error: "hello needs v, core and content" };
       }
       if (message.token !== undefined && typeof message.token !== "string") return { ok: false, error: "bad token" };
+      return { ok: true, message };
+    case "lobby":
+    case "quick":
+    case "begin":
+    case "leave":
+      return { ok: true, message };
+    case "open":
+      if (message.mission !== undefined && (typeof message.mission !== "string" || message.mission.length > 200)) {
+        return { ok: false, error: "bad mission" };
+      }
+      if (message.capacity !== undefined && !Number.isInteger(message.capacity)) return { ok: false, error: "bad capacity" };
+      return { ok: true, message };
+    case "join":
+      if (typeof message.game !== "string" || message.game.length > 40) return { ok: false, error: "bad game" };
+      return { ok: true, message };
+    case "ready":
+      if (typeof message.on !== "boolean") return { ok: false, error: "bad ready" };
       return { ok: true, message };
     case "create":
       if (!["solo", "daily"].includes(message.mode)) return { ok: false, error: "unknown mode" };

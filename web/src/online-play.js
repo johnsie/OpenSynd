@@ -23,7 +23,8 @@ export function createOnlinePlay({
   let pending = [];
   let holdFireSent = "";
   let holdFireAt = -Infinity;
-  const listeners = { end: [], close: [], news: [] };
+  let asked = false; // the page has asked for an operation and is waiting for it, so its start is not announced to onStart
+  const listeners = { start: [], end: [], close: [], news: [] };
   const emit = (type, payload) => listeners[type].forEach((listener) => listener(payload));
 
   // What the server says happened: through the same hooks as when the game runs here.
@@ -82,16 +83,29 @@ export function createOnlinePlay({
     signUp: (name, password) => client.signUp(name, password),
     signOut: () => client?.signOut() ?? Promise.resolve(),
 
-    /** Open a connection (if there is none) and ask for an operation. Resolves with the server's start message. */
+    /**
+     * Open the connection if there is none. Operations then begin on the server's say (a game's host starts it, a quick match fills,
+     * or a player is put back into one they left): each one arrives as a "start" for onStart listeners.
+     */
+    async connect() {
+      if (client.connected) return;
+      await client.connect();
+      client.on("start", (message) => {
+        // The page builds the operation from this; until it says it has (attach), what the server sends is kept.
+        attached = false;
+        pending = [];
+        smoother.clear();
+        if (asked) asked = false;
+        else emit("start", message);
+      });
+      for (const type of ["update", "feedback", "end"]) client.on(type, receive);
+      client.on("close", (event) => emit("close", event));
+    },
+
+    /** Connect and ask for an operation of one's own (solo or the day's). Resolves with the server's start message. */
     async start(mode, mission) {
-      attached = false;
-      pending = [];
-      smoother.clear();
-      if (!client.connected) {
-        await client.connect();
-        for (const type of ["update", "feedback", "end"]) client.on(type, receive);
-        client.on("close", (event) => emit("close", event));
-      }
+      await this.connect();
+      asked = true;
       return new Promise((done) => {
         const stop = client.on("start", (message) => {
           stop();
@@ -126,6 +140,7 @@ export function createOnlinePlay({
       }
     },
 
+    onStart: (listener) => listeners.start.push(listener),
     onEnd: (listener) => listeners.end.push(listener),
     onClose: (listener) => listeners.close.push(listener),
     onNews: (listener) => listeners.news.push(listener),

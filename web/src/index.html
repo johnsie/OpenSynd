@@ -257,6 +257,39 @@
       </div>
     </dialog>
 
+    <dialog id="coop-dialog" class="daily-dialog" aria-labelledby="coop-heading">
+      <div class="daily-body">
+        <h2 id="coop-heading" data-i18n="coop.heading">Co-op operations</h2>
+        <p id="coop-message" class="menu-note" role="status"></p>
+        <section id="coop-lobby" aria-labelledby="coop-lobby-heading">
+          <h3 id="coop-lobby-heading" data-i18n="coop.open_games">Open games</h3>
+          <ul id="coop-games" class="daily-chores"></ul>
+          <div class="company-actions">
+            <button id="coop-quick" type="button" class="primary" data-i18n="coop.quick">Quick match</button>
+            <label for="coop-capacity" data-i18n="coop.players">Players</label>
+            <select id="coop-capacity">
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+            </select>
+            <button id="coop-open" type="button" data-i18n="coop.open">Open a game</button>
+          </div>
+        </section>
+        <section id="coop-waiting" aria-labelledby="coop-waiting-heading" hidden>
+          <h3 id="coop-waiting-heading"></h3>
+          <ul id="coop-players" class="daily-chores"></ul>
+          <div class="company-actions">
+            <button id="coop-leave" type="button" data-i18n="coop.leave">Leave</button>
+            <button id="coop-ready" type="button" aria-pressed="false" data-i18n="coop.ready">Ready</button>
+            <button id="coop-begin" type="button" class="primary" data-i18n="coop.begin">Begin</button>
+          </div>
+        </section>
+        <div class="company-actions">
+          <button id="coop-close" type="button" data-i18n="coop.close">Close</button>
+        </div>
+      </div>
+    </dialog>
+
     <dialog id="signin-dialog" class="company-dialog" aria-labelledby="signin-heading">
       <form id="signin-form" method="dialog">
         <h2 id="signin-heading" data-i18n="signin.heading">Sign in</h2>
@@ -324,9 +357,9 @@
           <span data-i18n="menu.online_test">Play on the server</span>
           <small data-i18n="menu.online_test_note">A test operation run by the server, to check the connection.</small>
         </button>
-        <button type="button" disabled>
+        <button id="menu-coop" type="button" disabled>
           <span data-i18n="menu.coop">Co-op operations</span>
-          <small data-i18n="menu.coop_note">Two to four players, one squad each.</small>
+          <small id="menu-coop-note" data-i18n="menu.coop_note">Two to four players, one squad each.</small>
         </button>
         <button id="menu-daily" type="button" disabled>
           <span data-i18n="menu.daily">Daily operation</span>

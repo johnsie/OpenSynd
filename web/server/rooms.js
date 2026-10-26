@@ -5,6 +5,8 @@
 // like any other (see core/apply.js). The whole operation is recorded, so it can be played back to check a result.
 import { emptyCampaign } from "../src/campaign.js";
 import { applyCommand } from "../src/core/apply.js";
+import { operatorsOf } from "../src/core/orders.js";
+import { raiseWeapon } from "../src/inventory.js";
 import { recordingHooks } from "../src/core/hooks.js";
 import { startRecording, stateHash, stepRecorded } from "../src/core/replay.js";
 import { changedUnits, packWorld } from "../src/core/sync.js";
@@ -49,11 +51,29 @@ export class Room {
    * A player joins and controls these agents (all four if the squad is not shared out). `send(message)` is how they are told
    * things. Returns the player, with the `start` message already sent.
    */
-  addPlayer(id, { send, unitIds = this.squad, name = id }) {
-    const player = { id, name, send, unitIds, known: new Map(), queue: [], acks: [], feedback: recordingHooks(), lastSeq: -1 };
+  addPlayer(id, { send, unitIds = this.squad, name = id, account = null, start = true }) {
+    const player = {
+      id,
+      name,
+      account,
+      send,
+      unitIds,
+      known: new Map(),
+      queue: [],
+      acks: [],
+      feedback: recordingHooks(),
+      lastSeq: -1,
+      away: false,
+      awaySince: null,
+    };
     this.players.set(id, player);
-    this.sendStart(player);
+    if (start) this.sendStart(player);
     return player;
+  }
+
+  /** Tell every player the operation has begun (for a room that was filled first, so each is told who the others are). */
+  startAll() {
+    for (const player of this.players.values()) this.sendStart(player);
   }
 
   /** Tell a player an operation has begun: how to build it, and everything about it as it stands. */
@@ -66,6 +86,7 @@ export class Room {
       variant: this.variant,
       seed: this.seed,
       squad: player.unitIds,
+      team: [...this.players.values()].map((other) => ({ name: other.name, squad: other.unitIds })),
       step: this.world.steps,
       world: packWorld(this.world),
       units: changedUnits(this.world, player.known),
@@ -74,6 +95,41 @@ export class Room {
 
   removePlayer(id) {
     this.players.delete(id);
+  }
+
+  /**
+   * A player's connection has gone, but they may come back: their agents are told to hold and fight from where they stand, and what
+   * they were doing is left as it was. `time` says when (for expiring them later).
+   */
+  detach(id, time = 0) {
+    const player = this.players.get(id);
+    if (!player) return;
+    player.away = true;
+    player.awaySince = time;
+    player.send = () => {};
+    player.queue.length = 0;
+    for (const unit of operatorsOf(this.world, player.unitIds)) {
+      if (unit.activeSlot !== null && unit.activeSlot !== undefined) continue;
+      const slot = unit.equipment.findIndex((item) => item.definition.action === "disable-pulse" && item.charges !== 0);
+      if (slot >= 0) raiseWeapon(unit, slot);
+    }
+  }
+
+  /** A player who was away is back, on a new connection: they are told how everything stands. */
+  attach(id, send) {
+    const player = this.players.get(id);
+    if (!player) return null;
+    player.away = false;
+    player.awaySince = null;
+    player.send = send;
+    player.lastSeq = -1;
+    this.sendStart(player);
+    return player;
+  }
+
+  /** How many players are here (not away). */
+  get present() {
+    return [...this.players.values()].filter((player) => !player.away).length;
   }
 
   /** A command from a player: queued for the next step, or refused at once if it is nonsense or the queue is full. */

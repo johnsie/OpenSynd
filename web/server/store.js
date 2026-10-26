@@ -170,6 +170,7 @@ export function openStore(path = ":memory:", { now = Date.now } = {}) {
     },
 
     funds: (account) => Number(statements.funds.get(account)?.funds ?? 0),
+    addFunds: (account, amount) => statements.addFunds.run(amount, account),
     choreDays: (account) => new Set(statements.choreDays.all(account).map((row) => Number(row.day))),
     choresOn: (account, day) => statements.choresOn.all(account, day).map((row) => row.chore),
 
