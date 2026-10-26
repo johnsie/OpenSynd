@@ -6,55 +6,81 @@
 export const STEPS = Object.freeze([
   {
     id: "select",
-    text: "Select the second operator: click them, or press 2. Press 1 to go back to the first.",
+    text: "Click Op 2 in the squad panel to select only them (tick the box beside a name to add someone instead). Keys 1 to 4 do the same.",
+    point: () => [{ unit: "operator-two" }, { roster: "operator-two" }],
     done: (seen) => seen.selectedIds.includes("operator-two"),
   },
   {
+    id: "all",
+    text: "Click Select all in the squad panel, or press A, to give orders to the whole squad at once.",
+    point: () => ({ button: "#select-all-button" }),
+    done: (seen) => seen.allSelected,
+  },
+  {
     id: "walk",
-    text: "Select an operator and click the glowing square ahead to walk there. Drag, or use the arrow keys, to look around.",
+    text: "Click the glowing square marked by the arrow to walk there; everyone selected goes together. Drag to look around.",
+    point: () => ({ zone: "walk-pad" }),
     done: (seen) => seen.onWalkPad,
   },
   {
     id: "weapon",
     text: "Click the Pulse Emitter in an operator's inventory to take it out. Nobody fires without a weapon selected.",
+    point: () => ({ slotAction: "disable-pulse" }),
     done: (seen) => seen.weaponOut,
   },
   {
     id: "shoot",
-    text: "Right-click the grey practice target to fire; hold the button to keep firing. It is unarmed and cannot hurt you.",
+    text: "Right-click the practice target (the enemy agent under the arrow) to fire; hold the button to keep firing. It cannot hurt you.",
+    point: () => ({ unit: "practice-target" }),
     done: (seen) => seen.targetDown,
   },
   {
     id: "loot",
-    text: "Walk up to the fallen target and press F to take their kit.",
+    text: "Walk an operator up to the fallen target (under the arrow) and press F to take their kit.",
+    point: () => ({ unit: "practice-target" }),
     done: (seen) => seen.looted,
   },
   {
     id: "queue",
     text: "Hold Shift and click two different spots on the street to queue a route. The operator walks them in order.",
+    point: () => [{ tile: { x: 14, y: 20 } }, { tile: { x: 19, y: 19 } }],
     done: (seen) => seen.queued,
   },
   {
     id: "persuade",
     text: "Click the Persuader in operator 1's inventory to switch it on, then stand next to the civilian until they follow you.",
+    point: () => [{ slotAction: "persuade" }, { unit: "civilian-1" }],
     done: (seen) => seen.persuaded,
   },
   {
     id: "drive",
-    text: "Walk next to the parked car and press V to get in, then click the road to drive to the second glowing square.",
+    text: "Walk next to the parked car and press V to get in, then click the road to drive it to the second glowing square.",
+    point: (seen) => (seen.inCar ? { zone: "drive-pad" } : { unit: "training-car" }),
     done: (seen) => seen.carAtDrivePad,
   },
   {
     id: "gate",
-    text: "Press V to get out. Stand on the console square and press E to open the gate.",
+    text: "Press V to get out. Stand on the console square marked by the arrow and press E to open the gate.",
+    point: () => ({ zone: "gate-panel" }),
     done: (seen) => seen.gateOpen,
   },
   {
     id: "exit",
     text: "Bring everyone into the green exit zone to finish training.",
+    point: () => ({ zone: "safe-exit" }),
     done: (seen) => seen.won,
   },
 ]);
+
+// What the bouncing arrows point at for the current step, as a list. Anything the player has to click or go to gets one:
+// { unit } a person or vehicle in the world, { zone } a marked square, { tile } a spot on the street,
+// { roster } an operator's card, { button } a page button by selector,
+// { slotAction } an inventory square holding an item that does that (e.g. "persuade").
+export function pointerFor(tutorial, seen) {
+  const step = currentStep(tutorial);
+  const found = step?.point ? step.point(seen) : [];
+  return (Array.isArray(found) ? found : [found]).filter(Boolean);
+}
 
 export function createTutorial() {
   return { index: 0, finished: false, skipped: [] };
@@ -85,12 +111,14 @@ export function skipStep(tutorial) {
 
 export const NOTHING_SEEN = Object.freeze({
   selectedIds: [],
+  allSelected: false,
   onWalkPad: false,
   weaponOut: false,
   targetDown: false,
   looted: false,
   queued: false,
   persuaded: false,
+  inCar: false,
   carAtDrivePad: false,
   gateOpen: false,
   won: false,

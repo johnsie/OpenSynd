@@ -9,6 +9,7 @@ import {
   createTutorial,
   currentStep,
   observeTutorial,
+  pointerFor,
   skipStep,
   tutorialProgress,
 } from "../src/tutorial.js";
@@ -26,6 +27,7 @@ test("each step moves on only when its own condition holds, in order", () => {
   let tutorial = createTutorial();
   const order = [
     ["select", { selectedIds: ["operator-two"] }],
+    ["all", { allSelected: true }],
     ["walk", { onWalkPad: true }],
     ["weapon", { weaponOut: true }],
     ["shoot", { targetDown: true }],
@@ -54,7 +56,8 @@ test("a later step's condition does not skip an earlier one that has not been do
 });
 
 test("several steps already done move on together", () => {
-  const tutorial = observeTutorial(createTutorial(), seeing({ selectedIds: ["operator-two"], onWalkPad: true, weaponOut: true }));
+  const done = { selectedIds: ["operator-two"], allSelected: true, onWalkPad: true, weaponOut: true };
+  const tutorial = observeTutorial(createTutorial(), seeing(done));
   assert.equal(currentStep(tutorial).id, "shoot");
 });
 
@@ -72,4 +75,25 @@ test("every step has a prompt a player can read and a unique id", () => {
     assert.ok(step.text.length > 20 && step.text.length < 200, step.id);
     assert.equal(typeof step.done, "function");
   }
+});
+
+test("arrows point at everything the step wants clicked or walked to", () => {
+  let tutorial = createTutorial();
+  const at = (id, seen = NOTHING_SEEN) => {
+    while (currentStep(tutorial).id !== id) tutorial = skipStep(tutorial);
+    return pointerFor(tutorial, seen);
+  };
+  assert.deepEqual(pointerFor(tutorial, NOTHING_SEEN), [{ unit: "operator-two" }, { roster: "operator-two" }]);
+  assert.deepEqual(at("all"), [{ button: "#select-all-button" }], "the Select all button");
+  assert.deepEqual(at("walk"), [{ zone: "walk-pad" }]);
+  assert.deepEqual(at("weapon"), [{ slotAction: "disable-pulse" }], "the item to click");
+  assert.deepEqual(at("shoot"), [{ unit: "practice-target" }]);
+  assert.deepEqual(at("loot"), [{ unit: "practice-target" }]);
+  assert.equal(at("queue").length, 2, "two spots to Shift+click");
+  assert.deepEqual(at("persuade"), [{ slotAction: "persuade" }, { unit: "civilian-1" }], "the item, then the person");
+  assert.deepEqual(at("drive"), [{ unit: "training-car" }], "the car first");
+  assert.deepEqual(pointerFor(tutorial, seeing({ inCar: true })), [{ zone: "drive-pad" }], "then where to drive it");
+  assert.deepEqual(at("gate"), [{ zone: "gate-panel" }]);
+  assert.deepEqual(at("exit"), [{ zone: "safe-exit" }]);
+  assert.deepEqual(pointerFor({ ...tutorial, finished: true }, NOTHING_SEEN), []);
 });

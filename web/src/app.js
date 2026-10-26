@@ -23,7 +23,7 @@ import {
 import { createOverlay, createTileSprites } from "./textures.js";
 import { renderWorldMap } from "./worldmap.js";
 import { continueNote, continueTarget } from "./menu.js";
-import { createTutorial, currentStep, observeTutorial, skipStep, tutorialProgress } from "./tutorial.js";
+import { createTutorial, currentStep, observeTutorial, pointerFor, skipStep, tutorialProgress } from "./tutorial.js";
 import { DRUG_HINTS, DRUG_LABELS, DRUG_NAMES, adrenalineSpeed, advanceDrugs, drugMultiplier, newDrugs, setDrug } from "./drugs.js";
 import { advanceProps, damageProp, newProp, propsNear } from "./props.js";
 import {
@@ -2317,6 +2317,56 @@ function drawZones(viewport) {
 
 // A label over the square an open "hold" objective is played in, drawn over everything so it can always be found: how long is
 // left, a progress bar, and whether to step in.
+// In the tutorial, a bouncing arrow over everything the current step wants clicked or walked to (the inventory and roster ones
+// are page elements: see markTutorialTargets).
+function drawTutorialPointer(viewport) {
+  if (!state.tutorial) return;
+  const { cellSize, origin } = viewport;
+  const bounce = reduceMotion ? 0 : Math.abs(Math.sin(state.elapsed * 4)) * 10;
+  for (const point of pointerFor(state.tutorial, seeTutorial())) {
+    let position = null;
+    if (point.unit) position = state.units.find((item) => item.id === point.unit)?.position;
+    else if (point.zone) position = zoneCentre(point.zone);
+    else if (point.tile) position = point.tile;
+    if (!position) continue;
+    const tile = state.grid[Math.round(position.y)]?.[Math.round(position.x)];
+    const spot = gridToScreen(position, cellSize, origin, tile?.elevation ?? 0);
+    const x = spot.x;
+    const y = spot.y - (point.unit ? cellSize.height * 2.6 : cellSize.height * 1.2) - bounce;
+    context.save();
+    context.fillStyle = "#ffd166";
+    context.strokeStyle = "rgba(0, 0, 0, 0.85)";
+    context.lineWidth = 2;
+    context.beginPath();
+    context.moveTo(x, y);
+    context.lineTo(x - 11, y - 18);
+    context.lineTo(x - 4, y - 18);
+    context.lineTo(x - 4, y - 32);
+    context.lineTo(x + 4, y - 32);
+    context.lineTo(x + 4, y - 18);
+    context.lineTo(x + 11, y - 18);
+    context.closePath();
+    context.fill();
+    context.stroke();
+    context.restore();
+  }
+}
+
+// The same arrows for what is on the page: an operator's card, an inventory square. The class is put back after every redraw.
+function markTutorialTargets() {
+  for (const element of document.querySelectorAll(".tutorial-point")) element.classList.remove("tutorial-point");
+  if (!state.tutorial || !state.mission) return;
+  for (const point of pointerFor(state.tutorial, seeTutorial())) {
+    if (point.roster) {
+      document.querySelector(`.roster-item[data-unit="${point.roster}"] .roster-select`)?.classList.add("tutorial-point");
+    } else if (point.button) {
+      document.querySelector(point.button)?.classList.add("tutorial-point");
+    } else if (point.slotAction) {
+      for (const slot of document.querySelectorAll(`.slot[data-action="${point.slotAction}"]`)) slot.classList.add("tutorial-point");
+    }
+  }
+}
+
 function drawHoldLabels(viewport) {
   const { cellSize, origin } = viewport;
   for (const objective of state.objectives) {
@@ -2791,6 +2841,7 @@ function draw() {
   drawPickups(viewport); // over the figures, so gear lying beside someone is never hidden behind them
   drawEffects(viewport);
   drawHoldLabels(viewport);
+  drawTutorialPointer(viewport);
   drawMinimap(viewport);
 }
 
@@ -4808,12 +4859,14 @@ function seeTutorial() {
   const find = (id) => state.units.find((unit) => unit.id === id);
   return {
     selectedIds: [...(state.selectedIds ?? [])],
+    allSelected: team.length > 1 && team.every((unit) => state.selectedIds?.includes(unit.id)),
     onWalkPad: team.some((unit) => nearZone(unit, "walk-pad", 1.8)),
     weaponOut: team.some((unit) => Boolean(heldWeapon(unit))),
     targetDown: find("practice-target")?.disabled === true,
     looted: Boolean(state.tutorialFlags?.looted),
     queued: Boolean(state.tutorialFlags?.queued),
     persuaded: find("civilian-1")?.persuaded === true,
+    inCar: team.some((unit) => unit.inVehicle === "training-car"),
     carAtDrivePad: nearZone(find("training-car"), "drive-pad", 2.2),
     gateOpen: state.objectives.find((objective) => objective.id === "open-gate")?.complete === true,
     won: state.outcome === "success",
@@ -4821,6 +4874,7 @@ function seeTutorial() {
 }
 
 function renderTutorial() {
+  markTutorialTargets();
   const step = state.tutorial ? currentStep(state.tutorial) : null;
   tutorialPanel.hidden = !step;
   if (!step) return;
@@ -5255,6 +5309,7 @@ function slotRow(unit, label) {
       continue;
     }
     const definition = entry.definition;
+    square.dataset.action = definition.action ?? "";
     const active =
       (definition.action === "disable-pulse" && unit.activeSlot === slot) ||
       (definition.action === "persuade" && Boolean(unit.persuading));
@@ -5626,6 +5681,7 @@ function renderInterface() {
       const picked = isSelected({ ids: state.selectedIds }, unit.id) && !unit.disabled;
       const item = document.createElement("div");
       item.className = "roster-item";
+      item.dataset.unit = unit.id;
       item.classList.toggle("selected", picked);
       item.classList.toggle("down", unit.disabled);
       item.classList.toggle("targeted", (state.targeted[unit.id] ?? 0) > state.elapsed && !unit.disabled);
@@ -5748,6 +5804,7 @@ function renderInterface() {
     ? `${unit.definition.name} · integrity ${unit.health}/${maxHealth(unit)}` +
       ` · at ${Math.round(unit.position.x)}, ${Math.round(unit.position.y)}${orders}`
     : "No operator selected.";
+  markTutorialTargets();
 }
 
 function setStatus(message) {

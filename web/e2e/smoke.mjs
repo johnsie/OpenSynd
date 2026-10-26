@@ -1063,7 +1063,10 @@ for (const [name, type, executablePath] of targets) {
     await trainee.waitForTimeout(3500);
     assert.equal(await trainee.evaluate(() => window.opensyndTest.healthOf("operator-one")), 100, "the practice target does no harm");
     await trainee.evaluate(() => window.opensyndTest.placeUnit("operator-one", 3, 18));
-    await trainee.keyboard.press("2");
+    await trainee.click('.roster-item[data-unit="operator-two"] .roster-select'); // the squad panel, as a player would
+    await waitStep("all");
+    assert.equal(await trainee.locator("#select-all-button.tutorial-point").count(), 1, "an arrow marks Select all");
+    await trainee.keyboard.press("a");
     await waitStep("walk");
     await trainee.evaluate(() => window.opensyndTest.moveSelected(11, 20));
     await waitStep("weapon");

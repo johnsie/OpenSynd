@@ -1007,3 +1007,19 @@ dialog.company-dialog[open] {
 .tutorial-panel p { margin: 0 0 0.4rem; }
 .tutorial-actions { display: flex; justify-content: space-between; gap: 0.5rem; }
 .company-form { display: grid; gap: 0.6rem; }
+
+.tutorial-point { position: relative; outline: 2px solid #ffd166; outline-offset: 1px; }
+.tutorial-point::after {
+  content: "▼";
+  position: absolute;
+  top: -1.5em;
+  left: 50%;
+  margin-left: -0.5em;
+  color: #ffd166;
+  text-shadow: 0 0 3px #000, 0 0 3px #000;
+  pointer-events: none;
+  z-index: 6;
+  animation: tutorial-bounce 0.8s ease-in-out infinite;
+}
+@keyframes tutorial-bounce { 50% { transform: translateY(-6px); } }
+@media (prefers-reduced-motion: reduce) { .tutorial-point::after { animation: none; } }
