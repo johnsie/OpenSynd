@@ -4811,6 +4811,9 @@ function showMainMenu() {
   const entry = saved ? state.missionList?.find((item) => item.id === saved.missionId) : null;
   const button = document.querySelector("#menu-continue");
   button.hidden = target === null;
+  // One button per intention: nothing yet to continue means Start campaign; otherwise Continue and New campaign.
+  document.querySelector("#menu-campaign").hidden = target !== null;
+  document.querySelector("#menu-new-game").hidden = target === null;
   document.querySelector("#menu-continue-note").textContent = continueNote(target, {
     operationName: entry?.name,
     completedCount: state.progress?.completed.length ?? 0,

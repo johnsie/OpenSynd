@@ -45,14 +45,14 @@ const TABLE = Object.freeze({
   "company.save": ["Confirm", "Confirmar", "Confirmer"],
   "company.rename": ["Rename company", "Cambiar nombre", "Renommer la société"],
   "menu.continue": ["Continue", "Continuar", "Continuer"],
-  "menu.campaign": ["Campaign", "Campaña", "Campagne"],
+  "menu.campaign": ["Start campaign", "Empezar campaña", "Commencer la campagne"],
   "menu.campaign_note": [
     "Fight for the territories on the world map.",
     "Lucha por los territorios del mapa mundial.",
     "Battez-vous pour les territoires de la carte du monde.",
   ],
-  "menu.new_game": ["New game", "Nueva partida", "Nouvelle partie"],
-  "menu.new_game_note": ["Start the whole campaign again.", "Empieza toda la campaña de nuevo.", "Recommencez toute la campagne."],
+  "menu.new_game": ["New campaign", "Nueva campaña", "Nouvelle campagne"],
+  "menu.new_game_note": ["Wipe this one and begin again.", "Borra esta y empieza de nuevo.", "Effacez celle-ci et recommencez."],
   "menu.online": ["Online (planned)", "En línea (previsto)", "En ligne (prévu)"],
   "menu.coop": ["Co-op operations", "Operaciones cooperativas", "Opérations en coopération"],
   "menu.coop_note": [

@@ -1003,6 +1003,8 @@ for (const [name, type, executablePath] of targets) {
     await menuPage.waitForSelector("#menu-dialog[open]");
     assert.equal(await menuPage.locator("#title-dialog").evaluate((dialog) => dialog.open), false, "the map is not the first screen");
     assert.equal(await menuPage.locator("#menu-continue").isVisible(), false, "nothing to continue yet");
+    assert.equal(await menuPage.locator("#menu-campaign").isVisible(), true, "a fresh browser starts a campaign");
+    assert.equal(await menuPage.locator("#menu-new-game").isVisible(), false, "nothing to wipe yet");
     assert.equal(await menuPage.locator("#menu-dialog button:disabled").count(), 3, "the online modes are listed but planned");
     await menuPage.keyboard.press("Escape");
     assert.equal(await menuPage.locator("#menu-dialog").evaluate((dialog) => dialog.open), true, "Escape leaves the menu up");
@@ -1034,6 +1036,8 @@ for (const [name, type, executablePath] of targets) {
     await menuPage.click("#company-save");
     assert.equal(await menuPage.locator("#menu-company-name").innerText(), "Harbour Group", "it can be renamed");
     assert.match(await menuPage.locator("#menu-continue-note").innerText(), /1 operation won/);
+    assert.equal(await menuPage.locator("#menu-campaign").isVisible(), false, "Continue replaces Start campaign");
+    assert.equal(await menuPage.locator("#menu-new-game").isVisible(), true, "New campaign is offered beside it");
     await menuPage.click("#menu-continue");
     await menuPage.waitForSelector("#title-dialog[open]");
     await menuPage.close();
