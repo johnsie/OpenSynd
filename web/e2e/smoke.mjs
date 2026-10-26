@@ -1057,7 +1057,12 @@ for (const [name, type, executablePath] of targets) {
       assert.ok((await trainee.locator("#tutorial-text").innerText()).length > 20, `${id} has a prompt`);
     };
     assert.equal(await step(), "select");
-    await trainee.locator("#game-canvas").focus();
+    assert.equal(await trainee.evaluate(() => document.activeElement?.id), "game-canvas", "the map has the keys when training starts");
+    // The practice target is harmless: standing beside it, in plain sight, for a while costs nothing.
+    await trainee.evaluate(() => window.opensyndTest.placeNear("operator-one", "practice-target", 1, 0));
+    await trainee.waitForTimeout(3500);
+    assert.equal(await trainee.evaluate(() => window.opensyndTest.healthOf("operator-one")), 100, "the practice target does no harm");
+    await trainee.evaluate(() => window.opensyndTest.placeUnit("operator-one", 3, 18));
     await trainee.keyboard.press("2");
     await waitStep("walk");
     await trainee.evaluate(() => window.opensyndTest.moveSelected(11, 20));

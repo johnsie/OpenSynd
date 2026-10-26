@@ -677,15 +677,26 @@ async function loadGame(index = state.missionIndex) {
     targetId: null,
     disabled: false,
   });
-  state.enemyArms = enemyArmament(
-    mission.opponents.filter((placement) => unitDefinitions.get(placement.unit)?.role === "enemy-agent").map((placement) => placement.id),
-    state.campaign,
-    state.catalog,
-  );
+  // Training enemies are issued nothing.
+  state.enemyArms = tutorialRun
+    ? new Map()
+    : enemyArmament(
+        mission.opponents
+          .filter((placement) => unitDefinitions.get(placement.unit)?.role === "enemy-agent")
+          .map((placement) => placement.id),
+        state.campaign,
+        state.catalog,
+      );
   seedSimulation(1);
   state.units = [...mission.team, ...mission.opponents, ...(mission.bystanders ?? [])].map((placement) =>
     buildUnit(placement, unitDefinitions.get(placement.unit)),
   );
+  if (tutorialRun) {
+    // The practice target cannot hurt anyone: an enemy agent's own attack is taken away as well as any weapon.
+    for (const unit of state.units.filter((item) => item.side !== "team" && item.definition.stats.attack > 0)) {
+      unit.definition = { ...unit.definition, stats: { ...unit.definition.stats, attack: 0 } };
+    }
+  }
   // Vehicles are units too (side "vehicle"), with an AI driver who is a unit riding inside.
   state.roadGrid = createRoadGrid(state.grid);
   // A signal at each corner of every crossing: two corners show the east-west light, two the north-south one.
@@ -4845,6 +4856,7 @@ async function startTutorial() {
   if (titleDialog.open) titleDialog.close();
   state.modal = false;
   renderTutorial();
+  canvas.focus(); // the keys (1, 2, F, V, E) only work with the map focused
   setStatus("Training: follow the prompts at the bottom of the screen.");
 }
 
@@ -4889,6 +4901,7 @@ document.querySelector("#tutorial-finish").addEventListener("click", () => leave
 document.querySelector("#tutorial-again").addEventListener("click", () => {
   tutorialDoneDialog.close();
   state.modal = false;
+  canvas.focus();
   loadGame(state.missionIndex).catch(showFatalError); // the tutorial run is still set, so it reloads the training
 });
 tutorialDoneDialog.addEventListener("cancel", (event) => event.preventDefault());
@@ -5051,6 +5064,9 @@ if (new URLSearchParams(location.search).has("e2e")) {
     },
     rounds(id, slot) {
       return state.units.find((item) => item.id === id).equipment[slot]?.charges ?? null;
+    },
+    healthOf(id) {
+      return state.units.find((unit) => unit.id === id)?.health;
     },
     positions() {
       return Object.fromEntries(state.units.map((unit) => [unit.id, { ...unit.position }]));
