@@ -149,6 +149,10 @@ const TABLE = Object.freeze({
   "coop.ready": ["Ready", "Listo", "Prêt"],
   "coop.begin": ["Begin", "Empezar", "Commencer"],
   "coop.close": ["Close", "Cerrar", "Fermer"],
+  "world.heading": ["Rival companies", "Empresas rivales", "Sociétés rivales"],
+  "world.territories": ["Territories", "Territorios", "Territoires"],
+  "world.log": ["Recent raids", "Incursiones recientes", "Raids récents"],
+  "world.close": ["Close", "Cerrar", "Fermer"],
   "menu.continue": ["Continue", "Continuar", "Continuer"],
   "menu.campaign": ["Start campaign", "Empezar campaña", "Commencer la campagne"],
   "menu.campaign_note": [

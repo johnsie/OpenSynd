@@ -78,6 +78,8 @@ export function createOnlinePlay({
 
     health: () => client?.health() ?? Promise.resolve(null),
     daily: () => client?.daily() ?? Promise.resolve(null),
+    world: () => client?.world() ?? Promise.resolve(null),
+    upgradeDefence: (territory, level) => client.upgradeDefence(territory, level),
     whoAmI: () => client?.whoAmI() ?? Promise.resolve(null),
     signIn: (name, password) => client.signIn(name, password),
     signUp: (name, password) => client.signUp(name, password),
@@ -103,16 +105,29 @@ export function createOnlinePlay({
     },
 
     /** Connect and ask for an operation of one's own (solo or the day's). Resolves with the server's start message. */
-    async start(mode, mission) {
+    async start(mode, mission, extra = {}) {
       await this.connect();
       asked = true;
-      return new Promise((done) => {
+      return new Promise((done, fail) => {
         const stop = client.on("start", (message) => {
           stop();
+          stopError();
           done(message);
         });
-        client.create(mode, mission);
+        // A refused request (a shielded territory, too few funds) answers with an error instead of a start.
+        const stopError = client.on("error", (message) => {
+          stop();
+          stopError();
+          asked = false;
+          fail(new Error(message.message));
+        });
+        client.create(mode, mission, extra);
       });
+    },
+
+    /** Raid a territory. Resolves with the start message of the operation, or rejects with the reason it was refused. */
+    raid(territory) {
+      return this.start("raid", undefined, { territory });
     },
 
     /** The page has built the operation and applied the start message: updates now flow into it. */

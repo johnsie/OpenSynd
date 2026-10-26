@@ -65,6 +65,17 @@ export class OnlineClient {
     return { ok: response.ok, status: response.status, ...data };
   }
 
+  /** The shared world: who holds each territory, how well defended, what may be raided, and how the signed-in player is doing. */
+  async world() {
+    const result = await this.call("/api/world");
+    return result.ok ? result : null;
+  }
+
+  /** The holder raises a territory's defence to a level. Returns the server's answer (with an error sentence if it was refused). */
+  upgradeDefence(territory, level) {
+    return this.call("/api/defence", { method: "POST", body: { territory, level } });
+  }
+
   /** Today's operation, its chores and the boards (and how the signed-in player is doing). */
   async daily() {
     const result = await this.call("/api/daily");
@@ -191,8 +202,8 @@ export class OnlineClient {
   }
 
   /** Start an operation on the server. The "start" message follows. */
-  create(mode = "solo", mission) {
-    this.send({ t: "create", mode, ...(mission ? { mission } : {}) });
+  create(mode = "solo", mission, extra = {}) {
+    this.send({ t: "create", mode, ...(mission ? { mission } : {}), ...extra });
   }
 
   /** Give an order (see commands.js). Returns its number, which the server's acknowledgement carries. */

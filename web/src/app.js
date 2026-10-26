@@ -586,7 +586,7 @@ async function loadGame(index = state.missionIndex, options = {}) {
     }
   }
   state.variant = variant;
-  const rawMission = await readJson(`content/${missionPath}`);
+  const rawMission = remote?.data ?? (await readJson(`content/${missionPath}`)); // a raid is made on the spot and sent whole
   // The squad is chosen from the roster: its members take the mission's starting places in order.
   state.rawTeam = rawMission.team;
   const mission = { ...rawMission, team: squadTeam(rawMission.team) };
@@ -3446,6 +3446,14 @@ function showOutcome(outcome) {
           ["Funds on the server", String(state.dailyResult.funds)],
         ]
       : []),
+    ...(state.online && state.raidResult
+      ? [
+          ["Territory", state.raidResult.name],
+          ["Result", state.raidResult.captured ? "Taken: it is yours now" : "Held by its defenders"],
+          ["Raid cost", `${state.raidResult.cost} funds`],
+          ["Funds on the server", String(state.raidResult.funds)],
+        ]
+      : []),
     ...(state.online ? [] : [["Funds", fundsChange(state.fundsAtStart ?? state.campaign.funds, state.campaign.funds)]]),
     ...(state.opStats.civiliansHarmed + state.opStats.policeHarmed > 0
       ? [["Bystanders killed", String(state.opStats.civiliansHarmed + state.opStats.policeHarmed)]]
@@ -4428,6 +4436,7 @@ async function setUpOnline() {
     onlinePlay.onEnd((message) => {
       state.outcome = message.outcome === "success" ? "success" : "failure";
       state.dailyResult = message.daily ?? null;
+      state.raidResult = message.raid ?? null;
       showOutcome(state.outcome);
     });
     onlinePlay.onStart((start) => {
@@ -4455,6 +4464,7 @@ async function refreshOnlineMenu() {
   note.hidden = true;
   document.querySelector("#menu-daily").disabled = true;
   document.querySelector("#menu-coop").disabled = true;
+  document.querySelector("#menu-world").disabled = true;
   if (!(await setUpOnline())) return;
   note.hidden = false;
   note.textContent = "Looking for the server…";
@@ -4478,6 +4488,7 @@ async function refreshOnlineMenu() {
   const daily = document.querySelector("#menu-daily");
   daily.disabled = false;
   document.querySelector("#menu-coop").disabled = false;
+  document.querySelector("#menu-world").disabled = false;
   document.querySelector("#menu-coop-note").textContent = account
     ? "Two to four players, one squad each."
     : "Two to four players, one squad each. Sign in to play.";
@@ -4648,6 +4659,101 @@ document.querySelector("#daily-play").addEventListener("click", () => {
   if (!onlinePlay.account) showSignin();
   else startOnlineGame("daily").catch(showFatalError);
 });
+
+// ---- The shared world: who holds what, raiding, and defending what is yours.
+const worldDialog = document.querySelector("#world-dialog");
+
+const shieldText = (seconds) => (seconds >= 3600 ? `${Math.round(seconds / 3600)} h` : `${Math.max(1, Math.ceil(seconds / 60))} min`);
+
+function worldMessage(text) {
+  document.querySelector("#world-message").textContent = text ?? "";
+}
+
+async function renderWorld() {
+  const page = await onlinePlay.world();
+  if (!page) {
+    worldMessage("The server did not answer.");
+    return;
+  }
+  const you = page.you;
+  document.querySelector("#world-you").textContent =
+    `Funds ${you.funds} · ${you.owned} held · pays ${you.incomePerHour} an hour` +
+    (you.collected > 0 ? ` · ${you.collected} collected while you were away` : "") +
+    ` · a raid costs ${page.raidCost}`;
+  const rows = [...page.territories].sort(
+    (a, b) => Number(b.mine) - Number(a.mine) || Number(b.canRaid) - Number(a.canRaid) || a.name.localeCompare(b.name),
+  );
+  document.querySelector("#world-list").replaceChildren(
+    ...rows.map((territory) => {
+      const item = document.createElement("li");
+      item.classList.toggle("mine", territory.mine);
+      const words = document.createElement("span");
+      words.textContent = territory.name;
+      const detail = document.createElement("small");
+      const holder = territory.mine ? "yours" : `${territory.holder}${territory.player ? " (player)" : ""}`;
+      detail.textContent =
+        `${holder} · defence ${territory.defence}` +
+        (territory.shieldedFor > 0 ? ` · shielded ${shieldText(territory.shieldedFor)}` : "") +
+        ` · pays ${territory.income} an hour`;
+      words.append(detail);
+      item.append(words);
+      if (territory.mine) {
+        const next = territory.defence + 1;
+        const upgrade = Object.assign(document.createElement("button"), { type: "button", textContent: `Defence ${next}` });
+        upgrade.disabled = territory.defence >= page.maxDefence;
+        upgrade.addEventListener("click", async () => {
+          const result = await onlinePlay.upgradeDefence(territory.id, next);
+          worldMessage(result.error ?? `${territory.name} now has defence ${next}.`);
+          await renderWorld();
+        });
+        item.append(upgrade);
+      } else {
+        const raid = Object.assign(document.createElement("button"), { type: "button", textContent: "Raid" });
+        raid.disabled = !territory.canRaid;
+        raid.title = territory.why ?? "";
+        raid.addEventListener("click", () => startRaid(territory.id));
+        item.append(raid);
+      }
+      return item;
+    }),
+  );
+  const names = new Map(page.territories.map((territory) => [territory.id, territory.name]));
+  document.querySelector("#world-log").replaceChildren(
+    ...(page.raids.length === 0
+      ? [Object.assign(document.createElement("li"), { textContent: "No raids yet." })]
+      : page.raids.map((entry) => {
+          const took = entry.outcome === "captured";
+          return Object.assign(document.createElement("li"), {
+            textContent: `${entry.attacker} ${took ? "took" : "failed to take"} ${names.get(entry.territory) ?? entry.territory}` +
+              (entry.defender ? ` from ${entry.defender}` : ""),
+          });
+        })),
+  );
+}
+
+async function showWorld() {
+  if (!onlinePlay.account) return showSignin();
+  worldMessage("");
+  await renderWorld();
+  worldDialog.showModal();
+  return undefined;
+}
+
+async function startRaid(territory) {
+  worldMessage("Connecting…");
+  try {
+    const start = await onlinePlay.raid(territory);
+    worldDialog.close();
+    await enterOnlineOperation(start, "raid");
+  } catch (error) {
+    onlinePlay.stop();
+    worldMessage(error.message);
+    await renderWorld().catch(() => {});
+  }
+}
+
+document.querySelector("#menu-world").addEventListener("click", () => showWorld().catch(showFatalError));
+document.querySelector("#world-close").addEventListener("click", () => worldDialog.close());
 
 // ---- Co-op: the lobby. Games waiting for players are listed; a player opens one, takes a quick match or joins one, says they are ready,
 // and the host begins. The operation itself then arrives like any other (see enterOnlineOperation).

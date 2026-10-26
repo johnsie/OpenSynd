@@ -27,16 +27,19 @@ export function loadContent(root = CONTENT_ROOT) {
   };
 }
 
-/** An operation's mission and its map (carrying any zones the mission adds), by the mission's path in the pack. */
-export function loadOperation(content, missionPath) {
-  const mission = content.read(missionPath);
+/** The map of a mission given as data, carrying any zones the mission adds. */
+export function operationFrom(content, mission) {
   const base = content.read(mission.map);
   const map = mission.zones?.length ? { ...base, zones: [...base.zones, ...mission.zones] } : base;
   return { mission, map };
 }
 
+/** An operation's mission and its map, by the mission's path in the pack. */
+export const loadOperation = (content, missionPath) => operationFrom(content, content.read(missionPath));
+
 /** Make the world for an operation by its path, for a squad described by `campaign` (the starting squad if none is given). */
-export function makeWorld(content, missionPath, { campaign = emptyCampaign(), seed = 1, options = {} } = {}) {
-  const { mission, map } = loadOperation(content, missionPath);
+export function makeWorld(content, missionOrPath, { campaign = emptyCampaign(), seed = 1, options = {} } = {}) {
+  const { mission, map } =
+    typeof missionOrPath === "string" ? loadOperation(content, missionOrPath) : operationFrom(content, missionOrPath);
   return createWorld({ mission, map, content, campaign, seed, options });
 }

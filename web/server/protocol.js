@@ -9,7 +9,7 @@ export { CORE_VERSION };
 
 // From the game to the server.
 //   hello    { v, core, content, token }          first message: who this is, and which versions the game has
-//   create   { mode: "solo" | "daily", mission? }   start an operation
+//   create   { mode: "solo" | "daily" | "raid", mission?, territory? }   start an operation (a raid names the territory to take)
 //   command  { seq, command }                      an order for the player's agents (see commands.js)
 //   lobby    {}                                    list the games waiting for players
 //   open     { mission?, capacity? }               open a cooperative game and wait in it
@@ -68,7 +68,10 @@ export function parseClientMessage(text) {
       if (typeof message.on !== "boolean") return { ok: false, error: "bad ready" };
       return { ok: true, message };
     case "create":
-      if (!["solo", "daily"].includes(message.mode)) return { ok: false, error: "unknown mode" };
+      if (!["solo", "daily", "raid"].includes(message.mode)) return { ok: false, error: "unknown mode" };
+      if (message.territory !== undefined && (typeof message.territory !== "string" || message.territory.length > 80)) {
+        return { ok: false, error: "bad territory" };
+      }
       if (message.mission !== undefined && (typeof message.mission !== "string" || message.mission.length > 200)) {
         return { ok: false, error: "bad mission" };
       }

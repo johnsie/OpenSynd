@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { choresEarned, dailyOperation, dayNumber, resultOf, rewardWithStreak } from "../server/daily.js";
+import { SIGNUP_FUNDS } from "../server/raids.js";
 import { content, withServer } from "./support.js";
 
 const NOON = Date.UTC(2026, 9, 26, 12);
@@ -73,13 +74,13 @@ test("winning scores the run, pays the chores it earned once, ranks the player a
     const paid = end.daily.chores.reduce((total, chore) => total + chore.reward, 0);
     const owed = operation.chores.filter((chore) => expected.includes(chore.id));
     assert.equal(paid, owed.reduce((total, chore) => total + rewardWithStreak(chore.reward, 1), 0));
-    assert.equal(end.daily.funds, paid);
+    assert.equal(end.daily.funds, paid + SIGNUP_FUNDS);
     assert.deepEqual([end.daily.rank, end.daily.players], [1, 1]);
 
     const page = (await call("/api/daily", { token: anna.token })).body;
     assert.deepEqual(page.chores.filter((chore) => chore.done).map((chore) => chore.id), expected);
     assert.equal(page.you.best.score, end.daily.score);
-    assert.deepEqual([page.you.streak, page.you.funds], [1, paid]);
+    assert.deepEqual([page.you.streak, page.you.funds], [1, paid + SIGNUP_FUNDS]);
     assert.deepEqual(page.boards.today.map((row) => [row.rank, row.name, row.score]), [[1, "Anna", end.daily.score]]);
     assert.equal(page.boards.week.length, 1);
 
@@ -93,7 +94,7 @@ test("winning scores the run, pays the chores it earned once, ranks the player a
     advance(10);
     const again = await winToday({ client: anna.client, server, advance });
     assert.deepEqual(again.end.daily.chores, [], "already paid today");
-    assert.equal(again.end.daily.funds, paid);
+    assert.equal(again.end.daily.funds, paid + SIGNUP_FUNDS);
   }, { clock: () => NOON });
 });
 
@@ -112,7 +113,7 @@ test("a lost operation scores nothing and pays nothing, and a day later the chor
     advance(200);
     const end = await anna.client.next("end");
     assert.equal(end.outcome, "failure");
-    assert.deepEqual([end.daily.score, end.daily.chores, end.daily.funds, end.daily.rank], [0, [], 0, null]);
+    assert.deepEqual([end.daily.score, end.daily.chores, end.daily.funds, end.daily.rank], [0, [], SIGNUP_FUNDS, null]);
     assert.deepEqual((await call("/api/daily", { token: anna.token })).body.boards.today, [], "a loss is not on the board");
 
     clock += 86_400_000;

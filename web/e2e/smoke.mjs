@@ -1706,6 +1706,46 @@ for (const [name, type, executablePath] of targets) {
       await ben.close();
     });
 
+    scenario("Rival companies: raid a territory, win it, see it as yours, and raise its defence", async () => {
+      const page = await (await browser.newContext()).newPage();
+      await page.goto(`${url}?e2e&server=${encodeURIComponent(gameUrl)}`);
+      await page.waitForSelector("#menu-signin:not([hidden])");
+      await page.click("#menu-signin");
+      await page.fill("#signin-name", "Raidingrita");
+      await page.fill("#signin-password", "a good password");
+      await page.click("#signin-create");
+      await page.waitForFunction(() => document.querySelector("#menu-online-note").textContent.includes("Signed in as Raidingrita"));
+      await page.waitForFunction(() => !document.querySelector("#menu-world").disabled);
+      await page.click("#menu-world");
+      await page.waitForSelector("#world-dialog[open]");
+      assert.match(await page.locator("#world-you").innerText(), /Funds 1500 · 0 held/);
+      assert.equal(await page.locator("#world-list li").count(), 50, "fifty territories");
+      const firstRaid = page.locator("#world-list li button:not([disabled])").first();
+      await firstRaid.click();
+      await page.waitForFunction(() => window.opensyndTest.online().running, null, { timeout: 8000 });
+      assert.match(await page.locator("#objective-list").innerText(), /Hold the marked position/);
+      const room = [...gameServer.rooms.values()].find((item) => item.raid);
+      assert.ok(room, "the server is running the raid");
+      for (const objective of room.world.objectives) objective.complete = true;
+      await page.waitForSelector("#outcome-dialog[open]", { timeout: 8000 });
+      const stats = await page.locator("#outcome-stats").innerText();
+      assert.match(stats, /Result\s+Taken: it is yours now/);
+      assert.match(stats, /Raid cost\s+300 funds/);
+      await page.click("#outcome-close");
+      await page.waitForSelector("#menu-dialog[open]");
+      await page.click("#menu-world");
+      await page.waitForSelector("#world-dialog[open]");
+      assert.match(await page.locator("#world-you").innerText(), /1 held/);
+      const mine = page.locator("#world-list li.mine");
+      assert.equal(await mine.count(), 1);
+      assert.match(await mine.innerText(), /yours · defence 1/);
+      assert.match(await page.locator("#world-log").innerText(), /Raidingrita took/);
+      await mine.locator("button").click(); // defence 2 costs 1000: the account has 1200 left
+      await page.waitForFunction(() => document.querySelector("#world-message").textContent.includes("now has defence 2"));
+      assert.match(await page.locator("#world-list li.mine").innerText(), /defence 2/);
+      await page.close();
+    });
+
     scenario("Permadeath and recruiting: a fallen operative is lost after a win, and a persuad", async () => {
       // Permadeath and recruiting: a fallen operative is lost after a win, and a persuaded enemy agent joins.
       const roster = await browser.newPage();

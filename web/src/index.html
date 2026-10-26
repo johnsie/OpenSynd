@@ -290,6 +290,27 @@
       </div>
     </dialog>
 
+    <dialog id="world-dialog" class="daily-dialog" aria-labelledby="world-heading">
+      <div class="daily-body">
+        <header>
+          <h2 id="world-heading" data-i18n="world.heading">Rival companies</h2>
+          <p id="world-you" class="menu-note"></p>
+          <p id="world-message" class="menu-note" role="status"></p>
+        </header>
+        <section aria-labelledby="world-list-heading">
+          <h3 id="world-list-heading" data-i18n="world.territories">Territories</h3>
+          <ul id="world-list" class="world-list"></ul>
+        </section>
+        <section aria-labelledby="world-log-heading">
+          <h3 id="world-log-heading" data-i18n="world.log">Recent raids</h3>
+          <ol id="world-log" class="daily-board"></ol>
+        </section>
+        <div class="company-actions">
+          <button id="world-close" type="button" data-i18n="world.close">Close</button>
+        </div>
+      </div>
+    </dialog>
+
     <dialog id="signin-dialog" class="company-dialog" aria-labelledby="signin-heading">
       <form id="signin-form" method="dialog">
         <h2 id="signin-heading" data-i18n="signin.heading">Sign in</h2>
@@ -365,9 +386,9 @@
           <span data-i18n="menu.daily">Daily operation</span>
           <small id="menu-daily-note" data-i18n="menu.daily_note">The same operation for everyone, ranked.</small>
         </button>
-        <button type="button" disabled>
+        <button id="menu-world" type="button" disabled>
           <span data-i18n="menu.rivals">Rival companies</span>
-          <small data-i18n="menu.rivals_note">Raid other players' territories.</small>
+          <small id="menu-world-note" data-i18n="menu.rivals_note">Raid other players' territories.</small>
         </button>
         <p class="menu-group" data-i18n="menu.more">More</p>
         <button id="menu-settings" type="button" data-i18n="menu.settings">Settings</button>

@@ -20,6 +20,21 @@ import {
 } from "./daily.js";
 import { CORE_VERSION, PROTOCOL_VERSION, checkVersions, parseClientMessage } from "./protocol.js";
 import { WAITING_SECONDS, WaitingGame, splitSquad } from "./lobby.js";
+import {
+  MAX_DEFENCE,
+  RAID_COST,
+  SHIELD_AFTER_CAPTURED_HOURS,
+  SHIELD_AFTER_DEFENDED_HOURS,
+  HOUR_MS,
+  SIGNUP_FUNDS,
+  accrued,
+  canRaid,
+  incomePerHour,
+  raidMission,
+  rivalDefence,
+  seasonOf,
+  upgradeCost,
+} from "./raids.js";
 import { Room } from "./rooms.js";
 import { upgrade } from "./ws.js";
 
@@ -117,6 +132,7 @@ export function createGameServer({
         if (problem) return reply(400, { error: problem });
         const account = store.createAccount(name, await hashPassword(password));
         if (!account) return reply(409, { error: "That name is taken." });
+        store.addFunds(account.id, SIGNUP_FUNDS); // enough for a few raids to begin with
         const token = newToken();
         store.createSession(account.id, token);
         reply(201, { token, account: { id: account.id, name: account.name } });
@@ -137,6 +153,14 @@ export function createGameServer({
         const kept = store.runRecording(Number(url.pathname.split("/").pop()));
         if (!kept) return reply(404, { error: "No such run." });
         reply(200, kept);
+      } else if (url.pathname === "/api/world" && request.method === "GET") {
+        reply(200, worldPage(accountOf(request)));
+      } else if (url.pathname === "/api/defence" && request.method === "POST") {
+        const account = accountOf(request);
+        if (!account) return reply(401, { error: "Not signed in." });
+        const { territory, level } = await readBody(request);
+        const result = upgradeDefence(account, territory, level);
+        reply(result.status ?? 200, result.error ? { error: result.error } : result);
       } else if (url.pathname === "/api/me" && request.method === "GET") {
         const account = accountOf(request);
         if (!account) return reply(401, { error: "Not signed in." });
@@ -229,6 +253,112 @@ export function createGameServer({
     return { daily: { run, score, chores: paid, streak, funds: store.funds(account), rank: place?.rank ?? null, players: ranking.length } };
   }
 
+  // ------------------------------------------------------------------------------------------------------ the shared world
+
+  const entryOf = (id) => content.territories.find((territory) => territory.id === id);
+
+  /** A new month is a new season: the map starts afresh (funds are kept). */
+  function ensureSeason() {
+    const season = seasonOf(clock());
+    if (store.season() !== season) store.newSeason(season);
+    return season;
+  }
+
+  /** Territories hold income for whoever holds them: what has built up since they last collected is paid out now. */
+  function collect(account) {
+    const owned = store.ownedBy(account).map(entryOf).filter(Boolean);
+    const time = clock();
+    const pay = accrued(owned, store.collectedAt(account), time);
+    if (pay > 0) store.addFunds(account, pay);
+    store.setCollected(account, time);
+    return pay;
+  }
+
+  /** The world as one player sees it: who holds each territory, how well defended, and what may be done about it. */
+  function worldPage(account) {
+    const season = ensureSeason();
+    const collected = account ? collect(account.id) : 0;
+    const holdings = store.holdings();
+    const time = clock();
+    const mine = account ? store.ownedBy(account.id) : [];
+    return {
+      season,
+      raidCost: RAID_COST,
+      maxDefence: MAX_DEFENCE,
+      territories: content.territories.map((entry) => {
+        const held = holdings.get(entry.id);
+        const holderId = held?.owner ?? null;
+        const allowed = account
+          ? canRaid({
+              raiderId: account.id,
+              holderId,
+              holderCount: holderId === null ? 0 : store.ownedBy(holderId).length,
+              yours: mine.length,
+              shieldUntil: held?.shield ?? 0,
+              now: time,
+              funds: store.funds(account.id),
+            })
+          : { ok: false, reason: "Sign in to raid." };
+        return {
+          id: entry.id,
+          name: entry.name,
+          population: entry.population,
+          holder: held?.name ?? entry.owner,
+          player: Boolean(held?.name),
+          mine: Boolean(account && holderId === account.id),
+          defence: held?.defence ?? rivalDefence(entry),
+          shieldedFor: Math.max(0, Math.round(((held?.shield ?? 0) - time) / 1000)),
+          income: incomePerHour(entry),
+          canRaid: allowed.ok,
+          why: allowed.ok ? null : allowed.reason,
+        };
+      }),
+      you: account && {
+        funds: store.funds(account.id),
+        owned: mine.length,
+        incomePerHour: mine.map(entryOf).reduce((total, entry) => total + incomePerHour(entry), 0),
+        collected,
+      },
+      raids: account ? store.recentRaids(account.id, 10) : [],
+    };
+  }
+
+  /** The holder raises a territory's defence one level or more, paying for each. */
+  function upgradeDefence(account, id, level) {
+    const held = store.holdings().get(id);
+    if (!held || held.owner !== account.id) return { error: "That territory is not yours.", status: 403 };
+    if (!Number.isInteger(level) || level <= held.defence || level > MAX_DEFENCE) return { error: "Choose a higher level, up to the top one.", status: 400 };
+    let cost = 0;
+    for (let step = held.defence + 1; step <= level; step += 1) cost += upgradeCost(step);
+    if (!store.spendFunds(account.id, cost)) return { error: `That costs ${cost} funds.`, status: 402 };
+    store.setDefence(id, level);
+    return { ok: true, cost, funds: store.funds(account.id) };
+  }
+
+  /** A raid has ended: the territory changes hands if the raiders held it, the raid is logged and kept, and the holder can watch. */
+  function finishRaid(room) {
+    const { entry, level, attacker, holder } = room.raid;
+    const result = resultOf(room.world, room.squad);
+    const won = result.outcome === "success";
+    const time = clock();
+    const run = store.recordRun({
+      account: attacker,
+      day: dayNumber(time),
+      mode: "raid",
+      mission: entry.id,
+      seed: room.seed,
+      outcome: result.outcome,
+      seconds: result.seconds,
+      lost: result.lost,
+      score: scoreOf(result),
+      recording: room.toRecording(),
+    });
+    if (won) store.claim(entry.id, attacker, 1, time + SHIELD_AFTER_CAPTURED_HOURS * HOUR_MS);
+    else if (holder !== null) store.claim(entry.id, holder, level, time + SHIELD_AFTER_DEFENDED_HOURS * HOUR_MS);
+    store.logRaid({ territory: entry.id, attacker, defender: holder, outcome: won ? "captured" : "defended", run, level });
+    return { raid: { territory: entry.id, name: entry.name, captured: won, run, cost: RAID_COST, funds: store.funds(attacker) } };
+  }
+
   // ------------------------------------------------------------------------------------------------------------- games
 
   const missionPaths = () => new Set([...content.pack.missions, ...(content.pack.variants ?? [])]);
@@ -243,7 +373,50 @@ export function createGameServer({
   const sendTo = (key) => (message) => byKey.get(key)?.send(message);
   const playerOf = (connection) => ({ id: connection.key, name: connection.account.name, account: connection.account.id });
 
-  function startRoom(connection, mode, mission) {
+  function startRaid(connection, territory) {
+    if (rooms.size >= MAX_ROOMS) return connection.error("The server is full. Try again in a moment.");
+    if (!connection.account) return connection.error("Sign in to raid.");
+    ensureSeason();
+    const entry = entryOf(territory);
+    if (!entry) return connection.error("There is no such territory.");
+    const account = connection.account.id;
+    collect(account);
+    const held = store.holdings().get(entry.id);
+    const holder = held?.owner ?? null;
+    const allowed = canRaid({
+      raiderId: account,
+      holderId: holder,
+      holderCount: holder === null ? 0 : store.ownedBy(holder).length,
+      yours: store.ownedBy(account).length,
+      shieldUntil: held?.shield ?? 0,
+      now: clock(),
+      funds: store.funds(account),
+    });
+    if (!allowed.ok) return connection.error(allowed.reason);
+    store.spendFunds(account, RAID_COST);
+    const level = held?.defence ?? rivalDefence(entry);
+    const mission = raidMission(content, { ...entry, holder: held?.name ?? entry.owner }, level);
+    leaveGame(connection);
+    leaveRoom(connection);
+    roomCounter += 1;
+    const room = new Room({
+      id: `room-${roomCounter}`,
+      content,
+      mission: mission.id,
+      missionData: mission,
+      variant: "raid",
+      seed: roomCounter * 7919 + 13,
+    });
+    room.raid = { entry, level, attacker: account, holder };
+    room.recording.raid = { territory: entry.id, level };
+    room.onFinish = finishRaid;
+    room.startedAt = now();
+    rooms.set(room.id, room);
+    seat(connection, room, room.squad);
+  }
+
+  function startRoom(connection, mode, mission, territory) {
+    if (mode === "raid") return startRaid(connection, territory);
     if (rooms.size >= MAX_ROOMS) return connection.error("The server is full. Try again in a moment.");
     if (mode === "daily" && !connection.account) return connection.error("Sign in to play the daily operation.");
     const operation = mode === "daily" ? dailyOperation(content, today()) : null;
@@ -454,7 +627,7 @@ export function createGameServer({
       }
       switch (message.t) {
         case "create":
-          return startRoom(connection, message.mode, message.mission);
+          return startRoom(connection, message.mode, message.mission, message.territory);
         case "lobby":
           return connection.send({ t: "lobby", games: [...games.values()].map((game) => game.summary()) });
         case "open":

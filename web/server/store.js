@@ -44,6 +44,23 @@ export function openStore(path = ":memory:", { now = Date.now } = {}) {
       reward INTEGER NOT NULL,
       PRIMARY KEY (account, day, chore)
     );
+    CREATE TABLE IF NOT EXISTS territories (
+      id TEXT PRIMARY KEY,
+      owner INTEGER REFERENCES accounts(id) ON DELETE SET NULL,
+      defence INTEGER NOT NULL DEFAULT 1,
+      shield_until INTEGER NOT NULL DEFAULT 0
+    );
+    CREATE TABLE IF NOT EXISTS raids (
+      id INTEGER PRIMARY KEY,
+      territory TEXT NOT NULL,
+      attacker INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
+      defender INTEGER REFERENCES accounts(id) ON DELETE SET NULL,
+      outcome TEXT NOT NULL,
+      run INTEGER,
+      level INTEGER NOT NULL,
+      created INTEGER NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS sessions (
       token TEXT PRIMARY KEY,
       account INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
@@ -54,7 +71,32 @@ export function openStore(path = ":memory:", { now = Date.now } = {}) {
   if (!db.prepare("PRAGMA table_info(accounts)").all().some((column) => column.name === "funds")) {
     db.exec("ALTER TABLE accounts ADD COLUMN funds INTEGER NOT NULL DEFAULT 0");
   }
+  if (!db.prepare("PRAGMA table_info(accounts)").all().some((column) => column.name === "collected")) {
+    db.exec("ALTER TABLE accounts ADD COLUMN collected INTEGER NOT NULL DEFAULT 0");
+  }
   const statements = {
+    holdings: db.prepare(
+      "SELECT territories.id AS id, territories.owner AS owner, accounts.name AS name, territories.defence AS defence, territories.shield_until AS shield FROM territories LEFT JOIN accounts ON accounts.id = territories.owner",
+    ),
+    claim: db.prepare(
+      "INSERT INTO territories (id, owner, defence, shield_until) VALUES (?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET owner = excluded.owner, defence = excluded.defence, shield_until = excluded.shield_until",
+    ),
+    ownedBy: db.prepare("SELECT id FROM territories WHERE owner = ?"),
+    setDefence: db.prepare("UPDATE territories SET defence = ? WHERE id = ?"),
+    spend: db.prepare("UPDATE accounts SET funds = funds - ? WHERE id = ? AND funds >= ?"),
+    collectedAt: db.prepare("SELECT collected FROM accounts WHERE id = ?"),
+    setCollected: db.prepare("UPDATE accounts SET collected = ? WHERE id = ?"),
+    insertRaid: db.prepare(
+      "INSERT INTO raids (territory, attacker, defender, outcome, run, level, created) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    ),
+    recentRaids: db.prepare(`
+      SELECT raids.id AS id, raids.territory AS territory, raids.outcome AS outcome, raids.run AS run, raids.level AS level,
+             raids.created AS created, attacker.name AS attacker, defender.name AS defender
+      FROM raids JOIN accounts AS attacker ON attacker.id = raids.attacker LEFT JOIN accounts AS defender ON defender.id = raids.defender
+      WHERE raids.attacker = ? OR raids.defender = ? ORDER BY raids.id DESC LIMIT ?`),
+    getMeta: db.prepare("SELECT value FROM meta WHERE key = ?"),
+    setMeta: db.prepare("INSERT INTO meta (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value"),
+    clearWorld: db.prepare("DELETE FROM territories"),
     insertRun: db.prepare(
       "INSERT INTO runs (account, day, mode, mission, seed, outcome, seconds, lost, score, recording, created) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
     ),
@@ -95,6 +137,7 @@ export function openStore(path = ":memory:", { now = Date.now } = {}) {
     createAccount(name, { salt, hash }) {
       try {
         const result = statements.insertAccount.run(name, salt, hash, now());
+        statements.setCollected.run(now(), Number(result.lastInsertRowid));
         return publicAccount(statements.byId.get(result.lastInsertRowid));
       } catch (error) {
         if (/UNIQUE/.test(error.message)) return null;
@@ -167,6 +210,37 @@ export function openStore(path = ":memory:", { now = Date.now } = {}) {
       if (Number(result.changes) === 0) return false;
       statements.addFunds.run(reward, account);
       return true;
+    },
+
+    // ------------------------------------------------------------------------------------------------ the shared world
+
+    /** Who holds what: a Map from territory id to { owner, name, defence, shield }. Territories nobody has taken are not in it. */
+    holdings: () =>
+      new Map(
+        statements.holdings.all().map((row) => [
+          row.id,
+          { owner: row.owner === null ? null : Number(row.owner), name: row.name, defence: Number(row.defence), shield: Number(row.shield) },
+        ]),
+      ),
+    claim: (id, owner, defence, shieldUntil) => statements.claim.run(id, owner, defence, shieldUntil),
+    ownedBy: (account) => statements.ownedBy.all(account).map((row) => row.id),
+    setDefence: (id, level) => statements.setDefence.run(level, id),
+
+    /** Take funds from an account if it has them. Returns whether it did. */
+    spendFunds: (account, amount) => Number(statements.spend.run(amount, account, amount).changes) > 0,
+    collectedAt: (account) => Number(statements.collectedAt.get(account)?.collected ?? 0),
+    setCollected: (account, time) => statements.setCollected.run(time, account),
+
+    logRaid: ({ territory, attacker, defender, outcome, run, level }) =>
+      Number(statements.insertRaid.run(territory, attacker, defender, outcome, run, level, now()).lastInsertRowid),
+    recentRaids: (account, limit = 10) =>
+      statements.recentRaids.all(account, account, limit).map((row) => ({ ...row, id: Number(row.id), created: Number(row.created) })),
+
+    season: () => Number(statements.getMeta.get("season")?.value ?? 0),
+    /** A new season: every territory is nobody's again (funds and the raid log stay). */
+    newSeason(season) {
+      statements.clearWorld.run();
+      statements.setMeta.run("season", String(season));
     },
 
     funds: (account) => Number(statements.funds.get(account)?.funds ?? 0),

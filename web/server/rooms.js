@@ -27,14 +27,24 @@ export class Room {
    * `content` is the loaded pack; `mission` the path of the operation; `seed` starts its streams of chance. Players are added with
    * addPlayer. Nothing runs on its own: tick() is called by whoever owns the clock (a timer on the server, a loop in a test).
    */
-  constructor({ id, content, mission, variant = null, seed = 1, campaign = emptyCampaign(), options = { decidesOutcome: true } }) {
+  constructor({
+    id,
+    content,
+    mission,
+    missionData = null,
+    variant = null,
+    seed = 1,
+    campaign = emptyCampaign(),
+    options = { decidesOutcome: true },
+  }) {
     this.id = id;
     this.content = content;
     this.mission = mission;
     this.variant = variant;
     this.seed = seed;
     this.campaign = campaign;
-    this.world = makeWorld(content, mission, { campaign, seed, options });
+    this.missionData = missionData; // an operation made on the spot (a raid) rather than read from the pack: sent to players whole
+    this.world = makeWorld(content, missionData ?? mission, { campaign, seed, options });
     this.recording = startRecording({ mission, variant, seed, content: content.hash ?? null });
     this.players = new Map();
     this.stepHooks = recordingHooks();
@@ -84,6 +94,7 @@ export class Room {
       room: this.id,
       mission: this.mission,
       variant: this.variant,
+      ...(this.missionData ? { data: this.missionData } : {}),
       seed: this.seed,
       squad: player.unitIds,
       team: [...this.players.values()].map((other) => ({ name: other.name, squad: other.unitIds })),

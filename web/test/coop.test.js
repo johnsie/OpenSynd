@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { commands } from "../src/commands.js";
+import { SIGNUP_FUNDS } from "../server/raids.js";
 import { AWAY_SECONDS } from "../server/server.js";
 import { content, withServer } from "./support.js";
 
@@ -145,7 +146,7 @@ test("a win pays every signed-in player, and everyone is told", async () => {
       assert.ok(me.account);
     }
     const funds = players.map((one) => context.store.funds(context.store.findForLogin(one.name).id));
-    assert.deepEqual(funds, [ends[0].coop.reward, ends[0].coop.reward]);
+    assert.deepEqual(funds, [SIGNUP_FUNDS + ends[0].coop.reward, SIGNUP_FUNDS + ends[0].coop.reward]);
   });
 });
 
