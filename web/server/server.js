@@ -2,9 +2,11 @@
 
 // The game server: accounts over plain HTTP, and the games themselves over WebSockets. It keeps every running operation, steps
 // them on a clock, and sends each player what changes. Run it with server/main.js; tests make one on a spare port.
+import { randomBytes } from "node:crypto";
 import { createServer } from "node:http";
 
 import { FIXED_STEP_SECONDS } from "../src/simulation.js";
+import { createOidc, displayNameFor } from "./oidc.js";
 import { cleanSpeech, createRateLimiter, hashPassword, newToken, problemWithName, problemWithPassword, verifyPassword } from "./auth.js";
 import { contentHash } from "./content-hash.js";
 import {
@@ -86,6 +88,7 @@ export function createGameServer({
   tickEvery = true,
   clock = () => Date.now(),
   adminToken = null,
+  oidc = createOidc(),
 }) {
   content.hash ??= contentHash(content.root);
   const rooms = new Map();
@@ -127,7 +130,14 @@ export function createGameServer({
     const address = request.socket.remoteAddress ?? "unknown";
     try {
       if (url.pathname === "/api/health" && request.method === "GET") {
-        reply(200, { ok: true, protocol: PROTOCOL_VERSION, core: CORE_VERSION, content: content.hash, rooms: rooms.size });
+        reply(200, {
+          ok: true,
+          protocol: PROTOCOL_VERSION,
+          core: CORE_VERSION,
+          content: content.hash,
+          rooms: rooms.size,
+          oidc: oidc ? { issuer: oidc.issuer, client: oidc.client } : null,
+        });
       } else if (url.pathname === "/api/signup" && request.method === "POST") {
         if (!signups.take(address)) return reply(429, { error: "Too many sign-ups from here. Wait a minute." });
         const { name, password } = await readBody(request);
@@ -151,6 +161,31 @@ export function createGameServer({
         const token = newToken();
         store.createSession(found.id, token);
         reply(200, { token, account: { id: found.id, name: found.name } });
+      } else if (url.pathname === "/api/oidc/code" && request.method === "POST") {
+        if (!oidc) return reply(404, { error: "Signing in with Outiva is not set up on this server." });
+        if (!logins.take(address)) return reply(429, { error: "Too many tries. Wait a minute." });
+        const { code, verifier, redirectUri, nonce } = await readBody(request);
+        if ([code, verifier, redirectUri, nonce].some((value) => typeof value !== "string" || value.length > 2000)) {
+          return reply(400, { error: "That request could not be read." });
+        }
+        let claims;
+        try {
+          claims = await oidc.exchange({ code, verifier, redirectUri, nonce });
+        } catch {
+          return reply(401, { error: "Outiva did not accept that sign-in." });
+        }
+        let account = store.accountForSubject(claims.sub);
+        if (!account) {
+          const salt = randomBytes(16).toString("base64");
+          // A password nobody knows: this account signs in through Outiva only.
+          account = store.createAccount(displayNameFor(claims, store.nameTaken), { salt, hash: randomBytes(32).toString("base64") });
+          store.linkSubject(claims.sub, account.id);
+          store.addFunds(account.id, SIGNUP_FUNDS);
+        }
+        if (store.isBanned(account.id)) return reply(403, { error: "This account has been closed." });
+        const token = newToken();
+        store.createSession(account.id, token);
+        reply(200, { token, account: { id: account.id, name: account.name } });
       } else if (url.pathname === "/api/daily" && request.method === "GET") {
         reply(200, dailyPage(accountOf(request)));
       } else if (/^\/api\/run\/\d+$/.test(url.pathname) && request.method === "GET") {
@@ -219,11 +254,11 @@ export function createGameServer({
       } else if (url.pathname === "/api/account" && request.method === "DELETE") {
         const account = accountOf(request);
         if (!account) return reply(401, { error: "Not signed in." });
-        const { password } = await readBody(request);
+        const { password, confirm } = await readBody(request);
         const record = store.findForLogin(account.name);
-        if (typeof password !== "string" || !(await verifyPassword(password, record))) {
-          return reply(403, { error: "That password does not match." });
-        }
+        // An Outiva account has no password here: it confirms by naming itself.
+        const confirmed = store.isLinked(account.id) ? confirm === account.name : typeof password === "string" && (await verifyPassword(password, record));
+        if (!confirmed) return reply(403, { error: store.isLinked(account.id) ? "Type your name to confirm." : "That password does not match." });
         store.deleteAccount(account.id);
         for (const connection of connections) if (connection.account?.id === account.id) connection.socketConnection.close(1000, "account deleted");
         reply(200, { ok: true });

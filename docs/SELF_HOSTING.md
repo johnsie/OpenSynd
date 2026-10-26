@@ -44,6 +44,11 @@ PORT=8791 HOST=0.0.0.0 DATABASE=/var/lib/opensynd/opensynd.sqlite ORIGINS=https:
 - On the project's own host: `sudo sh deploy/setup-server.sh` once (a service, its user, a database folder, a restart permission for the
   runner), then the deploy job runs `deploy/deploy-server.sh` when the CI/CD variable `DEPLOY_SERVER` is set, and the site is built
   offering that server when `OPENSYND_SERVER` is set. Apache passes `/api` and `/ws` to it (`deploy/apache/opensynd.outiva.com.conf`).
+- **Sign in with Outiva** (OpenID Connect): on by default against `https://accounts.outiva.com/realms/outiva` with the client
+  `opensynd-web` (`OIDC_ISSUER`, `OIDC_CLIENT`; `OIDC_ISSUER=` switches it off). Register the client once with
+  `sudo sh deploy/configure-outiva-client.sh` on the Keycloak machine, **before** deploying a server that offers it: the page tries a
+  quiet sign-in on the first visit, and an unregistered client would send visitors to an error page. The server keeps only the
+  account's stable `sub` and a display name made from the username.
 - Players can try it at `https://example.org/?server=https://play.example.org`; the page remembers the address.
 
 ## Keeping the project's habits (optional)

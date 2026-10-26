@@ -88,6 +88,7 @@ export function createOnlinePlay({
     onChat: (listener) => listeners.chat.push(listener),
     whoAmI: () => client?.whoAmI() ?? Promise.resolve(null),
     signIn: (name, password) => client.signIn(name, password),
+    oidcCode: (details) => client.oidcCode(details),
     signUp: (name, password) => client.signUp(name, password),
     signOut: () => client?.signOut() ?? Promise.resolve(),
 

@@ -140,6 +140,7 @@ const TABLE = Object.freeze({
   "daily.all": ["All time", "Siempre", "Depuis toujours"],
   "daily.close": ["Close", "Cerrar", "Fermer"],
   "daily.play": ["Play today's operation", "Jugar la operación de hoy", "Jouer l'opération du jour"],
+  "signin.outiva": ["Sign in with Outiva", "Iniciar sesión con Outiva", "Se connecter avec Outiva"],
   "coop.friends": ["Friends", "Amigos", "Amis"],
   "coop.friend_name": ["Add by name", "Añadir por nombre", "Ajouter par nom"],
   "coop.friend_add": ["Ask", "Pedir", "Demander"],

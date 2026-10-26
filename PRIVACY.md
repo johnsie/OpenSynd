@@ -7,7 +7,8 @@ rival companies) talk to a game server, and only if you sign in to one.
 
 **What a game server keeps about you, and nothing more:**
 
-- your display name and a salted scrypt hash of your password (never the password itself);
+- if you sign in with Outiva: the identifier Outiva gives your account (not your email or password) and a display name made from your
+  username; if you use a password here instead: your display name and a salted scrypt hash of your password (never the password itself);
 - your funds, the territories you hold and the raids you took part in;
 - your scores, the daily chores you completed, and the recorded replays of your daily and raid operations;
 - who your friends are, and any report you made or that was made about you (with the reason given);

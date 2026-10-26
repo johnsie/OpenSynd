@@ -279,6 +279,7 @@ import {
 } from "./progress.js";
 import { createMusic } from "./music.js";
 import { createAudio, setVictoryTheme, shotCue, shotVolume } from "./audio.js";
+import { comeBack, signInAddress } from "./outiva-signin.js";
 import { SETTINGS_KEY, parseSettings, prefersReducedMotion, serializeSettings } from "./settings.js";
 
 const canvas = document.querySelector("#game-canvas");
@@ -4457,6 +4458,47 @@ async function setUpOnline() {
 }
 
 // The Online part of the menu: shown when a server has been named and answers; says who is signed in.
+// Outiva sign-in. Coming back from Outiva with a code signs the player in; otherwise, once per visit, a quiet attempt signs in someone
+// who is already signed in to Outiva. Signing out here stops that until the player chooses Outiva again.
+let outivaSettings = null;
+const OUTIVA_OFF = "opensynd.outiva.off.v1";
+const OUTIVA_TRIED = "opensynd.outiva.tried.v1";
+
+async function goToOutiva(silent) {
+  try {
+    sessionStorage.setItem(OUTIVA_TRIED, "1");
+    if (!silent) localStorage.removeItem(OUTIVA_OFF);
+  } catch {
+    // Without storage the quiet attempt could repeat; it is not made when storage cannot be used (see below).
+  }
+  location.assign(await signInAddress(outivaSettings, { silent, location, storage: sessionStorage }));
+}
+
+async function signInWithOutiva() {
+  let back = null;
+  let quiet = true;
+  try {
+    back = comeBack({ location, storage: sessionStorage });
+    quiet = sessionStorage.getItem(OUTIVA_TRIED) === null && localStorage.getItem(OUTIVA_OFF) === null;
+  } catch {
+    quiet = false; // no storage: a quiet attempt could never be remembered, so none is made
+  }
+  if (back) history.replaceState(null, "", location.pathname);
+  if (back?.code) {
+    const result = await onlinePlay.oidcCode(back).catch(() => ({ ok: false }));
+    if (result.ok) {
+      keepServerSettings({ url: serverSettings().url, token: result.token });
+      return result.account;
+    }
+    return null;
+  }
+  if (!back && quiet) {
+    await goToOutiva(true);
+    return new Promise(() => {}); // the page is leaving
+  }
+  return null;
+}
+
 async function refreshOnlineMenu() {
   const note = document.querySelector("#menu-online-note");
   const signin = document.querySelector("#menu-signin");
@@ -4481,7 +4523,9 @@ async function refreshOnlineMenu() {
     note.textContent = "This game and the server have different content. Reload the page to update.";
     return;
   }
-  const account = await onlinePlay.whoAmI();
+  outivaSettings = health.oidc;
+  let account = await onlinePlay.whoAmI();
+  if (!account && health.oidc) account = await signInWithOutiva(health.oidc);
   note.textContent = account ? `Signed in as ${account.name}.` : "Not signed in.";
   document.querySelector("#menu-signin-label").textContent = account ? `Sign out (${account.name})` : "Sign in";
   document.querySelector("#menu-signin-note").hidden = Boolean(account);
@@ -4502,6 +4546,7 @@ async function refreshOnlineMenu() {
 function showSignin() {
   document.querySelector("#signin-server").textContent = `Server: ${serverSettings().url}`;
   document.querySelector("#signin-error").hidden = true;
+  document.querySelector("#signin-outiva").hidden = !outivaSettings;
   document.querySelector("#signin-password").value = "";
   signinDialog.showModal();
   document.querySelector("#signin-name").focus();
@@ -4978,6 +5023,11 @@ document.querySelector("#menu-signin").addEventListener("click", async () => {
   if (!onlinePlay?.account) return showSignin();
   await onlinePlay.signOut();
   keepServerSettings({ url: serverSettings().url, token: null });
+  try {
+    localStorage.setItem(OUTIVA_OFF, "1"); // do not sign straight back in
+  } catch {
+    // The quiet sign-in then repeats next visit.
+  }
   await refreshOnlineMenu();
 });
 document.querySelector("#menu-online-test").addEventListener("click", () => startOnlineGame("solo").catch(showFatalError));
@@ -4987,6 +5037,7 @@ document.querySelector("#signin-form").addEventListener("submit", (event) => {
 });
 document.querySelector("#signin-create").addEventListener("click", () => trySignin(true).catch(showFatalError));
 document.querySelector("#signin-cancel").addEventListener("click", () => signinDialog.close());
+document.querySelector("#signin-outiva").addEventListener("click", () => goToOutiva(false).catch(showFatalError));
 
 // The company name is asked for the first time the player heads for the campaign, and can be changed from the menu.
 function showCompany() {

@@ -101,6 +101,11 @@ export class OnlineClient {
     this.send({ t: "say", text });
   }
 
+  /** Give the server the code Outiva sent back (see outiva-signin.js). Signs the player in if it is accepted. */
+  async oidcCode({ code, verifier, redirectUri, nonce }) {
+    return this.signedIn(await this.call("/api/oidc/code", { method: "POST", body: { code, verifier, redirectUri, nonce } }));
+  }
+
   /** Today's operation, its chores and the boards (and how the signed-in player is doing). */
   async daily() {
     const result = await this.call("/api/daily");

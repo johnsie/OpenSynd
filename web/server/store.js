@@ -61,6 +61,10 @@ export function openStore(path = ":memory:", { now = Date.now } = {}) {
       created INTEGER NOT NULL
     );
     CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS oidc_links (
+      subject TEXT PRIMARY KEY,
+      account INTEGER NOT NULL UNIQUE REFERENCES accounts(id) ON DELETE CASCADE
+    );
     CREATE TABLE IF NOT EXISTS friends (
       requester INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
       target INTEGER NOT NULL REFERENCES accounts(id) ON DELETE CASCADE,
@@ -91,6 +95,10 @@ export function openStore(path = ":memory:", { now = Date.now } = {}) {
     db.exec("ALTER TABLE accounts ADD COLUMN banned INTEGER NOT NULL DEFAULT 0");
   }
   const statements = {
+    oidcAccount: db.prepare("SELECT account FROM oidc_links WHERE subject = ?"),
+    oidcLink: db.prepare("INSERT INTO oidc_links (subject, account) VALUES (?, ?)"),
+    oidcOf: db.prepare("SELECT subject FROM oidc_links WHERE account = ?"),
+    nameTaken: db.prepare("SELECT 1 FROM accounts WHERE name = ?"),
     friendRows: db.prepare(`
       SELECT friends.requester AS requester, friends.target AS target, friends.accepted AS accepted,
              requester_account.name AS requester_name, target_account.name AS target_name
@@ -287,6 +295,17 @@ export function openStore(path = ":memory:", { now = Date.now } = {}) {
       statements.clearWorld.run();
       statements.setMeta.run("season", String(season));
     },
+
+    // ------------------------------------------------------------------------------------------------ Outiva (OpenID Connect) accounts
+
+    /** The account an identity (its `sub`) belongs to, or null. */
+    accountForSubject(subject) {
+      const row = statements.oidcAccount.get(subject);
+      return row ? publicAccount(statements.byId.get(row.account)) : null;
+    },
+    linkSubject: (subject, account) => statements.oidcLink.run(subject, account),
+    isLinked: (account) => Boolean(statements.oidcOf.get(account)),
+    nameTaken: (name) => Boolean(statements.nameTaken.get(name)),
 
     // --------------------------------------------------------------------------------------- friends, reports, bans, profiles
 

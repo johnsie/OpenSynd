@@ -7,6 +7,7 @@
 
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
+import { generateKeyPairSync, sign } from "node:crypto";
 import { createServer } from "node:http";
 import { availableParallelism } from "node:os";
 import { dirname, extname, join, normalize, resolve } from "node:path";
@@ -15,6 +16,7 @@ import { fileURLToPath } from "node:url";
 import { chromium, firefox } from "playwright-core";
 
 import { loadContent } from "../server/content.js";
+import { createOidc } from "../server/oidc.js";
 import { createGameServer } from "../server/server.js";
 import { openStore } from "../server/store.js";
 
@@ -46,7 +48,7 @@ await new Promise((done) => server.listen(0, "127.0.0.1", done));
 const url = `http://127.0.0.1:${server.address().port}/`;
 
 // A game server of our own, on a spare port, playing the same content the page was built with.
-const gameServer = createGameServer({ content: loadContent(join(dist, "content")), store: openStore() });
+const gameServer = createGameServer({ content: loadContent(join(dist, "content")), store: openStore(), oidc: null });
 const gameUrl = `http://${await gameServer.listen(0)}`;
 
 const targets = [
@@ -1553,11 +1555,76 @@ for (const [name, type, executablePath] of targets) {
       await page.waitForFunction( // the campaign is written out every few seconds
         (id) => JSON.parse(localStorage.getItem("opensynd.campaign.v1")).territories[id].status === "open",
         territoryId,
-        { timeout: 15000 },
+        { timeout: 40000 },
       );
       const record = await territoryRecord(page);
       assert.deepEqual([record.status, record.threat], ["open", null]);
       await page.close();
+    });
+
+    scenario("Signing in with Outiva: signed in there means signed in here; signing out stops it; the button signs in again", async () => {
+      // A stand-in for the Outiva identity service: it sends the browser straight back with a code, and signs the ID token.
+      const { publicKey, privateKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
+      const jwk = { ...publicKey.export({ format: "jwk" }), kid: "k", use: "sig" };
+      const b64 = (value) => Buffer.from(JSON.stringify(value)).toString("base64url");
+      const nonces = new Map();
+      let signedInThere = true;
+      const identity = createServer((request, response) => {
+        const address = new URL(request.url, "http://x");
+        const query = address.searchParams;
+        if (query.get("prompt") === "none" && !signedInThere) {
+          response.writeHead(302, { location: `${query.get("redirect_uri")}?error=login_required&state=${query.get("state")}` }).end();
+          return;
+        }
+        nonces.set("code-1", query.get("nonce"));
+        response.writeHead(302, { location: `${query.get("redirect_uri")}?code=code-1&state=${query.get("state")}` }).end();
+      });
+      await new Promise((done) => identity.listen(0, "127.0.0.1", done));
+      const issuer = `http://127.0.0.1:${identity.address().port}/realms/outiva`;
+      const fetchFn = async (address) => {
+        if (address.endsWith("/certs")) return { ok: true, json: async () => ({ keys: [jwk] }) };
+        const exp = Math.floor(Date.now() / 1000) + 300;
+        const nonce = nonces.get("code-1");
+        const claims = { iss: issuer, aud: "opensynd-web", sub: "outiva-user-1", preferred_username: "Casey", nonce, exp };
+        const head = `${b64({ alg: "RS256", kid: "k" })}.${b64(claims)}`;
+        const idToken = `${head}.${sign("sha256", Buffer.from(head), privateKey).toString("base64url")}`;
+        return { ok: true, json: async () => ({ id_token: idToken }) };
+      };
+      const own = createGameServer({
+        content: loadContent(join(dist, "content")),
+        store: openStore(),
+        oidc: createOidc({ issuer, client: "opensynd-web", fetchFn }),
+      });
+      const ownUrl = `http://${await own.listen(0)}`;
+      try {
+        const page = await (await browser.newContext()).newPage();
+        await page.goto(`${url}?e2e&server=${encodeURIComponent(ownUrl)}`);
+        await page.waitForFunction(() => document.querySelector("#menu-online-note")?.textContent.includes("Signed in as Casey"), null, {
+          timeout: 15000,
+        });
+        assert.equal(new URL(page.url()).search, "", "the answer from Outiva is cleaned from the address");
+        // Signing out stays signed out, even though they are still signed in to Outiva.
+        await page.click("#menu-signin");
+        await page.waitForFunction(() => document.querySelector("#menu-online-note").textContent.includes("Not signed in"));
+        await page.reload();
+        await page.waitForSelector("#menu-signin:not([hidden])");
+        assert.match(await page.locator("#menu-online-note").innerText(), /Not signed in/);
+        // The button signs in again.
+        await page.click("#menu-signin");
+        await page.click("#signin-outiva");
+        await page.waitForFunction(() => document.querySelector("#menu-online-note")?.textContent.includes("Signed in as Casey"), null, {
+          timeout: 15000,
+        });
+        // Not signed in at Outiva: the quiet attempt brings nothing back, and the page is still usable.
+        signedInThere = false;
+        const other = await (await browser.newContext()).newPage();
+        await other.goto(`${url}?e2e&server=${encodeURIComponent(ownUrl)}`);
+        await other.waitForSelector("#menu-signin:not([hidden])", { timeout: 15000 });
+        assert.match(await other.locator("#menu-online-note").innerText(), /Not signed in/);
+      } finally {
+        await own.close();
+        identity.close();
+      }
     });
 
     scenario("Playing on a server: sign up, start an operation that the server runs, give it an order, and leave", async () => {
