@@ -15,9 +15,15 @@ export function createTileGrid(map) {
 
 // A gate blocks its tiles until `isOpen(gate)` is true. The terrain's own
 // walkability is kept in `baseWalkable` so saves can be checked without gates.
+const preparedGrids = new WeakSet();
 export function applyGates(grid, gates, isOpen) {
-  for (const tile of grid.flat()) {
-    if (tile) tile.baseWalkable ??= tile.walkable;
+  // Remember each tile's own walkability the first time a grid is seen (this runs every few frames: not worth repeating over the
+  // whole map). A tile put into the grid later is recorded when a gate reaches it.
+  if (!preparedGrids.has(grid)) {
+    preparedGrids.add(grid);
+    for (const row of grid) {
+      for (const tile of row) if (tile) tile.baseWalkable ??= tile.walkable;
+    }
   }
   for (const gate of gates) {
     const open = isOpen(gate);
@@ -25,6 +31,7 @@ export function applyGates(grid, gates, isOpen) {
       for (let x = gate.position.x; x < gate.position.x + gate.width; x += 1) {
         const tile = grid[y]?.[x];
         if (!tile) continue;
+        tile.baseWalkable ??= tile.walkable;
         tile.gate = gate.id;
         if (gate.kind === "door") {
           // A door can always be walked into (routes plan through it); it only blocks sight and shots while closed.
@@ -47,33 +54,74 @@ export function isWalkable(grid, x, y) {
   return Boolean(grid[y]?.[x]?.walkable);
 }
 
+// Breadth-first search on four-way steps. Tiles are numbered row by row so the search can use plain arrays (the string keys it
+// used to build for every tile made it the slowest thing in the game and in the tests). The order of the search, and so the
+// path found, is unchanged.
+const STEP_X = [1, 0, -1, 0];
+const STEP_Y = [0, 1, 0, -1];
+const UNSEEN = -1;
+const FROM_START = -2;
+
 export function findPath(grid, start, destination) {
+  if (!isWalkable(grid, destination.x, destination.y)) return [];
+  if (start.x === destination.x && start.y === destination.y) return [];
+  const height = grid.length;
+  let width = 0;
+  for (const row of grid) if (row.length > width) width = row.length;
+  const inside = Number.isInteger(start.x) && Number.isInteger(start.y) && start.x >= 0 && start.y >= 0;
+  if (!inside || start.x >= width || start.y >= height) return findPathFromOutside(grid, start, destination);
+
+  const parent = new Int32Array(width * height).fill(UNSEEN);
+  const queue = new Int32Array(width * height);
+  const first = start.y * width + start.x;
+  const goal = destination.y * width + destination.x;
+  parent[first] = FROM_START;
+  queue[0] = first;
+  let head = 0;
+  let tail = 1;
+  while (head < tail) {
+    const current = queue[head];
+    head += 1;
+    if (current === goal) break;
+    const x = current % width;
+    const y = (current - x) / width;
+    for (let direction = 0; direction < 4; direction += 1) {
+      const nextX = x + STEP_X[direction];
+      const nextY = y + STEP_Y[direction];
+      if (nextX < 0 || nextY < 0 || nextX >= width || nextY >= height) continue;
+      const next = nextY * width + nextX;
+      if (parent[next] !== UNSEEN || !grid[nextY][nextX]?.walkable) continue;
+      parent[next] = current;
+      queue[tail] = next;
+      tail += 1;
+    }
+  }
+  if (parent[goal] === UNSEEN) return [];
+  const path = [];
+  for (let cursor = goal; cursor !== first; cursor = parent[cursor]) {
+    const x = cursor % width;
+    path.push({ x, y: (cursor - x) / width });
+  }
+  return path.reverse();
+}
+
+// A start that is not a tile of the grid (off the edge, or between tiles) is rare; it takes the plain search.
+function findPathFromOutside(grid, start, destination) {
   const startKey = `${start.x},${start.y}`;
   const destinationKey = `${destination.x},${destination.y}`;
-  if (!isWalkable(grid, destination.x, destination.y)) return [];
-  if (startKey === destinationKey) return [];
-
   const frontier = [{ x: start.x, y: start.y }];
   const previous = new Map([[startKey, null]]);
-  const directions = [
-    { x: 1, y: 0 },
-    { x: 0, y: 1 },
-    { x: -1, y: 0 },
-    { x: 0, y: -1 },
-  ];
-
   for (let index = 0; index < frontier.length; index += 1) {
     const current = frontier[index];
     if (`${current.x},${current.y}` === destinationKey) break;
-    for (const direction of directions) {
-      const next = { x: current.x + direction.x, y: current.y + direction.y };
+    for (let direction = 0; direction < 4; direction += 1) {
+      const next = { x: current.x + STEP_X[direction], y: current.y + STEP_Y[direction] };
       const key = `${next.x},${next.y}`;
       if (!isWalkable(grid, next.x, next.y) || previous.has(key)) continue;
       previous.set(key, current);
       frontier.push(next);
     }
   }
-
   if (!previous.has(destinationKey)) return [];
   const path = [];
   let cursor = destination;

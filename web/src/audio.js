@@ -415,7 +415,7 @@ const SYNTH = Object.freeze({
 });
 
 export const CUES = Object.freeze({
-  select: { caption: "Operator selected", notes: [[660, 0.06]], say: "Agent selected", sayGap: 4 },
+  select: { caption: "Operator selected", notes: [[660, 0.06]] },
   move: { caption: "Move order acknowledged", notes: [[440, 0.05], [550, 0.07]] },
   pulse: { caption: "Disabling pulse fired", notes: [[880, 0.04], [330, 0.12]] },
   repair: { caption: "Repair kit applied", notes: [[392, 0.08], [523, 0.08], [659, 0.1]] },
@@ -468,7 +468,7 @@ export function createAudio({
     if (synth && now - (lastPlayed.get(cueName) ?? -Infinity) < synth.gap) return;
     lastPlayed.set(cueName, now);
     if (settings.captions && onCaption) onCaption(cue.caption);
-    // FreeSynd's voices ("agent selected", "put down your weapon", mission completed or failed), read aloud by the browser's own
+    // Voices ("put down your weapon", mission completed or failed), read aloud by the browser's own
     // speech if there is any, quietly, and never over itself.
     if (cue.say && settings.spoken && !silent && speech && Utterance) {
       const spokenAt = Date.now() / 1000;

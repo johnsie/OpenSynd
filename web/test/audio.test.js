@@ -147,9 +147,14 @@ test("spoken cues are read aloud only when allowed, quietly, and never twice in 
   const talker = make(base);
   talker.play("complete");
   talker.play("failed");
+  talker.play("police-warning");
+  talker.play("police-warning");
   talker.play("select");
-  talker.play("select");
-  assert.deepEqual(said, [["Mission completed", 0.6], ["Mission failed", 0.6], ["Agent selected", 0.6]], "the second select is too soon");
+  assert.deepEqual(
+    said,
+    [["Mission completed", 0.6], ["Mission failed", 0.6], ["Put down your weapon", 0.6]],
+    "the second warning is too soon, and selecting an agent says nothing",
+  );
   make({ ...base, spoken: false }).play("complete");
   make({ ...base, muted: true }).play("complete");
   make({ ...base, volume: 0 }).play("complete");

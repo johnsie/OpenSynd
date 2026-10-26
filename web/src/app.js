@@ -5150,6 +5150,15 @@ if (new URLSearchParams(location.search).has("e2e")) {
       const step = state.tutorial ? currentStep(state.tutorial) : null;
       return { running: Boolean(state.tutorial), step: step?.id ?? null, finished: Boolean(state.tutorial?.finished) };
     },
+    // Let game time pass without waiting for it (the same steps the frames take, 0.05 s at a time).
+    fastForward(seconds) {
+      for (let passed = 0; passed < seconds; passed += 0.05) update(0.05);
+    },
+    holdStill(id) {
+      const unit = state.units.find((item) => item.id === id);
+      unit.vehicle.route = null; // a driven car with nowhere to go stays where it is
+      unit.path = [];
+    },
     selectWeapon(id) {
       const unit = state.units.find((item) => item.id === id);
       raiseWeapon(unit, unit.equipment.findIndex((item) => item.definition.action === "disable-pulse"));
