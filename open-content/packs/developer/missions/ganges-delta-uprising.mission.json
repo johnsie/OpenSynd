@@ -1,0 +1,930 @@
+{
+ "formatVersion": 1,
+ "id": "developer.op-ganges-delta-uprising",
+ "name": "Ganges Delta Defection Uprising",
+ "license": "CC0-1.0",
+ "map": "maps/ganges-delta.map.json",
+ "team": [
+  {
+   "id": "operator-one",
+   "unit": "units/field-operator.unit.json",
+   "position": {
+    "x": 2,
+    "y": 56
+   },
+   "equipment": [
+    "equipment/civic-pulse-emitter.equipment.json",
+    "equipment/field-repair-kit.equipment.json",
+    "equipment/persuader.equipment.json"
+   ]
+  },
+  {
+   "id": "operator-two",
+   "unit": "units/field-operator.unit.json",
+   "position": {
+    "x": 3,
+    "y": 56
+   },
+   "equipment": [
+    "equipment/civic-pulse-emitter.equipment.json",
+    "equipment/field-repair-kit.equipment.json"
+   ]
+  },
+  {
+   "id": "operator-three",
+   "unit": "units/field-operator.unit.json",
+   "position": {
+    "x": 2,
+    "y": 57
+   },
+   "equipment": [
+    "equipment/civic-pulse-emitter.equipment.json",
+    "equipment/field-repair-kit.equipment.json"
+   ]
+  },
+  {
+   "id": "operator-four",
+   "unit": "units/field-operator.unit.json",
+   "position": {
+    "x": 3,
+    "y": 57
+   },
+   "equipment": [
+    "equipment/civic-pulse-emitter.equipment.json",
+    "equipment/field-repair-kit.equipment.json"
+   ]
+  }
+ ],
+ "opponents": [
+  {
+   "id": "enemy-agent-one",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 109,
+    "y": 90
+   },
+   "equipment": [
+    "equipment/scatter-emitter.equipment.json"
+   ],
+   "patrol": [
+    {
+     "x": 109,
+     "y": 90
+    },
+    {
+     "x": 109,
+     "y": 98
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-two",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 74,
+    "y": 109
+   },
+   "equipment": [
+    "equipment/field-repair-kit.equipment.json"
+   ],
+   "patrol": [
+    {
+     "x": 74,
+     "y": 109
+    },
+    {
+     "x": 74,
+     "y": 103
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-three",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 11,
+    "y": 73
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 11,
+     "y": 73
+    },
+    {
+     "x": 11,
+     "y": 78
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-four",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 98,
+    "y": 33
+   },
+   "equipment": [
+    "equipment/delay-charge.equipment.json"
+   ],
+   "patrol": [
+    {
+     "x": 98,
+     "y": 33
+    },
+    {
+     "x": 98,
+     "y": 39
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-five",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 96,
+    "y": 64
+   },
+   "equipment": [
+    "equipment/scatter-emitter.equipment.json",
+    "equipment/field-repair-kit.equipment.json"
+   ],
+   "patrol": [
+    {
+     "x": 96,
+     "y": 64
+    },
+    {
+     "x": 88,
+     "y": 64
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-six",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 37,
+    "y": 28
+   },
+   "equipment": [
+    "equipment/scatter-emitter.equipment.json"
+   ],
+   "patrol": [
+    {
+     "x": 37,
+     "y": 28
+    },
+    {
+     "x": 44,
+     "y": 28
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-seven",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 103,
+    "y": 35
+   },
+   "equipment": [
+    "equipment/scatter-emitter.equipment.json"
+   ],
+   "patrol": [
+    {
+     "x": 103,
+     "y": 35
+    },
+    {
+     "x": 103,
+     "y": 29
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-eight",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 109,
+    "y": 29
+   },
+   "equipment": [
+    "equipment/delay-charge.equipment.json"
+   ],
+   "patrol": [
+    {
+     "x": 109,
+     "y": 29
+    },
+    {
+     "x": 103,
+     "y": 29
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-nine",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 30,
+    "y": 36
+   },
+   "equipment": [
+    "equipment/scatter-emitter.equipment.json",
+    "equipment/field-repair-kit.equipment.json"
+   ],
+   "patrol": [
+    {
+     "x": 30,
+     "y": 36
+    },
+    {
+     "x": 26,
+     "y": 36
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-ten",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 29,
+    "y": 43
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 29,
+     "y": 43
+    },
+    {
+     "x": 29,
+     "y": 50
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-eleven",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 111,
+    "y": 17
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 111,
+     "y": 17
+    },
+    {
+     "x": 111,
+     "y": 23
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-twelve",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 57,
+    "y": 29
+   },
+   "equipment": [
+    "equipment/scatter-emitter.equipment.json",
+    "equipment/delay-charge.equipment.json"
+   ],
+   "patrol": [
+    {
+     "x": 57,
+     "y": 29
+    },
+    {
+     "x": 63,
+     "y": 29
+    }
+   ]
+  },
+  {
+   "id": "guard-1",
+   "unit": "units/guard.unit.json",
+   "position": {
+    "x": 28,
+    "y": 97
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 28,
+     "y": 97
+    },
+    {
+     "x": 32,
+     "y": 97
+    }
+   ]
+  },
+  {
+   "id": "guard-2",
+   "unit": "units/guard.unit.json",
+   "position": {
+    "x": 29,
+    "y": 111
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 29,
+     "y": 111
+    },
+    {
+     "x": 40,
+     "y": 111
+    }
+   ]
+  },
+  {
+   "id": "guard-3",
+   "unit": "units/guard.unit.json",
+   "position": {
+    "x": 100,
+    "y": 75
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 100,
+     "y": 75
+    },
+    {
+     "x": 109,
+     "y": 75
+    }
+   ]
+  },
+  {
+   "id": "guard-4",
+   "unit": "units/guard.unit.json",
+   "position": {
+    "x": 28,
+    "y": 84
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 28,
+     "y": 84
+    },
+    {
+     "x": 25,
+     "y": 84
+    }
+   ]
+  },
+  {
+   "id": "guard-5",
+   "unit": "units/guard.unit.json",
+   "position": {
+    "x": 76,
+    "y": 2
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 76,
+     "y": 2
+    },
+    {
+     "x": 76,
+     "y": 14
+    }
+   ]
+  },
+  {
+   "id": "minder-1",
+   "unit": "units/guard.unit.json",
+   "position": {
+    "x": 44,
+    "y": 29
+   },
+   "equipment": []
+  },
+  {
+   "id": "minder-2",
+   "unit": "units/guard.unit.json",
+   "position": {
+    "x": 55,
+    "y": 27
+   },
+   "equipment": []
+  }
+ ],
+ "objectives": [
+  {
+   "id": "put-down-ringleaders",
+   "type": "eliminate",
+   "targets": [
+    "enemy-agent-one",
+    "enemy-agent-two",
+    "enemy-agent-three",
+    "enemy-agent-four"
+   ],
+   "required": true,
+   "description": "Put down the 4 ringleaders."
+  },
+  {
+   "id": "fall-back",
+   "type": "extract",
+   "targetZone": "fall-back-area",
+   "required": true,
+   "description": "Fall back to the marked landing area with the whole team."
+  }
+ ],
+ "bystanders": [
+  {
+   "id": "defector",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 49,
+    "y": 31
+   },
+   "equipment": []
+  },
+  {
+   "id": "civilian-1",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 98,
+    "y": 20
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 98,
+     "y": 20
+    },
+    {
+     "x": 98,
+     "y": 6
+    }
+   ]
+  },
+  {
+   "id": "civilian-2",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 75,
+    "y": 37
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 75,
+     "y": 37
+    },
+    {
+     "x": 75,
+     "y": 45
+    }
+   ]
+  },
+  {
+   "id": "civilian-3",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 95,
+    "y": 75
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 95,
+     "y": 75
+    },
+    {
+     "x": 95,
+     "y": 78
+    }
+   ]
+  },
+  {
+   "id": "civilian-4",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 50,
+    "y": 78
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 50,
+     "y": 78
+    },
+    {
+     "x": 59,
+     "y": 78
+    }
+   ]
+  },
+  {
+   "id": "civilian-5",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 26,
+    "y": 20
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 26,
+     "y": 20
+    },
+    {
+     "x": 29,
+     "y": 20
+    }
+   ]
+  },
+  {
+   "id": "civilian-6",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 66,
+    "y": 53
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 66,
+     "y": 53
+    },
+    {
+     "x": 66,
+     "y": 49
+    }
+   ]
+  },
+  {
+   "id": "civilian-7",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 77,
+    "y": 82
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 77,
+     "y": 82
+    },
+    {
+     "x": 77,
+     "y": 96
+    }
+   ]
+  },
+  {
+   "id": "civilian-8",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 45,
+    "y": 74
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 45,
+     "y": 74
+    },
+    {
+     "x": 51,
+     "y": 74
+    }
+   ]
+  },
+  {
+   "id": "civilian-9",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 53,
+    "y": 16
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 53,
+     "y": 16
+    },
+    {
+     "x": 59,
+     "y": 16
+    }
+   ]
+  },
+  {
+   "id": "civilian-10",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 26,
+    "y": 109
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 26,
+     "y": 109
+    },
+    {
+     "x": 32,
+     "y": 109
+    }
+   ]
+  },
+  {
+   "id": "police-1",
+   "unit": "units/city-police.unit.json",
+   "position": {
+    "x": 101,
+    "y": 101
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 101,
+     "y": 101
+    },
+    {
+     "x": 93,
+     "y": 101
+    }
+   ]
+  },
+  {
+   "id": "police-2",
+   "unit": "units/city-police.unit.json",
+   "position": {
+    "x": 76,
+    "y": 102
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 76,
+     "y": 102
+    },
+    {
+     "x": 68,
+     "y": 102
+    }
+   ]
+  },
+  {
+   "id": "police-3",
+   "unit": "units/city-police.unit.json",
+   "position": {
+    "x": 61,
+    "y": 75
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 61,
+     "y": 75
+    },
+    {
+     "x": 53,
+     "y": 75
+    }
+   ]
+  },
+  {
+   "id": "criminal-1",
+   "unit": "units/criminal.unit.json",
+   "position": {
+    "x": 28,
+    "y": 77
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 28,
+     "y": 77
+    },
+    {
+     "x": 28,
+     "y": 66
+    }
+   ]
+  },
+  {
+   "id": "criminal-2",
+   "unit": "units/criminal.unit.json",
+   "position": {
+    "x": 45,
+    "y": 107
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 45,
+     "y": 107
+    },
+    {
+     "x": 52,
+     "y": 107
+    }
+   ]
+  },
+  {
+   "id": "criminal-3",
+   "unit": "units/criminal.unit.json",
+   "position": {
+    "x": 52,
+    "y": 90
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 52,
+     "y": 90
+    },
+    {
+     "x": 49,
+     "y": 90
+    }
+   ]
+  }
+ ],
+ "region": {
+  "name": "Ganges Delta",
+  "lon": 90,
+  "lat": 24,
+  "population": 5500000
+ },
+ "vehicles": [
+  {
+   "id": "city-car-1",
+   "vehicle": "vehicles/city-car.vehicle.json",
+   "position": {
+    "x": 2,
+    "y": 98
+   },
+   "driver": "units/civilian-man.unit.json",
+   "patrol": [
+    {
+     "x": 2,
+     "y": 98
+    },
+    {
+     "x": 109,
+     "y": 98
+    }
+   ]
+  },
+  {
+   "id": "city-car-2",
+   "vehicle": "vehicles/city-car.vehicle.json",
+   "position": {
+    "x": 15,
+    "y": 76
+   },
+   "driver": "units/civilian-woman.unit.json",
+   "patrol": [
+    {
+     "x": 15,
+     "y": 76
+    },
+    {
+     "x": 109,
+     "y": 76
+    }
+   ]
+  },
+  {
+   "id": "city-car-3",
+   "vehicle": "vehicles/city-car.vehicle.json",
+   "position": {
+    "x": 2,
+    "y": 101
+   },
+   "driver": "units/civilian-man.unit.json",
+   "patrol": [
+    {
+     "x": 2,
+     "y": 101
+    },
+    {
+     "x": 109,
+     "y": 101
+    }
+   ]
+  },
+  {
+   "id": "city-car-4",
+   "vehicle": "vehicles/city-car.vehicle.json",
+   "position": {
+    "x": 2,
+    "y": 53
+   },
+   "driver": "units/civilian-woman.unit.json",
+   "patrol": [
+    {
+     "x": 2,
+     "y": 53
+    },
+    {
+     "x": 33,
+     "y": 53
+    }
+   ]
+  },
+  {
+   "id": "city-car-5",
+   "vehicle": "vehicles/patrol-car.vehicle.json",
+   "position": {
+    "x": 2,
+    "y": 28
+   },
+   "driver": "units/civilian-man.unit.json",
+   "patrol": [
+    {
+     "x": 2,
+     "y": 28
+    },
+    {
+     "x": 109,
+     "y": 28
+    }
+   ]
+  },
+  {
+   "id": "city-car-6",
+   "vehicle": "vehicles/armored-car.vehicle.json",
+   "position": {
+    "x": 2,
+    "y": 50
+   },
+   "driver": "units/civilian-woman.unit.json",
+   "patrol": [
+    {
+     "x": 2,
+     "y": 50
+    },
+    {
+     "x": 83,
+     "y": 50
+    }
+   ]
+  },
+  {
+   "id": "freight-train-1",
+   "vehicle": "vehicles/freight-train.vehicle.json",
+   "position": {
+    "x": 12,
+    "y": 2
+   },
+   "stops": [
+    {
+     "x": 12,
+     "y": 2,
+     "wait": 0
+    },
+    {
+     "x": 64,
+     "y": 2,
+     "wait": 8
+    },
+    {
+     "x": 109,
+     "y": 2,
+     "wait": 6
+    }
+   ]
+  }
+ ],
+ "variant": "uprising",
+ "territory": "developer.op-ganges-delta",
+ "title": "The district has risen",
+ "briefing": "Ganges Delta has risen against you and pays nothing until order is restored. Put down the 4 ringleaders and fall back to the landing area. The crowds will go home once they fall.",
+ "story": "Ganges Delta Uprising: taxes too high for too long, and the streets belong to the ringleaders. End it.",
+ "debrief": {
+  "success": "The ringleaders are down and Ganges Delta goes home. The district is yours again and pays tax once more.",
+  "failure": "The team is lost and Ganges Delta stays in revolt. It pays nothing until it is taken back."
+ },
+ "zones": [
+  {
+   "id": "fall-back-area",
+   "kind": "exit",
+   "position": {
+    "x": 0,
+    "y": 54
+   },
+   "width": 4,
+   "height": 4
+  }
+ ],
+ "intel": [
+  "Patrol survey: the rising is led by 4 agents, spread through the district.",
+  "Full survey: only the ringleaders count; everyone else will fight if you come near."
+ ]
+}

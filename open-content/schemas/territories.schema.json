@@ -69,6 +69,16 @@
           "type": "string",
           "pattern": "\\.json$",
           "description": "Path of its main mission, relative to the pack. Territories without one are still to be built."
+        },
+        "uprising": {
+          "type": "string",
+          "pattern": "\\.json$",
+          "description": "Path of the operation played to take the territory back when it is in revolt."
+        },
+        "defence": {
+          "type": "string",
+          "pattern": "\\.json$",
+          "description": "Path of the operation played to keep the territory when a rival company moves to take it over."
         }
       }
     }

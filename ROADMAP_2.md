@@ -128,9 +128,10 @@ notoriety changes by the stated amounts for kills, witnessed shootings and clean
 
 Fifty operations in an order you choose are good; a story and a rival give it pull.
 
-**E1. A rival company that fights back (L, new).** The territories you hold can be attacked. A held district can be lost if you
-neglect it (low mood, no defence), and winning it back is an operation. The existing revolt rule is the seed. *Test:* a seeded
-campaign loses a territory on the stated trigger and offers the recapture operation.
+**E1. A rival company that fights back (L, new). Done: every territory has three operations.** Its main one to take it; an
+uprising, played when it falls into revolt; and a defence, played when a rival company moves to take it over (a deadline of a few
+game days; miss it and the rival has it). *Test:* a seeded campaign starts and loses takeover attempts on the stated rules, and
+all 100 extra operations are checked as playable.
 
 **E2. Research with consequences (M, *check FreeSynd*).** Finished research can be *stolen* or *leaked*: enemies you meet start
 to carry what you have unlocked (this already exists in part). Add the reverse: capturing their gear speeds up the matching

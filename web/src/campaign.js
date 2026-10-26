@@ -8,6 +8,8 @@ import {
   MAX_ACTIVE_RESEARCH,
   RESEARCH_LEVELS,
   advanceTerritoryDay,
+  TAKEOVER_MAX_AT_ONCE,
+  defendTerritory,
   holdTerritory,
   missingRequirements,
   newTerritory,
@@ -394,11 +396,20 @@ export function winTerritory(campaign, id) {
   return next === territory ? campaign : { ...campaign, territories: { ...campaign.territories, [id]: next } };
 }
 
+// Seeing off a rival company's takeover attempt on a territory.
+export function defendInCampaign(campaign, id) {
+  const territory = campaign.territories[id];
+  if (!territory) return campaign;
+  const next = defendTerritory(territory);
+  return next === territory ? campaign : { ...campaign, territories: { ...campaign.territories, [id]: next } };
+}
+
 export const dayOf = (campaign) => Math.floor(campaign.hours / HOURS_PER_DAY);
 
 /**
  * Game hours pass. Each hour moves research along (paid from funds); each day collects tax and moves population and
- * mood. Returns the new campaign and what happened: { type: "researched" | "day" | "revolt", ... }.
+ * mood. Returns the new campaign and what happened:
+ * { type: "researched" | "day" | "revolt" | "takeover" | "takeover-lost", ... }.
  */
 export function advanceCampaign(campaign, hours, catalog) {
   let next = campaign;
@@ -419,11 +430,19 @@ export function advanceCampaign(campaign, hours, catalog) {
       const day = hour / HOURS_PER_DAY;
       let income = 0;
       territories = { ...territories };
+      let threats = Object.values(territories).filter((territory) => territory.threat).length;
       for (const [id, territory] of Object.entries(territories)) {
-        const result = advanceTerritoryDay(territory, day);
+        const result = advanceTerritoryDay(territory, day, threats < TAKEOVER_MAX_AT_ONCE);
         territories[id] = result.territory;
         income += result.income;
         if (territory.status !== "rebel" && result.territory.status === "rebel") events.push({ type: "revolt", id });
+        if (result.event === "takeover") {
+          threats += 1;
+          events.push({ type: "takeover", id, until: result.territory.threat.until });
+        } else if (result.event === "takeover-lost") {
+          threats -= 1;
+          events.push({ type: "takeover-lost", id });
+        }
       }
       funds = Math.round((funds + income) * 100) / 100;
       events.push({ type: "day", day, income: Math.round(income * 100) / 100 });

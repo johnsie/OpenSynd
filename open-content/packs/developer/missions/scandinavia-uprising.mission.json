@@ -1,0 +1,675 @@
+{
+ "formatVersion": 1,
+ "id": "developer.op-scandinavia-uprising",
+ "name": "Scandinavia Purge Uprising",
+ "license": "CC0-1.0",
+ "map": "maps/scandinavia.map.json",
+ "team": [
+  {
+   "id": "operator-one",
+   "unit": "units/field-operator.unit.json",
+   "position": {
+    "x": 2,
+    "y": 48
+   },
+   "equipment": [
+    "equipment/civic-pulse-emitter.equipment.json",
+    "equipment/field-repair-kit.equipment.json"
+   ]
+  },
+  {
+   "id": "operator-two",
+   "unit": "units/field-operator.unit.json",
+   "position": {
+    "x": 3,
+    "y": 48
+   },
+   "equipment": [
+    "equipment/civic-pulse-emitter.equipment.json",
+    "equipment/field-repair-kit.equipment.json"
+   ]
+  },
+  {
+   "id": "operator-three",
+   "unit": "units/field-operator.unit.json",
+   "position": {
+    "x": 2,
+    "y": 49
+   },
+   "equipment": [
+    "equipment/civic-pulse-emitter.equipment.json",
+    "equipment/field-repair-kit.equipment.json"
+   ]
+  },
+  {
+   "id": "operator-four",
+   "unit": "units/field-operator.unit.json",
+   "position": {
+    "x": 3,
+    "y": 49
+   },
+   "equipment": [
+    "equipment/civic-pulse-emitter.equipment.json",
+    "equipment/field-repair-kit.equipment.json"
+   ]
+  }
+ ],
+ "opponents": [
+  {
+   "id": "enemy-agent-one",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 46,
+    "y": 61
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 46,
+     "y": 61
+    },
+    {
+     "x": 46,
+     "y": 54
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-two",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 91,
+    "y": 82
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 91,
+     "y": 82
+    },
+    {
+     "x": 91,
+     "y": 90
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-three",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 49,
+    "y": 65
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 49,
+     "y": 65
+    },
+    {
+     "x": 45,
+     "y": 65
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-four",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 82,
+    "y": 93
+   },
+   "equipment": [
+    "equipment/field-repair-kit.equipment.json"
+   ],
+   "patrol": [
+    {
+     "x": 82,
+     "y": 93
+    },
+    {
+     "x": 89,
+     "y": 93
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-five",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 71,
+    "y": 60
+   },
+   "equipment": [
+    "equipment/field-repair-kit.equipment.json"
+   ],
+   "patrol": [
+    {
+     "x": 71,
+     "y": 60
+    },
+    {
+     "x": 71,
+     "y": 53
+    }
+   ]
+  },
+  {
+   "id": "guard-1",
+   "unit": "units/guard.unit.json",
+   "position": {
+    "x": 30,
+    "y": 90
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 30,
+     "y": 90
+    },
+    {
+     "x": 41,
+     "y": 90
+    }
+   ]
+  },
+  {
+   "id": "guard-2",
+   "unit": "units/guard.unit.json",
+   "position": {
+    "x": 53,
+    "y": 69
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 53,
+     "y": 69
+    },
+    {
+     "x": 53,
+     "y": 72
+    }
+   ]
+  }
+ ],
+ "objectives": [
+  {
+   "id": "put-down-ringleaders",
+   "type": "eliminate",
+   "targets": [
+    "enemy-agent-one",
+    "enemy-agent-two",
+    "enemy-agent-three"
+   ],
+   "required": true,
+   "description": "Put down the 3 ringleaders."
+  },
+  {
+   "id": "fall-back",
+   "type": "extract",
+   "targetZone": "fall-back-area",
+   "required": true,
+   "description": "Fall back to the marked landing area with the whole team."
+  }
+ ],
+ "bystanders": [
+  {
+   "id": "civilian-1",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 48,
+    "y": 31
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 48,
+     "y": 31
+    },
+    {
+     "x": 45,
+     "y": 31
+    }
+   ]
+  },
+  {
+   "id": "civilian-2",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 1,
+    "y": 68
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 1,
+     "y": 68
+    },
+    {
+     "x": 1,
+     "y": 59
+    }
+   ]
+  },
+  {
+   "id": "civilian-3",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 52,
+    "y": 24
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 52,
+     "y": 24
+    },
+    {
+     "x": 52,
+     "y": 28
+    }
+   ]
+  },
+  {
+   "id": "civilian-4",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 69,
+    "y": 55
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 69,
+     "y": 55
+    },
+    {
+     "x": 69,
+     "y": 63
+    }
+   ]
+  },
+  {
+   "id": "civilian-5",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 20,
+    "y": 48
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 20,
+     "y": 48
+    },
+    {
+     "x": 33,
+     "y": 48
+    }
+   ]
+  },
+  {
+   "id": "civilian-6",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 7,
+    "y": 26
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 7,
+     "y": 26
+    },
+    {
+     "x": 16,
+     "y": 26
+    }
+   ]
+  },
+  {
+   "id": "civilian-7",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 70,
+    "y": 82
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 70,
+     "y": 82
+    },
+    {
+     "x": 67,
+     "y": 82
+    }
+   ]
+  },
+  {
+   "id": "civilian-8",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 33,
+    "y": 69
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 33,
+     "y": 69
+    },
+    {
+     "x": 44,
+     "y": 69
+    }
+   ]
+  },
+  {
+   "id": "civilian-9",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 78,
+    "y": 47
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 78,
+     "y": 47
+    },
+    {
+     "x": 78,
+     "y": 37
+    }
+   ]
+  },
+  {
+   "id": "civilian-10",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 36,
+    "y": 46
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 36,
+     "y": 46
+    },
+    {
+     "x": 36,
+     "y": 49
+    }
+   ]
+  },
+  {
+   "id": "police-1",
+   "unit": "units/city-police.unit.json",
+   "position": {
+    "x": 24,
+    "y": 30
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 24,
+     "y": 30
+    },
+    {
+     "x": 24,
+     "y": 39
+    }
+   ]
+  },
+  {
+   "id": "police-2",
+   "unit": "units/city-police.unit.json",
+   "position": {
+    "x": 91,
+    "y": 14
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 91,
+     "y": 14
+    },
+    {
+     "x": 81,
+     "y": 14
+    }
+   ]
+  },
+  {
+   "id": "police-3",
+   "unit": "units/city-police.unit.json",
+   "position": {
+    "x": 49,
+    "y": 80
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 49,
+     "y": 80
+    },
+    {
+     "x": 58,
+     "y": 80
+    }
+   ]
+  },
+  {
+   "id": "criminal-1",
+   "unit": "units/criminal.unit.json",
+   "position": {
+    "x": 38,
+    "y": 24
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 38,
+     "y": 24
+    },
+    {
+     "x": 38,
+     "y": 28
+    }
+   ]
+  },
+  {
+   "id": "criminal-2",
+   "unit": "units/criminal.unit.json",
+   "position": {
+    "x": 94,
+    "y": 15
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 94,
+     "y": 15
+    },
+    {
+     "x": 86,
+     "y": 15
+    }
+   ]
+  },
+  {
+   "id": "criminal-3",
+   "unit": "units/criminal.unit.json",
+   "position": {
+    "x": 56,
+    "y": 45
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 56,
+     "y": 45
+    },
+    {
+     "x": 65,
+     "y": 45
+    }
+   ]
+  }
+ ],
+ "region": {
+  "name": "Scandinavia",
+  "lon": 15,
+  "lat": 62,
+  "population": 2700000
+ },
+ "vehicles": [
+  {
+   "id": "city-car-1",
+   "vehicle": "vehicles/city-car.vehicle.json",
+   "position": {
+    "x": 74,
+    "y": 69
+   },
+   "driver": "units/civilian-man.unit.json",
+   "patrol": [
+    {
+     "x": 74,
+     "y": 69
+    },
+    {
+     "x": 93,
+     "y": 69
+    }
+   ]
+  },
+  {
+   "id": "city-car-2",
+   "vehicle": "vehicles/city-car.vehicle.json",
+   "position": {
+    "x": 2,
+    "y": 49
+   },
+   "driver": "units/civilian-woman.unit.json",
+   "patrol": [
+    {
+     "x": 2,
+     "y": 49
+    },
+    {
+     "x": 79,
+     "y": 49
+    }
+   ]
+  },
+  {
+   "id": "city-car-3",
+   "vehicle": "vehicles/city-car.vehicle.json",
+   "position": {
+    "x": 2,
+    "y": 91
+   },
+   "driver": "units/civilian-man.unit.json",
+   "patrol": [
+    {
+     "x": 2,
+     "y": 91
+    },
+    {
+     "x": 93,
+     "y": 91
+    }
+   ]
+  },
+  {
+   "id": "city-car-4",
+   "vehicle": "vehicles/city-car.vehicle.json",
+   "position": {
+    "x": 2,
+    "y": 71
+   },
+   "driver": "units/civilian-woman.unit.json",
+   "patrol": [
+    {
+     "x": 2,
+     "y": 71
+    },
+    {
+     "x": 93,
+     "y": 71
+    }
+   ]
+  },
+  {
+   "id": "city-car-5",
+   "vehicle": "vehicles/patrol-car.vehicle.json",
+   "position": {
+    "x": 2,
+    "y": 48
+   },
+   "driver": "units/civilian-man.unit.json",
+   "patrol": [
+    {
+     "x": 2,
+     "y": 48
+    },
+    {
+     "x": 79,
+     "y": 48
+    }
+   ]
+  },
+  {
+   "id": "freight-train-1",
+   "vehicle": "vehicles/freight-train.vehicle.json",
+   "position": {
+    "x": 12,
+    "y": 2
+   },
+   "stops": [
+    {
+     "x": 12,
+     "y": 2,
+     "wait": 0
+    },
+    {
+     "x": 59,
+     "y": 2,
+     "wait": 8
+    },
+    {
+     "x": 78,
+     "y": 2,
+     "wait": 6
+    }
+   ]
+  }
+ ],
+ "variant": "uprising",
+ "territory": "developer.op-scandinavia",
+ "title": "The district has risen",
+ "briefing": "Scandinavia has risen against you and pays nothing until order is restored. Put down the 3 ringleaders and fall back to the landing area. The crowds will go home once they fall.",
+ "story": "Scandinavia Uprising: taxes too high for too long, and the streets belong to the ringleaders. End it.",
+ "debrief": {
+  "success": "The ringleaders are down and Scandinavia goes home. The district is yours again and pays tax once more.",
+  "failure": "The team is lost and Scandinavia stays in revolt. It pays nothing until it is taken back."
+ },
+ "zones": [
+  {
+   "id": "fall-back-area",
+   "kind": "exit",
+   "position": {
+    "x": 0,
+    "y": 46
+   },
+   "width": 4,
+   "height": 4
+  }
+ ],
+ "intel": [
+  "Patrol survey: the rising is led by 3 agents, spread through the district.",
+  "Full survey: only the ringleaders count; everyone else will fight if you come near."
+ ]
+}

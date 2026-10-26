@@ -593,3 +593,40 @@ test("the company name is cleaned, limited, and survives saving", async () => {
   assert.equal(setCompany(named, "  ").company, "Grey Harbour", "an empty name changes nothing");
   assert.equal(parseCampaign('{"company": 7}').company, "", "damaged names fall back");
 });
+
+test("rival companies move on held territories, at most two at once, and an unanswered attempt costs the territory", async () => {
+  const { advanceCampaign, defendInCampaign, emptyCampaign } = await import("../src/campaign.js");
+  const { TAKEOVER_DAYS, newTerritory } = await import("../src/strategy.js");
+  const territories = {};
+  for (let index = 0; index < 12; index += 1) territories[`t${index}`] = { ...newTerritory(`t${index}`), status: "finished" };
+  let campaign = { ...emptyCampaign(), territories };
+  const seen = [];
+  let atOnce = 0;
+  for (let day = 1; day <= 120; day += 1) {
+    const step = advanceCampaign(campaign, 24, []);
+    campaign = step.campaign;
+    seen.push(...step.events.filter((event) => event.type.startsWith("takeover")));
+    atOnce = Math.max(atOnce, Object.values(campaign.territories).filter((territory) => territory.threat).length);
+    if (day % 8 === 0) {
+      // The player keeps the territories contented, as a real campaign would, so only takeovers move them.
+      const calmed = (territory) => (territory.status === "rebel" ? { ...territory, status: "finished" } : territory);
+      campaign = {
+        ...campaign,
+        territories: Object.fromEntries(Object.entries(campaign.territories).map(([id, territory]) => [id, calmed(territory)])),
+      };
+    }
+  }
+  assert.ok(seen.some((event) => event.type === "takeover"), "attempts happen");
+  assert.ok(atOnce <= 2, `never more than two at once (saw ${atOnce})`);
+  const lost = seen.filter((event) => event.type === "takeover-lost");
+  assert.ok(lost.length > 0, "an unanswered attempt is lost");
+  for (const event of lost) assert.ok(seen.some((other) => other.type === "takeover" && other.id === event.id), "only after an attempt");
+  assert.ok(seen.find((event) => event.type === "takeover").until > 0);
+  assert.ok(TAKEOVER_DAYS > 1);
+
+  const threatened = { ...emptyCampaign(), territories: { a: { ...newTerritory("a"), status: "finished", threat: { until: 9 } } } };
+  assert.equal(defendInCampaign(threatened, "a").territories.a.threat, null);
+  assert.equal(defendInCampaign(threatened, "missing"), threatened);
+  const quiet = { ...emptyCampaign(), territories: { a: { ...newTerritory("a"), status: "finished" } } };
+  assert.equal(defendInCampaign(quiet, "a"), quiet);
+});

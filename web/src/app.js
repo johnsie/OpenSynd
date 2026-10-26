@@ -24,6 +24,7 @@ import { createOverlay, createTileSprites } from "./textures.js";
 import { renderWorldMap } from "./worldmap.js";
 import { continueNote, continueTarget } from "./menu.js";
 import { markerFor } from "./minimap.js";
+import { VARIANT_LABELS, operationPath, territoryAlert, variantFor } from "./operations.js";
 import { createTutorial, currentStep, observeTutorial, pointerFor, skipStep, tutorialProgress } from "./tutorial.js";
 import { DRUG_HINTS, DRUG_LABELS, DRUG_NAMES, adrenalineSpeed, advanceDrugs, drugMultiplier, newDrugs, setDrug } from "./drugs.js";
 import { advanceProps, damageProp, newProp, propsNear } from "./props.js";
@@ -135,6 +136,7 @@ import {
   removeUpgrade,
   upgradesOf,
   cleanCompanyName,
+  defendInCampaign,
   setCompany,
 } from "./campaign.js";
 import {
@@ -556,16 +558,35 @@ function startingEquipment(placement, definition, byPath, byId) {
     .slice(0, SLOTS_PER_OPERATIVE);
 }
 
-async function loadGame(index = state.missionIndex) {
+// `options.variant` forces which of the territory's operations to load ("uprising", "defence", or null for the main one); left out,
+// the territory's state decides (a revolt gets the uprising, a takeover attempt the defence).
+async function loadGame(index = state.missionIndex, options = {}) {
   await loadSprites();
   const pack = await readJson("content/pack.json");
   const tutorialRun = Boolean(state.tutorial); // the training operation sits outside the campaign's list
-  const missionPath = tutorialRun ? pack.tutorial : pack.missions[index];
+  if (pack.territories && !state.territories) state.territories = (await readJson(`content/${pack.territories}`)).territories;
+  let missionPath = tutorialRun ? pack.tutorial : pack.missions[index];
+  let variant = null;
+  state.territoryId = null;
+  if (!tutorialRun) {
+    const main = await readJson(`content/${missionPath}`);
+    state.territoryId = main.id;
+    const known = state.campaignLoaded ? state.campaign : parseCampaign(readStored(CAMPAIGN_KEY));
+    const wanted = options.variant === undefined ? variantFor(known.territories[main.id]) : options.variant;
+    const path = operationPath(state.territories?.find((territory) => territory.mission === missionPath), wanted);
+    if (wanted && path) {
+      variant = wanted;
+      missionPath = path;
+    }
+  }
+  state.variant = variant;
   const rawMission = await readJson(`content/${missionPath}`);
   // The squad is chosen from the roster: its members take the mission's starting places in order.
   state.rawTeam = rawMission.team;
   const mission = { ...rawMission, team: squadTeam(rawMission.team) };
-  const map = await readJson(`content/${mission.map}`);
+  const baseMap = await readJson(`content/${mission.map}`);
+  // An operation may add zones of its own to its map's (the landing area an uprising or defence falls back to).
+  const map = mission.zones?.length ? { ...baseMap, zones: [...baseMap.zones, ...mission.zones] } : baseMap;
   const unitEntries = await Promise.all(
     pack.units.map(async (path) => [path, await readJson(`content/${path}`)]),
   );
@@ -779,6 +800,7 @@ async function loadGame(index = state.missionIndex) {
         return {
           id: entry.id,
           name: entry.name,
+          owner: state.territories?.find((territory) => territory.mission === path)?.owner ?? "A rival company",
           objectives: entry.objectives.length,
           enemies: entry.opponents.length,
           region: entry.region ?? null,
@@ -837,7 +859,8 @@ function syncGates() {
 // Show the loaded mission's name and story wherever the page mentions it.
 function describeMission(mission, map, index) {
   const number = String(index + 1).padStart(2, "0");
-  document.querySelector("#operation-eyebrow").textContent = state.tutorial ? "TRAINING" : `OPERATION ${number}`;
+  const kind = state.variant ? ` · ${VARIANT_LABELS[state.variant]}` : "";
+  document.querySelector("#operation-eyebrow").textContent = state.tutorial ? "TRAINING" : `OPERATION ${number}${kind}`;
   document.querySelector("#operation-title").textContent = mission.name;
   document.querySelector("#brief-title").textContent = mission.name;
   document.querySelector("#title-heading").textContent = `OpenSynd: ${mission.name}`;
@@ -1351,9 +1374,13 @@ function renderTerritoryPanel() {
   const people = `${(territory.population / 1_000_000).toFixed(2)} million people`;
   const held = territory.status === "finished";
   const revolt = territory.status === "rebel";
+  const alert = territoryAlert(territory, dayOf(state.campaign), entry.owner);
   const title = document.createElement("p");
-  title.textContent =
-    `${entry.name}: ${people} · ` + (revolt ? "IN REVOLT, take it back" : held ? "held" : "not yet taken");
+  title.textContent = `${entry.name}: ${people} · ` + (alert ? alert.label : held ? "held" : "not yet taken");
+  const alertLine = document.createElement("p");
+  alertLine.className = "mood bad";
+  alertLine.hidden = !alert;
+  alertLine.textContent = alert?.detail ?? "";
   const taxRow = document.createElement("div");
   taxRow.className = "tax-row";
   const lower = document.createElement("button");
@@ -1405,7 +1432,7 @@ function renderTerritoryPanel() {
   const lines = (entry.intel ?? [])
     .slice(0, level)
     .map((text) => Object.assign(document.createElement("p"), { textContent: text }));
-  panel.replaceChildren(title, taxRow, mood, survey, ...lines);
+  panel.replaceChildren(title, ...(alert ? [alertLine] : []), taxRow, mood, survey, ...lines);
 }
 
 function changeTax(id, tax) {
@@ -1423,6 +1450,11 @@ function renderMissionList() {
     territories: (state.territories ?? []).filter((territory) => !territory.mission),
     progress: state.progress,
     selectedIndex: state.missionIndex,
+    alerts: Object.fromEntries(
+      state.missionList
+        .map((entry) => [entry.id, territoryAlert(state.campaign.territories[entry.id], dayOf(state.campaign), entry.owner)])
+        .filter(([, alert]) => alert),
+    ),
     onSelect: chooseMission,
     onCard: (card) => {
       document.querySelector("#world-map-card").textContent = card
@@ -1448,8 +1480,8 @@ function renderMissionList() {
       name.textContent = `Operation ${String(index + 1).padStart(2, "0")} · ${entry.name}`;
       const status = document.createElement("span");
       status.className = "state";
-      const revolt = state.campaign.territories[entry.id]?.status === "rebel";
-      status.textContent = revolt ? "REVOLT" : done ? "COMPLETED" : unlocked ? "AVAILABLE" : "LOCKED";
+      const alert = territoryAlert(state.campaign.territories[entry.id], dayOf(state.campaign), entry.owner);
+      status.textContent = alert ? alert.label : done ? "COMPLETED" : unlocked ? "AVAILABLE" : "LOCKED";
       const note = document.createElement("small");
       note.textContent = unlocked
         ? `${entry.objectives} objectives · ${entry.enemies} enemy agents`
@@ -3668,7 +3700,18 @@ function passHours(hours) {
       audio.play("objective");
     } else if (event.type === "revolt") {
       const territory = state.missionList.find((entry) => entry.id === event.id);
-      setStatus(`${territory?.name ?? "A territory"} is in revolt. It pays no tax until you take it back.`);
+      setStatus(`${territory?.name ?? "A territory"} is in revolt. It pays no tax until you take it back: play its uprising.`);
+      audio.play("alert");
+    } else if (event.type === "takeover") {
+      const territory = state.missionList.find((entry) => entry.id === event.id);
+      setStatus(
+        `${territory?.owner ?? "A rival company"} is moving to take over ${territory?.name ?? "a territory"}. ` +
+          "Play its defence before the deadline or lose it.",
+      );
+      audio.play("alert");
+    } else if (event.type === "takeover-lost") {
+      const territory = state.missionList.find((entry) => entry.id === event.id);
+      setStatus(`${territory?.owner ?? "A rival company"} has taken ${territory?.name ?? "a territory"}. It must be taken again.`);
       audio.play("alert");
     }
   }
@@ -3753,12 +3796,19 @@ function checkOutcome() {
   );
   state.campaign = penalise(state.campaign, state.opStats.resupply);
   if (outcome === "success") {
-    state.progress = markCompleted(state.progress, state.mission.id);
-    saveProgress();
-    renderMissionList();
+    // Only a territory's main operation counts as an operation won; the uprising and the defence are about keeping the territory.
+    if (!state.variant) {
+      state.progress = markCompleted(state.progress, state.mission.id);
+      saveProgress();
+      renderMissionList();
+    }
     keepLoot();
     settleRoster();
-    state.campaign = winTerritory(state.campaign, state.mission.id);
+    state.campaign =
+      state.variant === "defence"
+        ? defendInCampaign(state.campaign, state.territoryId)
+        : winTerritory(state.campaign, state.territoryId);
+    if (state.variant) renderMissionList();
   }
   persistCampaign();
   showOutcome(outcome);
@@ -4781,7 +4831,7 @@ window.addEventListener("keydown", (event) => {
 resetButton.addEventListener("click", async () => {
   if (operationInProgress() && !(await confirmLeave("Resetting restarts this operation from the beginning."))) return;
   clearAutosave();
-  loadGame(state.missionIndex).catch(showFatalError);
+  loadGame(state.missionIndex, { variant: state.variant }).catch(showFatalError); // the same operation from the start
 });
 for (const button of document.querySelectorAll("[data-cursor-x]")) {
   button.addEventListener("click", () => {
@@ -4841,11 +4891,20 @@ for (const dialog of [titleDialog, outcomeDialog]) {
     canvas.focus();
   });
 }
-document.querySelector("#operations-button").addEventListener("click", () => {
+// The map shows the operation the chosen territory needs now: if it has fallen into revolt or come under attack since it was loaded
+// (the clock runs during operations), load the one it needs instead.
+async function refreshOperation() {
+  const entry = state.missionList[state.missionIndex];
+  if (state.tutorial || !entry || operationInProgress()) return;
+  if (variantFor(state.campaign.territories[entry.id]) !== (state.variant ?? null)) await loadGame(state.missionIndex);
+}
+
+document.querySelector("#operations-button").addEventListener("click", async () => {
   if (state.tutorial) {
     leaveTutorial().catch(showFatalError);
     return;
   }
+  await refreshOperation().catch(showFatalError);
   state.modal = true;
   titleDialog.showModal();
 });
@@ -5053,7 +5112,7 @@ function showMainMenu() {
   if (tutorialDone()) tutorialNote.textContent = "Done. Play the training again.";
   const target = currentContinueTarget();
   const saved = target === "operation" ? readAutosave() : null;
-  const entry = saved ? state.missionList?.find((item) => item.id === saved.missionId) : null;
+  const entry = saved ? state.missionList?.find((item) => item.id === (saved.territoryId ?? saved.missionId)) : null;
   const button = document.querySelector("#menu-continue");
   button.hidden = target === null;
   // One button per intention: nothing yet to continue means Start campaign; otherwise Continue and New campaign.
@@ -5068,7 +5127,8 @@ function showMainMenu() {
   (button.hidden ? document.querySelector("#menu-campaign") : button).focus();
 }
 
-function showCampaign() {
+async function showCampaign() {
+  await refreshOperation().catch(showFatalError);
   menuDialog.close();
   state.modal = true;
   if (!titleDialog.open) titleDialog.showModal();
@@ -5116,7 +5176,7 @@ document.querySelector("#resume-discard").addEventListener("click", () => {
 document.querySelector("#replay-button").addEventListener("click", () => {
   clearAutosave();
   outcomeDialog.close();
-  loadGame(state.missionIndex).catch(showFatalError);
+  loadGame(state.missionIndex, { variant: state.variant }).catch(showFatalError); // the same operation again
 });
 // The next operation along that is open: the first after this one that has been unlocked and is not yet won.
 function nextOperation() {
@@ -5887,7 +5947,13 @@ const AUTOSAVE_SECONDS = 10;
 function writeAutosave() {
   if (!operationActive()) return;
   try {
-    const saved = { missionId: state.mission.id, savedAt: Date.now(), snapshot: createSaveSnapshot(state) };
+    const saved = {
+      missionId: state.mission.id,
+      territoryId: state.territoryId,
+      variant: state.variant,
+      savedAt: Date.now(),
+      snapshot: createSaveSnapshot(state),
+    };
     localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(saved));
   } catch {
     // Storage may be full or blocked: the game goes on without it.
@@ -5914,9 +5980,9 @@ function clearAutosave() {
 // Set the operation up again and put everyone back as they were saved. Returns whether it worked.
 async function resumeAutosave() {
   const saved = readAutosave();
-  const index = saved ? state.missionList.findIndex((entry) => entry.id === saved.missionId) : -1;
+  const index = saved ? state.missionList.findIndex((entry) => entry.id === (saved.territoryId ?? saved.missionId)) : -1;
   if (!saved || index < 0) return false;
-  await loadGame(index);
+  await loadGame(index, { variant: saved.variant ?? null }); // the operation it was saved in, whatever the territory has become
   try {
     applySaveSnapshot(parseSaveSnapshot(JSON.stringify(saved.snapshot), saveContext()));
   } catch (error) {
@@ -5940,7 +6006,7 @@ async function offerResume() {
     // No session storage: just offer.
   }
   const saved = readAutosave();
-  const entry = saved ? state.missionList.find((item) => item.id === saved.missionId) : null;
+  const entry = saved ? state.missionList.find((item) => item.id === (saved.territoryId ?? saved.missionId)) : null;
   if (!saved || !entry) return;
   if (automatic && (await resumeAutosave())) return;
   const minutes = Math.max(0, Math.round((Date.now() - saved.savedAt) / 60000));

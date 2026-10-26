@@ -1023,3 +1023,9 @@ dialog.company-dialog[open] {
 }
 @keyframes tutorial-bounce { 50% { transform: translateY(-6px); } }
 @media (prefers-reduced-motion: reduce) { .tutorial-point::after { animation: none; } }
+
+.map-region.alert-revolt .map-region-shape { fill: rgba(255, 107, 98, 0.3); stroke: #ff6b62; }
+.map-region.alert-revolt .map-pin { fill: #ff6b62; }
+.map-region.alert-takeover .map-region-shape { fill: rgba(232, 107, 214, 0.28); stroke: #e86bd6; stroke-width: 2.6; }
+.map-region.alert-takeover .map-pin { fill: #e86bd6; }
+.map-region.alert-revolt .map-region-state, .map-region.alert-takeover .map-region-state { fill: #ffd7d3; }

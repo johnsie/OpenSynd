@@ -347,8 +347,26 @@ class Validation:
         if map_path not in maps:
             self.error(path, "mission map is not declared by its content pack")
             return
-        map_value, zones = maps[map_path]
+        map_value, map_zones = maps[map_path]
         dimensions = map_value["dimensions"]
+        # A mission may add zones of its own to the map's (an area to fall back to, say).
+        zones = set(map_zones)
+        extra_zones = value.get("zones", [])
+        if not isinstance(extra_zones, list):
+            self.error(path, "zones must be an array")
+            extra_zones = []
+        for zone in extra_zones:
+            zone_id = zone.get("id") if isinstance(zone, dict) else None
+            if not isinstance(zone_id, str) or ID_PATTERN.fullmatch(zone_id) is None or zone_id in zones:
+                self.error(path, f"a mission zone needs an id of its own: {zone_id!r}")
+                continue
+            if zone.get("kind") not in {"entry", "interaction", "hold", "exit"}:
+                self.error(path, f"mission zone {zone_id} has an unknown kind")
+            position = zone.get("position")
+            rectangle = dict(position) if isinstance(position, dict) else {}
+            rectangle.update({"width": zone.get("width"), "height": zone.get("height")})
+            self.validate_rectangle(path, rectangle, dimensions["width"], dimensions["height"], f"mission zone {zone_id}")
+            zones.add(zone_id)
 
         region = value.get("region")
         if region is not None:
@@ -584,6 +602,27 @@ class Validation:
                 tutorial_paths.add(tutorial_path.resolve())
                 missions.append((tutorial_path, tutorial))
 
+        # Each territory's uprising and defence operations: checked like any other, but they belong to a territory's slots.
+        variant_paths: dict[Path, dict[str, Any]] = {}
+        variant_references = pack.get("variants", [])
+        if not isinstance(variant_references, list):
+            self.error(pack_path, "variants must be an array")
+            variant_references = []
+        for reference in variant_references:
+            variant_path = self.resolve_reference(pack_root, pack_path, reference)
+            variant = self.read_object(variant_path) if variant_path is not None else None
+            if variant is None:
+                continue
+            referenced.add(variant_path)
+            if variant.get("license") != pack["license"]:
+                self.error(variant_path, "content license must match its pack license")
+            if variant.get("variant") not in {"uprising", "defence"} or not isinstance(variant.get("territory"), str):
+                self.error(variant_path, "an uprising or defence operation needs a variant and the territory (main operation id) it is for")
+            if variant.get("unlocks"):
+                self.error(variant_path, "an uprising or defence cannot unlock operations")
+            variant_paths[variant_path.resolve()] = variant
+            missions.append((variant_path, variant))
+
         equipment_items: dict[str, tuple[Path, dict[str, Any]]] = {}
         for equipment_path in equipment:
             try:
@@ -607,8 +646,11 @@ class Validation:
                 mission_path, mission, pack_root, maps, units, equipment, vehicles
             )
 
-        self.validate_territories(pack_path, pack_root, pack, referenced,
-                                  [item for item in missions if item[0].resolve() not in tutorial_paths])
+        self.validate_territories(
+            pack_path, pack_root, pack, referenced,
+            [item for item in missions if item[0].resolve() not in tutorial_paths and item[0].resolve() not in variant_paths],
+            variant_paths,
+        )
 
         actual = {path.resolve() for path in pack_root.rglob("*.json")}
         for unreferenced in sorted(actual - referenced):
@@ -617,7 +659,8 @@ class Validation:
     TERRITORY_COUNT = 50  # the campaign is 50 territories, one main mission each (ROADMAP F45)
 
     def validate_territories(self, pack_path: Path, pack_root: Path, pack: dict[str, Any],
-                             referenced: set[Path], missions: list[tuple[Path, dict[str, Any]]]) -> None:
+                             referenced: set[Path], missions: list[tuple[Path, dict[str, Any]]],
+                             variants: dict[Path, dict[str, Any]] | None = None) -> None:
         """The world: exactly 50 territories; every mission belongs to exactly one, and matches its place."""
         reference = pack.get("territories")
         if reference is None:
@@ -638,6 +681,7 @@ class Validation:
         ids: set[str] = set()
         names: set[str] = set()
         owned: dict[Path, dict[str, Any]] = {}
+        variant_owner: dict[Path, tuple[dict[str, Any], str]] = {}
         for entry in entries:
             if not isinstance(entry, dict):
                 self.error(territories_path, "every territory must be an object")
@@ -668,6 +712,34 @@ class Validation:
                 if mission_path in owned:
                     self.error(territories_path, f"mission {entry['mission']} belongs to two territories")
                 owned[mission_path] = entry
+            # The two other operations every territory has: each is its own, and made for this territory and this kind.
+            main_path = self.resolve_reference(pack_root, territories_path, entry["mission"]) if entry.get("mission") else None
+            main_id = next((m.get("id") for p, m in missions if p.resolve() == (main_path.resolve() if main_path else None)), None)
+            for kind in ("uprising", "defence"):
+                if variants is None or entry.get(kind) is None:
+                    if variants:
+                        self.error(territories_path, f"territory {identifier} needs an {kind} operation")
+                    continue
+                variant_path = self.resolve_reference(pack_root, territories_path, entry[kind])
+                if variant_path is None:
+                    continue
+                variant = variants.get(variant_path.resolve())
+                if variant is None:
+                    self.error(territories_path, f"{entry[kind]} is not declared in the pack's variants")
+                    continue
+                if variant_path.resolve() in variant_owner:
+                    self.error(territories_path, f"{entry[kind]} belongs to two territories")
+                variant_owner[variant_path.resolve()] = (entry, kind)
+                if variant.get("variant") != kind:
+                    self.error(variant_path, f"this is the {kind} of {identifier} but says it is the {variant.get('variant')}")
+                if variant.get("territory") != main_id:
+                    self.error(variant_path, f"its territory must be the main operation of {identifier} ({main_id})")
+                region = variant.get("region") or {}
+                if (region.get("name"), region.get("lon"), region.get("lat")) != (entry["name"], entry["lon"], entry["lat"]):
+                    self.error(variant_path, f"region must match its territory {identifier}")
+        for variant_path, variant in (variants or {}).items():
+            if variant_path not in variant_owner:
+                self.error(variant_path, "operation does not belong to any territory")
         for mission_path, mission in missions:
             entry = owned.get(mission_path.resolve())
             if entry is None:

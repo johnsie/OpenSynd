@@ -7,6 +7,11 @@
 winning one of the neighbours listed in the last column. Tier 1 is the easy opening, tier 5 the final stretch (more
 enemies, heavier weapons, bigger maps). The balance bot (`node web/tools/balance.mjs 20 <name>`) plays any of them.
 
+Every territory has three operations, all on the same map: the **main** one (below) to take it; an **uprising**, played when
+it falls into revolt (put down the ringleaders); and a **defence**, played when a rival company moves to take it over
+(hold a position while the rival's agents converge, before a deadline of a few game days). The last two are made from the
+main one by `tools/generate_variants.py`; `BALANCE_VARIANTS=1 node web/tools/balance.mjs 20 defence` plays them.
+
 | # | Territory | Mission | Tier | Enemies | Objective types | Map | Opened by |
 |---|-----------|---------|------|---------|-----------------|-----|-----------|
 | 1 | Northern Europe | First Light (hand-made) | 1 | 8 enemy agent, 4 guard | extract, interact | 128x128 | start |

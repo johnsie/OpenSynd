@@ -35,6 +35,12 @@
     "units": { "$ref": "#/$defs/pathList" },
     "equipment": { "$ref": "#/$defs/pathList" },
     "territories": { "type": "string", "pattern": "\\.json$", "description": "The pack's territory list (territories.schema.json): the campaign's world, 50 territories." },
+    "tutorial": { "type": "string", "pattern": "\\.json$", "description": "The training operation: a mission outside the campaign that counts for nothing." },
+    "variants": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "\\.json$" },
+      "description": "Each territory's uprising and defence operations (listed by the territory list, played from the territory)."
+    },
     "missions": { "$ref": "#/$defs/pathList" }
   },
   "$defs": {

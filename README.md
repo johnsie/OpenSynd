@@ -29,8 +29,10 @@ pick that up, get in that car.
   time bombs, and a device that persuades bystanders and even enemy agents to follow you.
 - **Build your operatives up.** Fit cybernetic body parts (legs, arms, chest, heart, eyes, brain) and dose them with three
   drugs that make them faster, steadier or quicker to reload.
-- **Run a little empire between missions.** Held territories pay tax, but squeeze them too hard and they revolt. Spend
-  the money on research, new gear, hiring replacements, and intelligence about the next job.
+- **Run a little empire between missions.** Held territories pay tax, but squeeze them too hard and they revolt, and a
+  rival company may try to take them over. Every territory has three operations: the one that wins it, an uprising to take
+  it back when it revolts, and a defence to keep it when a rival moves in. Spend the money on research, new gear, hiring
+  replacements, and intelligence about the next job.
 - **Lose people for good.** Fallen operatives stay dead (you can switch that off). Enemy agents you persuade and get out
   alive can join your roster.
 - **Steal from the fallen.** Anyone who is shot down drops what they were carrying, scattered on the ground for you to

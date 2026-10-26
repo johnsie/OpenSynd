@@ -12,8 +12,13 @@ import {
   RESEARCH_RATES,
   SECONDS_PER_DAY,
   TAX_DEFAULT,
+  TAKEOVER_DAYS,
+  TAKEOVER_FIRST_DAY,
   advanceTerritoryDay,
   dailyTax,
+  defendTerritory,
+  takeoverChance,
+  takeoverDaysLeft,
   hashNumbers,
   holdTerritory,
   missingRequirements,
@@ -108,8 +113,14 @@ test("population drifts 100 to 300 a day within its limits, the same way every t
 test("damaged territory records are repaired", () => {
   assert.deepEqual(sanitizeTerritory("x", null), { ...newTerritory("x"), id: "x" });
   const repaired = sanitizeTerritory("x", { base: -4, population: 1e12, tax: 500, mood: 99, moodDays: -3, status: "weird" });
-  assert.deepEqual(repaired, { id: "x", base: 3_000_000, population: 3_002_000, tax: 100, mood: 5, moodDays: 0, status: "open" });
+  assert.deepEqual(repaired, {
+    id: "x", base: 3_000_000, population: 3_002_000, tax: 100, mood: 5, moodDays: 0, status: "open", threat: null,
+  });
   assert.equal(sanitizeTerritory("x", { tax: 40, status: "rebel" }).status, "rebel");
+  assert.deepEqual(sanitizeTerritory("x", { status: "finished", threat: { until: 9 } }).threat, { until: 9 });
+  assert.equal(sanitizeTerritory("x", { status: "finished", threat: { until: -2 } }).threat, null, "nonsense deadlines are dropped");
+  assert.equal(sanitizeTerritory("x", { status: "open", threat: { until: 9 } }).threat, null, "only a held territory can be under threat");
+  assert.equal(sanitizeTerritory("x", { status: "rebel", threat: { until: 9 } }).threat, null);
 });
 
 // ---- research
@@ -192,4 +203,66 @@ test("several researches run at once, each at its own level, paid in the order t
   const twice = researchHour(nearly, 10000, catalog);
   assert.deepEqual(twice.finished, ["a", "c"]);
   assert.deepEqual(twice.research.active, []);
+});
+
+// ---- takeover attempts by a rival company
+
+// The first day on which this territory is chosen for an attempt, searching forward from the earliest allowed day.
+function firstAttempt(territory, allow = true) {
+  for (let day = TAKEOVER_FIRST_DAY; day < TAKEOVER_FIRST_DAY + 2000; day += 1) {
+    const result = advanceTerritoryDay(territory, day, allow);
+    if (result.event === "takeover") return { day, result };
+  }
+  return null;
+}
+
+test("a rival company sometimes moves on a held territory, never early, never when not allowed, and always the same way", () => {
+  const found = firstAttempt(held());
+  assert.ok(found && found.day >= TAKEOVER_FIRST_DAY, "it happens, but not in the first days");
+  assert.deepEqual(found.result.territory.threat, { until: found.day + TAKEOVER_DAYS }, "with days to answer it");
+  assert.equal(found.result.territory.status, "finished", "the territory is still yours meanwhile");
+  assert.deepEqual(firstAttempt(held()).result, found.result, "the same every time");
+  assert.equal(firstAttempt(held(), false), null, "never when attempts are not allowed (too many already)");
+  for (let day = 1; day < TAKEOVER_FIRST_DAY; day += 1) {
+    assert.equal(advanceTerritoryDay(held(), day, true).event, null, `no attempt on day ${day}`);
+  }
+  assert.equal(advanceTerritoryDay(newTerritory("t"), 50, true).event, null, "a territory you do not hold is not attacked");
+  assert.equal(advanceTerritoryDay(held({ status: "rebel" }), 50, true).event, null, "nor one in revolt");
+});
+
+test("attempts are rare, and likelier where people are unhappy", () => {
+  let calm = 0;
+  let angry = 0;
+  for (let day = TAKEOVER_FIRST_DAY; day < TAKEOVER_FIRST_DAY + 3000; day += 1) {
+    if (advanceTerritoryDay(held({ id: "calm" }), day, true).event === "takeover") calm += 1;
+    if (advanceTerritoryDay(held({ id: "angry", mood: 4 }), day, true).event === "takeover") angry += 1;
+  }
+  assert.ok(calm > 20 && calm < 250, `about 3 in 100 days: ${calm} in 3000`);
+  assert.ok(takeoverChance(4) > takeoverChance(0));
+});
+
+test("a threatened territory pays tax until the deadline, then falls to the rival and must be taken again", () => {
+  const threatened = held({ threat: { until: 20 } });
+  assert.equal(takeoverDaysLeft(threatened, 17), 3);
+  assert.equal(takeoverDaysLeft(held(), 17), null);
+  const midway = advanceTerritoryDay(threatened, 19, true);
+  assert.equal(midway.event, null);
+  assert.equal(midway.territory.status, "finished");
+  assert.ok(midway.income > 0, "still pays");
+  assert.deepEqual(midway.territory.threat, { until: 20 });
+  const lost = advanceTerritoryDay(threatened, 20, true);
+  assert.equal(lost.event, "takeover-lost");
+  assert.deepEqual([lost.territory.status, lost.territory.threat, lost.territory.mood], ["open", null, MOOD_START]);
+  assert.equal(advanceTerritoryDay(lost.territory, 21).income, 0, "and pays nothing now");
+});
+
+test("seeing off the attempt ends the threat and settles the people; winning a territory clears any threat", () => {
+  const safe = defendTerritory(held({ threat: { until: 30 }, mood: 3, moodDays: 4 }));
+  assert.deepEqual([safe.threat, safe.mood, safe.moodDays], [null, 2, 0]);
+  const calm = held();
+  assert.equal(defendTerritory(calm), calm, "nothing to defend against");
+  assert.equal(holdTerritory({ ...newTerritory("t"), status: "rebel", threat: { until: 3 } }).threat, null);
+  const becomingRebel = advanceTerritoryDay(held({ mood: 5, threat: { until: 99 } }), 10, true);
+  assert.equal(becomingRebel.territory.status, "rebel");
+  assert.equal(becomingRebel.territory.threat, null, "a revolt ends the threat: the rival has nothing left to take");
 });

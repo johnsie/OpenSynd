@@ -1,0 +1,732 @@
+{
+ "formatVersion": 1,
+ "id": "developer.op-altiplano-uprising",
+ "name": "Altiplano Purge Uprising",
+ "license": "CC0-1.0",
+ "map": "maps/altiplano.map.json",
+ "team": [
+  {
+   "id": "operator-one",
+   "unit": "units/field-operator.unit.json",
+   "position": {
+    "x": 2,
+    "y": 48
+   },
+   "equipment": [
+    "equipment/civic-pulse-emitter.equipment.json",
+    "equipment/field-repair-kit.equipment.json"
+   ]
+  },
+  {
+   "id": "operator-two",
+   "unit": "units/field-operator.unit.json",
+   "position": {
+    "x": 3,
+    "y": 48
+   },
+   "equipment": [
+    "equipment/civic-pulse-emitter.equipment.json",
+    "equipment/field-repair-kit.equipment.json"
+   ]
+  },
+  {
+   "id": "operator-three",
+   "unit": "units/field-operator.unit.json",
+   "position": {
+    "x": 2,
+    "y": 49
+   },
+   "equipment": [
+    "equipment/civic-pulse-emitter.equipment.json",
+    "equipment/field-repair-kit.equipment.json"
+   ]
+  },
+  {
+   "id": "operator-four",
+   "unit": "units/field-operator.unit.json",
+   "position": {
+    "x": 3,
+    "y": 49
+   },
+   "equipment": [
+    "equipment/civic-pulse-emitter.equipment.json",
+    "equipment/field-repair-kit.equipment.json"
+   ]
+  }
+ ],
+ "opponents": [
+  {
+   "id": "enemy-agent-one",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 78,
+    "y": 49
+   },
+   "equipment": [
+    "equipment/field-repair-kit.equipment.json"
+   ],
+   "patrol": [
+    {
+     "x": 78,
+     "y": 49
+    },
+    {
+     "x": 78,
+     "y": 57
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-two",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 2,
+    "y": 26
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 2,
+     "y": 26
+    },
+    {
+     "x": 8,
+     "y": 26
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-three",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 73,
+    "y": 66
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 73,
+     "y": 66
+    },
+    {
+     "x": 67,
+     "y": 66
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-four",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 68,
+    "y": 34
+   },
+   "equipment": [
+    "equipment/field-repair-kit.equipment.json"
+   ],
+   "patrol": [
+    {
+     "x": 68,
+     "y": 34
+    },
+    {
+     "x": 68,
+     "y": 40
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-five",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 1,
+    "y": 91
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 1,
+     "y": 91
+    },
+    {
+     "x": 1,
+     "y": 83
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-six",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 74,
+    "y": 70
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 74,
+     "y": 70
+    },
+    {
+     "x": 80,
+     "y": 70
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-seven",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 39,
+    "y": 59
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 39,
+     "y": 59
+    },
+    {
+     "x": 33,
+     "y": 59
+    }
+   ]
+  },
+  {
+   "id": "guard-1",
+   "unit": "units/guard.unit.json",
+   "position": {
+    "x": 56,
+    "y": 71
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 56,
+     "y": 71
+    },
+    {
+     "x": 50,
+     "y": 71
+    }
+   ]
+  },
+  {
+   "id": "guard-2",
+   "unit": "units/guard.unit.json",
+   "position": {
+    "x": 53,
+    "y": 92
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 53,
+     "y": 92
+    },
+    {
+     "x": 53,
+     "y": 89
+    }
+   ]
+  },
+  {
+   "id": "guard-3",
+   "unit": "units/guard.unit.json",
+   "position": {
+    "x": 78,
+    "y": 68
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 78,
+     "y": 68
+    },
+    {
+     "x": 67,
+     "y": 68
+    }
+   ]
+  }
+ ],
+ "objectives": [
+  {
+   "id": "put-down-ringleaders",
+   "type": "eliminate",
+   "targets": [
+    "enemy-agent-one",
+    "enemy-agent-two",
+    "enemy-agent-three"
+   ],
+   "required": true,
+   "description": "Put down the 3 ringleaders."
+  },
+  {
+   "id": "fall-back",
+   "type": "extract",
+   "targetZone": "fall-back-area",
+   "required": true,
+   "description": "Fall back to the marked landing area with the whole team."
+  }
+ ],
+ "bystanders": [
+  {
+   "id": "civilian-1",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 84,
+    "y": 68
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 84,
+     "y": 68
+    },
+    {
+     "x": 84,
+     "y": 72
+    }
+   ]
+  },
+  {
+   "id": "civilian-2",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 26,
+    "y": 88
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 26,
+     "y": 88
+    },
+    {
+     "x": 23,
+     "y": 88
+    }
+   ]
+  },
+  {
+   "id": "civilian-3",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 13,
+    "y": 24
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 13,
+     "y": 24
+    },
+    {
+     "x": 0,
+     "y": 24
+    }
+   ]
+  },
+  {
+   "id": "civilian-4",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 90,
+    "y": 21
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 90,
+     "y": 21
+    },
+    {
+     "x": 90,
+     "y": 30
+    }
+   ]
+  },
+  {
+   "id": "civilian-5",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 49,
+    "y": 41
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 49,
+     "y": 41
+    },
+    {
+     "x": 49,
+     "y": 52
+    }
+   ]
+  },
+  {
+   "id": "civilian-6",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 93,
+    "y": 20
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 93,
+     "y": 20
+    },
+    {
+     "x": 89,
+     "y": 20
+    }
+   ]
+  },
+  {
+   "id": "civilian-7",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 71,
+    "y": 42
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 71,
+     "y": 42
+    },
+    {
+     "x": 71,
+     "y": 28
+    }
+   ]
+  },
+  {
+   "id": "civilian-8",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 18,
+    "y": 49
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 18,
+     "y": 49
+    },
+    {
+     "x": 7,
+     "y": 49
+    }
+   ]
+  },
+  {
+   "id": "civilian-9",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 90,
+    "y": 87
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 90,
+     "y": 87
+    },
+    {
+     "x": 90,
+     "y": 80
+    }
+   ]
+  },
+  {
+   "id": "civilian-10",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 35,
+    "y": 27
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 35,
+     "y": 27
+    },
+    {
+     "x": 35,
+     "y": 23
+    }
+   ]
+  },
+  {
+   "id": "police-1",
+   "unit": "units/city-police.unit.json",
+   "position": {
+    "x": 46,
+    "y": 34
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 46,
+     "y": 34
+    },
+    {
+     "x": 46,
+     "y": 26
+    }
+   ]
+  },
+  {
+   "id": "police-2",
+   "unit": "units/city-police.unit.json",
+   "position": {
+    "x": 25,
+    "y": 41
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 25,
+     "y": 41
+    },
+    {
+     "x": 25,
+     "y": 47
+    }
+   ]
+  },
+  {
+   "id": "police-3",
+   "unit": "units/city-police.unit.json",
+   "position": {
+    "x": 92,
+    "y": 81
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 92,
+     "y": 81
+    },
+    {
+     "x": 92,
+     "y": 70
+    }
+   ]
+  },
+  {
+   "id": "criminal-1",
+   "unit": "units/criminal.unit.json",
+   "position": {
+    "x": 25,
+    "y": 65
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 25,
+     "y": 65
+    },
+    {
+     "x": 25,
+     "y": 57
+    }
+   ]
+  },
+  {
+   "id": "criminal-2",
+   "unit": "units/criminal.unit.json",
+   "position": {
+    "x": 5,
+    "y": 17
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 5,
+     "y": 17
+    },
+    {
+     "x": 0,
+     "y": 17
+    }
+   ]
+  },
+  {
+   "id": "criminal-3",
+   "unit": "units/criminal.unit.json",
+   "position": {
+    "x": 81,
+    "y": 51
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 81,
+     "y": 51
+    },
+    {
+     "x": 69,
+     "y": 51
+    }
+   ]
+  }
+ ],
+ "region": {
+  "name": "Altiplano",
+  "lon": -66,
+  "lat": -18,
+  "population": 3800000
+ },
+ "vehicles": [
+  {
+   "id": "city-car-1",
+   "vehicle": "vehicles/city-car.vehicle.json",
+   "position": {
+    "x": 2,
+    "y": 48
+   },
+   "driver": "units/civilian-man.unit.json",
+   "patrol": [
+    {
+     "x": 2,
+     "y": 48
+    },
+    {
+     "x": 79,
+     "y": 48
+    }
+   ]
+  },
+  {
+   "id": "city-car-2",
+   "vehicle": "vehicles/city-car.vehicle.json",
+   "position": {
+    "x": 2,
+    "y": 92
+   },
+   "driver": "units/civilian-woman.unit.json",
+   "patrol": [
+    {
+     "x": 2,
+     "y": 92
+    },
+    {
+     "x": 93,
+     "y": 92
+    }
+   ]
+  },
+  {
+   "id": "city-car-3",
+   "vehicle": "vehicles/city-car.vehicle.json",
+   "position": {
+    "x": 2,
+    "y": 27
+   },
+   "driver": "units/civilian-man.unit.json",
+   "patrol": [
+    {
+     "x": 2,
+     "y": 27
+    },
+    {
+     "x": 36,
+     "y": 27
+    }
+   ]
+  },
+  {
+   "id": "city-car-4",
+   "vehicle": "vehicles/city-car.vehicle.json",
+   "position": {
+    "x": 2,
+    "y": 25
+   },
+   "driver": "units/civilian-woman.unit.json",
+   "patrol": [
+    {
+     "x": 2,
+     "y": 25
+    },
+    {
+     "x": 93,
+     "y": 25
+    }
+   ]
+  },
+  {
+   "id": "city-car-5",
+   "vehicle": "vehicles/patrol-car.vehicle.json",
+   "position": {
+    "x": 2,
+    "y": 26
+   },
+   "driver": "units/civilian-man.unit.json",
+   "patrol": [
+    {
+     "x": 2,
+     "y": 26
+    },
+    {
+     "x": 93,
+     "y": 26
+    }
+   ]
+  },
+  {
+   "id": "freight-train-1",
+   "vehicle": "vehicles/freight-train.vehicle.json",
+   "position": {
+    "x": 12,
+    "y": 2
+   },
+   "stops": [
+    {
+     "x": 12,
+     "y": 2,
+     "wait": 0
+    },
+    {
+     "x": 59,
+     "y": 2,
+     "wait": 8
+    },
+    {
+     "x": 78,
+     "y": 2,
+     "wait": 6
+    }
+   ]
+  }
+ ],
+ "variant": "uprising",
+ "territory": "developer.op-altiplano",
+ "title": "The district has risen",
+ "briefing": "Altiplano has risen against you and pays nothing until order is restored. Put down the 3 ringleaders and fall back to the landing area. The crowds will go home once they fall.",
+ "story": "Altiplano Uprising: taxes too high for too long, and the streets belong to the ringleaders. End it.",
+ "debrief": {
+  "success": "The ringleaders are down and Altiplano goes home. The district is yours again and pays tax once more.",
+  "failure": "The team is lost and Altiplano stays in revolt. It pays nothing until it is taken back."
+ },
+ "zones": [
+  {
+   "id": "fall-back-area",
+   "kind": "exit",
+   "position": {
+    "x": 0,
+    "y": 46
+   },
+   "width": 4,
+   "height": 4
+  }
+ ],
+ "intel": [
+  "Patrol survey: the rising is led by 3 agents, spread through the district.",
+  "Full survey: only the ringleaders count; everyone else will fight if you come near."
+ ]
+}

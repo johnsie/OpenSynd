@@ -1,0 +1,670 @@
+{
+ "formatVersion": 1,
+ "id": "developer.op-gulf-of-guinea-defence",
+ "name": "Gulf of Guinea Purge Defence",
+ "license": "CC0-1.0",
+ "map": "maps/gulf-of-guinea.map.json",
+ "team": [
+  {
+   "id": "operator-one",
+   "unit": "units/field-operator.unit.json",
+   "position": {
+    "x": 2,
+    "y": 48
+   },
+   "equipment": [
+    "equipment/civic-pulse-emitter.equipment.json",
+    "equipment/field-repair-kit.equipment.json"
+   ]
+  },
+  {
+   "id": "operator-two",
+   "unit": "units/field-operator.unit.json",
+   "position": {
+    "x": 3,
+    "y": 48
+   },
+   "equipment": [
+    "equipment/civic-pulse-emitter.equipment.json",
+    "equipment/field-repair-kit.equipment.json"
+   ]
+  },
+  {
+   "id": "operator-three",
+   "unit": "units/field-operator.unit.json",
+   "position": {
+    "x": 2,
+    "y": 49
+   },
+   "equipment": [
+    "equipment/civic-pulse-emitter.equipment.json",
+    "equipment/field-repair-kit.equipment.json"
+   ]
+  },
+  {
+   "id": "operator-four",
+   "unit": "units/field-operator.unit.json",
+   "position": {
+    "x": 3,
+    "y": 49
+   },
+   "equipment": [
+    "equipment/civic-pulse-emitter.equipment.json",
+    "equipment/field-repair-kit.equipment.json"
+   ]
+  }
+ ],
+ "opponents": [
+  {
+   "id": "enemy-agent-one",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 74,
+    "y": 5
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 74,
+     "y": 5
+    },
+    {
+     "x": 60,
+     "y": 25
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-two",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 27,
+    "y": 16
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 27,
+     "y": 16
+    },
+    {
+     "x": 60,
+     "y": 25
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-three",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 16,
+    "y": 70
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 16,
+     "y": 70
+    },
+    {
+     "x": 24,
+     "y": 70
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-four",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 30,
+    "y": 70
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 30,
+     "y": 70
+    },
+    {
+     "x": 23,
+     "y": 70
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-five",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 29,
+    "y": 27
+   },
+   "equipment": [
+    "equipment/field-repair-kit.equipment.json"
+   ],
+   "patrol": [
+    {
+     "x": 29,
+     "y": 27
+    },
+    {
+     "x": 60,
+     "y": 25
+    }
+   ]
+  },
+  {
+   "id": "guard-1",
+   "unit": "units/guard.unit.json",
+   "position": {
+    "x": 0,
+    "y": 90
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 0,
+     "y": 90
+    },
+    {
+     "x": 11,
+     "y": 90
+    }
+   ]
+  },
+  {
+   "id": "guard-2",
+   "unit": "units/guard.unit.json",
+   "position": {
+    "x": 92,
+    "y": 67
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 92,
+     "y": 67
+    },
+    {
+     "x": 84,
+     "y": 67
+    }
+   ]
+  }
+ ],
+ "objectives": [
+  {
+   "id": "hold-position",
+   "type": "hold",
+   "targetZone": "uplink-hold",
+   "holdSeconds": 40,
+   "required": true,
+   "description": "Hold the marked position for 40 seconds."
+  },
+  {
+   "id": "fall-back",
+   "type": "extract",
+   "targetZone": "fall-back-area",
+   "required": true,
+   "description": "Fall back to the marked landing area with the whole team."
+  }
+ ],
+ "bystanders": [
+  {
+   "id": "civilian-1",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 26,
+    "y": 88
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 26,
+     "y": 88
+    },
+    {
+     "x": 23,
+     "y": 88
+    }
+   ]
+  },
+  {
+   "id": "civilian-2",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 68,
+    "y": 35
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 68,
+     "y": 35
+    },
+    {
+     "x": 68,
+     "y": 44
+    }
+   ]
+  },
+  {
+   "id": "civilian-3",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 47,
+    "y": 79
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 47,
+     "y": 79
+    },
+    {
+     "x": 47,
+     "y": 90
+    }
+   ]
+  },
+  {
+   "id": "civilian-4",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 82,
+    "y": 49
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 82,
+     "y": 49
+    },
+    {
+     "x": 73,
+     "y": 49
+    }
+   ]
+  },
+  {
+   "id": "civilian-5",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 70,
+    "y": 63
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 70,
+     "y": 63
+    },
+    {
+     "x": 70,
+     "y": 56
+    }
+   ]
+  },
+  {
+   "id": "civilian-6",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 24,
+    "y": 67
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 24,
+     "y": 67
+    },
+    {
+     "x": 37,
+     "y": 67
+    }
+   ]
+  },
+  {
+   "id": "civilian-7",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 12,
+    "y": 25
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 12,
+     "y": 25
+    },
+    {
+     "x": 5,
+     "y": 25
+    }
+   ]
+  },
+  {
+   "id": "civilian-8",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 93,
+    "y": 59
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 93,
+     "y": 59
+    },
+    {
+     "x": 93,
+     "y": 50
+    }
+   ]
+  },
+  {
+   "id": "civilian-9",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 43,
+    "y": 25
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 43,
+     "y": 25
+    },
+    {
+     "x": 33,
+     "y": 25
+    }
+   ]
+  },
+  {
+   "id": "civilian-10",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 92,
+    "y": 42
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 92,
+     "y": 42
+    },
+    {
+     "x": 89,
+     "y": 42
+    }
+   ]
+  },
+  {
+   "id": "police-1",
+   "unit": "units/city-police.unit.json",
+   "position": {
+    "x": 53,
+    "y": 24
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 53,
+     "y": 24
+    },
+    {
+     "x": 44,
+     "y": 24
+    }
+   ]
+  },
+  {
+   "id": "police-2",
+   "unit": "units/city-police.unit.json",
+   "position": {
+    "x": 29,
+    "y": 48
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 29,
+     "y": 48
+    },
+    {
+     "x": 35,
+     "y": 48
+    }
+   ]
+  },
+  {
+   "id": "police-3",
+   "unit": "units/city-police.unit.json",
+   "position": {
+    "x": 24,
+    "y": 48
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 24,
+     "y": 48
+    },
+    {
+     "x": 24,
+     "y": 60
+    }
+   ]
+  },
+  {
+   "id": "criminal-1",
+   "unit": "units/criminal.unit.json",
+   "position": {
+    "x": 27,
+    "y": 91
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 27,
+     "y": 91
+    },
+    {
+     "x": 27,
+     "y": 81
+    }
+   ]
+  },
+  {
+   "id": "criminal-2",
+   "unit": "units/criminal.unit.json",
+   "position": {
+    "x": 30,
+    "y": 14
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 30,
+     "y": 14
+    },
+    {
+     "x": 37,
+     "y": 14
+    }
+   ]
+  },
+  {
+   "id": "criminal-3",
+   "unit": "units/criminal.unit.json",
+   "position": {
+    "x": 70,
+    "y": 88
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 70,
+     "y": 88
+    },
+    {
+     "x": 70,
+     "y": 79
+    }
+   ]
+  }
+ ],
+ "region": {
+  "name": "Gulf of Guinea",
+  "lon": -3,
+  "lat": 7,
+  "population": 3600000
+ },
+ "vehicles": [
+  {
+   "id": "city-car-1",
+   "vehicle": "vehicles/city-car.vehicle.json",
+   "position": {
+    "x": 2,
+    "y": 49
+   },
+   "driver": "units/civilian-man.unit.json",
+   "patrol": [
+    {
+     "x": 2,
+     "y": 49
+    },
+    {
+     "x": 93,
+     "y": 49
+    }
+   ]
+  },
+  {
+   "id": "city-car-2",
+   "vehicle": "vehicles/city-car.vehicle.json",
+   "position": {
+    "x": 2,
+    "y": 68
+   },
+   "driver": "units/civilian-woman.unit.json",
+   "patrol": [
+    {
+     "x": 2,
+     "y": 68
+    },
+    {
+     "x": 93,
+     "y": 68
+    }
+   ]
+  },
+  {
+   "id": "city-car-3",
+   "vehicle": "vehicles/city-car.vehicle.json",
+   "position": {
+    "x": 2,
+    "y": 27
+   },
+   "driver": "units/civilian-man.unit.json",
+   "patrol": [
+    {
+     "x": 2,
+     "y": 27
+    },
+    {
+     "x": 93,
+     "y": 27
+    }
+   ]
+  },
+  {
+   "id": "city-car-4",
+   "vehicle": "vehicles/city-car.vehicle.json",
+   "position": {
+    "x": 2,
+    "y": 25
+   },
+   "driver": "units/civilian-woman.unit.json",
+   "patrol": [
+    {
+     "x": 2,
+     "y": 25
+    },
+    {
+     "x": 93,
+     "y": 25
+    }
+   ]
+  },
+  {
+   "id": "city-car-5",
+   "vehicle": "vehicles/patrol-car.vehicle.json",
+   "position": {
+    "x": 2,
+    "y": 24
+   },
+   "driver": "units/civilian-man.unit.json",
+   "patrol": [
+    {
+     "x": 2,
+     "y": 24
+    },
+    {
+     "x": 93,
+     "y": 24
+    }
+   ]
+  },
+  {
+   "id": "freight-train-1",
+   "vehicle": "vehicles/freight-train.vehicle.json",
+   "position": {
+    "x": 12,
+    "y": 2
+   },
+   "stops": [
+    {
+     "x": 12,
+     "y": 2,
+     "wait": 0
+    },
+    {
+     "x": 59,
+     "y": 2,
+     "wait": 8
+    },
+    {
+     "x": 88,
+     "y": 2,
+     "wait": 6
+    }
+   ]
+  }
+ ],
+ "variant": "defence",
+ "territory": "developer.op-gulf-of-guinea",
+ "title": "Hold the district",
+ "briefing": "Halcyon Group is moving on Gulf of Guinea. Its agents are coming for the marked position: hold it for 40 seconds while they close in, then fall back to the landing area.",
+ "story": "Gulf of Guinea Defence: Halcyon Group wants the district and has sent its agents. Hold the line until they give up.",
+ "debrief": {
+  "success": "Halcyon Group pulls back from Gulf of Guinea. The district stays yours.",
+  "failure": "The line broke. Halcyon Group presses on, and Gulf of Guinea falls to it unless the next attempt holds."
+ },
+ "zones": [
+  {
+   "id": "fall-back-area",
+   "kind": "exit",
+   "position": {
+    "x": 0,
+    "y": 46
+   },
+   "width": 4,
+   "height": 4
+  }
+ ],
+ "intel": [
+  "Patrol survey: Halcyon Group sends 3 of its 5 agents at the position, the nearest first.",
+  "Full survey: guards and police stay on their beats but will join a fight."
+ ]
+}

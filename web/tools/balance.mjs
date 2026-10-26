@@ -19,6 +19,7 @@ import {
   resolveDisabled,
   resolveExtraction,
   resolveInteraction,
+  resolveUnitObjectives,
   syncGates,
 } from "../src/mission.js";
 import {
@@ -48,7 +49,8 @@ function generator(seed) {
 async function loadWorld(file) {
   const pack = await read("pack.json");
   const mission = await read(file);
-  const map = await read(mission.map);
+  const baseMap = await read(mission.map);
+  const map = mission.zones?.length ? { ...baseMap, zones: [...baseMap.zones, ...mission.zones] } : baseMap;
   const units = {};
   for (const path of pack.units) units[path] = await read(path);
   const items = {};
@@ -148,6 +150,29 @@ function playOnce(world, tactics) {
 
     // Someone it cannot reach or see (walled off) is ignored for a while rather than waited on for ever.
     const reachable = close.filter((w) => (ignoreUntil.get(w.id) ?? 0) <= seconds);
+    // Holding a position: once there, stay in the zone and fight what comes within a few tiles of it, as a player would, rather than
+    // chase every agent that wanders past. On the way there it fights as usual.
+    const holding = objectives.find((objective) => !objective.complete);
+    if (holding?.type === "hold") {
+      const zone = zoneOf(holding);
+      const heart = { x: zone.position.x + zone.width / 2, y: zone.position.y + zone.height / 2 };
+      if (active.some((unit) => zoneContains(zone, tileOf(unit.position)))) {
+        const near = reachable.filter((w) => dist(w, { position: heart }) <= 7);
+        for (const unit of active) {
+          if (near.length === 0) break;
+          const target = near.reduce((best, w) => (dist(unit, w) < dist(unit, best) ? w : best));
+          const gap = dist(unit, target);
+          if (roundsLeft(unit) === 0) continue;
+          if (gap <= combatStats(unit, gap).range && hasLineOfSight(grid, unit.position, target.position)) {
+            unit.path = [];
+            unit.targetId = target.id;
+          } else if (unit.path.length === 0 && !zoneContains(zone, tileOf(unit.position))) {
+            moveSquad({ x: zone.position.x, y: zone.position.y }); // back to the position
+          }
+        }
+        return;
+      }
+    }
     if (reachable.length > 0) {
       for (const unit of active) {
         const target = reachable.reduce((best, w) => (dist(unit, w) < dist(unit, best) ? w : best));
@@ -177,9 +202,9 @@ function playOnce(world, tactics) {
 
     const next = objectives.find((objective) => !objective.complete);
     if (!next) return;
-    if (next.type === "disable") {
+    if (next.type === "disable" || next.type === "eliminate") {
       // Go after the named targets: close in until every operator has a clear line and is in range.
-      const target = live.find((unit) => next.targets.includes(unit.id));
+      const target = live.find((unit) => (next.targets ?? []).includes(unit.id));
       if (!target) return;
       for (const unit of active) {
         if (roundsLeft(unit) === 0) continue;
@@ -236,6 +261,7 @@ function playOnce(world, tactics) {
     }
     const completed = [
       ...resolveDisabled(objectives, units),
+      ...resolveUnitObjectives(objectives, map.zones, units),
       ...advanceHold(objectives, map.zones, units, FIXED_STEP_SECONDS),
       ...resolveExtraction(objectives, map.zones, units),
     ];
@@ -303,10 +329,12 @@ const policies = {
   careful: (r) => ({ engageRange: 8 + r() * 3, loot: true }),
 };
 // The bot only knows the original objective types; operations built on the newer ones are balanced by hand.
-const SUPPORTED = new Set(["reach-zone", "interact", "disable", "hold", "extract"]);
-// Optional second argument: only operations whose file name contains it (the campaign has 50).
+const SUPPORTED = new Set(["reach-zone", "interact", "disable", "eliminate", "hold", "extract"]);
+// Optional second argument: only operations whose file name contains it (the campaign has 50). Set BALANCE_VARIANTS=1 to include
+// each territory's uprising and defence as well ("defence" as the second argument plays just the defences).
 const only = process.argv[3] ?? "";
-for (const file of pack.missions) {
+const files = process.env.BALANCE_VARIANTS ? [...pack.missions, ...(pack.variants ?? [])] : pack.missions;
+for (const file of files) {
   if (only && !file.includes(only)) continue;
   const world = await loadWorld(file);
   if (!world.mission.objectives.every((objective) => SUPPORTED.has(objective.type))) {

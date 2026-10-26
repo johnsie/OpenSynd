@@ -34,6 +34,8 @@ HANDMADE = {
     "missions/safe-passage.mission.json", "missions/loose-ends.mission.json", "missions/foyle-crossing.mission.json",
 }
 HANDMADE_MAPS = ["maps/signal-yard.map.json", "maps/audit-yard.map.json", "maps/freight-depot.map.json"]
+# Maps for operations outside the 50 (the tutorial's Training Yard, from tools/generate_tutorial.py): kept in the pack as they are.
+EXTRA_MAPS = ["maps/training-yard.map.json"]
 START = "developer.northern-europe"
 MAP_WIDTH, MAP_HEIGHT = 1000, 395  # the atlas projection in web/src/atlas.js
 
@@ -601,6 +603,11 @@ def write_campaign_table(territories: list[dict], depth: dict[str, int], parents
         "winning one of the neighbours listed in the last column. Tier 1 is the easy opening, tier 5 the final stretch (more",
         "enemies, heavier weapons, bigger maps). The balance bot (`node web/tools/balance.mjs 20 <name>`) plays any of them.",
         "",
+        "Every territory has three operations, all on the same map: the **main** one (below) to take it; an **uprising**, played when",
+        "it falls into revolt (put down the ringleaders); and a **defence**, played when a rival company moves to take it over",
+        "(hold a position while the rival's agents converge, before a deadline of a few game days). The last two are made from the",
+        "main one by `tools/generate_variants.py`; `BALANCE_VARIANTS=1 node web/tools/balance.mjs 20 defence` plays them.",
+        "",
         "| # | Territory | Mission | Tier | Enemies | Objective types | Map | Opened by |",
         "|---|-----------|---------|------|---------|-----------------|-----|-----------|",
         *rows,
@@ -659,7 +666,7 @@ def main() -> None:
 
     territories_path.write_text(json.dumps(world, indent=2) + "\n", encoding="utf-8")
     write_campaign_table(world["territories"], depth, parents, tier_of)
-    pack["maps"] = pack_maps
+    pack["maps"] = pack_maps + EXTRA_MAPS
     pack["missions"] = pack_missions
     (PACK / "pack.json").write_text(json.dumps(pack, indent=2) + "\n", encoding="utf-8")
 

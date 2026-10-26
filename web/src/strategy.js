@@ -31,8 +31,17 @@ export function hashNumbers(...values) {
   return (hash >>> 0) / 4294967296;
 }
 
+// Rival companies try to take over the territories you hold. An attempt gives a deadline (in game days) to play the territory's
+// defence operation; if it passes, the rival has the territory and it must be taken again. Attempts are rare, more likely where
+// people are unhappy, never before the first days are over, and never more than a couple at once.
+export const TAKEOVER_DAYS = 6;
+export const TAKEOVER_FIRST_DAY = 4;
+export const TAKEOVER_MAX_AT_ONCE = 2;
+export const takeoverChance = (mood) => 0.03 + 0.01 * mood;
+const takeoverRoll = (id, day) => hashNumbers("takeover", id, day);
+
 export function newTerritory(id, population = DEFAULT_POPULATION) {
-  return { id, base: population, population, tax: TAX_DEFAULT, mood: MOOD_START, moodDays: 0, status: "open" };
+  return { id, base: population, population, tax: TAX_DEFAULT, mood: MOOD_START, moodDays: 0, status: "open", threat: null };
 }
 
 export function sanitizeTerritory(id, value) {
@@ -42,7 +51,10 @@ export function sanitizeTerritory(id, value) {
   const mood = Number.isInteger(value?.mood) ? Math.min(MOODS.length - 1, Math.max(0, value.mood)) : MOOD_START;
   const moodDays = Number.isInteger(value?.moodDays) && value.moodDays >= 0 ? value.moodDays : 0;
   const status = ["open", "finished", "rebel"].includes(value?.status) ? value.status : "open";
-  return { id, base, population: Math.min(base + 2000, Math.max(base - 1000, population)), tax, mood, moodDays, status };
+  // Only a territory you hold can be under threat of takeover.
+  const until = value?.threat?.until;
+  const threat = status === "finished" && Number.isInteger(until) && until >= 0 ? { until } : null;
+  return { id, base, population: Math.min(base + 2000, Math.max(base - 1000, population)), tax, mood, moodDays, status, threat };
 }
 
 /** Funds a territory pays each day: only territories you hold, and none while they are in revolt. */
@@ -69,11 +81,25 @@ export function withTax(territory, tax) {
 /** A territory won (or won back from revolt) is held, and its people start content. */
 export function holdTerritory(territory) {
   if (territory.status === "finished") return territory;
-  return { ...territory, status: "finished", mood: territory.status === "rebel" ? MOOD_START : territory.mood, moodDays: 0 };
+  return { ...territory, status: "finished", mood: territory.status === "rebel" ? MOOD_START : territory.mood, moodDays: 0, threat: null };
 }
 
-/** One day passes: the population drifts a little, the mood timer runs, and tax is collected. */
-export function advanceTerritoryDay(territory, day) {
+/** A takeover attempt that has been seen off: the threat is over and the people feel safer. */
+export function defendTerritory(territory) {
+  if (!territory.threat) return territory;
+  return { ...territory, threat: null, mood: Math.max(0, territory.mood - 1), moodDays: 0 };
+}
+
+/** The rival company's attempt, and how many days are left to answer it (0 on the day it falls). */
+export function takeoverDaysLeft(territory, day) {
+  return territory.threat ? Math.max(0, territory.threat.until - day) : null;
+}
+
+/**
+ * One day passes: the population drifts a little, the mood timer runs, and tax is collected. A rival company may begin a takeover
+ * (only if `allowThreat`), and one that has run out of time succeeds. `event` says which: "takeover" or "takeover-lost".
+ */
+export function advanceTerritoryDay(territory, day, allowThreat = false) {
   const roll = hashNumbers("pop", territory.id, day);
   const size = 100 + Math.floor(hashNumbers("size", territory.id, day) * 201);
   const drift = roll < 0.6 ? size : -size;
@@ -90,8 +116,19 @@ export function advanceTerritoryDay(territory, day) {
     }
     if (mood === MOODS.length - 1 && status === "finished") status = "rebel";
   }
-  const moved = { ...territory, population, mood, moodDays, status };
-  return { territory: moved, income: dailyTax(territory) };
+  let moved = { ...territory, population, mood, moodDays, status };
+  let event = null;
+  if (status !== "finished") {
+    moved.threat = null;
+  } else if (moved.threat && day >= moved.threat.until) {
+    // The deadline has passed: the rival has it. It is taken again like any territory, and its people start from content.
+    moved = { ...moved, status: "open", threat: null, mood: MOOD_START, moodDays: 0 };
+    event = "takeover-lost";
+  } else if (!moved.threat && allowThreat && day >= TAKEOVER_FIRST_DAY && takeoverRoll(territory.id, day) < takeoverChance(mood)) {
+    moved = { ...moved, threat: { until: day + TAKEOVER_DAYS } };
+    event = "takeover";
+  }
+  return { territory: moved, income: dailyTax(territory), event };
 }
 
 // ---------------------------------------------------------------- research

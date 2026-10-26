@@ -45,7 +45,17 @@
       "description": "Operations (by id) that open when this one is won. If no operation in a pack lists any, they open as a chain."
     },
     "sequence": { "type": "boolean", "description": "When true the required objectives must be done in the order listed; the briefing points at the one to do now." },
+    "variant": {
+      "enum": ["uprising", "defence"],
+      "description": "Which of a territory's other operations this is: the uprising, played when it is in revolt, or the defence, played when a rival company moves to take it. Absent on a territory's main operation."
+    },
+    "territory": { "$ref": "#/$defs/id", "description": "For an uprising or defence: the id of the territory's main operation, which names the territory." },
     "map": { "$ref": "#/$defs/path" },
+    "zones": {
+      "type": "array",
+      "description": "Zones this mission adds to its map's own (an area to fall back to, say), in the same shape as the map's zones.",
+      "items": { "type": "object", "required": ["id", "kind", "position", "width", "height"] }
+    },
     "team": { "type": "array", "minItems": 1, "maxItems": 4, "items": { "$ref": "#/$defs/placement" } },
     "opponents": { "type": "array", "items": { "$ref": "#/$defs/placement" } },
     "vehicles": {

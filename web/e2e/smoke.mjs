@@ -1480,6 +1480,78 @@ for (const [name, type, executablePath] of targets) {
       await editorPage.close();
     });
 
+    // Each territory has three operations: its main one, an uprising when it is in revolt and a defence when a rival company
+    // moves on it. Winning the uprising or the defence keeps the territory without counting as a new operation won.
+    const territoryId = "developer.restore-relay";
+    const withTerritory = async (record) => {
+      const page = await (await browser.newContext()).newPage();
+      await page.goto(`${url}?e2e`);
+      await page.waitForSelector("#menu-dialog[open]");
+      await page.evaluate(
+        ([id, state]) => {
+          localStorage.setItem("opensynd.progress.v1", JSON.stringify({ completed: [id] }));
+          const campaign = { company: "Test", hours: state.hours ?? 0, territories: { [id]: state } };
+          localStorage.setItem("opensynd.campaign.v1", JSON.stringify(campaign));
+        },
+        [territoryId, record],
+      );
+      await page.reload();
+      await page.waitForSelector("#menu-continue:not([hidden])");
+      await page.click("#menu-continue");
+      await page.waitForSelector("#title-dialog[open]");
+      return page;
+    };
+    const territoryRecord = (page) =>
+      page.evaluate((id) => JSON.parse(localStorage.getItem("opensynd.campaign.v1")).territories[id], territoryId);
+
+    scenario("A territory in revolt plays its uprising: put down the ringleaders, and it is held again", async () => {
+      const page = await withTerritory({ status: "rebel" });
+      assert.match(await page.locator("#territory-panel").innerText(), /IN REVOLT/);
+      assert.match(await page.locator("#mission-list").innerText(), /IN REVOLT/);
+      assert.match(await page.locator("#operation-eyebrow").innerText(), /UPRISING/);
+      await page.click("#begin-button");
+      await page.waitForFunction(() => document.querySelector("#status-message").textContent.includes("Local map established"));
+      assert.match(await page.locator("#objective-list").innerText(), /ringleaders/);
+      await page.evaluate(() => window.opensyndTest.completeObjectives());
+      await page.waitForSelector("#outcome-dialog[open]");
+      assert.equal((await territoryRecord(page)).status, "finished", "taken back");
+      const progress = await page.evaluate(() => JSON.parse(localStorage.getItem("opensynd.progress.v1")));
+      assert.deepEqual(progress.completed, [territoryId], "the uprising is not another operation won");
+      await page.close();
+    });
+
+    scenario("A territory under a takeover attempt plays its defence: hold the position, and the threat is over", async () => {
+      const page = await withTerritory({ status: "finished", threat: { until: 99 } });
+      assert.match(await page.locator("#territory-panel").innerText(), /TAKEOVER ATTEMPT/);
+      assert.match(await page.locator("#territory-panel").innerText(), /is moving to take it over: 99 days left/);
+      assert.match(await page.locator("#operation-eyebrow").innerText(), /DEFENCE/);
+      await page.click("#begin-button");
+      await page.waitForFunction(() => document.querySelector("#status-message").textContent.includes("Local map established"));
+      assert.match(await page.locator("#objective-list").innerText(), /Hold the .* for \d+ seconds/);
+      // The rival's agents head for the position: they are patrolling toward it.
+      await page.evaluate(() => window.opensyndTest.completeObjectives());
+      await page.waitForSelector("#outcome-dialog[open]");
+      const record = await territoryRecord(page);
+      assert.deepEqual([record.status, record.threat], ["finished", null], "kept, and no longer threatened");
+      await page.close();
+    });
+
+    scenario("An unanswered takeover attempt loses the territory when the deadline passes", async () => {
+      const page = await withTerritory({ status: "finished", threat: { until: 2 }, hours: 40 });
+      await page.click("#begin-button");
+      await page.waitForFunction(() => document.querySelector("#status-message").textContent.includes("Local map established"));
+      await page.evaluate(() => window.opensyndTest.advanceHours(10)); // the clock reaches day 2
+      assert.match(await page.locator("#status-message").innerText(), /has taken .* It must be taken again/);
+      await page.waitForFunction( // the campaign is written out every few seconds
+        (id) => JSON.parse(localStorage.getItem("opensynd.campaign.v1")).territories[id].status === "open",
+        territoryId,
+        { timeout: 15000 },
+      );
+      const record = await territoryRecord(page);
+      assert.deepEqual([record.status, record.threat], ["open", null]);
+      await page.close();
+    });
+
     scenario("Permadeath and recruiting: a fallen operative is lost after a win, and a persuad", async () => {
       // Permadeath and recruiting: a fallen operative is lost after a win, and a persuaded enemy agent joins.
       const roster = await browser.newPage();

@@ -8,7 +8,9 @@
       "lat": 51,
       "population": 4200000,
       "mission": "missions/restore-relay.mission.json",
-      "owner": "Tidewater Consortium"
+      "owner": "Tidewater Consortium",
+      "uprising": "missions/restore-relay-uprising.mission.json",
+      "defence": "missions/restore-relay-defence.mission.json"
     },
     {
       "id": "developer.eastern-north-america",
@@ -17,7 +19,9 @@
       "lat": 40.5,
       "population": 5600000,
       "mission": "missions/quiet-hours.mission.json",
-      "owner": "Meridian Combine"
+      "owner": "Meridian Combine",
+      "uprising": "missions/quiet-hours-uprising.mission.json",
+      "defence": "missions/quiet-hours-defence.mission.json"
     },
     {
       "id": "developer.southern-brazil",
@@ -26,7 +30,9 @@
       "lat": -22,
       "population": 3100000,
       "mission": "missions/dead-drop.mission.json",
-      "owner": "Meridian Combine"
+      "owner": "Meridian Combine",
+      "uprising": "missions/dead-drop-uprising.mission.json",
+      "defence": "missions/dead-drop-defence.mission.json"
     },
     {
       "id": "developer.southeast-asia",
@@ -35,7 +41,9 @@
       "lat": 15,
       "population": 4800000,
       "mission": "missions/loose-ends.mission.json",
-      "owner": "Vesper Holdings"
+      "owner": "Vesper Holdings",
+      "uprising": "missions/loose-ends-uprising.mission.json",
+      "defence": "missions/loose-ends-defence.mission.json"
     },
     {
       "id": "developer.eastern-mediterranean",
@@ -44,7 +52,9 @@
       "lat": 37,
       "population": 2400000,
       "mission": "missions/safe-passage.mission.json",
-      "owner": "Corvid Combine"
+      "owner": "Corvid Combine",
+      "uprising": "missions/safe-passage-uprising.mission.json",
+      "defence": "missions/safe-passage-defence.mission.json"
     },
     {
       "id": "developer.alaska",
@@ -53,7 +63,9 @@
       "lat": 64,
       "population": 4700000,
       "owner": "Halcyon Group",
-      "mission": "missions/alaska.mission.json"
+      "mission": "missions/alaska.mission.json",
+      "uprising": "missions/alaska-uprising.mission.json",
+      "defence": "missions/alaska-defence.mission.json"
     },
     {
       "id": "developer.pacific-coast",
@@ -62,7 +74,9 @@
       "lat": 45,
       "population": 5100000,
       "owner": "Tidewater Consortium",
-      "mission": "missions/pacific-coast.mission.json"
+      "mission": "missions/pacific-coast.mission.json",
+      "uprising": "missions/pacific-coast-uprising.mission.json",
+      "defence": "missions/pacific-coast-defence.mission.json"
     },
     {
       "id": "developer.southwest-desert",
@@ -71,7 +85,9 @@
       "lat": 34,
       "population": 4100000,
       "owner": "Ironwood Trust",
-      "mission": "missions/southwest-desert.mission.json"
+      "mission": "missions/southwest-desert.mission.json",
+      "uprising": "missions/southwest-desert-uprising.mission.json",
+      "defence": "missions/southwest-desert-defence.mission.json"
     },
     {
       "id": "developer.gulf-coast",
@@ -80,7 +96,9 @@
       "lat": 30,
       "population": 6000000,
       "owner": "Tidewater Consortium",
-      "mission": "missions/gulf-coast.mission.json"
+      "mission": "missions/gulf-coast.mission.json",
+      "uprising": "missions/gulf-coast-uprising.mission.json",
+      "defence": "missions/gulf-coast-defence.mission.json"
     },
     {
       "id": "developer.great-plains",
@@ -89,7 +107,9 @@
       "lat": 42,
       "population": 5800000,
       "owner": "Ironwood Trust",
-      "mission": "missions/great-plains.mission.json"
+      "mission": "missions/great-plains.mission.json",
+      "uprising": "missions/great-plains-uprising.mission.json",
+      "defence": "missions/great-plains-defence.mission.json"
     },
     {
       "id": "developer.central-america",
@@ -98,7 +118,9 @@
       "lat": 13,
       "population": 2200000,
       "owner": "Ironwood Trust",
-      "mission": "missions/central-america.mission.json"
+      "mission": "missions/central-america.mission.json",
+      "uprising": "missions/central-america-uprising.mission.json",
+      "defence": "missions/central-america-defence.mission.json"
     },
     {
       "id": "developer.colombian-highlands",
@@ -107,7 +129,9 @@
       "lat": 4,
       "population": 3900000,
       "owner": "Tidewater Consortium",
-      "mission": "missions/colombian-highlands.mission.json"
+      "mission": "missions/colombian-highlands.mission.json",
+      "uprising": "missions/colombian-highlands-uprising.mission.json",
+      "defence": "missions/colombian-highlands-defence.mission.json"
     },
     {
       "id": "developer.amazon-basin",
@@ -116,7 +140,9 @@
       "lat": -5,
       "population": 3600000,
       "owner": "Ironwood Trust",
-      "mission": "missions/amazon-basin.mission.json"
+      "mission": "missions/amazon-basin.mission.json",
+      "uprising": "missions/amazon-basin-uprising.mission.json",
+      "defence": "missions/amazon-basin-defence.mission.json"
     },
     {
       "id": "developer.northeast-brazil",
@@ -125,7 +151,9 @@
       "lat": -8,
       "population": 4500000,
       "owner": "Tidewater Consortium",
-      "mission": "missions/northeast-brazil.mission.json"
+      "mission": "missions/northeast-brazil.mission.json",
+      "uprising": "missions/northeast-brazil-uprising.mission.json",
+      "defence": "missions/northeast-brazil-defence.mission.json"
     },
     {
       "id": "developer.andean-peru",
@@ -134,7 +162,9 @@
       "lat": -10,
       "population": 6300000,
       "owner": "Tidewater Consortium",
-      "mission": "missions/andean-peru.mission.json"
+      "mission": "missions/andean-peru.mission.json",
+      "uprising": "missions/andean-peru-uprising.mission.json",
+      "defence": "missions/andean-peru-defence.mission.json"
     },
     {
       "id": "developer.altiplano",
@@ -143,7 +173,9 @@
       "lat": -18,
       "population": 3800000,
       "owner": "Corvid Combine",
-      "mission": "missions/altiplano.mission.json"
+      "mission": "missions/altiplano.mission.json",
+      "uprising": "missions/altiplano-uprising.mission.json",
+      "defence": "missions/altiplano-defence.mission.json"
     },
     {
       "id": "developer.chilean-coast",
@@ -152,7 +184,9 @@
       "lat": -33,
       "population": 2800000,
       "owner": "Ironwood Trust",
-      "mission": "missions/chilean-coast.mission.json"
+      "mission": "missions/chilean-coast.mission.json",
+      "uprising": "missions/chilean-coast-uprising.mission.json",
+      "defence": "missions/chilean-coast-defence.mission.json"
     },
     {
       "id": "developer.patagonia",
@@ -161,7 +195,9 @@
       "lat": -47,
       "population": 6100000,
       "owner": "Halcyon Group",
-      "mission": "missions/patagonia.mission.json"
+      "mission": "missions/patagonia.mission.json",
+      "uprising": "missions/patagonia-uprising.mission.json",
+      "defence": "missions/patagonia-defence.mission.json"
     },
     {
       "id": "developer.iberia",
@@ -170,7 +206,9 @@
       "lat": 40,
       "population": 3500000,
       "owner": "Corvid Combine",
-      "mission": "missions/iberia.mission.json"
+      "mission": "missions/iberia.mission.json",
+      "uprising": "missions/iberia-uprising.mission.json",
+      "defence": "missions/iberia-defence.mission.json"
     },
     {
       "id": "developer.scandinavia",
@@ -179,7 +217,9 @@
       "lat": 62,
       "population": 2700000,
       "owner": "Ironwood Trust",
-      "mission": "missions/scandinavia.mission.json"
+      "mission": "missions/scandinavia.mission.json",
+      "uprising": "missions/scandinavia-uprising.mission.json",
+      "defence": "missions/scandinavia-defence.mission.json"
     },
     {
       "id": "developer.eastern-europe",
@@ -188,7 +228,9 @@
       "lat": 51,
       "population": 4000000,
       "owner": "Ironwood Trust",
-      "mission": "missions/eastern-europe.mission.json"
+      "mission": "missions/eastern-europe.mission.json",
+      "uprising": "missions/eastern-europe-uprising.mission.json",
+      "defence": "missions/eastern-europe-defence.mission.json"
     },
     {
       "id": "developer.balkans",
@@ -197,7 +239,9 @@
       "lat": 43,
       "population": 2500000,
       "owner": "Meridian Combine",
-      "mission": "missions/balkans.mission.json"
+      "mission": "missions/balkans.mission.json",
+      "uprising": "missions/balkans-uprising.mission.json",
+      "defence": "missions/balkans-defence.mission.json"
     },
     {
       "id": "developer.russian-plain",
@@ -206,7 +250,9 @@
       "lat": 57,
       "population": 3000000,
       "owner": "Ironwood Trust",
-      "mission": "missions/russian-plain.mission.json"
+      "mission": "missions/russian-plain.mission.json",
+      "uprising": "missions/russian-plain-uprising.mission.json",
+      "defence": "missions/russian-plain-defence.mission.json"
     },
     {
       "id": "developer.caucasus",
@@ -215,7 +261,9 @@
       "lat": 42,
       "population": 5100000,
       "owner": "Vesper Holdings",
-      "mission": "missions/caucasus.mission.json"
+      "mission": "missions/caucasus.mission.json",
+      "uprising": "missions/caucasus-uprising.mission.json",
+      "defence": "missions/caucasus-defence.mission.json"
     },
     {
       "id": "developer.ural-region",
@@ -224,7 +272,9 @@
       "lat": 58,
       "population": 5800000,
       "owner": "Halcyon Group",
-      "mission": "missions/ural-region.mission.json"
+      "mission": "missions/ural-region.mission.json",
+      "uprising": "missions/ural-region-uprising.mission.json",
+      "defence": "missions/ural-region-defence.mission.json"
     },
     {
       "id": "developer.western-siberia",
@@ -233,7 +283,9 @@
       "lat": 62,
       "population": 5100000,
       "owner": "Ironwood Trust",
-      "mission": "missions/western-siberia.mission.json"
+      "mission": "missions/western-siberia.mission.json",
+      "uprising": "missions/western-siberia-uprising.mission.json",
+      "defence": "missions/western-siberia-defence.mission.json"
     },
     {
       "id": "developer.eastern-siberia",
@@ -242,7 +294,9 @@
       "lat": 64,
       "population": 1900000,
       "owner": "Ironwood Trust",
-      "mission": "missions/eastern-siberia.mission.json"
+      "mission": "missions/eastern-siberia.mission.json",
+      "uprising": "missions/eastern-siberia-uprising.mission.json",
+      "defence": "missions/eastern-siberia-defence.mission.json"
     },
     {
       "id": "developer.iranian-plateau",
@@ -251,7 +305,9 @@
       "lat": 32,
       "population": 4000000,
       "owner": "Meridian Combine",
-      "mission": "missions/iranian-plateau.mission.json"
+      "mission": "missions/iranian-plateau.mission.json",
+      "uprising": "missions/iranian-plateau-uprising.mission.json",
+      "defence": "missions/iranian-plateau-defence.mission.json"
     },
     {
       "id": "developer.arabian-peninsula",
@@ -260,7 +316,9 @@
       "lat": 24,
       "population": 5800000,
       "owner": "Vesper Holdings",
-      "mission": "missions/arabian-peninsula.mission.json"
+      "mission": "missions/arabian-peninsula.mission.json",
+      "uprising": "missions/arabian-peninsula-uprising.mission.json",
+      "defence": "missions/arabian-peninsula-defence.mission.json"
     },
     {
       "id": "developer.maghreb",
@@ -269,7 +327,9 @@
       "lat": 33,
       "population": 2200000,
       "owner": "Meridian Combine",
-      "mission": "missions/maghreb.mission.json"
+      "mission": "missions/maghreb.mission.json",
+      "uprising": "missions/maghreb-uprising.mission.json",
+      "defence": "missions/maghreb-defence.mission.json"
     },
     {
       "id": "developer.gulf-of-guinea",
@@ -278,7 +338,9 @@
       "lat": 7,
       "population": 3600000,
       "owner": "Halcyon Group",
-      "mission": "missions/gulf-of-guinea.mission.json"
+      "mission": "missions/gulf-of-guinea.mission.json",
+      "uprising": "missions/gulf-of-guinea-uprising.mission.json",
+      "defence": "missions/gulf-of-guinea-defence.mission.json"
     },
     {
       "id": "developer.congo-basin",
@@ -287,7 +349,9 @@
       "lat": 0,
       "population": 5300000,
       "owner": "Tidewater Consortium",
-      "mission": "missions/congo-basin.mission.json"
+      "mission": "missions/congo-basin.mission.json",
+      "uprising": "missions/congo-basin-uprising.mission.json",
+      "defence": "missions/congo-basin-defence.mission.json"
     },
     {
       "id": "developer.horn-of-africa",
@@ -296,7 +360,9 @@
       "lat": 8,
       "population": 2900000,
       "owner": "Corvid Combine",
-      "mission": "missions/horn-of-africa.mission.json"
+      "mission": "missions/horn-of-africa.mission.json",
+      "uprising": "missions/horn-of-africa-uprising.mission.json",
+      "defence": "missions/horn-of-africa-defence.mission.json"
     },
     {
       "id": "developer.east-african-rift",
@@ -305,7 +371,9 @@
       "lat": -3,
       "population": 5000000,
       "owner": "Meridian Combine",
-      "mission": "missions/east-african-rift.mission.json"
+      "mission": "missions/east-african-rift.mission.json",
+      "uprising": "missions/east-african-rift-uprising.mission.json",
+      "defence": "missions/east-african-rift-defence.mission.json"
     },
     {
       "id": "developer.southern-africa",
@@ -314,7 +382,9 @@
       "lat": -26,
       "population": 3200000,
       "owner": "Halcyon Group",
-      "mission": "missions/southern-africa.mission.json"
+      "mission": "missions/southern-africa.mission.json",
+      "uprising": "missions/southern-africa-uprising.mission.json",
+      "defence": "missions/southern-africa-defence.mission.json"
     },
     {
       "id": "developer.kazakh-steppe",
@@ -323,7 +393,9 @@
       "lat": 48,
       "population": 2700000,
       "owner": "Halcyon Group",
-      "mission": "missions/kazakh-steppe.mission.json"
+      "mission": "missions/kazakh-steppe.mission.json",
+      "uprising": "missions/kazakh-steppe-uprising.mission.json",
+      "defence": "missions/kazakh-steppe-defence.mission.json"
     },
     {
       "id": "developer.indus-valley",
@@ -332,7 +404,9 @@
       "lat": 31,
       "population": 3600000,
       "owner": "Ironwood Trust",
-      "mission": "missions/indus-valley.mission.json"
+      "mission": "missions/indus-valley.mission.json",
+      "uprising": "missions/indus-valley-uprising.mission.json",
+      "defence": "missions/indus-valley-defence.mission.json"
     },
     {
       "id": "developer.deccan",
@@ -341,7 +415,9 @@
       "lat": 15,
       "population": 6000000,
       "owner": "Ironwood Trust",
-      "mission": "missions/deccan.mission.json"
+      "mission": "missions/deccan.mission.json",
+      "uprising": "missions/deccan-uprising.mission.json",
+      "defence": "missions/deccan-defence.mission.json"
     },
     {
       "id": "developer.ganges-delta",
@@ -350,7 +426,9 @@
       "lat": 24,
       "population": 5500000,
       "owner": "Ironwood Trust",
-      "mission": "missions/ganges-delta.mission.json"
+      "mission": "missions/ganges-delta.mission.json",
+      "uprising": "missions/ganges-delta-uprising.mission.json",
+      "defence": "missions/ganges-delta-defence.mission.json"
     },
     {
       "id": "developer.mongolia",
@@ -359,7 +437,9 @@
       "lat": 47,
       "population": 2300000,
       "owner": "Meridian Combine",
-      "mission": "missions/mongolia.mission.json"
+      "mission": "missions/mongolia.mission.json",
+      "uprising": "missions/mongolia-uprising.mission.json",
+      "defence": "missions/mongolia-defence.mission.json"
     },
     {
       "id": "developer.southern-china",
@@ -368,7 +448,9 @@
       "lat": 26,
       "population": 6300000,
       "owner": "Halcyon Group",
-      "mission": "missions/southern-china.mission.json"
+      "mission": "missions/southern-china.mission.json",
+      "uprising": "missions/southern-china-uprising.mission.json",
+      "defence": "missions/southern-china-defence.mission.json"
     },
     {
       "id": "developer.manchuria",
@@ -377,7 +459,9 @@
       "lat": 45,
       "population": 4900000,
       "owner": "Halcyon Group",
-      "mission": "missions/manchuria.mission.json"
+      "mission": "missions/manchuria.mission.json",
+      "uprising": "missions/manchuria-uprising.mission.json",
+      "defence": "missions/manchuria-defence.mission.json"
     },
     {
       "id": "developer.japan",
@@ -386,7 +470,9 @@
       "lat": 36,
       "population": 2000000,
       "owner": "Vesper Holdings",
-      "mission": "missions/japan.mission.json"
+      "mission": "missions/japan.mission.json",
+      "uprising": "missions/japan-uprising.mission.json",
+      "defence": "missions/japan-defence.mission.json"
     },
     {
       "id": "developer.sumatra",
@@ -395,7 +481,9 @@
       "lat": -1,
       "population": 5300000,
       "owner": "Meridian Combine",
-      "mission": "missions/sumatra.mission.json"
+      "mission": "missions/sumatra.mission.json",
+      "uprising": "missions/sumatra-uprising.mission.json",
+      "defence": "missions/sumatra-defence.mission.json"
     },
     {
       "id": "developer.borneo",
@@ -404,7 +492,9 @@
       "lat": 0,
       "population": 6200000,
       "owner": "Corvid Combine",
-      "mission": "missions/borneo.mission.json"
+      "mission": "missions/borneo.mission.json",
+      "uprising": "missions/borneo-uprising.mission.json",
+      "defence": "missions/borneo-defence.mission.json"
     },
     {
       "id": "developer.western-australia",
@@ -413,7 +503,9 @@
       "lat": -26,
       "population": 1900000,
       "owner": "Ironwood Trust",
-      "mission": "missions/western-australia.mission.json"
+      "mission": "missions/western-australia.mission.json",
+      "uprising": "missions/western-australia-uprising.mission.json",
+      "defence": "missions/western-australia-defence.mission.json"
     },
     {
       "id": "developer.central-australia",
@@ -422,7 +514,9 @@
       "lat": -24,
       "population": 5900000,
       "owner": "Meridian Combine",
-      "mission": "missions/central-australia.mission.json"
+      "mission": "missions/central-australia.mission.json",
+      "uprising": "missions/central-australia-uprising.mission.json",
+      "defence": "missions/central-australia-defence.mission.json"
     },
     {
       "id": "developer.eastern-australia",
@@ -431,7 +525,9 @@
       "lat": -26,
       "population": 3300000,
       "owner": "Corvid Combine",
-      "mission": "missions/eastern-australia.mission.json"
+      "mission": "missions/eastern-australia.mission.json",
+      "uprising": "missions/eastern-australia-uprising.mission.json",
+      "defence": "missions/eastern-australia-defence.mission.json"
     },
     {
       "id": "developer.madagascar",
@@ -440,7 +536,9 @@
       "lat": -19,
       "population": 4100000,
       "owner": "Tidewater Consortium",
-      "mission": "missions/madagascar.mission.json"
+      "mission": "missions/madagascar.mission.json",
+      "uprising": "missions/madagascar-uprising.mission.json",
+      "defence": "missions/madagascar-defence.mission.json"
     },
     {
       "id": "developer.northern-ireland",
@@ -449,7 +547,9 @@
       "lat": 54.6,
       "population": 1900000,
       "owner": "Tidewater Consortium",
-      "mission": "missions/foyle-crossing.mission.json"
+      "mission": "missions/foyle-crossing.mission.json",
+      "uprising": "missions/foyle-crossing-uprising.mission.json",
+      "defence": "missions/foyle-crossing-defence.mission.json"
     }
   ]
 }

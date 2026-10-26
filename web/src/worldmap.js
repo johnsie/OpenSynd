@@ -59,12 +59,14 @@ export function regionStates(entries, progress, selectedIndex) {
 }
 
 /** The text shown for a region when it is hovered or focused. */
-export function regionCard(entry, index, state, entries) {
+export function regionCard(entry, index, state, entries, alert = null) {
   const number = String(index + 1).padStart(2, "0");
   const place = entry.region?.name ?? entry.name;
-  const label = state === "completed" ? "COMPLETED" : state === "available" ? "AVAILABLE" : "LOCKED";
-  const detail =
-    state === "locked"
+  let label = state === "completed" ? "COMPLETED" : state === "available" ? "AVAILABLE" : "LOCKED";
+  if (alert) label = alert.label; // a revolt or a takeover attempt matters more than whether the first operation was won
+  const detail = alert
+    ? alert.detail
+    : state === "locked"
       ? `Complete ${
           prerequisites(entries, index)
             .map((id) => entries.find((item) => item.id === id)?.name)
@@ -174,7 +176,7 @@ function drawAtlas(root) {
  * Draw the map into `container`. `onSelect(index)` is called when an unlocked region is chosen;
  * `onCard(card)` is told what to show (or null) when a region is hovered or focused.
  */
-export function renderWorldMap({ container, entries, progress, selectedIndex, onSelect, onCard, territories = [] }) {
+export function renderWorldMap({ container, entries, progress, selectedIndex, onSelect, onCard, territories = [], alerts = {} }) {
   const states = regionStates(entries, progress, selectedIndex);
   const root = svg("svg", {
     viewBox: viewBoxOf(currentView),
@@ -237,10 +239,11 @@ export function renderWorldMap({ container, entries, progress, selectedIndex, on
   }
   entries.forEach((entry, index) => {
     const { state, selected } = states[index];
-    const card = regionCard(entry, index, state, entries);
+    const alert = alerts[entry.id] ?? null;
+    const card = regionCard(entry, index, state, entries, alert);
     const centre = centres[index];
     const group = svg("g", {
-      class: `map-region ${state}${selected ? " selected" : ""}`,
+      class: `map-region ${state}${selected ? " selected" : ""}${alert ? ` alert-${alert.kind}` : ""}`,
       role: "button",
       "aria-label": `${card.title}, ${card.place}, ${card.label.toLowerCase()}. ${card.detail}`,
       "aria-pressed": selected,

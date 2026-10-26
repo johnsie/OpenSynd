@@ -1,0 +1,834 @@
+{
+ "formatVersion": 1,
+ "id": "developer.op-indus-valley-uprising",
+ "name": "Indus Valley Blackout Uprising",
+ "license": "CC0-1.0",
+ "map": "maps/indus-valley.map.json",
+ "team": [
+  {
+   "id": "operator-one",
+   "unit": "units/field-operator.unit.json",
+   "position": {
+    "x": 2,
+    "y": 56
+   },
+   "equipment": [
+    "equipment/civic-pulse-emitter.equipment.json",
+    "equipment/field-repair-kit.equipment.json"
+   ]
+  },
+  {
+   "id": "operator-two",
+   "unit": "units/field-operator.unit.json",
+   "position": {
+    "x": 3,
+    "y": 56
+   },
+   "equipment": [
+    "equipment/civic-pulse-emitter.equipment.json",
+    "equipment/field-repair-kit.equipment.json"
+   ]
+  },
+  {
+   "id": "operator-three",
+   "unit": "units/field-operator.unit.json",
+   "position": {
+    "x": 2,
+    "y": 57
+   },
+   "equipment": [
+    "equipment/civic-pulse-emitter.equipment.json",
+    "equipment/field-repair-kit.equipment.json"
+   ]
+  },
+  {
+   "id": "operator-four",
+   "unit": "units/field-operator.unit.json",
+   "position": {
+    "x": 3,
+    "y": 57
+   },
+   "equipment": [
+    "equipment/civic-pulse-emitter.equipment.json",
+    "equipment/field-repair-kit.equipment.json"
+   ]
+  }
+ ],
+ "opponents": [
+  {
+   "id": "enemy-agent-one",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 73,
+    "y": 66
+   },
+   "equipment": [
+    "equipment/scatter-emitter.equipment.json"
+   ],
+   "patrol": [
+    {
+     "x": 73,
+     "y": 66
+    },
+    {
+     "x": 79,
+     "y": 66
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-two",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 99,
+    "y": 31
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 99,
+     "y": 31
+    },
+    {
+     "x": 105,
+     "y": 31
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-three",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 83,
+    "y": 103
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 83,
+     "y": 103
+    },
+    {
+     "x": 83,
+     "y": 110
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-four",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 77,
+    "y": 66
+   },
+   "equipment": [
+    "equipment/field-repair-kit.equipment.json",
+    "equipment/delay-charge.equipment.json"
+   ],
+   "patrol": [
+    {
+     "x": 77,
+     "y": 66
+    },
+    {
+     "x": 73,
+     "y": 66
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-five",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 7,
+    "y": 25
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 7,
+     "y": 25
+    },
+    {
+     "x": 14,
+     "y": 25
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-six",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 92,
+    "y": 52
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 92,
+     "y": 52
+    },
+    {
+     "x": 92,
+     "y": 45
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-seven",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 74,
+    "y": 61
+   },
+   "equipment": [
+    "equipment/scatter-emitter.equipment.json"
+   ],
+   "patrol": [
+    {
+     "x": 74,
+     "y": 61
+    },
+    {
+     "x": 74,
+     "y": 53
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-eight",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 101,
+    "y": 103
+   },
+   "equipment": [
+    "equipment/delay-charge.equipment.json"
+   ],
+   "patrol": [
+    {
+     "x": 101,
+     "y": 103
+    },
+    {
+     "x": 101,
+     "y": 96
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-nine",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 98,
+    "y": 99
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 98,
+     "y": 99
+    },
+    {
+     "x": 98,
+     "y": 107
+    }
+   ]
+  },
+  {
+   "id": "guard-1",
+   "unit": "units/guard.unit.json",
+   "position": {
+    "x": 69,
+    "y": 52
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 69,
+     "y": 52
+    },
+    {
+     "x": 79,
+     "y": 52
+    }
+   ]
+  },
+  {
+   "id": "guard-2",
+   "unit": "units/guard.unit.json",
+   "position": {
+    "x": 29,
+    "y": 27
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 29,
+     "y": 27
+    },
+    {
+     "x": 29,
+     "y": 36
+    }
+   ]
+  },
+  {
+   "id": "guard-3",
+   "unit": "units/guard.unit.json",
+   "position": {
+    "x": 100,
+    "y": 108
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 100,
+     "y": 108
+    },
+    {
+     "x": 100,
+     "y": 101
+    }
+   ]
+  },
+  {
+   "id": "guard-4",
+   "unit": "units/guard.unit.json",
+   "position": {
+    "x": 101,
+    "y": 10
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 101,
+     "y": 10
+    },
+    {
+     "x": 97,
+     "y": 10
+    }
+   ]
+  },
+  {
+   "id": "warden",
+   "unit": "units/site-warden.unit.json",
+   "position": {
+    "x": 41,
+    "y": 107
+   },
+   "equipment": [
+    "equipment/scatter-emitter.equipment.json"
+   ],
+   "patrol": [
+    {
+     "x": 41,
+     "y": 107
+    },
+    {
+     "x": 47,
+     "y": 107
+    }
+   ]
+  }
+ ],
+ "objectives": [
+  {
+   "id": "put-down-ringleaders",
+   "type": "eliminate",
+   "targets": [
+    "enemy-agent-one",
+    "enemy-agent-two",
+    "enemy-agent-three"
+   ],
+   "required": true,
+   "description": "Put down the 3 ringleaders."
+  },
+  {
+   "id": "fall-back",
+   "type": "extract",
+   "targetZone": "fall-back-area",
+   "required": true,
+   "description": "Fall back to the marked landing area with the whole team."
+  }
+ ],
+ "bystanders": [
+  {
+   "id": "civilian-1",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 74,
+    "y": 18
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 74,
+     "y": 18
+    },
+    {
+     "x": 74,
+     "y": 31
+    }
+   ]
+  },
+  {
+   "id": "civilian-2",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 76,
+    "y": 5
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 76,
+     "y": 5
+    },
+    {
+     "x": 76,
+     "y": 15
+    }
+   ]
+  },
+  {
+   "id": "civilian-3",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 27,
+    "y": 6
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 27,
+     "y": 6
+    },
+    {
+     "x": 37,
+     "y": 6
+    }
+   ]
+  },
+  {
+   "id": "civilian-4",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 98,
+    "y": 81
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 98,
+     "y": 81
+    },
+    {
+     "x": 109,
+     "y": 81
+    }
+   ]
+  },
+  {
+   "id": "civilian-5",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 52,
+    "y": 103
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 52,
+     "y": 103
+    },
+    {
+     "x": 58,
+     "y": 103
+    }
+   ]
+  },
+  {
+   "id": "civilian-6",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 57,
+    "y": 101
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 57,
+     "y": 101
+    },
+    {
+     "x": 67,
+     "y": 101
+    }
+   ]
+  },
+  {
+   "id": "civilian-7",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 109,
+    "y": 100
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 109,
+     "y": 100
+    },
+    {
+     "x": 109,
+     "y": 86
+    }
+   ]
+  },
+  {
+   "id": "civilian-8",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 52,
+    "y": 83
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 52,
+     "y": 83
+    },
+    {
+     "x": 52,
+     "y": 96
+    }
+   ]
+  },
+  {
+   "id": "civilian-9",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 97,
+    "y": 53
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 97,
+     "y": 53
+    },
+    {
+     "x": 97,
+     "y": 40
+    }
+   ]
+  },
+  {
+   "id": "civilian-10",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 103,
+    "y": 99
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 103,
+     "y": 99
+    },
+    {
+     "x": 103,
+     "y": 92
+    }
+   ]
+  },
+  {
+   "id": "police-1",
+   "unit": "units/city-police.unit.json",
+   "position": {
+    "x": 49,
+    "y": 51
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 49,
+     "y": 51
+    },
+    {
+     "x": 55,
+     "y": 51
+    }
+   ]
+  },
+  {
+   "id": "police-2",
+   "unit": "units/city-police.unit.json",
+   "position": {
+    "x": 28,
+    "y": 80
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 28,
+     "y": 80
+    },
+    {
+     "x": 28,
+     "y": 68
+    }
+   ]
+  },
+  {
+   "id": "police-3",
+   "unit": "units/city-police.unit.json",
+   "position": {
+    "x": 28,
+    "y": 41
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 28,
+     "y": 41
+    },
+    {
+     "x": 28,
+     "y": 47
+    }
+   ]
+  },
+  {
+   "id": "criminal-1",
+   "unit": "units/criminal.unit.json",
+   "position": {
+    "x": 8,
+    "y": 74
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 8,
+     "y": 74
+    },
+    {
+     "x": 20,
+     "y": 74
+    }
+   ]
+  },
+  {
+   "id": "criminal-2",
+   "unit": "units/criminal.unit.json",
+   "position": {
+    "x": 78,
+    "y": 108
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 78,
+     "y": 108
+    },
+    {
+     "x": 78,
+     "y": 111
+    }
+   ]
+  },
+  {
+   "id": "criminal-3",
+   "unit": "units/criminal.unit.json",
+   "position": {
+    "x": 53,
+    "y": 13
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 53,
+     "y": 13
+    },
+    {
+     "x": 49,
+     "y": 13
+    }
+   ]
+  }
+ ],
+ "region": {
+  "name": "Indus Valley",
+  "lon": 70,
+  "lat": 31,
+  "population": 3600000
+ },
+ "vehicles": [
+  {
+   "id": "city-car-1",
+   "vehicle": "vehicles/city-car.vehicle.json",
+   "position": {
+    "x": 2,
+    "y": 74
+   },
+   "driver": "units/civilian-man.unit.json",
+   "patrol": [
+    {
+     "x": 2,
+     "y": 74
+    },
+    {
+     "x": 109,
+     "y": 74
+    }
+   ]
+  },
+  {
+   "id": "city-car-2",
+   "vehicle": "vehicles/city-car.vehicle.json",
+   "position": {
+    "x": 2,
+    "y": 77
+   },
+   "driver": "units/civilian-woman.unit.json",
+   "patrol": [
+    {
+     "x": 2,
+     "y": 77
+    },
+    {
+     "x": 109,
+     "y": 77
+    }
+   ]
+  },
+  {
+   "id": "city-car-3",
+   "vehicle": "vehicles/city-car.vehicle.json",
+   "position": {
+    "x": 2,
+    "y": 76
+   },
+   "driver": "units/civilian-man.unit.json",
+   "patrol": [
+    {
+     "x": 2,
+     "y": 76
+    },
+    {
+     "x": 109,
+     "y": 76
+    }
+   ]
+  },
+  {
+   "id": "city-car-4",
+   "vehicle": "vehicles/city-car.vehicle.json",
+   "position": {
+    "x": 95,
+    "y": 99
+   },
+   "driver": "units/civilian-woman.unit.json",
+   "patrol": [
+    {
+     "x": 95,
+     "y": 99
+    },
+    {
+     "x": 109,
+     "y": 99
+    }
+   ]
+  },
+  {
+   "id": "city-car-5",
+   "vehicle": "vehicles/patrol-car.vehicle.json",
+   "position": {
+    "x": 2,
+    "y": 51
+   },
+   "driver": "units/civilian-man.unit.json",
+   "patrol": [
+    {
+     "x": 2,
+     "y": 51
+    },
+    {
+     "x": 95,
+     "y": 51
+    }
+   ]
+  },
+  {
+   "id": "city-car-6",
+   "vehicle": "vehicles/armored-car.vehicle.json",
+   "position": {
+    "x": 62,
+    "y": 53
+   },
+   "driver": "units/civilian-woman.unit.json",
+   "patrol": [
+    {
+     "x": 62,
+     "y": 53
+    },
+    {
+     "x": 95,
+     "y": 53
+    }
+   ]
+  },
+  {
+   "id": "freight-train-1",
+   "vehicle": "vehicles/freight-train.vehicle.json",
+   "position": {
+    "x": 12,
+    "y": 2
+   },
+   "stops": [
+    {
+     "x": 12,
+     "y": 2,
+     "wait": 0
+    },
+    {
+     "x": 64,
+     "y": 2,
+     "wait": 8
+    },
+    {
+     "x": 94,
+     "y": 2,
+     "wait": 6
+    }
+   ]
+  }
+ ],
+ "variant": "uprising",
+ "territory": "developer.op-indus-valley",
+ "title": "The district has risen",
+ "briefing": "Indus Valley has risen against you and pays nothing until order is restored. Put down the 3 ringleaders and fall back to the landing area. The crowds will go home once they fall.",
+ "story": "Indus Valley Uprising: taxes too high for too long, and the streets belong to the ringleaders. End it.",
+ "debrief": {
+  "success": "The ringleaders are down and Indus Valley goes home. The district is yours again and pays tax once more.",
+  "failure": "The team is lost and Indus Valley stays in revolt. It pays nothing until it is taken back."
+ },
+ "zones": [
+  {
+   "id": "fall-back-area",
+   "kind": "exit",
+   "position": {
+    "x": 0,
+    "y": 54
+   },
+   "width": 4,
+   "height": 4
+  }
+ ],
+ "intel": [
+  "Patrol survey: the rising is led by 3 agents, spread through the district.",
+  "Full survey: only the ringleaders count; everyone else will fight if you come near."
+ ]
+}

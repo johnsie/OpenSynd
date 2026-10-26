@@ -1,0 +1,817 @@
+{
+ "formatVersion": 1,
+ "id": "developer.op-ural-region-uprising",
+ "name": "Ural Region Purge Uprising",
+ "license": "CC0-1.0",
+ "map": "maps/ural-region.map.json",
+ "team": [
+  {
+   "id": "operator-one",
+   "unit": "units/field-operator.unit.json",
+   "position": {
+    "x": 2,
+    "y": 56
+   },
+   "equipment": [
+    "equipment/civic-pulse-emitter.equipment.json",
+    "equipment/field-repair-kit.equipment.json"
+   ]
+  },
+  {
+   "id": "operator-two",
+   "unit": "units/field-operator.unit.json",
+   "position": {
+    "x": 3,
+    "y": 56
+   },
+   "equipment": [
+    "equipment/civic-pulse-emitter.equipment.json",
+    "equipment/field-repair-kit.equipment.json"
+   ]
+  },
+  {
+   "id": "operator-three",
+   "unit": "units/field-operator.unit.json",
+   "position": {
+    "x": 2,
+    "y": 57
+   },
+   "equipment": [
+    "equipment/civic-pulse-emitter.equipment.json",
+    "equipment/field-repair-kit.equipment.json"
+   ]
+  },
+  {
+   "id": "operator-four",
+   "unit": "units/field-operator.unit.json",
+   "position": {
+    "x": 3,
+    "y": 57
+   },
+   "equipment": [
+    "equipment/civic-pulse-emitter.equipment.json",
+    "equipment/field-repair-kit.equipment.json"
+   ]
+  }
+ ],
+ "opponents": [
+  {
+   "id": "enemy-agent-one",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 27,
+    "y": 47
+   },
+   "equipment": [
+    "equipment/scatter-emitter.equipment.json"
+   ],
+   "patrol": [
+    {
+     "x": 27,
+     "y": 47
+    },
+    {
+     "x": 27,
+     "y": 53
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-two",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 99,
+    "y": 103
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 99,
+     "y": 103
+    },
+    {
+     "x": 106,
+     "y": 103
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-three",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 28,
+    "y": 35
+   },
+   "equipment": [
+    "equipment/scatter-emitter.equipment.json"
+   ],
+   "patrol": [
+    {
+     "x": 28,
+     "y": 35
+    },
+    {
+     "x": 28,
+     "y": 41
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-four",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 75,
+    "y": 44
+   },
+   "equipment": [
+    "equipment/scatter-emitter.equipment.json",
+    "equipment/delay-charge.equipment.json"
+   ],
+   "patrol": [
+    {
+     "x": 75,
+     "y": 44
+    },
+    {
+     "x": 75,
+     "y": 38
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-five",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 75,
+    "y": 0
+   },
+   "equipment": [
+    "equipment/field-repair-kit.equipment.json"
+   ],
+   "patrol": [
+    {
+     "x": 75,
+     "y": 0
+    },
+    {
+     "x": 82,
+     "y": 0
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-six",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 24,
+    "y": 75
+   },
+   "equipment": [
+    "equipment/field-repair-kit.equipment.json"
+   ],
+   "patrol": [
+    {
+     "x": 24,
+     "y": 75
+    },
+    {
+     "x": 30,
+     "y": 75
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-seven",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 82,
+    "y": 99
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 82,
+     "y": 99
+    },
+    {
+     "x": 82,
+     "y": 107
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-eight",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 27,
+    "y": 106
+   },
+   "equipment": [
+    "equipment/delay-charge.equipment.json"
+   ],
+   "patrol": [
+    {
+     "x": 27,
+     "y": 106
+    },
+    {
+     "x": 20,
+     "y": 106
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-nine",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 73,
+    "y": 102
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 73,
+     "y": 102
+    },
+    {
+     "x": 73,
+     "y": 95
+    }
+   ]
+  },
+  {
+   "id": "guard-1",
+   "unit": "units/guard.unit.json",
+   "position": {
+    "x": 16,
+    "y": 98
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 16,
+     "y": 98
+    },
+    {
+     "x": 22,
+     "y": 98
+    }
+   ]
+  },
+  {
+   "id": "guard-2",
+   "unit": "units/guard.unit.json",
+   "position": {
+    "x": 74,
+    "y": 54
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 74,
+     "y": 54
+    },
+    {
+     "x": 62,
+     "y": 54
+    }
+   ]
+  },
+  {
+   "id": "guard-3",
+   "unit": "units/guard.unit.json",
+   "position": {
+    "x": 44,
+    "y": 77
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 44,
+     "y": 77
+    },
+    {
+     "x": 51,
+     "y": 77
+    }
+   ]
+  },
+  {
+   "id": "guard-4",
+   "unit": "units/guard.unit.json",
+   "position": {
+    "x": 73,
+    "y": 75
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 73,
+     "y": 75
+    },
+    {
+     "x": 73,
+     "y": 67
+    }
+   ]
+  }
+ ],
+ "objectives": [
+  {
+   "id": "put-down-ringleaders",
+   "type": "eliminate",
+   "targets": [
+    "enemy-agent-one",
+    "enemy-agent-two",
+    "enemy-agent-three"
+   ],
+   "required": true,
+   "description": "Put down the 3 ringleaders."
+  },
+  {
+   "id": "fall-back",
+   "type": "extract",
+   "targetZone": "fall-back-area",
+   "required": true,
+   "description": "Fall back to the marked landing area with the whole team."
+  }
+ ],
+ "bystanders": [
+  {
+   "id": "civilian-1",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 74,
+    "y": 109
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 74,
+     "y": 109
+    },
+    {
+     "x": 74,
+     "y": 96
+    }
+   ]
+  },
+  {
+   "id": "civilian-2",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 31,
+    "y": 27
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 31,
+     "y": 27
+    },
+    {
+     "x": 31,
+     "y": 30
+    }
+   ]
+  },
+  {
+   "id": "civilian-3",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 77,
+    "y": 10
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 77,
+     "y": 10
+    },
+    {
+     "x": 77,
+     "y": 2
+    }
+   ]
+  },
+  {
+   "id": "civilian-4",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 98,
+    "y": 29
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 98,
+     "y": 29
+    },
+    {
+     "x": 108,
+     "y": 29
+    }
+   ]
+  },
+  {
+   "id": "civilian-5",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 28,
+    "y": 96
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 28,
+     "y": 96
+    },
+    {
+     "x": 28,
+     "y": 103
+    }
+   ]
+  },
+  {
+   "id": "civilian-6",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 50,
+    "y": 9
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 50,
+     "y": 9
+    },
+    {
+     "x": 50,
+     "y": 22
+    }
+   ]
+  },
+  {
+   "id": "civilian-7",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 87,
+    "y": 51
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 87,
+     "y": 51
+    },
+    {
+     "x": 95,
+     "y": 51
+    }
+   ]
+  },
+  {
+   "id": "civilian-8",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 111,
+    "y": 52
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 111,
+     "y": 52
+    },
+    {
+     "x": 111,
+     "y": 58
+    }
+   ]
+  },
+  {
+   "id": "civilian-9",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 26,
+    "y": 61
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 26,
+     "y": 61
+    },
+    {
+     "x": 26,
+     "y": 49
+    }
+   ]
+  },
+  {
+   "id": "civilian-10",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 26,
+    "y": 3
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 26,
+     "y": 3
+    },
+    {
+     "x": 32,
+     "y": 3
+    }
+   ]
+  },
+  {
+   "id": "police-1",
+   "unit": "units/city-police.unit.json",
+   "position": {
+    "x": 98,
+    "y": 7
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 98,
+     "y": 7
+    },
+    {
+     "x": 110,
+     "y": 7
+    }
+   ]
+  },
+  {
+   "id": "police-2",
+   "unit": "units/city-police.unit.json",
+   "position": {
+    "x": 107,
+    "y": 101
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 107,
+     "y": 101
+    },
+    {
+     "x": 98,
+     "y": 101
+    }
+   ]
+  },
+  {
+   "id": "police-3",
+   "unit": "units/city-police.unit.json",
+   "position": {
+    "x": 99,
+    "y": 93
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 99,
+     "y": 93
+    },
+    {
+     "x": 99,
+     "y": 101
+    }
+   ]
+  },
+  {
+   "id": "criminal-1",
+   "unit": "units/criminal.unit.json",
+   "position": {
+    "x": 108,
+    "y": 41
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 108,
+     "y": 41
+    },
+    {
+     "x": 108,
+     "y": 49
+    }
+   ]
+  },
+  {
+   "id": "criminal-2",
+   "unit": "units/criminal.unit.json",
+   "position": {
+    "x": 60,
+    "y": 53
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 60,
+     "y": 53
+    },
+    {
+     "x": 72,
+     "y": 53
+    }
+   ]
+  },
+  {
+   "id": "criminal-3",
+   "unit": "units/criminal.unit.json",
+   "position": {
+    "x": 15,
+    "y": 93
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 15,
+     "y": 93
+    },
+    {
+     "x": 15,
+     "y": 87
+    }
+   ]
+  }
+ ],
+ "region": {
+  "name": "Ural Region",
+  "lon": 60,
+  "lat": 58,
+  "population": 5800000
+ },
+ "vehicles": [
+  {
+   "id": "city-car-1",
+   "vehicle": "vehicles/city-car.vehicle.json",
+   "position": {
+    "x": 62,
+    "y": 51
+   },
+   "driver": "units/civilian-man.unit.json",
+   "patrol": [
+    {
+     "x": 62,
+     "y": 51
+    },
+    {
+     "x": 109,
+     "y": 51
+    }
+   ]
+  },
+  {
+   "id": "city-car-2",
+   "vehicle": "vehicles/city-car.vehicle.json",
+   "position": {
+    "x": 62,
+    "y": 100
+   },
+   "driver": "units/civilian-woman.unit.json",
+   "patrol": [
+    {
+     "x": 62,
+     "y": 100
+    },
+    {
+     "x": 109,
+     "y": 100
+    }
+   ]
+  },
+  {
+   "id": "city-car-3",
+   "vehicle": "vehicles/city-car.vehicle.json",
+   "position": {
+    "x": 62,
+    "y": 76
+   },
+   "driver": "units/civilian-man.unit.json",
+   "patrol": [
+    {
+     "x": 62,
+     "y": 76
+    },
+    {
+     "x": 109,
+     "y": 76
+    }
+   ]
+  },
+  {
+   "id": "city-car-4",
+   "vehicle": "vehicles/city-car.vehicle.json",
+   "position": {
+    "x": 62,
+    "y": 98
+   },
+   "driver": "units/civilian-woman.unit.json",
+   "patrol": [
+    {
+     "x": 62,
+     "y": 98
+    },
+    {
+     "x": 109,
+     "y": 98
+    }
+   ]
+  },
+  {
+   "id": "city-car-5",
+   "vehicle": "vehicles/patrol-car.vehicle.json",
+   "position": {
+    "x": 62,
+    "y": 52
+   },
+   "driver": "units/civilian-man.unit.json",
+   "patrol": [
+    {
+     "x": 62,
+     "y": 52
+    },
+    {
+     "x": 109,
+     "y": 52
+    }
+   ]
+  },
+  {
+   "id": "city-car-6",
+   "vehicle": "vehicles/armored-car.vehicle.json",
+   "position": {
+    "x": 62,
+    "y": 101
+   },
+   "driver": "units/civilian-woman.unit.json",
+   "patrol": [
+    {
+     "x": 62,
+     "y": 101
+    },
+    {
+     "x": 109,
+     "y": 101
+    }
+   ]
+  },
+  {
+   "id": "freight-train-1",
+   "vehicle": "vehicles/freight-train.vehicle.json",
+   "position": {
+    "x": 12,
+    "y": 2
+   },
+   "stops": [
+    {
+     "x": 12,
+     "y": 2,
+     "wait": 0
+    },
+    {
+     "x": 64,
+     "y": 2,
+     "wait": 8
+    },
+    {
+     "x": 109,
+     "y": 2,
+     "wait": 6
+    }
+   ]
+  }
+ ],
+ "variant": "uprising",
+ "territory": "developer.op-ural-region",
+ "title": "The district has risen",
+ "briefing": "Ural Region has risen against you and pays nothing until order is restored. Put down the 3 ringleaders and fall back to the landing area. The crowds will go home once they fall.",
+ "story": "Ural Region Uprising: taxes too high for too long, and the streets belong to the ringleaders. End it.",
+ "debrief": {
+  "success": "The ringleaders are down and Ural Region goes home. The district is yours again and pays tax once more.",
+  "failure": "The team is lost and Ural Region stays in revolt. It pays nothing until it is taken back."
+ },
+ "zones": [
+  {
+   "id": "fall-back-area",
+   "kind": "exit",
+   "position": {
+    "x": 0,
+    "y": 54
+   },
+   "width": 4,
+   "height": 4
+  }
+ ],
+ "intel": [
+  "Patrol survey: the rising is led by 3 agents, spread through the district.",
+  "Full survey: only the ringleaders count; everyone else will fight if you come near."
+ ]
+}

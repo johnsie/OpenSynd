@@ -1,0 +1,727 @@
+{
+ "formatVersion": 1,
+ "id": "developer.op-congo-basin-defence",
+ "name": "Congo Basin Uplink Defence",
+ "license": "CC0-1.0",
+ "map": "maps/congo-basin.map.json",
+ "team": [
+  {
+   "id": "operator-one",
+   "unit": "units/field-operator.unit.json",
+   "position": {
+    "x": 2,
+    "y": 48
+   },
+   "equipment": [
+    "equipment/civic-pulse-emitter.equipment.json",
+    "equipment/field-repair-kit.equipment.json"
+   ]
+  },
+  {
+   "id": "operator-two",
+   "unit": "units/field-operator.unit.json",
+   "position": {
+    "x": 3,
+    "y": 48
+   },
+   "equipment": [
+    "equipment/civic-pulse-emitter.equipment.json",
+    "equipment/field-repair-kit.equipment.json"
+   ]
+  },
+  {
+   "id": "operator-three",
+   "unit": "units/field-operator.unit.json",
+   "position": {
+    "x": 2,
+    "y": 49
+   },
+   "equipment": [
+    "equipment/civic-pulse-emitter.equipment.json",
+    "equipment/field-repair-kit.equipment.json"
+   ]
+  },
+  {
+   "id": "operator-four",
+   "unit": "units/field-operator.unit.json",
+   "position": {
+    "x": 3,
+    "y": 49
+   },
+   "equipment": [
+    "equipment/civic-pulse-emitter.equipment.json",
+    "equipment/field-repair-kit.equipment.json"
+   ]
+  }
+ ],
+ "opponents": [
+  {
+   "id": "enemy-agent-one",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 24,
+    "y": 5
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 24,
+     "y": 5
+    },
+    {
+     "x": 24,
+     "y": 13
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-two",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 48,
+    "y": 69
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 48,
+     "y": 69
+    },
+    {
+     "x": 46,
+     "y": 54
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-three",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 79,
+    "y": 25
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 79,
+     "y": 25
+    },
+    {
+     "x": 79,
+     "y": 18
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-four",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 70,
+    "y": 48
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 70,
+     "y": 48
+    },
+    {
+     "x": 46,
+     "y": 54
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-five",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 26,
+    "y": 9
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 26,
+     "y": 9
+    },
+    {
+     "x": 23,
+     "y": 9
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-six",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 86,
+    "y": 91
+   },
+   "equipment": [
+    "equipment/scatter-emitter.equipment.json"
+   ],
+   "patrol": [
+    {
+     "x": 86,
+     "y": 91
+    },
+    {
+     "x": 86,
+     "y": 95
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-seven",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 70,
+    "y": 31
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 70,
+     "y": 31
+    },
+    {
+     "x": 46,
+     "y": 54
+    }
+   ]
+  },
+  {
+   "id": "guard-1",
+   "unit": "units/guard.unit.json",
+   "position": {
+    "x": 42,
+    "y": 90
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 42,
+     "y": 90
+    },
+    {
+     "x": 51,
+     "y": 90
+    }
+   ]
+  },
+  {
+   "id": "guard-2",
+   "unit": "units/guard.unit.json",
+   "position": {
+    "x": 69,
+    "y": 77
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 69,
+     "y": 77
+    },
+    {
+     "x": 69,
+     "y": 85
+    }
+   ]
+  },
+  {
+   "id": "guard-3",
+   "unit": "units/guard.unit.json",
+   "position": {
+    "x": 46,
+    "y": 87
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 46,
+     "y": 87
+    },
+    {
+     "x": 46,
+     "y": 78
+    }
+   ]
+  }
+ ],
+ "objectives": [
+  {
+   "id": "hold-position",
+   "type": "hold",
+   "targetZone": "uplink-hold",
+   "holdSeconds": 44,
+   "required": true,
+   "description": "Hold the marked position for 44 seconds."
+  },
+  {
+   "id": "fall-back",
+   "type": "extract",
+   "targetZone": "fall-back-area",
+   "required": true,
+   "description": "Fall back to the marked landing area with the whole team."
+  }
+ ],
+ "bystanders": [
+  {
+   "id": "civilian-1",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 44,
+    "y": 26
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 44,
+     "y": 26
+    },
+    {
+     "x": 44,
+     "y": 23
+    }
+   ]
+  },
+  {
+   "id": "civilian-2",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 9,
+    "y": 71
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 9,
+     "y": 71
+    },
+    {
+     "x": 9,
+     "y": 67
+    }
+   ]
+  },
+  {
+   "id": "civilian-3",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 15,
+    "y": 25
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 15,
+     "y": 25
+    },
+    {
+     "x": 15,
+     "y": 11
+    }
+   ]
+  },
+  {
+   "id": "civilian-4",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 70,
+    "y": 6
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 70,
+     "y": 6
+    },
+    {
+     "x": 81,
+     "y": 6
+    }
+   ]
+  },
+  {
+   "id": "civilian-5",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 28,
+    "y": 46
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 28,
+     "y": 46
+    },
+    {
+     "x": 28,
+     "y": 37
+    }
+   ]
+  },
+  {
+   "id": "civilian-6",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 71,
+    "y": 60
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 71,
+     "y": 60
+    },
+    {
+     "x": 71,
+     "y": 72
+    }
+   ]
+  },
+  {
+   "id": "civilian-7",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 91,
+    "y": 66
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 91,
+     "y": 66
+    },
+    {
+     "x": 91,
+     "y": 55
+    }
+   ]
+  },
+  {
+   "id": "civilian-8",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 75,
+    "y": 68
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 75,
+     "y": 68
+    },
+    {
+     "x": 65,
+     "y": 68
+    }
+   ]
+  },
+  {
+   "id": "civilian-9",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 69,
+    "y": 17
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 69,
+     "y": 17
+    },
+    {
+     "x": 69,
+     "y": 3
+    }
+   ]
+  },
+  {
+   "id": "civilian-10",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 46,
+    "y": 63
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 46,
+     "y": 63
+    },
+    {
+     "x": 50,
+     "y": 63
+    }
+   ]
+  },
+  {
+   "id": "police-1",
+   "unit": "units/city-police.unit.json",
+   "position": {
+    "x": 1,
+    "y": 93
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 1,
+     "y": 93
+    },
+    {
+     "x": 1,
+     "y": 81
+    }
+   ]
+  },
+  {
+   "id": "police-2",
+   "unit": "units/city-police.unit.json",
+   "position": {
+    "x": 48,
+    "y": 48
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 48,
+     "y": 48
+    },
+    {
+     "x": 48,
+     "y": 41
+    }
+   ]
+  },
+  {
+   "id": "police-3",
+   "unit": "units/city-police.unit.json",
+   "position": {
+    "x": 49,
+    "y": 31
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 49,
+     "y": 31
+    },
+    {
+     "x": 49,
+     "y": 25
+    }
+   ]
+  },
+  {
+   "id": "criminal-1",
+   "unit": "units/criminal.unit.json",
+   "position": {
+    "x": 91,
+    "y": 48
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 91,
+     "y": 48
+    },
+    {
+     "x": 91,
+     "y": 56
+    }
+   ]
+  },
+  {
+   "id": "criminal-2",
+   "unit": "units/criminal.unit.json",
+   "position": {
+    "x": 48,
+    "y": 41
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 48,
+     "y": 41
+    },
+    {
+     "x": 45,
+     "y": 41
+    }
+   ]
+  },
+  {
+   "id": "criminal-3",
+   "unit": "units/criminal.unit.json",
+   "position": {
+    "x": 33,
+    "y": 68
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 33,
+     "y": 68
+    },
+    {
+     "x": 22,
+     "y": 68
+    }
+   ]
+  }
+ ],
+ "region": {
+  "name": "Congo Basin",
+  "lon": 22,
+  "lat": 0,
+  "population": 5300000
+ },
+ "vehicles": [
+  {
+   "id": "city-car-1",
+   "vehicle": "vehicles/city-car.vehicle.json",
+   "position": {
+    "x": 2,
+    "y": 68
+   },
+   "driver": "units/civilian-man.unit.json",
+   "patrol": [
+    {
+     "x": 2,
+     "y": 68
+    },
+    {
+     "x": 93,
+     "y": 68
+    }
+   ]
+  },
+  {
+   "id": "city-car-2",
+   "vehicle": "vehicles/city-car.vehicle.json",
+   "position": {
+    "x": 2,
+    "y": 27
+   },
+   "driver": "units/civilian-woman.unit.json",
+   "patrol": [
+    {
+     "x": 2,
+     "y": 27
+    },
+    {
+     "x": 79,
+     "y": 27
+    }
+   ]
+  },
+  {
+   "id": "city-car-3",
+   "vehicle": "vehicles/city-car.vehicle.json",
+   "position": {
+    "x": 2,
+    "y": 25
+   },
+   "driver": "units/civilian-man.unit.json",
+   "patrol": [
+    {
+     "x": 2,
+     "y": 25
+    },
+    {
+     "x": 48,
+     "y": 25
+    }
+   ]
+  },
+  {
+   "id": "city-car-4",
+   "vehicle": "vehicles/city-car.vehicle.json",
+   "position": {
+    "x": 2,
+    "y": 90
+   },
+   "driver": "units/civilian-woman.unit.json",
+   "patrol": [
+    {
+     "x": 2,
+     "y": 90
+    },
+    {
+     "x": 93,
+     "y": 90
+    }
+   ]
+  },
+  {
+   "id": "city-car-5",
+   "vehicle": "vehicles/patrol-car.vehicle.json",
+   "position": {
+    "x": 2,
+    "y": 47
+   },
+   "driver": "units/civilian-man.unit.json",
+   "patrol": [
+    {
+     "x": 2,
+     "y": 47
+    },
+    {
+     "x": 93,
+     "y": 47
+    }
+   ]
+  },
+  {
+   "id": "freight-train-1",
+   "vehicle": "vehicles/freight-train.vehicle.json",
+   "position": {
+    "x": 12,
+    "y": 2
+   },
+   "stops": [
+    {
+     "x": 12,
+     "y": 2,
+     "wait": 0
+    },
+    {
+     "x": 59,
+     "y": 2,
+     "wait": 8
+    },
+    {
+     "x": 78,
+     "y": 2,
+     "wait": 6
+    }
+   ]
+  }
+ ],
+ "variant": "defence",
+ "territory": "developer.op-congo-basin",
+ "title": "Hold the district",
+ "briefing": "Tidewater Consortium is moving on Congo Basin. Its agents are coming for the marked position: hold it for 44 seconds while they close in, then fall back to the landing area.",
+ "story": "Congo Basin Defence: Tidewater Consortium wants the district and has sent its agents. Hold the line until they give up.",
+ "debrief": {
+  "success": "Tidewater Consortium pulls back from Congo Basin. The district stays yours.",
+  "failure": "The line broke. Tidewater Consortium presses on, and Congo Basin falls to it unless the next attempt holds."
+ },
+ "zones": [
+  {
+   "id": "fall-back-area",
+   "kind": "exit",
+   "position": {
+    "x": 0,
+    "y": 46
+   },
+   "width": 4,
+   "height": 4
+  }
+ ],
+ "intel": [
+  "Patrol survey: Tidewater Consortium sends 3 of its 7 agents at the position, the nearest first.",
+  "Full survey: guards and police stay on their beats but will join a fight."
+ ]
+}

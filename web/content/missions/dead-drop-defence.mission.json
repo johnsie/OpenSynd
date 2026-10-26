@@ -1,0 +1,1022 @@
+{
+ "formatVersion": 1,
+ "id": "developer.dead-drop-defence",
+ "name": "Dead Drop Defence",
+ "license": "CC0-1.0",
+ "map": "maps/freight-depot.map.json",
+ "team": [
+  {
+   "id": "operator-one",
+   "unit": "units/field-operator.unit.json",
+   "position": {
+    "x": 2,
+    "y": 48
+   },
+   "equipment": [
+    "equipment/civic-pulse-emitter.equipment.json",
+    "equipment/field-repair-kit.equipment.json"
+   ]
+  },
+  {
+   "id": "operator-two",
+   "unit": "units/field-operator.unit.json",
+   "position": {
+    "x": 3,
+    "y": 48
+   },
+   "equipment": [
+    "equipment/civic-pulse-emitter.equipment.json",
+    "equipment/field-repair-kit.equipment.json"
+   ]
+  },
+  {
+   "id": "operator-three",
+   "unit": "units/field-operator.unit.json",
+   "position": {
+    "x": 2,
+    "y": 49
+   },
+   "equipment": [
+    "equipment/civic-pulse-emitter.equipment.json",
+    "equipment/field-repair-kit.equipment.json"
+   ]
+  },
+  {
+   "id": "operator-four",
+   "unit": "units/field-operator.unit.json",
+   "position": {
+    "x": 3,
+    "y": 49
+   },
+   "equipment": [
+    "equipment/civic-pulse-emitter.equipment.json",
+    "equipment/field-repair-kit.equipment.json"
+   ]
+  }
+ ],
+ "opponents": [
+  {
+   "id": "enemy-agent-one",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 25,
+    "y": 10
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 25,
+     "y": 10
+    },
+    {
+     "x": 25,
+     "y": 40
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-two",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 25,
+    "y": 58
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 25,
+     "y": 58
+    },
+    {
+     "x": 47,
+     "y": 47
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-three",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 47,
+    "y": 8
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 47,
+     "y": 8
+    },
+    {
+     "x": 47,
+     "y": 47
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-four",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 40,
+    "y": 47
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 40,
+     "y": 47
+    },
+    {
+     "x": 47,
+     "y": 47
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-five",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 69,
+    "y": 8
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 69,
+     "y": 8
+    },
+    {
+     "x": 69,
+     "y": 38
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-six",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 69,
+    "y": 52
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 69,
+     "y": 52
+    },
+    {
+     "x": 47,
+     "y": 47
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-seven",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 69,
+    "y": 78
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 69,
+     "y": 78
+    },
+    {
+     "x": 69,
+     "y": 90
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-eight",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 91,
+    "y": 10
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 91,
+     "y": 10
+    },
+    {
+     "x": 91,
+     "y": 40
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-nine",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 91,
+    "y": 58
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 91,
+     "y": 58
+    },
+    {
+     "x": 91,
+     "y": 86
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-ten",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 12,
+    "y": 69
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 12,
+     "y": 69
+    },
+    {
+     "x": 40,
+     "y": 69
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-eleven",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 30,
+    "y": 91
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 30,
+     "y": 91
+    },
+    {
+     "x": 60,
+     "y": 91
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-twelve",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 12,
+    "y": 25
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 12,
+     "y": 25
+    },
+    {
+     "x": 40,
+     "y": 25
+    }
+   ]
+  },
+  {
+   "id": "warden",
+   "unit": "units/site-warden.unit.json",
+   "position": {
+    "x": 64,
+    "y": 69
+   },
+   "equipment": [
+    "equipment/scatter-emitter.equipment.json"
+   ],
+   "patrol": [
+    {
+     "x": 64,
+     "y": 69
+    },
+    {
+     "x": 76,
+     "y": 69
+    }
+   ]
+  },
+  {
+   "id": "vault-guard",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 69,
+    "y": 62
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 69,
+     "y": 62
+    },
+    {
+     "x": 47,
+     "y": 47
+    }
+   ]
+  },
+  {
+   "id": "guard-1",
+   "unit": "units/guard.unit.json",
+   "position": {
+    "x": 52,
+    "y": 92
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 52,
+     "y": 92
+    },
+    {
+     "x": 64,
+     "y": 92
+    }
+   ]
+  },
+  {
+   "id": "guard-2",
+   "unit": "units/guard.unit.json",
+   "position": {
+    "x": 47,
+    "y": 59
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 47,
+     "y": 59
+    },
+    {
+     "x": 47,
+     "y": 70
+    }
+   ]
+  },
+  {
+   "id": "guard-3",
+   "unit": "units/guard.unit.json",
+   "position": {
+    "x": 48,
+    "y": 17
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 48,
+     "y": 17
+    },
+    {
+     "x": 48,
+     "y": 31
+    }
+   ]
+  },
+  {
+   "id": "guard-4",
+   "unit": "units/guard.unit.json",
+   "position": {
+    "x": 69,
+    "y": 38
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 69,
+     "y": 38
+    },
+    {
+     "x": 69,
+     "y": 46
+    }
+   ]
+  }
+ ],
+ "objectives": [
+  {
+   "id": "hold-position",
+   "type": "hold",
+   "targetZone": "uplink-hold",
+   "holdSeconds": 56,
+   "required": true,
+   "description": "Hold the marked position for 56 seconds."
+  },
+  {
+   "id": "fall-back",
+   "type": "extract",
+   "targetZone": "fall-back-area",
+   "required": true,
+   "description": "Fall back to the marked landing area with the whole team."
+  }
+ ],
+ "bystanders": [
+  {
+   "id": "civilian-1",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 14,
+    "y": 26
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 14,
+     "y": 26
+    },
+    {
+     "x": 32,
+     "y": 26
+    }
+   ]
+  },
+  {
+   "id": "civilian-2",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 25,
+    "y": 32
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 25,
+     "y": 32
+    },
+    {
+     "x": 25,
+     "y": 44
+    }
+   ]
+  },
+  {
+   "id": "civilian-3",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 48,
+    "y": 50
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 48,
+     "y": 50
+    },
+    {
+     "x": 48,
+     "y": 67
+    }
+   ]
+  },
+  {
+   "id": "civilian-4",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 26,
+    "y": 48
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 26,
+     "y": 48
+    },
+    {
+     "x": 41,
+     "y": 48
+    }
+   ]
+  },
+  {
+   "id": "civilian-5",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 56,
+    "y": 26
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 56,
+     "y": 26
+    },
+    {
+     "x": 70,
+     "y": 26
+    }
+   ]
+  },
+  {
+   "id": "civilian-6",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 20,
+    "y": 92
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 20,
+     "y": 92
+    },
+    {
+     "x": 31,
+     "y": 92
+    }
+   ]
+  },
+  {
+   "id": "civilian-7",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 48,
+    "y": 14
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 48,
+     "y": 14
+    },
+    {
+     "x": 48,
+     "y": 25
+    }
+   ]
+  },
+  {
+   "id": "civilian-8",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 26,
+    "y": 50
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 26,
+     "y": 50
+    },
+    {
+     "x": 26,
+     "y": 64
+    }
+   ]
+  },
+  {
+   "id": "civilian-9",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 69,
+    "y": 14
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 69,
+     "y": 14
+    },
+    {
+     "x": 69,
+     "y": 28
+    }
+   ]
+  },
+  {
+   "id": "civilian-10",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 69,
+    "y": 8
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 69,
+     "y": 8
+    },
+    {
+     "x": 69,
+     "y": 19
+    }
+   ]
+  },
+  {
+   "id": "civilian-11",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 48,
+    "y": 56
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 48,
+     "y": 56
+    },
+    {
+     "x": 48,
+     "y": 66
+    }
+   ]
+  },
+  {
+   "id": "civilian-12",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 14,
+    "y": 48
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 14,
+     "y": 48
+    },
+    {
+     "x": 25,
+     "y": 48
+    }
+   ]
+  },
+  {
+   "id": "civilian-13",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 26,
+    "y": 8
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 26,
+     "y": 8
+    },
+    {
+     "x": 26,
+     "y": 19
+    }
+   ]
+  },
+  {
+   "id": "civilian-14",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 8,
+    "y": 69
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 8,
+     "y": 69
+    },
+    {
+     "x": 19,
+     "y": 69
+    }
+   ]
+  },
+  {
+   "id": "police-15",
+   "unit": "units/city-police.unit.json",
+   "position": {
+    "x": 26,
+    "y": 70
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 26,
+     "y": 70
+    },
+    {
+     "x": 43,
+     "y": 70
+    }
+   ]
+  },
+  {
+   "id": "police-16",
+   "unit": "units/city-police.unit.json",
+   "position": {
+    "x": 62,
+    "y": 48
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 62,
+     "y": 48
+    },
+    {
+     "x": 77,
+     "y": 48
+    }
+   ]
+  },
+  {
+   "id": "police-17",
+   "unit": "units/city-police.unit.json",
+   "position": {
+    "x": 8,
+    "y": 92
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 8,
+     "y": 92
+    },
+    {
+     "x": 24,
+     "y": 92
+    }
+   ]
+  },
+  {
+   "id": "police-18",
+   "unit": "units/city-police.unit.json",
+   "position": {
+    "x": 53,
+    "y": 26
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 53,
+     "y": 26
+    },
+    {
+     "x": 38,
+     "y": 26
+    }
+   ]
+  },
+  {
+   "id": "criminal-1",
+   "unit": "units/criminal.unit.json",
+   "position": {
+    "x": 17,
+    "y": 47
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 17,
+     "y": 47
+    },
+    {
+     "x": 25,
+     "y": 47
+    }
+   ]
+  },
+  {
+   "id": "criminal-2",
+   "unit": "units/criminal.unit.json",
+   "position": {
+    "x": 31,
+    "y": 91
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 31,
+     "y": 91
+    },
+    {
+     "x": 43,
+     "y": 91
+    }
+   ]
+  },
+  {
+   "id": "criminal-3",
+   "unit": "units/criminal.unit.json",
+   "position": {
+    "x": 91,
+    "y": 45
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 91,
+     "y": 45
+    },
+    {
+     "x": 91,
+     "y": 53
+    }
+   ]
+  },
+  {
+   "id": "criminal-4",
+   "unit": "units/criminal.unit.json",
+   "position": {
+    "x": 92,
+    "y": 59
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 92,
+     "y": 59
+    },
+    {
+     "x": 92,
+     "y": 68
+    }
+   ]
+  }
+ ],
+ "region": {
+  "name": "Southern Brazil",
+  "lon": -50,
+  "lat": -22,
+  "population": 3100000
+ },
+ "vehicles": [
+  {
+   "id": "city-car-1",
+   "vehicle": "vehicles/city-car.vehicle.json",
+   "position": {
+    "x": 74,
+    "y": 68
+   },
+   "driver": "units/civilian-woman.unit.json",
+   "patrol": [
+    {
+     "x": 74,
+     "y": 68
+    },
+    {
+     "x": 93,
+     "y": 68
+    }
+   ]
+  },
+  {
+   "id": "city-car-2",
+   "vehicle": "vehicles/city-car.vehicle.json",
+   "position": {
+    "x": 22,
+    "y": 69
+   },
+   "driver": "units/civilian-man.unit.json",
+   "patrol": [
+    {
+     "x": 22,
+     "y": 69
+    },
+    {
+     "x": 57,
+     "y": 69
+    }
+   ]
+  },
+  {
+   "id": "city-car-3",
+   "vehicle": "vehicles/city-car.vehicle.json",
+   "position": {
+    "x": 8,
+    "y": 69
+   },
+   "driver": "units/criminal.unit.json",
+   "patrol": [
+    {
+     "x": 8,
+     "y": 69
+    },
+    {
+     "x": 39,
+     "y": 69
+    }
+   ]
+  },
+  {
+   "id": "ambulance-4",
+   "vehicle": "vehicles/ambulance.vehicle.json",
+   "position": {
+    "x": 22,
+    "y": 47
+   },
+   "driver": "units/civilian-woman.unit.json",
+   "patrol": [
+    {
+     "x": 22,
+     "y": 47
+    },
+    {
+     "x": 48,
+     "y": 47
+    }
+   ]
+  },
+  {
+   "id": "patrol-car-5",
+   "vehicle": "vehicles/patrol-car.vehicle.json",
+   "position": {
+    "x": 61,
+    "y": 47
+   },
+   "driver": "units/city-police.unit.json",
+   "patrol": [
+    {
+     "x": 61,
+     "y": 47
+    },
+    {
+     "x": 93,
+     "y": 47
+    }
+   ]
+  },
+  {
+   "id": "armored-car-6",
+   "vehicle": "vehicles/armored-car.vehicle.json",
+   "position": {
+    "x": 37,
+    "y": 47
+   },
+   "driver": "units/guard.unit.json",
+   "patrol": [
+    {
+     "x": 37,
+     "y": 47
+    },
+    {
+     "x": 66,
+     "y": 47
+    }
+   ]
+  },
+  {
+   "id": "parked-city-car-1",
+   "vehicle": "vehicles/city-car.vehicle.json",
+   "position": {
+    "x": 8,
+    "y": 47
+   }
+  },
+  {
+   "id": "parked-ambulance-2",
+   "vehicle": "vehicles/ambulance.vehicle.json",
+   "position": {
+    "x": 14,
+    "y": 47
+   }
+  },
+  {
+   "id": "fire-engine-7",
+   "vehicle": "vehicles/fire-engine.vehicle.json",
+   "position": {
+    "x": 22,
+    "y": 91
+   },
+   "driver": "units/civilian-man.unit.json",
+   "patrol": [
+    {
+     "x": 22,
+     "y": 91
+    },
+    {
+     "x": 57,
+     "y": 91
+    }
+   ]
+  }
+ ],
+ "variant": "defence",
+ "territory": "developer.dead-drop",
+ "title": "Hold the district",
+ "briefing": "Meridian Combine is moving on Southern Brazil. Its agents are coming for the marked position: hold it for 56 seconds while they close in, then fall back to the landing area.",
+ "story": "Southern Brazil Defence: Meridian Combine wants the district and has sent its agents. Hold the line until they give up.",
+ "debrief": {
+  "success": "Meridian Combine pulls back from Southern Brazil. The district stays yours.",
+  "failure": "The line broke. Meridian Combine presses on, and Southern Brazil falls to it unless the next attempt holds."
+ },
+ "zones": [
+  {
+   "id": "fall-back-area",
+   "kind": "exit",
+   "position": {
+    "x": 0,
+    "y": 46
+   },
+   "width": 4,
+   "height": 4
+  }
+ ],
+ "intel": [
+  "Patrol survey: Meridian Combine sends 5 of its 13 agents at the position, the nearest first.",
+  "Full survey: guards and police stay on their beats but will join a fight."
+ ]
+}

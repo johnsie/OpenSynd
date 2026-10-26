@@ -1,0 +1,668 @@
+{
+ "formatVersion": 1,
+ "id": "developer.op-eastern-europe-defence",
+ "name": "Eastern Europe Purge Defence",
+ "license": "CC0-1.0",
+ "map": "maps/eastern-europe.map.json",
+ "team": [
+  {
+   "id": "operator-one",
+   "unit": "units/field-operator.unit.json",
+   "position": {
+    "x": 2,
+    "y": 48
+   },
+   "equipment": [
+    "equipment/civic-pulse-emitter.equipment.json",
+    "equipment/field-repair-kit.equipment.json"
+   ]
+  },
+  {
+   "id": "operator-two",
+   "unit": "units/field-operator.unit.json",
+   "position": {
+    "x": 3,
+    "y": 48
+   },
+   "equipment": [
+    "equipment/civic-pulse-emitter.equipment.json",
+    "equipment/field-repair-kit.equipment.json"
+   ]
+  },
+  {
+   "id": "operator-three",
+   "unit": "units/field-operator.unit.json",
+   "position": {
+    "x": 2,
+    "y": 49
+   },
+   "equipment": [
+    "equipment/civic-pulse-emitter.equipment.json",
+    "equipment/field-repair-kit.equipment.json"
+   ]
+  },
+  {
+   "id": "operator-four",
+   "unit": "units/field-operator.unit.json",
+   "position": {
+    "x": 3,
+    "y": 49
+   },
+   "equipment": [
+    "equipment/civic-pulse-emitter.equipment.json",
+    "equipment/field-repair-kit.equipment.json"
+   ]
+  }
+ ],
+ "opponents": [
+  {
+   "id": "enemy-agent-one",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 94,
+    "y": 90
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 94,
+     "y": 90
+    },
+    {
+     "x": 69,
+     "y": 82
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-two",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 2,
+    "y": 25
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 2,
+     "y": 25
+    },
+    {
+     "x": 10,
+     "y": 25
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-three",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 82,
+    "y": 90
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 82,
+     "y": 90
+    },
+    {
+     "x": 69,
+     "y": 82
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-four",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 46,
+    "y": 24
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 46,
+     "y": 24
+    },
+    {
+     "x": 46,
+     "y": 18
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-five",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 55,
+    "y": 68
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 55,
+     "y": 68
+    },
+    {
+     "x": 69,
+     "y": 82
+    }
+   ]
+  },
+  {
+   "id": "guard-1",
+   "unit": "units/guard.unit.json",
+   "position": {
+    "x": 0,
+    "y": 68
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 0,
+     "y": 68
+    },
+    {
+     "x": 0,
+     "y": 78
+    }
+   ]
+  },
+  {
+   "id": "guard-2",
+   "unit": "units/guard.unit.json",
+   "position": {
+    "x": 67,
+    "y": 24
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 67,
+     "y": 24
+    },
+    {
+     "x": 67,
+     "y": 31
+    }
+   ]
+  }
+ ],
+ "objectives": [
+  {
+   "id": "hold-position",
+   "type": "hold",
+   "targetZone": "uplink-hold",
+   "holdSeconds": 40,
+   "required": true,
+   "description": "Hold the marked position for 40 seconds."
+  },
+  {
+   "id": "fall-back",
+   "type": "extract",
+   "targetZone": "fall-back-area",
+   "required": true,
+   "description": "Fall back to the marked landing area with the whole team."
+  }
+ ],
+ "bystanders": [
+  {
+   "id": "civilian-1",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 91,
+    "y": 56
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 91,
+     "y": 56
+    },
+    {
+     "x": 95,
+     "y": 56
+    }
+   ]
+  },
+  {
+   "id": "civilian-2",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 43,
+    "y": 27
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 43,
+     "y": 27
+    },
+    {
+     "x": 57,
+     "y": 27
+    }
+   ]
+  },
+  {
+   "id": "civilian-3",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 31,
+    "y": 90
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 31,
+     "y": 90
+    },
+    {
+     "x": 31,
+     "y": 95
+    }
+   ]
+  },
+  {
+   "id": "civilian-4",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 83,
+    "y": 24
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 83,
+     "y": 24
+    },
+    {
+     "x": 83,
+     "y": 28
+    }
+   ]
+  },
+  {
+   "id": "civilian-5",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 58,
+    "y": 70
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 58,
+     "y": 70
+    },
+    {
+     "x": 58,
+     "y": 81
+    }
+   ]
+  },
+  {
+   "id": "civilian-6",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 26,
+    "y": 23
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 26,
+     "y": 23
+    },
+    {
+     "x": 32,
+     "y": 23
+    }
+   ]
+  },
+  {
+   "id": "civilian-7",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 16,
+    "y": 90
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 16,
+     "y": 90
+    },
+    {
+     "x": 16,
+     "y": 95
+    }
+   ]
+  },
+  {
+   "id": "civilian-8",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 19,
+    "y": 49
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 19,
+     "y": 49
+    },
+    {
+     "x": 8,
+     "y": 49
+    }
+   ]
+  },
+  {
+   "id": "civilian-9",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 47,
+    "y": 28
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 47,
+     "y": 28
+    },
+    {
+     "x": 47,
+     "y": 22
+    }
+   ]
+  },
+  {
+   "id": "civilian-10",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 92,
+    "y": 37
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 92,
+     "y": 37
+    },
+    {
+     "x": 89,
+     "y": 37
+    }
+   ]
+  },
+  {
+   "id": "police-1",
+   "unit": "units/city-police.unit.json",
+   "position": {
+    "x": 4,
+    "y": 71
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 4,
+     "y": 71
+    },
+    {
+     "x": 12,
+     "y": 71
+    }
+   ]
+  },
+  {
+   "id": "police-2",
+   "unit": "units/city-police.unit.json",
+   "position": {
+    "x": 79,
+    "y": 46
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 79,
+     "y": 46
+    },
+    {
+     "x": 79,
+     "y": 50
+    }
+   ]
+  },
+  {
+   "id": "police-3",
+   "unit": "units/city-police.unit.json",
+   "position": {
+    "x": 69,
+    "y": 20
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 69,
+     "y": 20
+    },
+    {
+     "x": 69,
+     "y": 9
+    }
+   ]
+  },
+  {
+   "id": "criminal-1",
+   "unit": "units/criminal.unit.json",
+   "position": {
+    "x": 30,
+    "y": 6
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 30,
+     "y": 6
+    },
+    {
+     "x": 30,
+     "y": 3
+    }
+   ]
+  },
+  {
+   "id": "criminal-2",
+   "unit": "units/criminal.unit.json",
+   "position": {
+    "x": 29,
+    "y": 0
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 29,
+     "y": 0
+    },
+    {
+     "x": 39,
+     "y": 0
+    }
+   ]
+  },
+  {
+   "id": "criminal-3",
+   "unit": "units/criminal.unit.json",
+   "position": {
+    "x": 24,
+    "y": 13
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 24,
+     "y": 13
+    },
+    {
+     "x": 24,
+     "y": 6
+    }
+   ]
+  }
+ ],
+ "region": {
+  "name": "Eastern Europe",
+  "lon": 30,
+  "lat": 51,
+  "population": 4000000
+ },
+ "vehicles": [
+  {
+   "id": "city-car-1",
+   "vehicle": "vehicles/city-car.vehicle.json",
+   "position": {
+    "x": 2,
+    "y": 24
+   },
+   "driver": "units/civilian-man.unit.json",
+   "patrol": [
+    {
+     "x": 2,
+     "y": 24
+    },
+    {
+     "x": 93,
+     "y": 24
+    }
+   ]
+  },
+  {
+   "id": "city-car-2",
+   "vehicle": "vehicles/city-car.vehicle.json",
+   "position": {
+    "x": 2,
+    "y": 49
+   },
+   "driver": "units/civilian-woman.unit.json",
+   "patrol": [
+    {
+     "x": 2,
+     "y": 49
+    },
+    {
+     "x": 93,
+     "y": 49
+    }
+   ]
+  },
+  {
+   "id": "city-car-3",
+   "vehicle": "vehicles/city-car.vehicle.json",
+   "position": {
+    "x": 2,
+    "y": 26
+   },
+   "driver": "units/civilian-man.unit.json",
+   "patrol": [
+    {
+     "x": 2,
+     "y": 26
+    },
+    {
+     "x": 93,
+     "y": 26
+    }
+   ]
+  },
+  {
+   "id": "city-car-4",
+   "vehicle": "vehicles/city-car.vehicle.json",
+   "position": {
+    "x": 2,
+    "y": 46
+   },
+   "driver": "units/civilian-woman.unit.json",
+   "patrol": [
+    {
+     "x": 2,
+     "y": 46
+    },
+    {
+     "x": 93,
+     "y": 46
+    }
+   ]
+  },
+  {
+   "id": "city-car-5",
+   "vehicle": "vehicles/patrol-car.vehicle.json",
+   "position": {
+    "x": 2,
+    "y": 48
+   },
+   "driver": "units/civilian-man.unit.json",
+   "patrol": [
+    {
+     "x": 2,
+     "y": 48
+    },
+    {
+     "x": 93,
+     "y": 48
+    }
+   ]
+  },
+  {
+   "id": "freight-train-1",
+   "vehicle": "vehicles/freight-train.vehicle.json",
+   "position": {
+    "x": 12,
+    "y": 2
+   },
+   "stops": [
+    {
+     "x": 12,
+     "y": 2,
+     "wait": 0
+    },
+    {
+     "x": 59,
+     "y": 2,
+     "wait": 8
+    },
+    {
+     "x": 88,
+     "y": 2,
+     "wait": 6
+    }
+   ]
+  }
+ ],
+ "variant": "defence",
+ "territory": "developer.op-eastern-europe",
+ "title": "Hold the district",
+ "briefing": "Ironwood Trust is moving on Eastern Europe. Its agents are coming for the marked position: hold it for 40 seconds while they close in, then fall back to the landing area.",
+ "story": "Eastern Europe Defence: Ironwood Trust wants the district and has sent its agents. Hold the line until they give up.",
+ "debrief": {
+  "success": "Ironwood Trust pulls back from Eastern Europe. The district stays yours.",
+  "failure": "The line broke. Ironwood Trust presses on, and Eastern Europe falls to it unless the next attempt holds."
+ },
+ "zones": [
+  {
+   "id": "fall-back-area",
+   "kind": "exit",
+   "position": {
+    "x": 0,
+    "y": 46
+   },
+   "width": 4,
+   "height": 4
+  }
+ ],
+ "intel": [
+  "Patrol survey: Ironwood Trust sends 3 of its 5 agents at the position, the nearest first.",
+  "Full survey: guards and police stay on their beats but will join a fight."
+ ]
+}

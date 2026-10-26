@@ -1,0 +1,1005 @@
+{
+ "formatVersion": 1,
+ "id": "developer.op-alaska-uprising",
+ "name": "Alaska Relay Run Uprising",
+ "license": "CC0-1.0",
+ "map": "maps/alaska.map.json",
+ "team": [
+  {
+   "id": "operator-one",
+   "unit": "units/field-operator.unit.json",
+   "position": {
+    "x": 2,
+    "y": 48
+   },
+   "equipment": [
+    "equipment/civic-pulse-emitter.equipment.json",
+    "equipment/field-repair-kit.equipment.json"
+   ]
+  },
+  {
+   "id": "operator-two",
+   "unit": "units/field-operator.unit.json",
+   "position": {
+    "x": 3,
+    "y": 48
+   },
+   "equipment": [
+    "equipment/civic-pulse-emitter.equipment.json",
+    "equipment/field-repair-kit.equipment.json"
+   ]
+  },
+  {
+   "id": "operator-three",
+   "unit": "units/field-operator.unit.json",
+   "position": {
+    "x": 2,
+    "y": 49
+   },
+   "equipment": [
+    "equipment/civic-pulse-emitter.equipment.json",
+    "equipment/field-repair-kit.equipment.json"
+   ]
+  },
+  {
+   "id": "operator-four",
+   "unit": "units/field-operator.unit.json",
+   "position": {
+    "x": 3,
+    "y": 49
+   },
+   "equipment": [
+    "equipment/civic-pulse-emitter.equipment.json",
+    "equipment/field-repair-kit.equipment.json"
+   ]
+  }
+ ],
+ "opponents": [
+  {
+   "id": "enemy-agent-one",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 65,
+    "y": 47
+   },
+   "equipment": [
+    "equipment/scatter-emitter.equipment.json"
+   ],
+   "patrol": [
+    {
+     "x": 65,
+     "y": 47
+    },
+    {
+     "x": 65,
+     "y": 50
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-two",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 22,
+    "y": 92
+   },
+   "equipment": [
+    "equipment/scatter-emitter.equipment.json"
+   ],
+   "patrol": [
+    {
+     "x": 22,
+     "y": 92
+    },
+    {
+     "x": 14,
+     "y": 92
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-three",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 54,
+    "y": 26
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 54,
+     "y": 26
+    },
+    {
+     "x": 54,
+     "y": 23
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-four",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 34,
+    "y": 47
+   },
+   "equipment": [
+    "equipment/scatter-emitter.equipment.json",
+    "equipment/delay-charge.equipment.json"
+   ],
+   "patrol": [
+    {
+     "x": 34,
+     "y": 47
+    },
+    {
+     "x": 34,
+     "y": 50
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-five",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 37,
+    "y": 74
+   },
+   "equipment": [
+    "equipment/scatter-emitter.equipment.json"
+   ],
+   "patrol": [
+    {
+     "x": 37,
+     "y": 74
+    },
+    {
+     "x": 37,
+     "y": 66
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-six",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 78,
+    "y": 24
+   },
+   "equipment": [
+    "equipment/scatter-emitter.equipment.json"
+   ],
+   "patrol": [
+    {
+     "x": 78,
+     "y": 24
+    },
+    {
+     "x": 84,
+     "y": 24
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-seven",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 52,
+    "y": 50
+   },
+   "equipment": [
+    "equipment/scatter-emitter.equipment.json"
+   ],
+   "patrol": [
+    {
+     "x": 52,
+     "y": 50
+    },
+    {
+     "x": 52,
+     "y": 45
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-eight",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 24,
+    "y": 48
+   },
+   "equipment": [
+    "equipment/field-repair-kit.equipment.json",
+    "equipment/delay-charge.equipment.json"
+   ],
+   "patrol": [
+    {
+     "x": 24,
+     "y": 48
+    },
+    {
+     "x": 32,
+     "y": 48
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-nine",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 49,
+    "y": 28
+   },
+   "equipment": [
+    "equipment/scatter-emitter.equipment.json"
+   ],
+   "patrol": [
+    {
+     "x": 49,
+     "y": 28
+    },
+    {
+     "x": 41,
+     "y": 28
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-ten",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 25,
+    "y": 71
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 25,
+     "y": 71
+    },
+    {
+     "x": 25,
+     "y": 78
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-eleven",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 23,
+    "y": 74
+   },
+   "equipment": [
+    "equipment/scatter-emitter.equipment.json"
+   ],
+   "patrol": [
+    {
+     "x": 23,
+     "y": 74
+    },
+    {
+     "x": 28,
+     "y": 74
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-twelve",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 90,
+    "y": 40
+   },
+   "equipment": [
+    "equipment/delay-charge.equipment.json"
+   ],
+   "patrol": [
+    {
+     "x": 90,
+     "y": 40
+    },
+    {
+     "x": 90,
+     "y": 34
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-thirteen",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 54,
+    "y": 48
+   },
+   "equipment": [
+    "equipment/scatter-emitter.equipment.json"
+   ],
+   "patrol": [
+    {
+     "x": 54,
+     "y": 48
+    },
+    {
+     "x": 62,
+     "y": 48
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-fourteen",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 70,
+    "y": 23
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 70,
+     "y": 23
+    },
+    {
+     "x": 70,
+     "y": 29
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-fifteen",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 52,
+    "y": 23
+   },
+   "equipment": [
+    "equipment/scatter-emitter.equipment.json"
+   ],
+   "patrol": [
+    {
+     "x": 52,
+     "y": 23
+    },
+    {
+     "x": 46,
+     "y": 23
+    }
+   ]
+  },
+  {
+   "id": "enemy-agent-sixteen",
+   "unit": "units/enemy-agent.unit.json",
+   "position": {
+    "x": 83,
+    "y": 90
+   },
+   "equipment": [
+    "equipment/delay-charge.equipment.json"
+   ],
+   "patrol": [
+    {
+     "x": 83,
+     "y": 90
+    },
+    {
+     "x": 75,
+     "y": 90
+    }
+   ]
+  },
+  {
+   "id": "guard-1",
+   "unit": "units/guard.unit.json",
+   "position": {
+    "x": 85,
+    "y": 49
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 85,
+     "y": 49
+    },
+    {
+     "x": 75,
+     "y": 49
+    }
+   ]
+  },
+  {
+   "id": "guard-2",
+   "unit": "units/guard.unit.json",
+   "position": {
+    "x": 69,
+    "y": 77
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 69,
+     "y": 77
+    },
+    {
+     "x": 69,
+     "y": 66
+    }
+   ]
+  },
+  {
+   "id": "guard-3",
+   "unit": "units/guard.unit.json",
+   "position": {
+    "x": 49,
+    "y": 57
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 49,
+     "y": 57
+    },
+    {
+     "x": 49,
+     "y": 49
+    }
+   ]
+  },
+  {
+   "id": "guard-4",
+   "unit": "units/guard.unit.json",
+   "position": {
+    "x": 90,
+    "y": 13
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 90,
+     "y": 13
+    },
+    {
+     "x": 95,
+     "y": 13
+    }
+   ]
+  },
+  {
+   "id": "guard-5",
+   "unit": "units/guard.unit.json",
+   "position": {
+    "x": 69,
+    "y": 95
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 69,
+     "y": 95
+    },
+    {
+     "x": 69,
+     "y": 84
+    }
+   ]
+  },
+  {
+   "id": "guard-6",
+   "unit": "units/guard.unit.json",
+   "position": {
+    "x": 87,
+    "y": 69
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 87,
+     "y": 69
+    },
+    {
+     "x": 87,
+     "y": 72
+    }
+   ]
+  }
+ ],
+ "objectives": [
+  {
+   "id": "put-down-ringleaders",
+   "type": "eliminate",
+   "targets": [
+    "enemy-agent-one",
+    "enemy-agent-two",
+    "enemy-agent-three",
+    "enemy-agent-four",
+    "enemy-agent-five"
+   ],
+   "required": true,
+   "description": "Put down the 5 ringleaders."
+  },
+  {
+   "id": "fall-back",
+   "type": "extract",
+   "targetZone": "fall-back-area",
+   "required": true,
+   "description": "Fall back to the marked landing area with the whole team."
+  }
+ ],
+ "bystanders": [
+  {
+   "id": "civilian-1",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 90,
+    "y": 8
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 90,
+     "y": 8
+    },
+    {
+     "x": 90,
+     "y": 20
+    }
+   ]
+  },
+  {
+   "id": "civilian-2",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 62,
+    "y": 93
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 62,
+     "y": 93
+    },
+    {
+     "x": 54,
+     "y": 93
+    }
+   ]
+  },
+  {
+   "id": "civilian-3",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 43,
+    "y": 70
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 43,
+     "y": 70
+    },
+    {
+     "x": 53,
+     "y": 70
+    }
+   ]
+  },
+  {
+   "id": "civilian-4",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 93,
+    "y": 71
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 93,
+     "y": 71
+    },
+    {
+     "x": 93,
+     "y": 65
+    }
+   ]
+  },
+  {
+   "id": "civilian-5",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 69,
+    "y": 17
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 69,
+     "y": 17
+    },
+    {
+     "x": 69,
+     "y": 3
+    }
+   ]
+  },
+  {
+   "id": "civilian-6",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 27,
+    "y": 53
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 27,
+     "y": 53
+    },
+    {
+     "x": 27,
+     "y": 42
+    }
+   ]
+  },
+  {
+   "id": "civilian-7",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 30,
+    "y": 49
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 30,
+     "y": 49
+    },
+    {
+     "x": 20,
+     "y": 49
+    }
+   ]
+  },
+  {
+   "id": "civilian-8",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 46,
+    "y": 61
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 46,
+     "y": 61
+    },
+    {
+     "x": 46,
+     "y": 67
+    }
+   ]
+  },
+  {
+   "id": "civilian-9",
+   "unit": "units/civilian-woman.unit.json",
+   "position": {
+    "x": 69,
+    "y": 39
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 69,
+     "y": 39
+    },
+    {
+     "x": 69,
+     "y": 28
+    }
+   ]
+  },
+  {
+   "id": "civilian-10",
+   "unit": "units/civilian-man.unit.json",
+   "position": {
+    "x": 49,
+    "y": 81
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 49,
+     "y": 81
+    },
+    {
+     "x": 49,
+     "y": 92
+    }
+   ]
+  },
+  {
+   "id": "police-1",
+   "unit": "units/city-police.unit.json",
+   "position": {
+    "x": 78,
+    "y": 71
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 78,
+     "y": 71
+    },
+    {
+     "x": 78,
+     "y": 67
+    }
+   ]
+  },
+  {
+   "id": "police-2",
+   "unit": "units/city-police.unit.json",
+   "position": {
+    "x": 24,
+    "y": 44
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 24,
+     "y": 44
+    },
+    {
+     "x": 24,
+     "y": 56
+    }
+   ]
+  },
+  {
+   "id": "police-3",
+   "unit": "units/city-police.unit.json",
+   "position": {
+    "x": 48,
+    "y": 87
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 48,
+     "y": 87
+    },
+    {
+     "x": 45,
+     "y": 87
+    }
+   ]
+  },
+  {
+   "id": "criminal-1",
+   "unit": "units/criminal.unit.json",
+   "position": {
+    "x": 89,
+    "y": 92
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 89,
+     "y": 92
+    },
+    {
+     "x": 89,
+     "y": 84
+    }
+   ]
+  },
+  {
+   "id": "criminal-2",
+   "unit": "units/criminal.unit.json",
+   "position": {
+    "x": 86,
+    "y": 58
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 86,
+     "y": 58
+    },
+    {
+     "x": 80,
+     "y": 58
+    }
+   ]
+  },
+  {
+   "id": "criminal-3",
+   "unit": "units/criminal.unit.json",
+   "position": {
+    "x": 70,
+    "y": 89
+   },
+   "equipment": [],
+   "patrol": [
+    {
+     "x": 70,
+     "y": 89
+    },
+    {
+     "x": 70,
+     "y": 95
+    }
+   ]
+  }
+ ],
+ "region": {
+  "name": "Alaska",
+  "lon": -150,
+  "lat": 64,
+  "population": 4700000
+ },
+ "vehicles": [
+  {
+   "id": "city-car-1",
+   "vehicle": "vehicles/city-car.vehicle.json",
+   "position": {
+    "x": 62,
+    "y": 48
+   },
+   "driver": "units/civilian-man.unit.json",
+   "patrol": [
+    {
+     "x": 62,
+     "y": 48
+    },
+    {
+     "x": 93,
+     "y": 48
+    }
+   ]
+  },
+  {
+   "id": "city-car-2",
+   "vehicle": "vehicles/city-car.vehicle.json",
+   "position": {
+    "x": 2,
+    "y": 68
+   },
+   "driver": "units/civilian-woman.unit.json",
+   "patrol": [
+    {
+     "x": 2,
+     "y": 68
+    },
+    {
+     "x": 93,
+     "y": 68
+    }
+   ]
+  },
+  {
+   "id": "city-car-3",
+   "vehicle": "vehicles/city-car.vehicle.json",
+   "position": {
+    "x": 2,
+    "y": 48
+   },
+   "driver": "units/civilian-man.unit.json",
+   "patrol": [
+    {
+     "x": 2,
+     "y": 48
+    },
+    {
+     "x": 55,
+     "y": 48
+    }
+   ]
+  },
+  {
+   "id": "city-car-4",
+   "vehicle": "vehicles/city-car.vehicle.json",
+   "position": {
+    "x": 2,
+    "y": 27
+   },
+   "driver": "units/civilian-woman.unit.json",
+   "patrol": [
+    {
+     "x": 2,
+     "y": 27
+    },
+    {
+     "x": 93,
+     "y": 27
+    }
+   ]
+  },
+  {
+   "id": "city-car-5",
+   "vehicle": "vehicles/patrol-car.vehicle.json",
+   "position": {
+    "x": 2,
+    "y": 92
+   },
+   "driver": "units/civilian-man.unit.json",
+   "patrol": [
+    {
+     "x": 2,
+     "y": 92
+    },
+    {
+     "x": 93,
+     "y": 92
+    }
+   ]
+  },
+  {
+   "id": "city-car-6",
+   "vehicle": "vehicles/armored-car.vehicle.json",
+   "position": {
+    "x": 2,
+    "y": 46
+   },
+   "driver": "units/civilian-woman.unit.json",
+   "patrol": [
+    {
+     "x": 2,
+     "y": 46
+    },
+    {
+     "x": 93,
+     "y": 46
+    }
+   ]
+  },
+  {
+   "id": "freight-train-1",
+   "vehicle": "vehicles/freight-train.vehicle.json",
+   "position": {
+    "x": 12,
+    "y": 2
+   },
+   "stops": [
+    {
+     "x": 12,
+     "y": 2,
+     "wait": 0
+    },
+    {
+     "x": 59,
+     "y": 2,
+     "wait": 8
+    },
+    {
+     "x": 88,
+     "y": 2,
+     "wait": 6
+    }
+   ]
+  }
+ ],
+ "variant": "uprising",
+ "territory": "developer.op-alaska",
+ "title": "The district has risen",
+ "briefing": "Alaska has risen against you and pays nothing until order is restored. Put down the 5 ringleaders and fall back to the landing area. The crowds will go home once they fall.",
+ "story": "Alaska Uprising: taxes too high for too long, and the streets belong to the ringleaders. End it.",
+ "debrief": {
+  "success": "The ringleaders are down and Alaska goes home. The district is yours again and pays tax once more.",
+  "failure": "The team is lost and Alaska stays in revolt. It pays nothing until it is taken back."
+ },
+ "zones": [
+  {
+   "id": "fall-back-area",
+   "kind": "exit",
+   "position": {
+    "x": 0,
+    "y": 46
+   },
+   "width": 4,
+   "height": 4
+  }
+ ],
+ "intel": [
+  "Patrol survey: the rising is led by 5 agents, spread through the district.",
+  "Full survey: only the ringleaders count; everyone else will fight if you come near."
+ ]
+}
