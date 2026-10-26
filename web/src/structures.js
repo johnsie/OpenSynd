@@ -69,6 +69,94 @@ export function drawFenceTile(context, p, tile, cellHeight) {
   context.stroke();
 }
 
+/**
+ * A steel lattice pylon on a one-tile footing: four tapering corner posts, rings at four heights and crossed braces between them, with
+ * a few green work lights low down (dark towers of the kind that stand about the roads in games of this sort).
+ */
+export function drawPylonTile(context, p, tile, cellHeight) {
+  const half = 0.36;
+  const height = cellHeight * 3.4;
+  const levels = 4;
+  const corners = [[-1, -1], [1, -1], [1, 1], [-1, 1]];
+  const ring = (level) => {
+    const scale = 1 - 0.34 * (level / levels);
+    return corners.map(([dx, dy]) => p(tile.x + dx * half * scale, tile.y + dy * half * scale, (height * level) / levels));
+  };
+  const rings = Array.from({ length: levels + 1 }, (_, level) => ring(level));
+  const pad = corners.map(([dx, dy]) => p(tile.x + dx * 0.46, tile.y + dy * 0.46, 0));
+  context.fillStyle = "rgba(48, 58, 52, .85)";
+  polygon(context, pad);
+  context.fill();
+  context.strokeStyle = "#14181b";
+  context.lineWidth = 2.4;
+  context.lineJoin = "round";
+  for (let level = 0; level <= levels; level += 1) {
+    polygon(context, rings[level]);
+    context.stroke();
+  }
+  for (let corner = 0; corner < 4; corner += 1) {
+    context.beginPath();
+    context.moveTo(rings[0][corner].x, rings[0][corner].y);
+    context.lineTo(rings[levels][corner].x, rings[levels][corner].y);
+    context.stroke();
+  }
+  context.lineWidth = 1.2;
+  context.strokeStyle = "#2b3238";
+  context.beginPath();
+  for (let level = 0; level < levels; level += 1) {
+    for (let corner = 0; corner < 4; corner += 1) {
+      const next = (corner + 1) % 4;
+      context.moveTo(rings[level][corner].x, rings[level][corner].y);
+      context.lineTo(rings[level + 1][next].x, rings[level + 1][next].y);
+      context.moveTo(rings[level][next].x, rings[level][next].y);
+      context.lineTo(rings[level + 1][corner].x, rings[level + 1][corner].y);
+    }
+  }
+  context.stroke();
+  context.fillStyle = "rgba(140, 220, 130, .85)";
+  for (const corner of rings[1]) context.fillRect(corner.x - 1, corner.y - 1, 2, 2);
+}
+
+/** A run of pipes on low supports (a bundle of two, copper-coloured, like the pipe runs beside walkways in games of this sort). */
+export function drawPipeTile(context, p, tile, cellHeight) {
+  const radius = cellHeight * 0.13;
+  const stand = cellHeight * 0.42;
+  const post = onRun(p, tile, 0, 0, 0);
+  context.strokeStyle = "#2a2f33";
+  context.lineWidth = 2;
+  context.beginPath();
+  context.moveTo(post.x, post.y);
+  context.lineTo(post.x, post.y - stand);
+  context.stroke();
+  for (const [across, lift, body, light] of [[-0.14, 0, "#7a4a22", "#c58a4a"], [0.14, cellHeight * 0.1, "#8d5a2a", "#d49a58"]]) {
+    const a = onRun(p, tile, -0.5, across, stand + lift);
+    const b = onRun(p, tile, 0.5, across, stand + lift);
+    context.lineCap = "butt";
+    context.strokeStyle = "#1c1a18";
+    context.lineWidth = radius * 2 + 2;
+    context.beginPath();
+    context.moveTo(a.x, a.y);
+    context.lineTo(b.x, b.y);
+    context.stroke();
+    context.strokeStyle = body;
+    context.lineWidth = radius * 2;
+    context.beginPath();
+    context.moveTo(a.x, a.y);
+    context.lineTo(b.x, b.y);
+    context.stroke();
+    context.strokeStyle = light;
+    context.lineWidth = Math.max(1, radius * 0.55);
+    context.beginPath();
+    context.moveTo(a.x, a.y - radius * 0.45);
+    context.lineTo(b.x, b.y - radius * 0.45);
+    context.stroke();
+  }
+  // A joint flange at the tile's middle.
+  const joint = onRun(p, tile, 0, 0, stand + cellHeight * 0.05);
+  context.fillStyle = "rgba(20, 16, 12, .55)";
+  context.fillRect(joint.x - 1.5, joint.y - radius * 1.9, 3, radius * 3.6);
+}
+
 export function drawWallTile(context, p, tile, cellHeight, color) {
   const height = cellHeight * 0.95;
   const half = 0.2;
@@ -714,8 +802,12 @@ export function drawVehicle(context, p, vehicle, cellHeight, time, { controlled 
     const roof = lift(p(x, y, 0), cabinTop);
     if (vehicle.definition.kind === "patrol-car") {
       const flip = Math.floor(time / 220) % 2 === 0;
-      for (const [offset, colour, on] of [[-0.35, "#ff3b4a", flip], [0.35, "#4a8dff", !flip]]) {
-        const at = p(alongX ? x : x + offset * halfX, alongX ? y + offset * halfY : y, cabinTop + cellHeight * 0.08);
+      // The light cluster sits towards the nose, off to one side, as on the reference hover-car.
+      for (const [offset, colour, on] of [[-0.45, "#ff3b4a", flip], [-0.15, "#4a8dff", !flip]]) {
+        const forward = 0.32 * front;
+        const at = alongX
+          ? p(x + forward * halfX, y + offset * halfY, cabinTop + cellHeight * 0.08)
+          : p(x + offset * halfX, y + forward * halfY, cabinTop + cellHeight * 0.08);
         context.fillStyle = colour;
         context.globalAlpha = on ? 1 : 0.35;
         context.fillRect(at.x - 5, at.y - 3, 10, 5);
@@ -726,6 +818,24 @@ export function drawVehicle(context, p, vehicle, cellHeight, time, { controlled 
           context.fill();
         }
         context.globalAlpha = 1;
+      }
+      // A row of white lamps across the nose when it faces the camera: the dark hull, blunt nose and lamps of a police hover-car.
+      if (front > 0) {
+        for (const across of [-0.56, -0.28, 0, 0.28, 0.56]) {
+          const nose = front * 0.97;
+          const spot = alongX ? { x: x + nose * halfX, y: y + across * halfY } : { x: x + across * halfX, y: y + nose * halfY };
+          const lamp = lift(p(spot.x, spot.y, 0), wheelHeight + cellHeight * shape.body * 0.4);
+          context.globalAlpha = 0.28;
+          context.fillStyle = "#ffffff";
+          context.beginPath();
+          context.arc(lamp.x, lamp.y, 5, 0, Math.PI * 2);
+          context.fill();
+          context.globalAlpha = 1;
+          context.fillStyle = "#fffdf0";
+          context.beginPath();
+          context.arc(lamp.x, lamp.y, 2, 0, Math.PI * 2);
+          context.fill();
+        }
       }
       context.fillStyle = shadeHex(accentColor, 0);
       const stripeTop = bodyTop - cellHeight * 0.08;
@@ -868,6 +978,81 @@ export function drawScenery(context, p, prop, cellHeight, time) {
     context.fillStyle = "#59666f";
     context.fillRect(-unit * 0.24, -unit * 0.66, unit * 0.48, unit * 0.1);
     context.restore();
+  } else if (prop.kind === "barrels") {
+    // Two rows of upright drums on a pallet; a band of rust round each. Burnt out, they are scorched and tipped over.
+    const drum = (cx, cy, tipped) => {
+      const w = unit * 0.2;
+      const h = unit * 0.5;
+      if (tipped) {
+        ellipse(cx, cy - unit * 0.08, h * 0.55, w * 0.7, "#1a1d1f");
+        return;
+      }
+      context.fillStyle = "#23282b";
+      context.fillRect(cx - w, cy - h, w * 2, h);
+      context.fillStyle = "#b5642a";
+      context.fillRect(cx - w, cy - h * 0.62, w * 2, h * 0.14);
+      ellipse(cx, cy, w, w * 0.45, "#2c3236");
+      ellipse(cx, cy - h, w, w * 0.45, "#3b4247");
+    };
+    const destroyed = prop.state === "destroyed";
+    context.fillStyle = "#4a3b2c";
+    context.fillRect(base.x - unit * 0.62, base.y - unit * 0.05, unit * 1.24, unit * 0.1);
+    for (const [dx, dy] of [[-0.4, 0.05], [0, 0.12], [0.4, 0.05], [-0.2, -0.1], [0.2, -0.1]]) {
+      drum(base.x + dx * unit, base.y + dy * unit, destroyed);
+    }
+    if (prop.state === "burning") flames(unit * 1.6, unit * 1.2);
+  } else if (prop.kind === "skylight") {
+    // A glass pyramid: four lit faces, or a dark frame with the glass gone.
+    const size = unit * 0.5;
+    const top = { x: base.x, y: base.y - unit * 0.55 };
+    const pts = [[-size, 0], [0, size * 0.5], [size, 0], [0, -size * 0.5]].map(([dx, dy]) => ({ x: base.x + dx, y: base.y + dy }));
+    if (prop.state === "destroyed") {
+      context.fillStyle = "#101214";
+      polygon(context, pts);
+      context.fill();
+      context.strokeStyle = "#8a9aa2";
+      context.lineWidth = 1.5;
+      polygon(context, pts);
+      context.stroke();
+      return;
+    }
+    const faces = [[pts[0], pts[1], "#dfe8ea"], [pts[1], pts[2], "#b9c6cb"], [pts[2], pts[3], "#eef4f5"], [pts[3], pts[0], "#cdd8dc"]];
+    for (const [a, b, fill] of faces) {
+      context.fillStyle = fill;
+      polygon(context, [a, b, top]);
+      context.fill();
+    }
+    context.strokeStyle = "rgba(40, 50, 56, .7)";
+    context.lineWidth = 1;
+    for (const point of pts) {
+      context.beginPath();
+      context.moveTo(point.x, point.y);
+      context.lineTo(top.x, top.y);
+      context.stroke();
+    }
+  } else if (prop.kind === "shrub") {
+    // Low planting: a few rounded clumps of leaf.
+    const leaves = { standing: ["#33683c", "#418449"], burning: ["#7a4a24", "#9a5a2b"], destroyed: ["#2a2a24", "#32322a"] };
+    const leaf = leaves[prop.state] ?? leaves.standing;
+    for (const [dx, dy, r] of [[-0.22, 0.02, 0.22], [0.2, 0.04, 0.2], [0, -0.1, 0.26], [-0.06, 0.1, 0.18]]) {
+      ellipse(base.x + dx * unit, base.y - unit * 0.18 + dy * unit, unit * r, unit * r * 0.8, leaf[(dx > 0) + 0]);
+    }
+    if (prop.state === "burning") flames(unit * 1.1, unit * 0.9);
+  } else if (prop.kind === "antenna") {
+    // A black dome on a pale stalk, like a roof's radio ball.
+    context.fillStyle = "#b9a58a";
+    context.fillRect(base.x - unit * 0.07, base.y - unit * 0.9, unit * 0.14, unit * 0.9);
+    ellipse(base.x, base.y - unit * 1.3, unit * 0.46, unit * 0.46, "#15181b");
+    ellipse(base.x - unit * 0.16, base.y - unit * 1.46, unit * 0.14, unit * 0.09, "rgba(255, 255, 255, .22)");
+  } else if (prop.kind === "vent") {
+    // A black dome on a roof.
+    ellipse(base.x, base.y - unit * 0.05, unit * 0.34, unit * 0.16, "#14171a");
+    context.fillStyle = "#1d2125";
+    context.beginPath();
+    context.ellipse(base.x, base.y - unit * 0.18, unit * 0.3, unit * 0.34, 0, Math.PI, 0);
+    context.closePath();
+    context.fill();
+    ellipse(base.x - unit * 0.1, base.y - unit * 0.38, unit * 0.09, unit * 0.05, "rgba(255, 255, 255, .16)");
   } else if (prop.kind === "billboard") {
     context.fillStyle = "#46505a";
     context.fillRect(base.x - unit * 0.05, base.y - unit * 1.8, unit * 0.1, unit * 1.8);

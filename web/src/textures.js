@@ -75,6 +75,96 @@ function paintTile(context, surface, colour, variant, width, height) {
       stroke(context, width, height, [[u0, v], [u0 + 0.3, v - 0.04], [u0 + 0.5, v + 0.03]], "rgba(120, 210, 230, .3)");
     }
     speckle(context, random, width, height, count / 2, "160, 230, 245", "0, 20, 30");
+  } else if (surface === "lawn" || surface === "mud" || surface === "scrub") {
+    // Grass (or trampled earth): fine speckle and short blades, the odd darker tuft.
+    const grain = {
+      lawn: ["170, 230, 140", "0, 10, 0"],
+      scrub: ["255, 215, 120", "40, 20, 0"],
+      mud: ["200, 180, 130", "0, 10, 0"],
+    }[surface];
+    speckle(context, random, width, height, count * (surface === "scrub" ? 2 : 1.3), grain[0], grain[1]);
+    for (let blade = 0; blade < count / 3; blade += 1) {
+      const point = corner(width, height, random(), random());
+      context.strokeStyle = random() < 0.5 ? "rgba(200, 255, 170, .14)" : "rgba(0, 20, 0, .22)";
+      context.lineWidth = 1;
+      context.beginPath();
+      context.moveTo(point.x, point.y);
+      context.lineTo(point.x + (random() - 0.5) * 2, point.y - 2 - random() * 2);
+      context.stroke();
+    }
+    if (surface === "mud" && kind === 2) {
+      context.fillStyle = "rgba(20, 40, 50, .3)";
+      const puddle = corner(width, height, 0.5, 0.5);
+      context.beginPath();
+      context.ellipse(puddle.x, puddle.y, width * 0.16, height * 0.13, 0, 0, Math.PI * 2);
+      context.fill();
+    }
+  } else if (surface === "sand") {
+    // Dunes in miniature: wind ripples across the tile and a scatter of grains.
+    speckle(context, random, width, height, count * 1.1, "255, 240, 200", "60, 40, 10");
+    for (let ripple = 0; ripple < 3; ripple += 1) {
+      const v = (ripple + 0.5) / 3 + (random() - 0.5) * 0.1;
+      stroke(context, width, height, [[0.05, v], [0.3, v - 0.05], [0.6, v + 0.04], [0.95, v - 0.02]], "rgba(70, 50, 20, .16)");
+    }
+  } else if (surface === "snow") {
+    speckle(context, random, width, height, count * 0.9, "255, 255, 255", "90, 120, 150");
+    if (kind === 2) stroke(context, width, height, [[0.2, 0.65], [0.45, 0.55], [0.75, 0.62]], "rgba(90, 120, 150, .22)");
+    if (kind === 3) {
+      context.fillStyle = "rgba(255, 255, 255, .25)";
+      const drift = corner(width, height, 0.45, 0.5);
+      context.beginPath();
+      context.ellipse(drift.x, drift.y, width * 0.2, height * 0.1, 0, 0, Math.PI * 2);
+      context.fill();
+    }
+  } else if (surface === "gravel") {
+    speckle(context, random, width, height, count * 2.2, "225, 225, 215", "0, 0, 0");
+    for (let stone = 0; stone < count / 5; stone += 1) {
+      const point = corner(width, height, random(), random());
+      context.fillStyle = random() < 0.5 ? "rgba(255, 255, 255, .12)" : "rgba(0, 0, 0, .2)";
+      context.fillRect(point.x, point.y, 2, 2);
+    }
+  } else if (surface === "chevron") {
+    // Hazard-striped paving in front of an entrance: rows of dark chevrons across the tile.
+    speckle(context, random, width, height, count / 2, "255, 230, 170", "0, 0, 0");
+    for (let row = 0; row < 4; row += 1) {
+      const at = row / 4;
+      stroke(context, width, height, [[0, at + 0.02], [0.5, at + 0.2], [1, at + 0.02]], "rgba(25, 14, 0, .8)", 4);
+    }
+  } else if (surface === "rooftop") {
+    // A flat roof of dark tiles with a joint between them, a grid of lighter seams and the odd stain.
+    speckle(context, random, width, height, count / 2, "190, 200, 190", "0, 0, 0");
+    for (const at of [0.25, 0.5, 0.75]) {
+      stroke(context, width, height, [[at, 0.04], [at, 0.96]], "rgba(0, 0, 0, .45)", 1.4);
+      stroke(context, width, height, [[0.04, at], [0.96, at]], "rgba(0, 0, 0, .45)", 1.4);
+    }
+    stroke(context, width, height, [[0.02, 0.02], [0.98, 0.02], [0.98, 0.98], [0.02, 0.98], [0.02, 0.02]], "rgba(255, 255, 255, .08)");
+  } else if (surface === "plaza" || surface === "kerb") {
+    // Cobbles or paving stones laid in staggered courses.
+    speckle(context, random, width, height, count / 2, "230, 220, 200", "0, 0, 0");
+    for (const v of [0.33, 0.66]) stroke(context, width, height, [[0.02, v], [0.98, v]], "rgba(0, 0, 0, .22)");
+    for (const [row, joints] of [[0, [0.3, 0.7]], [1, [0.5]], [2, [0.2, 0.8]]]) {
+      for (const u of joints) stroke(context, width, height, [[u, row / 3], [u, (row + 1) / 3]], "rgba(0, 0, 0, .22)");
+    }
+  } else if (surface === "dock") {
+    // Planks along the tile's x axis, each a slightly different shade, with nail heads at the ends.
+    for (let plank = 0; plank < 5; plank += 1) {
+      const v0 = plank / 5;
+      const tint = random() < 0.5 ? "255, 235, 200" : "0, 0, 0";
+      stroke(context, width, height, [[0, v0 + 0.1], [1, v0 + 0.1]], `rgba(${tint}, ${0.05 + random() * 0.08})`, 3);
+      stroke(context, width, height, [[0, v0], [1, v0]], "rgba(0, 0, 0, .35)", 1);
+    }
+    speckle(context, random, width, height, count / 3, "255, 230, 190", "0, 0, 0");
+  } else if (surface === "steps-x" || surface === "steps-y") {
+    // Stone steps: treads across the way up (steps-x climbs along the map's x axis), a lit front edge to each and a shadow under it.
+    const across = surface === "steps-x";
+    speckle(context, random, width, height, count / 2, "230, 225, 210", "0, 0, 0");
+    for (let tread = 0; tread < 4; tread += 1) {
+      const at = (tread + 0.5) / 4;
+      const line = across ? [[at, 0], [at, 1]] : [[0, at], [1, at]];
+      stroke(context, width, height, line, "rgba(0, 0, 0, .38)", 1.6);
+      const lit = across ? [[at - 0.06, 0.02], [at - 0.06, 0.98]] : [[0.02, at - 0.06], [0.98, at - 0.06]];
+      stroke(context, width, height, lit, "rgba(255, 250, 235, .22)", 1);
+    }
   } else if (surface === "rail") {
     // Ballast with a sleeper every quarter tile and two steel rails along the track (which runs along the map's x axis).
     speckle(context, random, width, height, count * 1.2, "190, 190, 185", "0, 0, 0");

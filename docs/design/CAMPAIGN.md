@@ -15,52 +15,52 @@ main one by `tools/generate_variants.py`; `BALANCE_VARIANTS=1 node web/tools/bal
 | # | Territory | Mission | Tier | Enemies | Objective types | Map | Opened by |
 |---|-----------|---------|------|---------|-----------------|-----|-----------|
 | 1 | Northern Europe | First Light (hand-made) | 1 | 8 enemy agent, 4 guard | extract, interact | 128x128 | start |
-| 2 | Balkans | Balkans Uplink (generated) | 1 | 5 enemy agent, 2 guard | extract, hold, interact | 96x96 | Northern Europe |
-| 3 | Iberia | Iberia Defection (generated) | 1 | 5 enemy agent, 4 guard | extract, interact, persuade, protect | 96x96 | Northern Europe |
-| 4 | Maghreb | Maghreb Uplink (generated) | 1 | 5 enemy agent, 2 guard | extract, hold, interact | 96x96 | Northern Europe |
-| 5 | Northern Ireland | Foyle Crossing (hand-made) | 1 | 13 enemy agent, 4 guard, 1 site warden | disable, extract, interact | 96x96 | Northern Europe |
-| 6 | Scandinavia | Scandinavia Purge (generated) | 1 | 5 enemy agent, 2 guard | eliminate, extract, interact | 96x96 | Northern Europe |
-| 7 | Eastern Europe | Eastern Europe Purge (generated) | 1 | 5 enemy agent, 2 guard | eliminate, extract | 96x96 | Balkans, Scandinavia |
-| 8 | Eastern Mediterranean | Safe Passage (hand-made) | 1 | 9 enemy agent, 4 guard | extract, protect, take-item | 128x128 | Balkans |
-| 9 | Gulf of Guinea | Gulf of Guinea Purge (generated) | 1 | 5 enemy agent, 2 guard | eliminate, extract | 96x96 | Maghreb, Iberia |
-| 10 | Arabian Peninsula | Arabian Peninsula Uplink (generated) | 1 | 5 enemy agent, 2 guard | extract, hold, interact | 96x96 | Eastern Mediterranean |
-| 11 | Caucasus | Caucasus Vault Job (generated) | 2 | 7 enemy agent, 3 guard, 1 site warden | disable, extract, interact | 96x96 | Eastern Mediterranean, Eastern Europe |
-| 12 | Congo Basin | Congo Basin Uplink (generated) | 2 | 7 enemy agent, 3 guard | extract, hold, interact | 96x96 | Gulf of Guinea |
-| 13 | Iranian Plateau | Iranian Plateau Uplink (generated) | 2 | 7 enemy agent, 3 guard | extract, hold, interact | 96x96 | Eastern Mediterranean |
-| 14 | Northeast Brazil | Northeast Brazil Blackout (generated) | 2 | 7 enemy agent, 3 guard, 1 site warden | disable, extract, hold, interact | 96x96 | Gulf of Guinea |
-| 15 | Russian Plain | Russian Plain Vault Job (generated) | 2 | 7 enemy agent, 3 guard, 1 site warden | disable, extract, interact | 96x96 | Eastern Europe, Eastern Mediterranean |
-| 16 | Altiplano | Altiplano Purge (generated) | 2 | 7 enemy agent, 3 guard | eliminate, extract, interact | 96x96 | Northeast Brazil |
-| 17 | Amazon Basin | Amazon Basin Relay Run (generated) | 2 | 7 enemy agent, 3 guard | extract, interact | 96x96 | Northeast Brazil |
-| 18 | Andean Peru | Andean Peru Defection (generated) | 2 | 7 enemy agent, 5 guard | extract, interact, persuade, protect | 96x96 | Northeast Brazil |
-| 19 | East African Rift | East African Rift Blackout (generated) | 2 | 7 enemy agent, 3 guard, 1 site warden | disable, extract, hold, interact | 96x96 | Congo Basin |
-| 20 | Horn of Africa | Horn of Africa Blackout (generated) | 2 | 7 enemy agent, 3 guard, 1 site warden | disable, extract, hold, interact | 96x96 | Arabian Peninsula, Congo Basin |
-| 21 | Indus Valley | Indus Valley Blackout (generated) | 3 | 9 enemy agent, 4 guard, 1 site warden | disable, extract, hold, interact | 112x112 | Iranian Plateau |
-| 22 | Kazakh Steppe | Kazakh Steppe Audit (generated) | 3 | 9 enemy agent, 4 guard, 1 site warden | extract, interact | 112x112 | Iranian Plateau |
-| 23 | Madagascar | Madagascar Defection (generated) | 3 | 9 enemy agent, 6 guard | extract, interact, persuade, protect | 112x112 | Congo Basin |
-| 24 | Southern Africa | Southern Africa Audit (generated) | 3 | 9 enemy agent, 4 guard, 1 site warden | extract, interact | 112x112 | Congo Basin |
+| 2 | Balkans | Balkans Uplink (generated) | 1 | 5 enemy agent, 2 guard | extract, hold, interact | 128x104 | Northern Europe |
+| 3 | Iberia | Iberia Audit (generated) | 1 | 5 enemy agent, 2 guard, 1 site warden | extract, interact | 128x104 | Northern Europe |
+| 4 | Maghreb | Maghreb Uplink (generated) | 1 | 5 enemy agent, 2 guard | extract, hold, interact | 128x104 | Northern Europe |
+| 5 | Northern Ireland | Northern Ireland Blackout (generated) | 1 | 5 enemy agent, 2 guard, 1 site warden | disable, extract, hold, interact | 128x96 | Northern Europe |
+| 6 | Scandinavia | Scandinavia Defection (generated) | 1 | 5 enemy agent, 4 guard | extract, interact, persuade, protect | 128x112 | Northern Europe |
+| 7 | Eastern Europe | Eastern Europe Purge (generated) | 1 | 5 enemy agent, 2 guard | eliminate, extract, interact | 128x128 | Balkans, Scandinavia |
+| 8 | Eastern Mediterranean | Eastern Mediterranean Vault Job (generated) | 1 | 5 enemy agent, 2 guard, 1 site warden | disable, extract, interact | 128x96 | Balkans |
+| 9 | Gulf of Guinea | Gulf of Guinea Audit (generated) | 1 | 5 enemy agent, 2 guard, 1 site warden | extract, interact | 128x128 | Maghreb, Iberia |
+| 10 | Arabian Peninsula | Arabian Peninsula Uplink (generated) | 1 | 5 enemy agent, 2 guard | extract, hold, interact | 128x112 | Eastern Mediterranean |
+| 11 | Caucasus | Caucasus Vault Job (generated) | 2 | 7 enemy agent, 3 guard, 1 site warden | disable, extract, interact | 128x128 | Eastern Mediterranean, Eastern Europe |
+| 12 | Congo Basin | Congo Basin Uplink (generated) | 2 | 7 enemy agent, 3 guard | extract, hold, interact | 128x112 | Gulf of Guinea |
+| 13 | Iranian Plateau | Iranian Plateau Purge (generated) | 2 | 7 enemy agent, 3 guard | eliminate, extract | 128x96 | Eastern Mediterranean |
+| 14 | Northeast Brazil | Northeast Brazil Defection (generated) | 2 | 7 enemy agent, 5 guard | extract, interact, persuade, protect | 128x104 | Gulf of Guinea |
+| 15 | Russian Plain | Russian Plain Vault Job (generated) | 2 | 7 enemy agent, 3 guard, 1 site warden | disable, extract, interact | 128x128 | Eastern Europe, Eastern Mediterranean |
+| 16 | Altiplano | Altiplano Purge (generated) | 2 | 7 enemy agent, 3 guard | eliminate, extract, interact | 128x96 | Northeast Brazil |
+| 17 | Amazon Basin | Amazon Basin Relay Run (generated) | 2 | 7 enemy agent, 3 guard | extract, interact | 128x96 | Northeast Brazil |
+| 18 | Andean Peru | Andean Peru Defection (generated) | 2 | 7 enemy agent, 5 guard | extract, interact, persuade, protect | 128x96 | Northeast Brazil |
+| 19 | East African Rift | East African Rift Blackout (generated) | 2 | 7 enemy agent, 3 guard, 1 site warden | disable, extract, hold, interact | 128x96 | Congo Basin |
+| 20 | Horn of Africa | Horn of Africa Defection (generated) | 2 | 7 enemy agent, 5 guard | extract, interact, persuade, protect | 128x96 | Arabian Peninsula, Congo Basin |
+| 21 | Indus Valley | Indus Valley Blackout (generated) | 3 | 9 enemy agent, 4 guard, 1 site warden | disable, extract, hold, interact | 144x104 | Iranian Plateau |
+| 22 | Kazakh Steppe | Kazakh Steppe Defection (generated) | 3 | 9 enemy agent, 6 guard | extract, persuade, protect | 144x112 | Iranian Plateau |
+| 23 | Madagascar | Madagascar Audit (generated) | 3 | 9 enemy agent, 4 guard, 1 site warden | extract, interact | 144x104 | Congo Basin |
+| 24 | Southern Africa | Southern Africa Audit (generated) | 3 | 9 enemy agent, 4 guard, 1 site warden | extract, interact | 144x104 | Congo Basin |
 | 25 | Southern Brazil | Dead Drop (hand-made) | 3 | 13 enemy agent, 4 guard, 1 site warden | disable, extract, hold, interact | 96x96 | Northeast Brazil |
-| 26 | Ural Region | Ural Region Purge (generated) | 3 | 9 enemy agent, 4 guard | eliminate, extract | 112x112 | Russian Plain, Caucasus |
-| 27 | Western Siberia | Western Siberia Defection (generated) | 3 | 9 enemy agent, 6 guard | extract, interact, persuade, protect | 112x112 | Russian Plain |
-| 28 | Central America | Central America Defection (generated) | 3 | 9 enemy agent, 6 guard | extract, interact, persuade, protect | 112x112 | Andean Peru |
-| 29 | Chilean Coast | Chilean Coast Vault Job (generated) | 3 | 9 enemy agent, 4 guard, 1 site warden | disable, extract, interact | 112x112 | Altiplano, Andean Peru |
-| 30 | Colombian Highlands | Colombian Highlands Purge (generated) | 3 | 9 enemy agent, 4 guard | eliminate, extract, interact | 112x112 | Andean Peru, Amazon Basin |
-| 31 | Deccan | Deccan Defection (generated) | 4 | 12 enemy agent, 7 guard | extract, persuade, protect | 112x112 | Indus Valley |
-| 32 | Ganges Delta | Ganges Delta Defection (generated) | 4 | 12 enemy agent, 7 guard | extract, persuade, protect | 112x112 | Indus Valley |
-| 33 | Patagonia | Patagonia Vault Job (generated) | 4 | 12 enemy agent, 5 guard, 1 site warden | disable, extract, interact | 112x112 | Altiplano, Southern Brazil |
+| 26 | Ural Region | Ural Region Audit (generated) | 3 | 9 enemy agent, 4 guard, 1 site warden | extract, interact | 144x104 | Russian Plain, Caucasus |
+| 27 | Western Siberia | Western Siberia Purge (generated) | 3 | 9 enemy agent, 4 guard | eliminate, extract, interact | 144x104 | Russian Plain |
+| 28 | Central America | Central America Defection (generated) | 3 | 9 enemy agent, 6 guard | extract, interact, persuade, protect | 144x104 | Andean Peru |
+| 29 | Chilean Coast | Chilean Coast Vault Job (generated) | 3 | 9 enemy agent, 4 guard, 1 site warden | disable, extract, interact | 144x104 | Altiplano, Andean Peru |
+| 30 | Colombian Highlands | Colombian Highlands Purge (generated) | 3 | 9 enemy agent, 4 guard | eliminate, extract, interact | 144x112 | Andean Peru, Amazon Basin |
+| 31 | Deccan | Deccan Defection (generated) | 4 | 12 enemy agent, 7 guard | extract, interact, persuade, protect | 160x160 | Indus Valley |
+| 32 | Ganges Delta | Ganges Delta Blackout (generated) | 4 | 12 enemy agent, 5 guard, 1 site warden | disable, extract, hold, interact | 160x128 | Indus Valley |
+| 33 | Patagonia | Patagonia Purge (generated) | 4 | 12 enemy agent, 5 guard | eliminate, extract, interact | 160x144 | Altiplano, Southern Brazil |
 | 34 | Eastern North America | Quiet Hours (hand-made) | 4 | 10 enemy agent, 4 guard | extract, interact | 96x96 | Central America |
-| 35 | Gulf Coast | Gulf Coast Uplink (generated) | 4 | 12 enemy agent, 5 guard | extract, hold, interact | 112x112 | Central America |
-| 36 | Mongolia | Mongolia Purge (generated) | 4 | 12 enemy agent, 5 guard | eliminate, extract, interact | 112x112 | Ganges Delta |
-| 37 | Southeast Asia | Loose Ends (hand-made) | 4 | 10 enemy agent, 4 guard, 1 site warden | destroy-vehicle, disable, extract, interact, use-vehicle | 96x96 | Ganges Delta, Deccan |
-| 38 | Southern China | Southern China Defection (generated) | 4 | 12 enemy agent, 7 guard | extract, persuade, protect | 112x112 | Ganges Delta |
-| 39 | Southwest Desert | Southwest Desert Uplink (generated) | 4 | 12 enemy agent, 5 guard | extract, hold, interact | 112x112 | Central America |
-| 40 | Sumatra | Sumatra Uplink (generated) | 4 | 12 enemy agent, 5 guard | extract, hold, interact | 112x112 | Ganges Delta, Deccan |
-| 41 | Alaska | Alaska Relay Run (generated) | 5 | 16 enemy agent, 6 guard | extract, interact | 96x96 | Southwest Desert, Gulf Coast |
-| 42 | Borneo | Borneo Purge (generated) | 5 | 16 enemy agent, 6 guard | eliminate, extract | 128x128 | Sumatra, Southeast Asia |
-| 43 | Central Australia | Central Australia Blackout (generated) | 5 | 16 enemy agent, 6 guard, 1 site warden | disable, extract, hold, interact | 128x128 | Sumatra |
-| 44 | Eastern Australia | Eastern Australia Relay Run (generated) | 5 | 16 enemy agent, 6 guard | extract, interact | 128x128 | Sumatra |
-| 45 | Eastern Siberia | Eastern Siberia Audit (generated) | 5 | 16 enemy agent, 6 guard, 1 site warden | extract, interact | 128x128 | Mongolia, Southern China |
-| 46 | Great Plains | Great Plains Relay Run (generated) | 5 | 16 enemy agent, 6 guard | extract, interact | 128x128 | Gulf Coast, Southwest Desert |
-| 47 | Japan | Japan Purge (generated) | 5 | 16 enemy agent, 6 guard | eliminate, extract, interact | 128x128 | Southern China, Mongolia |
-| 48 | Manchuria | Manchuria Relay Run (generated) | 5 | 16 enemy agent, 6 guard | extract, interact | 128x128 | Mongolia, Southern China |
-| 49 | Pacific Coast | Pacific Coast Defection (generated) | 5 | 16 enemy agent, 8 guard | extract, interact, persuade, protect | 128x128 | Southwest Desert, Gulf Coast |
-| 50 | Western Australia | Western Australia Uplink (generated) | 5 | 16 enemy agent, 6 guard | extract, hold, interact | 128x128 | Sumatra |
+| 35 | Gulf Coast | Gulf Coast Purge (generated) | 4 | 12 enemy agent, 5 guard | eliminate, extract, interact | 160x144 | Central America |
+| 36 | Mongolia | Mongolia Audit (generated) | 4 | 12 enemy agent, 5 guard, 1 site warden | extract, interact | 160x112 | Ganges Delta |
+| 37 | Southeast Asia | Southeast Asia Blackout (generated) | 4 | 12 enemy agent, 5 guard, 1 site warden | disable, extract, hold, interact | 160x112 | Ganges Delta, Deccan |
+| 38 | Southern China | Southern China Purge (generated) | 4 | 12 enemy agent, 5 guard | eliminate, extract, interact | 160x160 | Ganges Delta |
+| 39 | Southwest Desert | Southwest Desert Uplink (generated) | 4 | 12 enemy agent, 5 guard | extract, hold, interact | 160x128 | Central America |
+| 40 | Sumatra | Sumatra Defection (generated) | 4 | 12 enemy agent, 7 guard | extract, interact, persuade, protect | 160x160 | Ganges Delta, Deccan |
+| 41 | Alaska | Alaska Relay Run (generated) | 5 | 16 enemy agent, 6 guard | extract, interact | 176x152 | Southwest Desert, Gulf Coast |
+| 42 | Borneo | Borneo Purge (generated) | 5 | 16 enemy agent, 6 guard | eliminate, extract | 176x128 | Sumatra, Southeast Asia |
+| 43 | Central Australia | Central Australia Blackout (generated) | 5 | 16 enemy agent, 6 guard, 1 site warden | disable, extract, hold, interact | 176x128 | Sumatra |
+| 44 | Eastern Australia | Eastern Australia Relay Run (generated) | 5 | 16 enemy agent, 6 guard | extract, interact | 176x144 | Sumatra |
+| 45 | Eastern Siberia | Eastern Siberia Defection (generated) | 5 | 16 enemy agent, 8 guard | extract, persuade, protect | 176x144 | Mongolia, Southern China |
+| 46 | Great Plains | Great Plains Relay Run (generated) | 5 | 16 enemy agent, 6 guard | extract, interact | 176x128 | Gulf Coast, Southwest Desert |
+| 47 | Japan | Japan Blackout (generated) | 5 | 16 enemy agent, 6 guard, 1 site warden | disable, extract, hold, interact | 176x128 | Southern China, Mongolia |
+| 48 | Manchuria | Manchuria Purge (generated) | 5 | 16 enemy agent, 6 guard | eliminate, extract, interact | 176x128 | Mongolia, Southern China |
+| 49 | Pacific Coast | Pacific Coast Vault Job (generated) | 5 | 16 enemy agent, 6 guard, 1 site warden | disable, extract, interact | 176x128 | Southwest Desert, Gulf Coast |
+| 50 | Western Australia | Western Australia Uplink (generated) | 5 | 16 enemy agent, 6 guard | extract, hold, interact | 176x128 | Sumatra |

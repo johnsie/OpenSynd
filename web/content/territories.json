@@ -40,10 +40,10 @@
       "lon": 105,
       "lat": 15,
       "population": 4800000,
-      "mission": "missions/loose-ends.mission.json",
+      "mission": "missions/southeast-asia.mission.json",
       "owner": "Vesper Holdings",
-      "uprising": "missions/loose-ends-uprising.mission.json",
-      "defence": "missions/loose-ends-defence.mission.json"
+      "uprising": "missions/southeast-asia-uprising.mission.json",
+      "defence": "missions/southeast-asia-defence.mission.json"
     },
     {
       "id": "developer.eastern-mediterranean",
@@ -51,10 +51,10 @@
       "lon": 35,
       "lat": 37,
       "population": 2400000,
-      "mission": "missions/safe-passage.mission.json",
+      "mission": "missions/eastern-mediterranean.mission.json",
       "owner": "Corvid Combine",
-      "uprising": "missions/safe-passage-uprising.mission.json",
-      "defence": "missions/safe-passage-defence.mission.json"
+      "uprising": "missions/eastern-mediterranean-uprising.mission.json",
+      "defence": "missions/eastern-mediterranean-defence.mission.json"
     },
     {
       "id": "developer.alaska",
@@ -547,9 +547,9 @@
       "lat": 54.6,
       "population": 1900000,
       "owner": "Tidewater Consortium",
-      "mission": "missions/foyle-crossing.mission.json",
-      "uprising": "missions/foyle-crossing-uprising.mission.json",
-      "defence": "missions/foyle-crossing-defence.mission.json"
+      "mission": "missions/northern-ireland.mission.json",
+      "uprising": "missions/northern-ireland-uprising.mission.json",
+      "defence": "missions/northern-ireland-defence.mission.json"
     }
   ]
 }

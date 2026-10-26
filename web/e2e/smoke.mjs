@@ -464,30 +464,16 @@ for (const [name, type, executablePath] of targets) {
       await page.evaluate(() => window.opensyndTest.completeObjectives());
       await page.waitForSelector("#outcome-dialog[open]");
       assert.equal(await page.locator("#next-button").isVisible(), true);
-      // Safe Passage is done in order: the first objective stands out and the later ones wait.
-      await page.click("#next-button");
-      await page.waitForSelector("#title-dialog[open]");
-      assert.match(await page.locator("#title-heading").innerText(), /Safe Passage/);
-      await page.click("#begin-button");
-      assert.match(await page.locator("#operation-eyebrow").innerText(), /OPERATION 04/);
-      assert.equal(await page.locator("#objective-list li.current").count(), 1);
-      assert.match(await page.locator("#objective-list li.current").innerText(), /clearance key/i);
-      assert.equal(await page.locator("#objective-list li.waiting").count(), 2);
-      await page.evaluate(() => window.opensyndTest.completeObjectives());
-      await page.waitForSelector("#outcome-dialog[open]");
-      await page.click("#next-button");
-      await page.waitForSelector("#title-dialog[open]");
-      assert.match(await page.locator("#title-heading").innerText(), /Loose Ends/);
-      await page.click("#begin-button");
-      assert.match(await page.locator("#operation-eyebrow").innerText(), /OPERATION 05/);
-      await page.evaluate(() => window.opensyndTest.completeObjectives());
-      await page.waitForSelector("#outcome-dialog[open]");
-      // Foyle Crossing (opened by the first operation) is still to do, so it comes next.
-      await page.click("#next-button");
-      await page.waitForSelector("#title-dialog[open]");
-      assert.match(await page.locator("#title-heading").innerText(), /Foyle Crossing/);
-      await page.click("#begin-button");
-      assert.match(await page.locator("#operation-eyebrow").innerText(), /OPERATION 06/);
+      // The operations after the hand-made ones are generated for their territories, each on a map of its own.
+      for (const number of ["04", "05", "06"]) {
+        await page.click("#next-button");
+        await page.waitForSelector("#title-dialog[open]");
+        await page.click("#begin-button");
+        assert.match(await page.locator("#operation-eyebrow").innerText(), new RegExp(`OPERATION ${number}`));
+        if (number === "06") break; // finished below
+        await page.evaluate(() => window.opensyndTest.completeObjectives());
+        await page.waitForSelector("#outcome-dialog[open]");
+      }
       // The territories it opened are next: the campaign goes on past the hand-made operations.
       await page.evaluate(() => window.opensyndTest.completeObjectives());
       await page.waitForSelector("#outcome-dialog[open]");
@@ -884,17 +870,25 @@ for (const [name, type, executablePath] of targets) {
       });
       await rail.goto(`${url}?e2e`);
       await rail.waitForSelector(".roster-select");
-      await rail.evaluate(async () => {
+      // The operation to play is one with a freight train (only the districts with the elevated railway have one).
+      const target = await rail.evaluate(async () => {
         const pack = await (await fetch("content/pack.json")).json();
-        const ids = [];
-        for (const path of pack.missions) ids.push((await (await fetch(`content/${path}`)).json()).id);
-        localStorage.setItem("opensynd.progress.v1", JSON.stringify({ completed: ids.filter((id) => !id.includes("balkans")) }));
+        const missions = [];
+        for (const path of pack.missions) missions.push(await (await fetch(`content/${path}`)).json());
+        const hasTrain = (mission) => (mission.vehicles ?? []).some((item) => item.vehicle.includes("freight-train"));
+        const found = missions.find(hasTrain);
+        const others = missions.map((m) => m.id).filter((id) => id !== found.id);
+        localStorage.setItem("opensynd.progress.v1", JSON.stringify({ completed: others }));
+        return { name: found.name };
       });
       await rail.reload();
       await rail.waitForSelector(".roster-select");
       await rail.click("#filter-all");
-      await rail.locator("#mission-list button", { hasText: "Balkans Uplink" }).click();
-      await rail.waitForFunction(() => document.querySelector("#title-heading").textContent.includes("Balkans"));
+      await rail
+        .locator("#mission-list button", { hasText: target.name, hasNotText: `Complete ${target.name}` })
+        .first()
+        .click();
+      await rail.waitForFunction((name) => document.querySelector("#title-heading").textContent.includes(name), target.name);
       await rail.click("#begin-button");
       await rail.waitForFunction(() => document.querySelector("#status-message").textContent.includes("Local map established"));
       const firstTrain = await rail.evaluate(() => window.opensyndTest.trains()[0]);

@@ -246,7 +246,7 @@ function playOnce(world, tactics) {
     if (active.some((unit) => unit.path.length === 0 && !inZone(unit))) moveSquad(middle);
   };
 
-  const limit = 20 * 60;
+  const limit = 20 * 60 * Math.max(1, map.dimensions.width / 128); // a bigger district takes longer to cross
   let outcome = "active";
   while (seconds < limit && outcome === "active") {
     if (seconds >= nextThink) {

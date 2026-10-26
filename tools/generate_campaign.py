@@ -29,9 +29,11 @@ import generate_maps as maps  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 PACK = ROOT / "open-content/packs/developer"
+# Hand-made operations each have a map of their own. Safe Passage, Loose Ends and Foyle Crossing used to share the first three maps; their
+# territories now get generated districts, and the old missions live on as test fixtures (web/test/fixtures/missions) for the rules they
+# exercise.
 HANDMADE = {
     "missions/restore-relay.mission.json", "missions/quiet-hours.mission.json", "missions/dead-drop.mission.json",
-    "missions/safe-passage.mission.json", "missions/loose-ends.mission.json", "missions/foyle-crossing.mission.json",
 }
 HANDMADE_MAPS = ["maps/signal-yard.map.json", "maps/audit-yard.map.json", "maps/freight-depot.map.json"]
 # Maps for operations outside the 50 (the tutorial's Training Yard, from tools/generate_tutorial.py): kept in the pack as they are.
@@ -102,8 +104,9 @@ def build_graph(territories: list[dict]) -> tuple[dict[str, int], dict[str, list
 
 def surfaces(map_value: dict) -> tuple[list[list[str]], list[list[bool]]]:
     size = map_value["dimensions"]["width"]
-    surface = [[""] * size for _ in range(size)]
-    walkable = [[False] * size for _ in range(size)]
+    rows = map_value["dimensions"]["height"]
+    surface = [[""] * size for _ in range(rows)]
+    walkable = [[False] * size for _ in range(rows)]
     for r in map_value["regions"]:
         for y in range(r["y"], r["y"] + r["height"]):
             for x in range(r["x"], r["x"] + r["width"]):
@@ -115,10 +118,12 @@ def surfaces(map_value: dict) -> tuple[list[list[str]], list[list[bool]]]:
 RAIL_HEIGHT = 8  # tile elevation of the viaduct: about as high as the buildings
 
 
-def rail_for(size: int, period: int, block: int, first: int, blocks: int, compound) -> dict:
+def rail_for(size: int, period: int, block: int, first: int, blocks: int, compound, street_columns=None) -> dict:
     """The railway: segments of an elevated line along row 2, leaving a gap at each street column (which passes underneath)."""
     end = (compound[0] - 3) if compound else size - 2
     columns = [(first + block + period * index, first + block + period * index + 4) for index in range(blocks)]
+    if street_columns:
+        columns = [(x, x + 4) for x in street_columns]
     segments = []
     start = 1
     for low, high in columns + [(end + 1, end + 1)]:
@@ -142,41 +147,98 @@ def rail_stops(segments: list[tuple[int, int]]) -> list[int]:
     return [segments[0][0] + 11, middle[0] + middle[1] // 2, segments[-1][0] + segments[-1][1] - 2]
 
 
-def layout_for(territory: dict, tier: int) -> dict:
+# The style of each territory's district (see map_styles.py), chosen by what the place is like: coasts get harbours, deserts get sand,
+# the far north gets snow, and so on. A style is not a theme park: the mission, the enemies and the objectives are the same kinds as
+# everywhere, but the ground you fight over is different. Territories not listed keep the downtown grid.
+STYLE_OF = {
+    "northern-europe": "oldtown", "eastern-north-america": "highrise", "southern-brazil": "river", "southeast-asia": "harbour",
+    "eastern-mediterranean": "oldtown", "alaska": "tundra", "pacific-coast": "harbour", "southwest-desert": "desert",
+    "gulf-coast": "harbour", "great-plains": "outskirts", "central-america": "jungle", "colombian-highlands": "park",
+    "amazon-basin": "jungle", "northeast-brazil": "harbour", "andean-peru": "oldtown", "altiplano": "desert",
+    "chilean-coast": "harbour", "patagonia": "outskirts", "iberia": "oldtown", "scandinavia": "park", "eastern-europe": "industrial",
+    "balkans": "river", "russian-plain": "park", "caucasus": "oldtown", "ural-region": "industrial", "western-siberia": "tundra",
+    "eastern-siberia": "tundra", "iranian-plateau": "desert", "arabian-peninsula": "desert", "maghreb": "oldtown",
+    "gulf-of-guinea": "harbour", "congo-basin": "jungle", "horn-of-africa": "desert", "east-african-rift": "river",
+    "southern-africa": "outskirts", "kazakh-steppe": "outskirts", "indus-valley": "river", "deccan": "highrise",
+    "ganges-delta": "river", "mongolia": "desert", "southern-china": "highrise", "manchuria": "industrial",
+    "japan": "highrise", "sumatra": "jungle", "borneo": "jungle", "western-australia": "outskirts", "central-australia": "desert",
+    "eastern-australia": "harbour", "madagascar": "jungle", "northern-ireland": "park",
+}
+RAIL_STYLES = {"downtown", "industrial", "highrise"}  # districts with the elevated freight line along the north edge
+STREET_COLUMNS = {"industrial": (30, 28), "highrise": (28, 26)}  # first column, then the spacing
+
+
+def outline_for(rng: random.Random, size: int, height: int, has_rail: bool) -> list[tuple[int, int, int, int]]:
+    """Rectangles cut out of the map so it is not a plain rectangle: a stepped diagonal corner (or two) on the west side, or a bay
+    taken out of the top or bottom edge. They stay clear of the entry, the exit yard and the compound; a map with the railway along
+    its north edge keeps its north side whole."""
+    kind = rng.choice(["none", "none", "sw", "nw", "both", "bay-top", "bay-bottom", "bays"])
+    holes: list[tuple[int, int, int, int]] = []
+    cut = rng.randint(20, 36)
+
+    def corner(top: bool) -> None:
+        for step in range(0, cut, 2):
+            y = step if top else height - step - 2
+            holes.append((0, y, cut - step, 2))
+
+    if kind in ("sw", "both"):
+        corner(False)
+    if kind in ("nw", "both") and not has_rail:
+        corner(True)
+    width, depth = rng.randint(24, 44), rng.randint(8, 14)
+    x = rng.randint(int(size * 0.28), int(size * 0.55))
+    if kind in ("bay-top", "bays") and not has_rail:
+        holes.append((x, 0, width, depth))
+    if kind in ("bay-bottom", "bays"):
+        holes.append((size - x - width, height - depth, width, depth))
+    return holes
+
+
+def layout_for(territory: dict, tier: int, attempt: int = 0) -> dict:
     """The parameters of a city for this territory: bigger and more fenced further along the campaign."""
-    rng = random.Random(seed_of(territory["id"]))
-    size = [96, 96, 112, 112, 128][min(tier - 1, 4)]
-    if size == 128 and rng.random() < 0.3:
-        size = 96
-    period, block = (22, 18) if size == 96 else (24, 20)
+    rng = random.Random(seed_of(territory["id"]) + attempt)
+    size = [128, 128, 144, 160, 176][min(tier - 1, 4)]  # a district takes a couple of minutes to cross, more further along
+    style = STYLE_OF.get(slug_of(territory), "downtown")
+    # Wider than tall for most styles (the squad crosses from west to east): between three quarters and all of the width, and the
+    # crop keeps the avenue and the entry together. A harbour keeps its sea, so it is cropped from the top.
+    height = size if style == "downtown" else max(96, int(size * rng.choice([1.0, 0.9, 0.82, 0.74, 0.74])) // 8 * 8)
+    crop_y0 = (size - height) if style == "harbour" else (size - height) // 2
+    period, block = 24, 20
     first = 6
-    blocks = 4 if size < 128 else 5
-    while first + block + period * (blocks - 1) + 4 > size - 2:
-        blocks -= 1
+    blocks = (size - 2 - 4 - first - block) // period + 1
     compound = None
     fences = []
     gate = None
     if rng.random() < 0.65:
-        width, height = 14, 34
-        cx = size - width
-        cy = rng.choice([0, (size - height) // 2, size - height])
-        compound = (cx, cy, width, height)
+        cw, ch = 14, 34
+        cx = size - cw
+        cy = rng.choice([0, (height - ch) // 2, height - ch])
+        compound = (cx, cy, cw, ch)
         gate = (cx, cy + 16, 1, 2)
         if cy > 0:
-            fences.append(("fence-north", cx, cy, width, 1))
-        if cy + height < size:
-            fences.append(("fence-south", cx, cy + height, width, 1))
+            fences.append(("fence-north", cx, cy, cw, 1))
+        if cy + ch < height:
+            fences.append(("fence-south", cx, cy + ch, cw, 1))
         fences.append(("fence-west-upper", cx, cy, 1, 16))
-        fences.append(("fence-west-lower", cx, cy + 18, 1, height - 18))
+        fences.append(("fence-west-lower", cx, cy + 18, 1, ch - 18))
     channel = None
     if size >= 112 and rng.random() < 0.5:
         channel = {"x": size // 2 - 4, "width": 8, "bridges": [first + 20 + 24 * k for k in range(blocks - 1)]}
+    columns = []
+    if style in STREET_COLUMNS:
+        first_column, spacing = STREET_COLUMNS[style]
+        columns = list(range(first_column, size - 24, spacing))
     return {
+        "style": style,
+        "street_columns": columns,
         "id": f"developer.{slug_of(territory)}-district",
         "file": f"{slug_of(territory)}.map.json",
         "name": f"{territory['name']} District",
         "size": size,
-        "seed": seed_of(territory["id"] + ":map"),
+        "height": height,
+        "crop_y0": crop_y0,
+        "outline": outline_for(rng, size, height, style in RAIL_STYLES),
+        "seed": seed_of(territory["id"] + ":map") + attempt,
         "period": period,
         "block": block,
         "first": first,
@@ -186,9 +248,9 @@ def layout_for(territory: dict, tier: int) -> dict:
         "compound": compound,
         "fences": fences,
         "gate": gate,
-        "rail": rail_for(size, period, block, first, blocks, compound),
+        "rail": rail_for(size, period, block, first, blocks, compound, columns or None) if style in RAIL_STYLES else None,
         "doors": tier >= 2,  # alley mouths closed by doors that open for anyone who walks up to them
-        "entry": (2, size // 2),
+        "entry": (2, size // 2 - crop_y0),
         "zones": [],
         "watch_points": [],
     }
@@ -197,6 +259,7 @@ def layout_for(territory: dict, tier: int) -> dict:
 def place_zones(layout: dict, map_value: dict, rng: random.Random) -> list[dict]:
     """Choose the entry, relays, console, server, uplink and exit on ground reachable from the start."""
     size = layout["size"]
+    height = layout.get("height", size)
     _, walkable = surfaces(map_value)
     if layout["gate"]:
         gx, gy, gw, gh = layout["gate"]
@@ -218,7 +281,9 @@ def place_zones(layout: dict, map_value: dict, rng: random.Random) -> list[dict]
     zones = [maps.zone("team-entry", "entry", entry[0], entry[1], 2, 2)]
 
     def pick(side: int, gap: int, minimum_entry: int = 20) -> tuple[int, int]:
-        candidates = [(x, y) for x in range(3, size - 6) for y in range(3, size - 6) if area_ok(x, y, side)]
+        gap = round(gap * size / 128)
+        minimum_entry = round(minimum_entry * size / 128)
+        candidates = [(x, y) for x in range(3, size - 6) for y in range(3, height - 6) if area_ok(x, y, side)]
         rng.shuffle(candidates)
         for x, y in candidates:
             if math.hypot(x - entry[0], y - entry[1]) < minimum_entry:
@@ -241,19 +306,27 @@ def place_zones(layout: dict, map_value: dict, rng: random.Random) -> list[dict]
         cx, cy, _, _ = compound
         zones.append(maps.zone("safe-exit", "exit", cx + 6, cy + 14, 4, 4))
     else:
-        candidates = [(x, y) for x in range(size - 16, size - 6) for y in range(3, size - 6) if area_ok(x, y, 4)]
-        x, y = max(candidates, key=lambda point: (point[0], -abs(point[1] - size // 2), point))
+        candidates = [(x, y) for x in range(size - 16, size - 6) for y in range(3, height - 6) if area_ok(x, y, 4)]
+        x, y = max(candidates, key=lambda point: (point[0], -abs(point[1] - entry[1]), point))
         zones.append(maps.zone("safe-exit", "exit", x, y, 4, 4))
     return zones
 
 
 def make_map(territory: dict, tier: int) -> tuple[dict, dict]:
-    layout = layout_for(territory, tier)
-    rng = random.Random(seed_of(territory["id"] + ":zones"))
-    layout["zones"] = place_zones(layout, maps.build(layout), rng)
-    map_value = maps.build(layout)
-    maps.verify(map_value, layout)
-    return layout, map_value
+    """The territory's district. A style's random layout can wall something off (the exit behind water, a zone with no room), so a
+    layout that fails its checks is thrown away and the style is laid out again with the next seed."""
+    last = None
+    for attempt in range(40):
+        layout = layout_for(territory, tier, attempt)
+        rng = random.Random(seed_of(territory["id"] + ":zones") + attempt)
+        try:
+            layout["zones"] = place_zones(layout, maps.build(layout), rng)
+            map_value = maps.build(layout)
+            maps.verify(map_value, layout)
+            return layout, map_value
+        except (AssertionError, RuntimeError) as error:
+            last = error
+    raise RuntimeError(f"{territory['name']}: no district layout passed its checks ({last})")
 
 
 # --------------------------------------------------------------------------------------------------- the missions
@@ -321,10 +394,13 @@ def with_patrol(rng: random.Random, reach: set[tuple[int, int]], placement: dict
     return placement
 
 
-def road_runs(surface: list[list[str]], reach: set[tuple[int, int]], size: int) -> list[tuple[tuple[int, int], tuple[int, int]]]:
+Run = tuple[tuple[int, int], tuple[int, int]]
+
+
+def road_runs(surface: list[list[str]], reach: set[tuple[int, int]], size: int, rows: int | None = None) -> list[Run]:
     """Straight stretches of open road at least 14 tiles long (east-west)."""
     runs = []
-    for y in range(size):
+    for y in range(rows if rows is not None else size):
         x = 0
         while x < size:
             if (x, y) in reach and surface[y][x] == "street":
@@ -430,11 +506,20 @@ def make_mission(territory: dict, tier: int, layout: dict, map_value: dict, map_
         opponents.append(with_patrol(rng, reach, {
             "id": f"enemy-agent-{NUMBERS[number]}", "unit": "units/enemy-agent.unit.json",
             "position": {"x": position[0], "y": position[1]}, "equipment": equipment}, 6, 8))
+    # Guards stand guard. Each has a post: beside a door, the compound gate or the way out, and the rest along the streets; the relays and
+    # the vault are left to the enemy agents and the warden, so a guard's post never sits on top of what the squad has to reach. Only about
+    # one in four paces a short beat; the rest stay where they are until something happens, which is what a guard does.
+    posts = [(z["position"]["x"] + z["width"] // 2, z["position"]["y"] + z["height"] // 2) for z in layout["zones"]
+             if z["id"] in ("safe-exit", "uplink-hold")]
+    posts += [(o["position"]["x"], o["position"]["y"]) for o in map_value.get("objects", []) if o["kind"] in ("door", "gate")]
+    rng.shuffle(posts)
     for number in range(guards):
-        position = spot(street or pool)
-        opponents.append(with_patrol(rng, reach, {
-            "id": f"guard-{number + 1}", "unit": "units/guard.unit.json",
-            "position": {"x": position[0], "y": position[1]}, "equipment": []}, 6, 12))
+        post = posts[number] if number < len(posts) else None
+        near = [p for p in pool if post and 2 <= math.hypot(p[0] - post[0], p[1] - post[1]) <= 6]
+        position = spot(near or street or pool)
+        guard = {"id": f"guard-{number + 1}", "unit": "units/guard.unit.json",
+                 "position": {"x": position[0], "y": position[1]}, "equipment": []}
+        opponents.append(with_patrol(rng, reach, guard, 3, 5) if number % 4 == 3 else guard)
     if recipe["warden"] or recipe["server"]:
         # The warden keeps a post of their own, well away from the vault server and every other objective, on open ground
         # rather than in the middle of a street (nobody posts a warden at a crossing).
@@ -479,7 +564,7 @@ def make_mission(territory: dict, tier: int, layout: dict, map_value: dict, map_
             "id": f"criminal-{number + 1}", "unit": "units/criminal.unit.json",
             "position": {"x": position[0], "y": position[1]}, "equipment": []}, 6, 12))
 
-    runs = road_runs(surface, reach, size)
+    runs = road_runs(surface, reach, size, layout.get("height", size))
     rng.shuffle(runs)
     car_kinds = ["vehicles/city-car.vehicle.json"] * 4 + ["vehicles/patrol-car.vehicle.json"]
     if tier >= 3:
@@ -493,12 +578,13 @@ def make_mission(territory: dict, tier: int, layout: dict, map_value: dict, map_
 
     # A freight train shuttles along the viaduct between its three stations, waiting at each.
     rail = layout["rail"]
-    first_x, station_x, last_x = rail["stops"]
-    vehicles.append({
-        "id": "freight-train-1", "vehicle": "vehicles/freight-train.vehicle.json", "position": {"x": first_x, "y": rail["y"]},
-        "stops": [{"x": first_x, "y": rail["y"], "wait": 0}, {"x": station_x, "y": rail["y"], "wait": 8},
-                  {"x": last_x, "y": rail["y"], "wait": 6}],
-    })
+    if rail:
+        first_x, station_x, last_x = rail["stops"]
+        vehicles.append({
+            "id": "freight-train-1", "vehicle": "vehicles/freight-train.vehicle.json", "position": {"x": first_x, "y": rail["y"]},
+            "stops": [{"x": first_x, "y": rail["y"], "wait": 0}, {"x": station_x, "y": rail["y"], "wait": 8},
+                      {"x": last_x, "y": rail["y"], "wait": 6}],
+        })
 
     place = rng.choice(PLACES)
     name = f"{territory['name']} {recipe['noun']}"
@@ -589,10 +675,11 @@ def write_campaign_table(territories: list[dict], depth: dict[str, int], parents
         enemies = ", ".join(f"{count} {kind.replace('-', ' ')}" for kind, count in sorted(kinds.items(), key=lambda p: (-p[1], p[0])))
         objectives = ", ".join(sorted({o["type"] for o in mission["objectives"]}))
         opened_by = ", ".join(names[p] for p in parents.get(t["id"], [])) or "start"
-        size = json.loads((PACK / mission["map"]).read_text(encoding="utf-8"))["dimensions"]["width"]
+        dims = json.loads((PACK / mission["map"]).read_text(encoding="utf-8"))["dimensions"]
+        size, tall = dims["width"], dims["height"]
         hand = "hand-made" if t["mission"] in HANDMADE else "generated"
         rows.append(f"| {len(rows) + 1} | {t['name']} | {mission['name']} ({hand}) | {tier_of[t['id']]} | {enemies} | "
-                    f"{objectives} | {size}x{size} | {opened_by} |")
+                    f"{objectives} | {size}x{tall} | {opened_by} |")
     text = "\n".join([
         "<!-- SPDX-License-Identifier: GPL-2.0-or-later -->",
         "<!-- Generated by tools/generate_campaign.py: edit the generator, not this file. -->",
@@ -642,7 +729,7 @@ def main() -> None:
     for t in handmade:
         path = PACK / t["mission"]
         mission = json.loads(path.read_text(encoding="utf-8"))
-        kept = [u for u in mission.get("unlocks", []) if u not in generated_ids]
+        kept = [u for u in mission.get("unlocks", []) if u not in generated_ids and u in set(mission_id.values())]
         mission["unlocks"] = kept + [c for c in sorted(children[t["id"]]) if c not in kept]
         path.write_text(json.dumps(mission, indent=2) + "\n", encoding="utf-8")
 
@@ -662,7 +749,7 @@ def main() -> None:
         t["mission"] = mission_path
         pack_maps.append(map_path)
         pack_missions.append(mission_path)
-        print(f"{t['name']}: tier {tier}, depth {depth[t['id']]}, {recipe['key']}, {layout['size']}x{layout['size']}")
+        print(f"{t['name']}: tier {tier}, depth {depth[t['id']]}, {recipe['key']}, {layout['size']}x{layout.get('height', layout['size'])}")
 
     territories_path.write_text(json.dumps(world, indent=2) + "\n", encoding="utf-8")
     write_campaign_table(world["territories"], depth, parents, tier_of)

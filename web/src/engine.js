@@ -211,7 +211,7 @@ export function buildPatrolRoute(grid, start, waypoints) {
 
 // ---- Sight
 
-const SEE_THROUGH_SURFACES = new Set(["service-fence", "runoff-channel"]);
+const SEE_THROUGH_SURFACES = new Set(["service-fence", "runoff-channel", "kerb", "pylon", "pipe"]);
 export const SIGHT_STEP = 0.25;
 
 const tileAt = (position) => ({ x: Math.round(position.x), y: Math.round(position.y) });

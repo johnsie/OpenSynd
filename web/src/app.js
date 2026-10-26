@@ -62,6 +62,8 @@ import {
   drawSignal,
   drawConsole,
   drawFenceTile,
+  drawPylonTile,
+  drawPipeTile,
   drawGateTile,
   drawRelay,
   drawVehicle,
@@ -1888,6 +1890,8 @@ function drawTile(tile, viewport) {
   }
   if (tile.surface === FENCE_SURFACE) drawFenceTile(context, project, tile, cellSize.height);
   else if (tile.surface === WALL_SURFACE) drawWallTile(context, project, tile, cellSize.height, shade(tile.color, 0));
+  else if (tile.surface === "pylon") drawPylonTile(context, project, tile, cellSize.height);
+  else if (tile.surface === "pipe") drawPipeTile(context, project, tile, cellSize.height);
   else drawRoad(tile, topCenter, cellSize);
   if (tile.railOver) drawRailOver(tile, cellSize, origin);
 }
@@ -2019,6 +2023,34 @@ function drawBuilding(building, viewport, size) {
     fillAll(glass, index === 0 ? "#1b3140" : "#142532");
     fillAll(lit, index === 0 ? "#e6c88a" : "#caa96b");
     fillAll(smashed, "#07090b");
+    // A pair of doors at street level with a lamp on a bracket over them, so a building looks used (the entrances you can walk into are
+    // real doors in the map; these are the way in for people who are not there).
+    if (across >= 5) {
+      const doorBay = Math.floor(random() * bays);
+      const centre = (doorBay + 0.5) / bays;
+      const half = Math.min(0.1, 0.8 / across);
+      const leaf = (a, b) => strip(wall, a, b, floorHeight * 0.02, floorHeight * 0.8);
+      context.fillStyle = "#0c0f12";
+      quad(leaf(centre - half, centre + half));
+      context.fill();
+      context.strokeStyle = "rgba(230, 215, 170, .55)";
+      context.lineWidth = 1;
+      quad(leaf(centre - half, centre + half));
+      context.stroke();
+      const seam = [onWall(wall.from, wall.to, centre, floorHeight * 0.02), onWall(wall.from, wall.to, centre, floorHeight * 0.8)];
+      context.beginPath();
+      context.moveTo(seam[0].x, seam[0].y);
+      context.lineTo(seam[1].x, seam[1].y);
+      context.stroke();
+      const lamp = onWall(wall.from, wall.to, centre, floorHeight * 0.95);
+      const glow = context.createRadialGradient(lamp.x, lamp.y, 0, lamp.x, lamp.y, cellSize.height * 0.9);
+      glow.addColorStop(0, "rgba(255, 238, 180, .42)");
+      glow.addColorStop(1, "rgba(255, 238, 180, 0)");
+      context.fillStyle = glow;
+      context.fillRect(lamp.x - cellSize.height, lamp.y - cellSize.height, cellSize.height * 2, cellSize.height * 2);
+      context.fillStyle = "#fff3c4";
+      context.fillRect(lamp.x - 4, lamp.y - 1, 8, 3);
+    }
     context.strokeStyle = "rgba(200, 220, 230, .55)";
     context.lineWidth = 1;
     context.beginPath();
@@ -2819,6 +2851,21 @@ const MINI_COLORS = {
   "service-fence": "#6b7a84",
   "service-wall": "#6b7a84",
   "relay-pad": "#e1b35a",
+  lawn: "#2f4d36",
+  mud: "#3b4b2e",
+  sand: "#8a7550",
+  snow: "#aab5bb",
+  gravel: "#45484b",
+  plaza: "#5a5348",
+  kerb: "#6a655a",
+  rooftop: "#2c2e2b",
+  chevron: "#8a6a2a",
+  pylon: "#2a2f33",
+  pipe: "#7a4a22",
+  scrub: "#6f5a2c",
+  "steps-x": "#8a8478",
+  "steps-y": "#8a8478",
+  dock: "#5a4a38",
 };
 
 // Terrain never changes, so it is painted once per mission and reused each frame.

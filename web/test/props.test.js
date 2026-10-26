@@ -10,7 +10,7 @@ const prop = (kind, x = 5, y = 5, id = `${kind}-${x}-${y}`) => newProp({ id, kin
 test("a prop starts standing with its kind's health", () => {
   const tree = prop("tree");
   assert.deepEqual([tree.state, tree.health, tree.burnLeft], ["standing", PROP_KINDS.tree.health, 0]);
-  assert.equal(Object.keys(PROP_KINDS).length, 5);
+  assert.equal(Object.keys(PROP_KINDS).length, 10);
 });
 
 test("a tree shrugs off bullets and is set alight by fire", () => {

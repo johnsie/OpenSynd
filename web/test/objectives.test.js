@@ -20,6 +20,9 @@ import {
 import { FIXED_STEP_SECONDS, advancePatrols } from "../src/simulation.js";
 
 const read = async (path) => JSON.parse(await readFile(new URL(`../content/${path}`, import.meta.url), "utf8"));
+// Safe Passage and Loose Ends are no longer operations in the campaign (every territory has a map of its own now); they are kept as
+// fixtures because they exercise rules (an escort that waits for a key, a stolen vehicle) that the generated operations do not.
+const readFixture = async (name) => JSON.parse(await readFile(new URL(`./fixtures/missions/${name}`, import.meta.url), "utf8"));
 
 const zones = [
   { id: "drop", position: { x: 10, y: 10 }, width: 3, height: 3 },
@@ -174,7 +177,7 @@ test("a gate opens for an operator carrying its key who stands close", () => {
 });
 
 test("Safe Passage: the accountant waits, walks to the gate, waits for the key, then crosses", async () => {
-  const mission = await read("missions/safe-passage.mission.json");
+  const mission = await readFixture("safe-passage.mission.json");
   const map = await read(mission.map);
   assert.equal(mission.sequence, true);
   const grid = createTileGrid(map);
@@ -243,8 +246,8 @@ test("a scripted walker with no route skips the step, and 'escape' removes the u
 });
 
 test("Loose Ends and Safe Passage use only objective types the game resolves", async () => {
-  for (const file of ["missions/safe-passage.mission.json", "missions/loose-ends.mission.json"]) {
-    const mission = await read(file);
+  for (const file of ["safe-passage.mission.json", "loose-ends.mission.json"]) {
+    const mission = await readFixture(file);
     assert.equal(mission.sequence, true);
     assert.equal(new Set(mission.objectives.map((item) => item.id)).size, mission.objectives.length);
     assert.equal(mission.objectives.at(-1).type, "extract", "the last step is always the way out");

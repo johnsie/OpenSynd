@@ -6,6 +6,11 @@
 //   streetlight  any weapon brings it down
 //   bin          any weapon dents it
 //   billboard    fire, beams and blasts; it burns like a tree
+//   barrels      a stack of drums; any weapon dents them and fire sets them alight (they burn like a tree)
+//   skylight     a glass pyramid on a roof; any weapon breaks it
+//   vent         a dome on a roof; nothing hurts it
+//   shrub        a low bush or planting; fire, beams and blasts hurt it, and it burns like a tree
+//   antenna      a dark dome on a stalk, for roofs; nothing hurts it
 //   wreck        a burnt-out car left at the kerb; nothing hurts it any more (after FreeSynd's damaged large armored car)
 // Pure rules; drawing lives in the app.
 export const FIRE_SECONDS = 10;
@@ -19,6 +24,11 @@ export const PROP_KINDS = Object.freeze({
   bin: { health: 10, hurtBy: ["bullet", "burn", "beam", "explosion"], flammable: false },
   billboard: { health: 40, hurtBy: ["burn", "beam", "explosion"], flammable: true },
   wreck: { health: 1, hurtBy: [], flammable: false },
+  barrels: { health: 18, hurtBy: ["bullet", "burn", "beam", "explosion"], flammable: true },
+  skylight: { health: 6, hurtBy: ["bullet", "burn", "beam", "explosion"], flammable: false },
+  vent: { health: 1, hurtBy: [], flammable: false },
+  shrub: { health: 10, hurtBy: ["burn", "beam", "explosion"], flammable: true },
+  antenna: { health: 1, hurtBy: [], flammable: false },
 });
 
 export function newProp(definition) {

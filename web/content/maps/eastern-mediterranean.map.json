@@ -1,0 +1,2481 @@
+{
+ "formatVersion": 1,
+ "id": "developer.eastern-mediterranean-district",
+ "name": "Eastern Mediterranean District",
+ "license": "CC0-1.0",
+ "projection": "isometric-diamond",
+ "dimensions": {
+  "width": 128,
+  "height": 96
+ },
+ "cellSize": {
+  "width": 80,
+  "height": 40
+ },
+ "regions": [
+  {
+   "id": "ground-1ba",
+   "x": 0,
+   "y": 14,
+   "width": 128,
+   "height": 68,
+   "surface": "plaza",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#6b5c4a"
+  },
+  {
+   "id": "ground-1bl",
+   "x": 0,
+   "y": 82,
+   "width": 37,
+   "height": 14,
+   "surface": "plaza",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#6b5c4a"
+  },
+  {
+   "id": "ground-1br",
+   "x": 64,
+   "y": 82,
+   "width": 64,
+   "height": 14,
+   "surface": "plaza",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#6b5c4a"
+  },
+  {
+   "id": "ground-1l",
+   "x": 0,
+   "y": 0,
+   "width": 64,
+   "height": 14,
+   "surface": "plaza",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#6b5c4a"
+  },
+  {
+   "id": "ground-1r",
+   "x": 91,
+   "y": 0,
+   "width": 37,
+   "height": 14,
+   "surface": "plaza",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#6b5c4a"
+  },
+  {
+   "id": "avenue-2",
+   "x": 0,
+   "y": 46,
+   "width": 128,
+   "height": 4,
+   "surface": "street",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#2d363d"
+  },
+  {
+   "id": "plaza-3",
+   "x": 55,
+   "y": 39,
+   "width": 18,
+   "height": 18,
+   "surface": "plaza",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#7a6a54"
+  },
+  {
+   "id": "fountain-4",
+   "x": 63,
+   "y": 52,
+   "width": 3,
+   "height": 3,
+   "surface": "runoff-channel",
+   "walkable": false,
+   "elevation": 0,
+   "color": "#1d4350"
+  },
+  {
+   "id": "street-5b",
+   "x": 62,
+   "y": 14,
+   "width": 4,
+   "height": 32,
+   "surface": "street",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#2d363d"
+  },
+  {
+   "id": "street-5l",
+   "x": 62,
+   "y": 0,
+   "width": 2,
+   "height": 14,
+   "surface": "street",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#2d363d"
+  },
+  {
+   "id": "street-6a",
+   "x": 62,
+   "y": 50,
+   "width": 4,
+   "height": 32,
+   "surface": "street",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#2d363d"
+  },
+  {
+   "id": "street-6r",
+   "x": 64,
+   "y": 82,
+   "width": 2,
+   "height": 14,
+   "surface": "street",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#2d363d"
+  },
+  {
+   "id": "terrace-7",
+   "x": 26,
+   "y": 24,
+   "width": 12,
+   "height": 9,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 2,
+   "color": "#84483a"
+  },
+  {
+   "id": "kerb-8",
+   "x": 26,
+   "y": 24,
+   "width": 12,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-9",
+   "x": 26,
+   "y": 32,
+   "width": 12,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-10",
+   "x": 26,
+   "y": 24,
+   "width": 1,
+   "height": 9,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-11",
+   "x": 37,
+   "y": 24,
+   "width": 1,
+   "height": 3,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-12",
+   "x": 37,
+   "y": 29,
+   "width": 1,
+   "height": 4,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6a655a"
+  },
+  {
+   "id": "steps-13",
+   "x": 37,
+   "y": 27,
+   "width": 1,
+   "height": 2,
+   "surface": "steps-x",
+   "walkable": true,
+   "elevation": 2,
+   "color": "#84483a"
+  },
+  {
+   "id": "steps-14",
+   "x": 38,
+   "y": 27,
+   "width": 1,
+   "height": 2,
+   "surface": "steps-x",
+   "walkable": true,
+   "elevation": 2,
+   "color": "#84483a"
+  },
+  {
+   "id": "kerb-15",
+   "x": 38,
+   "y": 26,
+   "width": 1,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-16",
+   "x": 38,
+   "y": 29,
+   "width": 1,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6a655a"
+  },
+  {
+   "id": "steps-17",
+   "x": 39,
+   "y": 27,
+   "width": 1,
+   "height": 2,
+   "surface": "steps-x",
+   "walkable": true,
+   "elevation": 1,
+   "color": "#84483a"
+  },
+  {
+   "id": "kerb-18",
+   "x": 39,
+   "y": 26,
+   "width": 1,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-19",
+   "x": 39,
+   "y": 29,
+   "width": 1,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#6a655a"
+  },
+  {
+   "id": "steps-20",
+   "x": 40,
+   "y": 27,
+   "width": 1,
+   "height": 2,
+   "surface": "steps-x",
+   "walkable": true,
+   "elevation": 1,
+   "color": "#84483a"
+  },
+  {
+   "id": "kerb-21",
+   "x": 40,
+   "y": 26,
+   "width": 1,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-22",
+   "x": 40,
+   "y": 29,
+   "width": 1,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#6a655a"
+  },
+  {
+   "id": "terrace-23",
+   "x": 82,
+   "y": 67,
+   "width": 10,
+   "height": 8,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 3,
+   "color": "#7a3f2e"
+  },
+  {
+   "id": "kerb-24",
+   "x": 82,
+   "y": 67,
+   "width": 10,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 3,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-25",
+   "x": 82,
+   "y": 74,
+   "width": 4,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 3,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-26",
+   "x": 88,
+   "y": 74,
+   "width": 4,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 3,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-27",
+   "x": 82,
+   "y": 67,
+   "width": 1,
+   "height": 8,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 3,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-28",
+   "x": 91,
+   "y": 67,
+   "width": 1,
+   "height": 8,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 3,
+   "color": "#6a655a"
+  },
+  {
+   "id": "steps-29",
+   "x": 86,
+   "y": 74,
+   "width": 2,
+   "height": 1,
+   "surface": "steps-y",
+   "walkable": true,
+   "elevation": 3,
+   "color": "#7a3f2e"
+  },
+  {
+   "id": "steps-30",
+   "x": 86,
+   "y": 75,
+   "width": 2,
+   "height": 1,
+   "surface": "steps-y",
+   "walkable": true,
+   "elevation": 3,
+   "color": "#7a3f2e"
+  },
+  {
+   "id": "kerb-31",
+   "x": 85,
+   "y": 75,
+   "width": 1,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 3,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-32",
+   "x": 88,
+   "y": 75,
+   "width": 1,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 3,
+   "color": "#6a655a"
+  },
+  {
+   "id": "steps-33",
+   "x": 86,
+   "y": 76,
+   "width": 2,
+   "height": 1,
+   "surface": "steps-y",
+   "walkable": true,
+   "elevation": 2,
+   "color": "#7a3f2e"
+  },
+  {
+   "id": "kerb-34",
+   "x": 85,
+   "y": 76,
+   "width": 1,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-35",
+   "x": 88,
+   "y": 76,
+   "width": 1,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6a655a"
+  },
+  {
+   "id": "steps-36",
+   "x": 86,
+   "y": 77,
+   "width": 2,
+   "height": 1,
+   "surface": "steps-y",
+   "walkable": true,
+   "elevation": 2,
+   "color": "#7a3f2e"
+  },
+  {
+   "id": "kerb-37",
+   "x": 85,
+   "y": 77,
+   "width": 1,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-38",
+   "x": 88,
+   "y": 77,
+   "width": 1,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6a655a"
+  },
+  {
+   "id": "steps-39",
+   "x": 86,
+   "y": 78,
+   "width": 2,
+   "height": 1,
+   "surface": "steps-y",
+   "walkable": true,
+   "elevation": 1,
+   "color": "#7a3f2e"
+  },
+  {
+   "id": "kerb-40",
+   "x": 85,
+   "y": 78,
+   "width": 1,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-41",
+   "x": 88,
+   "y": 78,
+   "width": 1,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#6a655a"
+  },
+  {
+   "id": "steps-42",
+   "x": 86,
+   "y": 79,
+   "width": 2,
+   "height": 1,
+   "surface": "steps-y",
+   "walkable": true,
+   "elevation": 1,
+   "color": "#7a3f2e"
+  },
+  {
+   "id": "kerb-43",
+   "x": 85,
+   "y": 79,
+   "width": 1,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-44",
+   "x": 88,
+   "y": 79,
+   "width": 1,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#6a655a"
+  },
+  {
+   "id": "terrace-45b",
+   "x": 85,
+   "y": 14,
+   "width": 11,
+   "height": 5,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 3,
+   "color": "#7a3f2e"
+  },
+  {
+   "id": "terrace-45r",
+   "x": 91,
+   "y": 11,
+   "width": 5,
+   "height": 3,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 3,
+   "color": "#7a3f2e"
+  },
+  {
+   "id": "kerb-47",
+   "x": 91,
+   "y": 11,
+   "width": 5,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 3,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-48",
+   "x": 85,
+   "y": 18,
+   "width": 11,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 3,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-49b",
+   "x": 85,
+   "y": 14,
+   "width": 1,
+   "height": 5,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 3,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-50",
+   "x": 95,
+   "y": 11,
+   "width": 1,
+   "height": 8,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 3,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-54",
+   "x": 91,
+   "y": 10,
+   "width": 1,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 3,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-57",
+   "x": 91,
+   "y": 9,
+   "width": 1,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-60",
+   "x": 91,
+   "y": 8,
+   "width": 1,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-63",
+   "x": 91,
+   "y": 7,
+   "width": 1,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-66",
+   "x": 91,
+   "y": 6,
+   "width": 1,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#6a655a"
+  },
+  {
+   "id": "terrace-67",
+   "x": 27,
+   "y": 72,
+   "width": 10,
+   "height": 9,
+   "surface": "lawn",
+   "walkable": true,
+   "elevation": 2,
+   "color": "#6b5a2a"
+  },
+  {
+   "id": "kerb-68",
+   "x": 27,
+   "y": 72,
+   "width": 10,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-69",
+   "x": 27,
+   "y": 80,
+   "width": 4,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-70",
+   "x": 33,
+   "y": 80,
+   "width": 4,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-71",
+   "x": 27,
+   "y": 72,
+   "width": 1,
+   "height": 9,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-72",
+   "x": 36,
+   "y": 72,
+   "width": 1,
+   "height": 9,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6a655a"
+  },
+  {
+   "id": "steps-73",
+   "x": 31,
+   "y": 80,
+   "width": 2,
+   "height": 1,
+   "surface": "steps-y",
+   "walkable": true,
+   "elevation": 2,
+   "color": "#6b5a2a"
+  },
+  {
+   "id": "steps-74",
+   "x": 31,
+   "y": 81,
+   "width": 2,
+   "height": 1,
+   "surface": "steps-y",
+   "walkable": true,
+   "elevation": 2,
+   "color": "#6b5a2a"
+  },
+  {
+   "id": "kerb-75",
+   "x": 30,
+   "y": 81,
+   "width": 1,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-76",
+   "x": 33,
+   "y": 81,
+   "width": 1,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6a655a"
+  },
+  {
+   "id": "steps-77",
+   "x": 31,
+   "y": 82,
+   "width": 2,
+   "height": 1,
+   "surface": "steps-y",
+   "walkable": true,
+   "elevation": 1,
+   "color": "#6b5a2a"
+  },
+  {
+   "id": "kerb-78",
+   "x": 30,
+   "y": 82,
+   "width": 1,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-79",
+   "x": 33,
+   "y": 82,
+   "width": 1,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#6a655a"
+  },
+  {
+   "id": "steps-80",
+   "x": 31,
+   "y": 83,
+   "width": 2,
+   "height": 1,
+   "surface": "steps-y",
+   "walkable": true,
+   "elevation": 1,
+   "color": "#6b5a2a"
+  },
+  {
+   "id": "kerb-81",
+   "x": 30,
+   "y": 83,
+   "width": 1,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-82",
+   "x": 33,
+   "y": 83,
+   "width": 1,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#6a655a"
+  },
+  {
+   "id": "terrace-83",
+   "x": 82,
+   "y": 25,
+   "width": 10,
+   "height": 8,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 2,
+   "color": "#84483a"
+  },
+  {
+   "id": "kerb-84",
+   "x": 82,
+   "y": 25,
+   "width": 10,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-85",
+   "x": 82,
+   "y": 32,
+   "width": 10,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-86",
+   "x": 82,
+   "y": 25,
+   "width": 1,
+   "height": 3,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-87",
+   "x": 82,
+   "y": 30,
+   "width": 1,
+   "height": 3,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-88",
+   "x": 91,
+   "y": 25,
+   "width": 1,
+   "height": 8,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6a655a"
+  },
+  {
+   "id": "steps-89",
+   "x": 82,
+   "y": 28,
+   "width": 1,
+   "height": 2,
+   "surface": "steps-x",
+   "walkable": true,
+   "elevation": 2,
+   "color": "#84483a"
+  },
+  {
+   "id": "steps-90",
+   "x": 81,
+   "y": 28,
+   "width": 1,
+   "height": 2,
+   "surface": "steps-x",
+   "walkable": true,
+   "elevation": 2,
+   "color": "#84483a"
+  },
+  {
+   "id": "kerb-91",
+   "x": 81,
+   "y": 27,
+   "width": 1,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-92",
+   "x": 81,
+   "y": 30,
+   "width": 1,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6a655a"
+  },
+  {
+   "id": "steps-93",
+   "x": 80,
+   "y": 28,
+   "width": 1,
+   "height": 2,
+   "surface": "steps-x",
+   "walkable": true,
+   "elevation": 1,
+   "color": "#84483a"
+  },
+  {
+   "id": "kerb-94",
+   "x": 80,
+   "y": 27,
+   "width": 1,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-95",
+   "x": 80,
+   "y": 30,
+   "width": 1,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#6a655a"
+  },
+  {
+   "id": "steps-96",
+   "x": 79,
+   "y": 28,
+   "width": 1,
+   "height": 2,
+   "surface": "steps-x",
+   "walkable": true,
+   "elevation": 1,
+   "color": "#84483a"
+  },
+  {
+   "id": "kerb-97",
+   "x": 79,
+   "y": 27,
+   "width": 1,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-98",
+   "x": 79,
+   "y": 30,
+   "width": 1,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#6a655a"
+  },
+  {
+   "id": "terrace-99",
+   "x": 30,
+   "y": 56,
+   "width": 10,
+   "height": 10,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 2,
+   "color": "#5e362b"
+  },
+  {
+   "id": "kerb-100",
+   "x": 30,
+   "y": 56,
+   "width": 10,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-101",
+   "x": 30,
+   "y": 65,
+   "width": 4,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-102",
+   "x": 36,
+   "y": 65,
+   "width": 4,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-103",
+   "x": 30,
+   "y": 56,
+   "width": 1,
+   "height": 10,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-104",
+   "x": 39,
+   "y": 56,
+   "width": 1,
+   "height": 10,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6a655a"
+  },
+  {
+   "id": "steps-105",
+   "x": 34,
+   "y": 65,
+   "width": 2,
+   "height": 1,
+   "surface": "steps-y",
+   "walkable": true,
+   "elevation": 2,
+   "color": "#5e362b"
+  },
+  {
+   "id": "steps-106",
+   "x": 34,
+   "y": 66,
+   "width": 2,
+   "height": 1,
+   "surface": "steps-y",
+   "walkable": true,
+   "elevation": 2,
+   "color": "#5e362b"
+  },
+  {
+   "id": "kerb-107",
+   "x": 33,
+   "y": 66,
+   "width": 1,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-108",
+   "x": 36,
+   "y": 66,
+   "width": 1,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6a655a"
+  },
+  {
+   "id": "steps-109",
+   "x": 34,
+   "y": 67,
+   "width": 2,
+   "height": 1,
+   "surface": "steps-y",
+   "walkable": true,
+   "elevation": 1,
+   "color": "#5e362b"
+  },
+  {
+   "id": "kerb-110",
+   "x": 33,
+   "y": 67,
+   "width": 1,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-111",
+   "x": 36,
+   "y": 67,
+   "width": 1,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#6a655a"
+  },
+  {
+   "id": "steps-112",
+   "x": 34,
+   "y": 68,
+   "width": 2,
+   "height": 1,
+   "surface": "steps-y",
+   "walkable": true,
+   "elevation": 1,
+   "color": "#5e362b"
+  },
+  {
+   "id": "kerb-113",
+   "x": 33,
+   "y": 68,
+   "width": 1,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-114",
+   "x": 36,
+   "y": 68,
+   "width": 1,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#6a655a"
+  },
+  {
+   "id": "terrace-115",
+   "x": 25,
+   "y": 11,
+   "width": 11,
+   "height": 7,
+   "surface": "lawn",
+   "walkable": true,
+   "elevation": 2,
+   "color": "#6b5a2a"
+  },
+  {
+   "id": "kerb-116",
+   "x": 25,
+   "y": 11,
+   "width": 11,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-117",
+   "x": 25,
+   "y": 17,
+   "width": 11,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-118",
+   "x": 25,
+   "y": 11,
+   "width": 1,
+   "height": 2,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-119",
+   "x": 25,
+   "y": 15,
+   "width": 1,
+   "height": 3,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-120",
+   "x": 35,
+   "y": 11,
+   "width": 1,
+   "height": 7,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6a655a"
+  },
+  {
+   "id": "steps-121",
+   "x": 25,
+   "y": 13,
+   "width": 1,
+   "height": 2,
+   "surface": "steps-x",
+   "walkable": true,
+   "elevation": 2,
+   "color": "#6b5a2a"
+  },
+  {
+   "id": "steps-122",
+   "x": 24,
+   "y": 13,
+   "width": 1,
+   "height": 2,
+   "surface": "steps-x",
+   "walkable": true,
+   "elevation": 2,
+   "color": "#6b5a2a"
+  },
+  {
+   "id": "kerb-123",
+   "x": 24,
+   "y": 12,
+   "width": 1,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-124",
+   "x": 24,
+   "y": 15,
+   "width": 1,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6a655a"
+  },
+  {
+   "id": "steps-125",
+   "x": 23,
+   "y": 13,
+   "width": 1,
+   "height": 2,
+   "surface": "steps-x",
+   "walkable": true,
+   "elevation": 1,
+   "color": "#6b5a2a"
+  },
+  {
+   "id": "kerb-126",
+   "x": 23,
+   "y": 12,
+   "width": 1,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-127",
+   "x": 23,
+   "y": 15,
+   "width": 1,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#6a655a"
+  },
+  {
+   "id": "steps-128",
+   "x": 22,
+   "y": 13,
+   "width": 1,
+   "height": 2,
+   "surface": "steps-x",
+   "walkable": true,
+   "elevation": 1,
+   "color": "#6b5a2a"
+  },
+  {
+   "id": "kerb-129",
+   "x": 22,
+   "y": 12,
+   "width": 1,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#6a655a"
+  },
+  {
+   "id": "kerb-130",
+   "x": 22,
+   "y": 15,
+   "width": 1,
+   "height": 1,
+   "surface": "kerb",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#6a655a"
+  },
+  {
+   "id": "building-131",
+   "x": 38,
+   "y": 4,
+   "width": 11,
+   "height": 8,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#5e362b"
+  },
+  {
+   "id": "building-132",
+   "x": 45,
+   "y": 14,
+   "width": 4,
+   "height": 15,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#5e362b"
+  },
+  {
+   "id": "building-133",
+   "x": 19,
+   "y": 41,
+   "width": 3,
+   "height": 1,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#5e362b"
+  },
+  {
+   "id": "building-135",
+   "x": 102,
+   "y": 4,
+   "width": 9,
+   "height": 11,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#7a3f2e"
+  },
+  {
+   "id": "building-136",
+   "x": 105,
+   "y": 17,
+   "width": 3,
+   "height": 4,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#7a3f2e"
+  },
+  {
+   "id": "building-137",
+   "x": 102,
+   "y": 21,
+   "width": 9,
+   "height": 4,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#7a3f2e"
+  },
+  {
+   "id": "building-138",
+   "x": 105,
+   "y": 25,
+   "width": 3,
+   "height": 4,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#7a3f2e"
+  },
+  {
+   "id": "building-139",
+   "x": 15,
+   "y": 58,
+   "width": 6,
+   "height": 7,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#7a3f2e"
+  },
+  {
+   "id": "building-140",
+   "x": 15,
+   "y": 67,
+   "width": 6,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 3,
+   "color": "#7a3f2e"
+  },
+  {
+   "id": "garden-141",
+   "x": 44,
+   "y": 59,
+   "width": 9,
+   "height": 8,
+   "surface": "lawn",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#6b5a2a"
+  },
+  {
+   "id": "wall-142",
+   "x": 44,
+   "y": 59,
+   "width": 3,
+   "height": 1,
+   "surface": "service-fence",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#3a4650"
+  },
+  {
+   "id": "wall-143",
+   "x": 50,
+   "y": 59,
+   "width": 3,
+   "height": 1,
+   "surface": "service-fence",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#3a4650"
+  },
+  {
+   "id": "wall-144",
+   "x": 44,
+   "y": 66,
+   "width": 9,
+   "height": 1,
+   "surface": "service-fence",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#3a4650"
+  },
+  {
+   "id": "wall-145",
+   "x": 44,
+   "y": 59,
+   "width": 1,
+   "height": 8,
+   "surface": "service-fence",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#3a4650"
+  },
+  {
+   "id": "wall-146",
+   "x": 52,
+   "y": 59,
+   "width": 1,
+   "height": 8,
+   "surface": "service-fence",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#3a4650"
+  },
+  {
+   "id": "building-147",
+   "x": 44,
+   "y": 69,
+   "width": 9,
+   "height": 4,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 3,
+   "color": "#7a3f2e"
+  },
+  {
+   "id": "building-148",
+   "x": 15,
+   "y": 82,
+   "width": 5,
+   "height": 10,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 3,
+   "color": "#84483a"
+  },
+  {
+   "id": "building-149a",
+   "x": 49,
+   "y": 75,
+   "width": 4,
+   "height": 7,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 4,
+   "color": "#84483a"
+  },
+  {
+   "id": "building-150",
+   "x": 82,
+   "y": 52,
+   "width": 4,
+   "height": 12,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6b3a2c"
+  },
+  {
+   "id": "building-151",
+   "x": 71,
+   "y": 66,
+   "width": 7,
+   "height": 3,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#5e362b"
+  },
+  {
+   "id": "building-152",
+   "x": 71,
+   "y": 73,
+   "width": 7,
+   "height": 3,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#5e362b"
+  },
+  {
+   "id": "building-153",
+   "x": 71,
+   "y": 78,
+   "width": 4,
+   "height": 14,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 4,
+   "color": "#84483a"
+  },
+  {
+   "id": "building-154",
+   "x": 77,
+   "y": 86,
+   "width": 9,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 4,
+   "color": "#84483a"
+  },
+  {
+   "id": "building-155",
+   "x": 95,
+   "y": 52,
+   "width": 6,
+   "height": 5,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 4,
+   "color": "#73402f"
+  },
+  {
+   "id": "building-156",
+   "x": 95,
+   "y": 59,
+   "width": 6,
+   "height": 7,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#7a3f2e"
+  },
+  {
+   "id": "building-157",
+   "x": 88,
+   "y": 88,
+   "width": 10,
+   "height": 4,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#7a3f2e"
+  },
+  {
+   "id": "relay-one-base",
+   "x": 100,
+   "y": 10,
+   "width": 2,
+   "height": 2,
+   "surface": "relay-pad",
+   "walkable": true,
+   "elevation": 1,
+   "color": "#8b6b32"
+  },
+  {
+   "id": "relay-two-base",
+   "x": 76,
+   "y": 37,
+   "width": 2,
+   "height": 2,
+   "surface": "relay-pad",
+   "walkable": true,
+   "elevation": 1,
+   "color": "#8b6b32"
+  },
+  {
+   "id": "relay-three-base",
+   "x": 23,
+   "y": 63,
+   "width": 2,
+   "height": 2,
+   "surface": "relay-pad",
+   "walkable": true,
+   "elevation": 1,
+   "color": "#8b6b32"
+  },
+  {
+   "id": "gate-panel-base",
+   "x": 108,
+   "y": 54,
+   "width": 2,
+   "height": 2,
+   "surface": "relay-pad",
+   "walkable": true,
+   "elevation": 1,
+   "color": "#8b6b32"
+  },
+  {
+   "id": "vault-server-base",
+   "x": 59,
+   "y": 55,
+   "width": 2,
+   "height": 2,
+   "surface": "relay-pad",
+   "walkable": true,
+   "elevation": 1,
+   "color": "#8b6b32"
+  },
+  {
+   "id": "compound-floor",
+   "x": 115,
+   "y": 63,
+   "width": 13,
+   "height": 33,
+   "surface": "service-concrete",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#2b3a36"
+  },
+  {
+   "id": "fence-north",
+   "x": 114,
+   "y": 62,
+   "width": 14,
+   "height": 1,
+   "surface": "service-fence",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#3a4650"
+  },
+  {
+   "id": "fence-west-upper",
+   "x": 114,
+   "y": 62,
+   "width": 1,
+   "height": 16,
+   "surface": "service-fence",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#3a4650"
+  },
+  {
+   "id": "fence-west-lower",
+   "x": 114,
+   "y": 80,
+   "width": 1,
+   "height": 16,
+   "surface": "service-fence",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#3a4650"
+  }
+ ],
+ "zones": [
+  {
+   "id": "team-entry",
+   "kind": "entry",
+   "position": {
+    "x": 2,
+    "y": 48
+   },
+   "width": 2,
+   "height": 2
+  },
+  {
+   "id": "relay-one",
+   "kind": "interaction",
+   "position": {
+    "x": 100,
+    "y": 10
+   },
+   "width": 2,
+   "height": 2,
+   "prop": "relay"
+  },
+  {
+   "id": "relay-two",
+   "kind": "interaction",
+   "position": {
+    "x": 76,
+    "y": 37
+   },
+   "width": 2,
+   "height": 2,
+   "prop": "relay"
+  },
+  {
+   "id": "relay-three",
+   "kind": "interaction",
+   "position": {
+    "x": 23,
+    "y": 63
+   },
+   "width": 2,
+   "height": 2,
+   "prop": "relay"
+  },
+  {
+   "id": "gate-panel",
+   "kind": "interaction",
+   "position": {
+    "x": 108,
+    "y": 54
+   },
+   "width": 2,
+   "height": 2,
+   "prop": "console"
+  },
+  {
+   "id": "vault-server",
+   "kind": "interaction",
+   "position": {
+    "x": 59,
+    "y": 55
+   },
+   "width": 2,
+   "height": 2,
+   "prop": "server"
+  },
+  {
+   "id": "uplink-hold",
+   "kind": "hold",
+   "position": {
+    "x": 118,
+    "y": 24
+   },
+   "width": 4,
+   "height": 4,
+   "prop": "beacon"
+  },
+  {
+   "id": "safe-exit",
+   "kind": "exit",
+   "position": {
+    "x": 120,
+    "y": 76
+   },
+   "width": 4,
+   "height": 4
+  }
+ ],
+ "objects": [
+  {
+   "id": "service-gate",
+   "kind": "gate",
+   "position": {
+    "x": 114,
+    "y": 78
+   },
+   "width": 1,
+   "height": 2,
+   "control": "gate-panel"
+  }
+ ],
+ "props": [
+  {
+   "id": "skylight-1",
+   "kind": "skylight",
+   "position": {
+    "x": 28,
+    "y": 30
+   }
+  },
+  {
+   "id": "skylight-2",
+   "kind": "skylight",
+   "position": {
+    "x": 30,
+    "y": 30
+   }
+  },
+  {
+   "id": "skylight-3",
+   "kind": "skylight",
+   "position": {
+    "x": 32,
+    "y": 30
+   }
+  },
+  {
+   "id": "skylight-4",
+   "kind": "skylight",
+   "position": {
+    "x": 34,
+    "y": 30
+   }
+  },
+  {
+   "id": "vent-1",
+   "kind": "vent",
+   "position": {
+    "x": 30,
+    "y": 29
+   }
+  },
+  {
+   "id": "vent-2",
+   "kind": "vent",
+   "position": {
+    "x": 87,
+    "y": 70
+   }
+  },
+  {
+   "id": "skylight-5",
+   "kind": "skylight",
+   "position": {
+    "x": 93,
+    "y": 13
+   }
+  },
+  {
+   "id": "antenna-1",
+   "kind": "antenna",
+   "position": {
+    "x": 32,
+    "y": 75
+   }
+  },
+  {
+   "id": "shrub-1",
+   "kind": "shrub",
+   "position": {
+    "x": 29,
+    "y": 79
+   }
+  },
+  {
+   "id": "shrub-2",
+   "kind": "shrub",
+   "position": {
+    "x": 31,
+    "y": 79
+   }
+  },
+  {
+   "id": "shrub-3",
+   "kind": "shrub",
+   "position": {
+    "x": 33,
+    "y": 73
+   }
+  },
+  {
+   "id": "skylight-6",
+   "kind": "skylight",
+   "position": {
+    "x": 84,
+    "y": 27
+   }
+  },
+  {
+   "id": "skylight-7",
+   "kind": "skylight",
+   "position": {
+    "x": 86,
+    "y": 27
+   }
+  },
+  {
+   "id": "skylight-8",
+   "kind": "skylight",
+   "position": {
+    "x": 88,
+    "y": 27
+   }
+  },
+  {
+   "id": "vent-3",
+   "kind": "vent",
+   "position": {
+    "x": 84,
+    "y": 30
+   }
+  },
+  {
+   "id": "vent-4",
+   "kind": "vent",
+   "position": {
+    "x": 32,
+    "y": 62
+   }
+  },
+  {
+   "id": "antenna-2",
+   "kind": "antenna",
+   "position": {
+    "x": 30,
+    "y": 13
+   }
+  },
+  {
+   "id": "shrub-4",
+   "kind": "shrub",
+   "position": {
+    "x": 27,
+    "y": 16
+   }
+  },
+  {
+   "id": "shrub-5",
+   "kind": "shrub",
+   "position": {
+    "x": 29,
+    "y": 16
+   }
+  },
+  {
+   "id": "shrub-6",
+   "kind": "shrub",
+   "position": {
+    "x": 31,
+    "y": 16
+   }
+  },
+  {
+   "id": "shrub-7",
+   "kind": "shrub",
+   "position": {
+    "x": 33,
+    "y": 12
+   }
+  },
+  {
+   "id": "shrub-8",
+   "kind": "shrub",
+   "position": {
+    "x": 48,
+    "y": 64
+   }
+  },
+  {
+   "id": "shrub-9",
+   "kind": "shrub",
+   "position": {
+    "x": 50,
+    "y": 62
+   }
+  },
+  {
+   "id": "shrub-10",
+   "kind": "shrub",
+   "position": {
+    "x": 47,
+    "y": 62
+   }
+  },
+  {
+   "id": "shrub-11",
+   "kind": "shrub",
+   "position": {
+    "x": 48,
+    "y": 63
+   }
+  },
+  {
+   "id": "shrub-12",
+   "kind": "shrub",
+   "position": {
+    "x": 50,
+    "y": 63
+   }
+  },
+  {
+   "id": "bin-1",
+   "kind": "bin",
+   "position": {
+    "x": 14,
+    "y": 63
+   }
+  },
+  {
+   "id": "shrub-13",
+   "kind": "shrub",
+   "position": {
+    "x": 14,
+    "y": 83
+   }
+  },
+  {
+   "id": "bin-2",
+   "kind": "bin",
+   "position": {
+    "x": 14,
+    "y": 87
+   }
+  },
+  {
+   "id": "bin-3",
+   "kind": "bin",
+   "position": {
+    "x": 20,
+    "y": 57
+   }
+  },
+  {
+   "id": "bin-4",
+   "kind": "bin",
+   "position": {
+    "x": 20,
+    "y": 73
+   }
+  },
+  {
+   "id": "bin-5",
+   "kind": "bin",
+   "position": {
+    "x": 20,
+    "y": 82
+   }
+  },
+  {
+   "id": "bin-6",
+   "kind": "bin",
+   "position": {
+    "x": 37,
+    "y": 4
+   }
+  },
+  {
+   "id": "tree-1",
+   "kind": "tree",
+   "position": {
+    "x": 41,
+    "y": 50
+   }
+  },
+  {
+   "id": "shrub-14",
+   "kind": "shrub",
+   "position": {
+    "x": 42,
+    "y": 12
+   }
+  },
+  {
+   "id": "shrub-15",
+   "kind": "shrub",
+   "position": {
+    "x": 44,
+    "y": 3
+   }
+  },
+  {
+   "id": "bin-7",
+   "kind": "bin",
+   "position": {
+    "x": 44,
+    "y": 24
+   }
+  },
+  {
+   "id": "streetlight-1",
+   "kind": "streetlight",
+   "position": {
+    "x": 44,
+    "y": 45
+   }
+  },
+  {
+   "id": "tree-2",
+   "kind": "tree",
+   "position": {
+    "x": 47,
+    "y": 50
+   }
+  },
+  {
+   "id": "shrub-16",
+   "kind": "shrub",
+   "position": {
+    "x": 53,
+    "y": 71
+   }
+  },
+  {
+   "id": "tree-3",
+   "kind": "tree",
+   "position": {
+    "x": 61,
+    "y": 14
+   }
+  },
+  {
+   "id": "tree-4",
+   "kind": "tree",
+   "position": {
+    "x": 61,
+    "y": 41
+   }
+  },
+  {
+   "id": "tree-5",
+   "kind": "tree",
+   "position": {
+    "x": 66,
+    "y": 64
+   }
+  },
+  {
+   "id": "streetlight-2",
+   "kind": "streetlight",
+   "position": {
+    "x": 66,
+    "y": 78
+   }
+  },
+  {
+   "id": "shrub-17",
+   "kind": "shrub",
+   "position": {
+    "x": 70,
+    "y": 79
+   }
+  },
+  {
+   "id": "shrub-18",
+   "kind": "shrub",
+   "position": {
+    "x": 70,
+    "y": 85
+   }
+  },
+  {
+   "id": "bin-8",
+   "kind": "bin",
+   "position": {
+    "x": 70,
+    "y": 91
+   }
+  },
+  {
+   "id": "tree-6",
+   "kind": "tree",
+   "position": {
+    "x": 72,
+    "y": 49
+   }
+  },
+  {
+   "id": "shrub-19",
+   "kind": "shrub",
+   "position": {
+    "x": 75,
+    "y": 89
+   }
+  },
+  {
+   "id": "streetlight-3",
+   "kind": "streetlight",
+   "position": {
+    "x": 77,
+    "y": 45
+   }
+  },
+  {
+   "id": "bin-9",
+   "kind": "bin",
+   "position": {
+    "x": 77,
+    "y": 65
+   }
+  },
+  {
+   "id": "bin-10",
+   "kind": "bin",
+   "position": {
+    "x": 77,
+    "y": 92
+   }
+  },
+  {
+   "id": "streetlight-4",
+   "kind": "streetlight",
+   "position": {
+    "x": 81,
+    "y": 45
+   }
+  },
+  {
+   "id": "shrub-20",
+   "kind": "shrub",
+   "position": {
+    "x": 81,
+    "y": 53
+   }
+  },
+  {
+   "id": "shrub-21",
+   "kind": "shrub",
+   "position": {
+    "x": 81,
+    "y": 60
+   }
+  },
+  {
+   "id": "bin-11",
+   "kind": "bin",
+   "position": {
+    "x": 81,
+    "y": 85
+   }
+  },
+  {
+   "id": "tree-7",
+   "kind": "tree",
+   "position": {
+    "x": 82,
+    "y": 50
+   }
+  },
+  {
+   "id": "shrub-22",
+   "kind": "shrub",
+   "position": {
+    "x": 83,
+    "y": 92
+   }
+  },
+  {
+   "id": "bin-12",
+   "kind": "bin",
+   "position": {
+    "x": 86,
+    "y": 90
+   }
+  },
+  {
+   "id": "shrub-23",
+   "kind": "shrub",
+   "position": {
+    "x": 88,
+    "y": 92
+   }
+  },
+  {
+   "id": "shrub-24",
+   "kind": "shrub",
+   "position": {
+    "x": 94,
+    "y": 60
+   }
+  },
+  {
+   "id": "tree-8",
+   "kind": "tree",
+   "position": {
+    "x": 95,
+    "y": 45
+   }
+  },
+  {
+   "id": "streetlight-5",
+   "kind": "streetlight",
+   "position": {
+    "x": 100,
+    "y": 50
+   }
+  },
+  {
+   "id": "shrub-25",
+   "kind": "shrub",
+   "position": {
+    "x": 101,
+    "y": 21
+   }
+  },
+  {
+   "id": "shrub-26",
+   "kind": "shrub",
+   "position": {
+    "x": 101,
+    "y": 61
+   }
+  },
+  {
+   "id": "shrub-27",
+   "kind": "shrub",
+   "position": {
+    "x": 102,
+    "y": 25
+   }
+  },
+  {
+   "id": "shrub-28",
+   "kind": "shrub",
+   "position": {
+    "x": 105,
+    "y": 15
+   }
+  },
+  {
+   "id": "shrub-29",
+   "kind": "shrub",
+   "position": {
+    "x": 106,
+    "y": 29
+   }
+  },
+  {
+   "id": "bin-13",
+   "kind": "bin",
+   "position": {
+    "x": 111,
+    "y": 7
+   }
+  },
+  {
+   "id": "bin-14",
+   "kind": "bin",
+   "position": {
+    "x": 111,
+    "y": 14
+   }
+  },
+  {
+   "id": "tree-9",
+   "kind": "tree",
+   "position": {
+    "x": 111,
+    "y": 50
+   }
+  },
+  {
+   "id": "tree-10",
+   "kind": "tree",
+   "position": {
+    "x": 115,
+    "y": 45
+   }
+  },
+  {
+   "id": "tree-11",
+   "kind": "tree",
+   "position": {
+    "x": 123,
+    "y": 45
+   }
+  },
+  {
+   "id": "streetlight-6",
+   "kind": "streetlight",
+   "position": {
+    "x": 124,
+    "y": 50
+   }
+  },
+  {
+   "id": "wreck-1",
+   "kind": "wreck",
+   "facing": "north-south",
+   "position": {
+    "x": 61,
+    "y": 72
+   }
+  }
+ ]
+}

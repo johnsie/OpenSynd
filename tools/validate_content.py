@@ -18,6 +18,7 @@ PACKS_ROOT = CONTENT_ROOT / "packs"
 SCHEMAS_ROOT = CONTENT_ROOT / "schemas"
 ID_PATTERN = re.compile(r"^[a-z][a-z0-9]*(?:[.-][a-z0-9]+)*$")
 COLOR_PATTERN = re.compile(r"^#[0-9a-fA-F]{6}$")
+PROP_KINDS = {"tree", "streetlight", "bin", "billboard", "wreck", "barrels", "skylight", "vent", "shrub", "antenna"}
 CONTENT_LICENSES = {"CC0-1.0", "CC-BY-4.0"}
 
 
@@ -146,7 +147,7 @@ class Validation:
                 self.error(path, f"invalid or duplicate prop id: {prop_id!r}")
                 continue
             prop_ids.add(prop_id)
-            if item.get("kind") not in {"tree", "streetlight", "bin", "billboard", "wreck"}:
+            if item.get("kind") not in PROP_KINDS:
                 self.error(path, f"prop {prop_id} has an unsupported kind")
             if item.get("facing", "east-west") not in {"east-west", "north-south"}:
                 self.error(path, f"prop {prop_id} has an unsupported facing")

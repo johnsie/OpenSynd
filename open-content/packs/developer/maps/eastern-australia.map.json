@@ -5,8 +5,8 @@
  "license": "CC0-1.0",
  "projection": "isometric-diamond",
  "dimensions": {
-  "width": 128,
-  "height": 128
+  "width": 176,
+  "height": 144
  },
  "cellSize": {
   "width": 80,
@@ -14,2594 +14,3584 @@
  },
  "regions": [
   {
-   "id": "ground",
+   "id": "ground-1aaaaaaaaaaaabbbbbbbbbbbb",
    "x": 0,
-   "y": 0,
-   "width": 128,
-   "height": 128,
+   "y": 24,
+   "width": 176,
+   "height": 96,
    "surface": "service-concrete",
    "walkable": true,
    "elevation": 0,
    "color": "#293138"
   },
   {
-   "id": "street-column-0",
-   "x": 26,
-   "y": 0,
-   "width": 4,
-   "height": 128,
-   "surface": "street",
+   "id": "ground-1aaaaaaaaaaaabbbbbbbbbbbr",
+   "x": 2,
+   "y": 22,
+   "width": 174,
+   "height": 2,
+   "surface": "service-concrete",
    "walkable": true,
    "elevation": 0,
-   "color": "#2d363d"
+   "color": "#293138"
   },
   {
-   "id": "street-row-0",
-   "x": 0,
-   "y": 26,
-   "width": 128,
-   "height": 4,
-   "surface": "street",
-   "walkable": true,
-   "elevation": 0,
-   "color": "#2d363d"
-  },
-  {
-   "id": "street-column-1",
-   "x": 50,
-   "y": 0,
-   "width": 4,
-   "height": 128,
-   "surface": "street",
-   "walkable": true,
-   "elevation": 0,
-   "color": "#2d363d"
-  },
-  {
-   "id": "street-row-1",
-   "x": 0,
-   "y": 50,
-   "width": 128,
-   "height": 4,
-   "surface": "street",
-   "walkable": true,
-   "elevation": 0,
-   "color": "#2d363d"
-  },
-  {
-   "id": "street-column-2",
-   "x": 74,
-   "y": 0,
-   "width": 4,
-   "height": 128,
-   "surface": "street",
-   "walkable": true,
-   "elevation": 0,
-   "color": "#2d363d"
-  },
-  {
-   "id": "street-row-2",
-   "x": 0,
-   "y": 74,
-   "width": 128,
-   "height": 4,
-   "surface": "street",
-   "walkable": true,
-   "elevation": 0,
-   "color": "#2d363d"
-  },
-  {
-   "id": "street-column-3",
-   "x": 98,
-   "y": 0,
-   "width": 4,
-   "height": 128,
-   "surface": "street",
-   "walkable": true,
-   "elevation": 0,
-   "color": "#2d363d"
-  },
-  {
-   "id": "street-row-3",
-   "x": 0,
-   "y": 98,
-   "width": 128,
-   "height": 4,
-   "surface": "street",
-   "walkable": true,
-   "elevation": 0,
-   "color": "#2d363d"
-  },
-  {
-   "id": "street-column-4",
-   "x": 122,
-   "y": 0,
-   "width": 4,
-   "height": 128,
-   "surface": "street",
-   "walkable": true,
-   "elevation": 0,
-   "color": "#2d363d"
-  },
-  {
-   "id": "street-row-4",
-   "x": 0,
-   "y": 122,
-   "width": 128,
-   "height": 4,
-   "surface": "street",
-   "walkable": true,
-   "elevation": 0,
-   "color": "#2d363d"
-  },
-  {
-   "id": "rail-line-0",
-   "x": 1,
-   "y": 2,
-   "width": 25,
-   "height": 1,
-   "surface": "rail",
-   "walkable": false,
-   "elevation": 8,
-   "color": "#3a3f44"
-  },
-  {
-   "id": "rail-line-1",
-   "x": 30,
-   "y": 2,
-   "width": 20,
-   "height": 1,
-   "surface": "rail",
-   "walkable": false,
-   "elevation": 8,
-   "color": "#3a3f44"
-  },
-  {
-   "id": "rail-line-2",
-   "x": 54,
-   "y": 2,
-   "width": 20,
-   "height": 1,
-   "surface": "rail",
-   "walkable": false,
-   "elevation": 8,
-   "color": "#3a3f44"
-  },
-  {
-   "id": "rail-line-3",
-   "x": 78,
-   "y": 2,
-   "width": 20,
-   "height": 1,
-   "surface": "rail",
-   "walkable": false,
-   "elevation": 8,
-   "color": "#3a3f44"
-  },
-  {
-   "id": "rail-line-4",
-   "x": 102,
-   "y": 2,
-   "width": 20,
-   "height": 1,
-   "surface": "rail",
-   "walkable": false,
-   "elevation": 8,
-   "color": "#3a3f44"
-  },
-  {
-   "id": "platform-0-4",
+   "id": "ground-1aaaaaaaaaaaabbbbbbbbbbr",
    "x": 4,
-   "y": 3,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
+   "y": 20,
+   "width": 172,
+   "height": 2,
+   "surface": "service-concrete",
    "walkable": true,
-   "elevation": 9,
-   "color": "#3b464f"
+   "elevation": 0,
+   "color": "#293138"
   },
   {
-   "id": "support-0-4",
-   "x": 4,
-   "y": 4,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": false,
-   "elevation": 6,
-   "color": "#3b464f"
-  },
-  {
-   "id": "platform-0-5",
-   "x": 5,
-   "y": 3,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 9,
-   "color": "#3b464f"
-  },
-  {
-   "id": "support-0-5",
-   "x": 5,
-   "y": 4,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": false,
-   "elevation": 6,
-   "color": "#3b464f"
-  },
-  {
-   "id": "platform-0-6",
+   "id": "ground-1aaaaaaaaaaaabbbbbbbbbr",
    "x": 6,
-   "y": 3,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
+   "y": 18,
+   "width": 170,
+   "height": 2,
+   "surface": "service-concrete",
    "walkable": true,
-   "elevation": 9,
-   "color": "#3b464f"
+   "elevation": 0,
+   "color": "#293138"
   },
   {
-   "id": "support-0-6",
-   "x": 6,
-   "y": 4,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": false,
-   "elevation": 6,
-   "color": "#3b464f"
-  },
-  {
-   "id": "platform-0-7",
-   "x": 7,
-   "y": 3,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 9,
-   "color": "#3b464f"
-  },
-  {
-   "id": "support-0-7",
-   "x": 7,
-   "y": 4,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": false,
-   "elevation": 6,
-   "color": "#3b464f"
-  },
-  {
-   "id": "platform-0-8",
+   "id": "ground-1aaaaaaaaaaaabbbbbbbbr",
    "x": 8,
-   "y": 3,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 9,
-   "color": "#3b464f"
-  },
-  {
-   "id": "support-0-8",
-   "x": 8,
-   "y": 4,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": false,
-   "elevation": 6,
-   "color": "#3b464f"
-  },
-  {
-   "id": "platform-0-9",
-   "x": 9,
-   "y": 3,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 9,
-   "color": "#3b464f"
-  },
-  {
-   "id": "support-0-9",
-   "x": 9,
-   "y": 4,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": false,
-   "elevation": 6,
-   "color": "#3b464f"
-  },
-  {
-   "id": "platform-0-10",
-   "x": 10,
-   "y": 3,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 9,
-   "color": "#3b464f"
-  },
-  {
-   "id": "support-0-10",
-   "x": 10,
-   "y": 4,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": false,
-   "elevation": 6,
-   "color": "#3b464f"
-  },
-  {
-   "id": "platform-0-11",
-   "x": 11,
-   "y": 3,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 9,
-   "color": "#3b464f"
-  },
-  {
-   "id": "support-0-11",
-   "x": 11,
-   "y": 4,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": false,
-   "elevation": 6,
-   "color": "#3b464f"
-  },
-  {
-   "id": "platform-0-12",
-   "x": 12,
-   "y": 3,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 9,
-   "color": "#3b464f"
-  },
-  {
-   "id": "platform-0-13",
-   "x": 13,
-   "y": 3,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 9,
-   "color": "#3b464f"
-  },
-  {
-   "id": "support-0-13",
-   "x": 13,
-   "y": 4,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": false,
-   "elevation": 6,
-   "color": "#3b464f"
-  },
-  {
-   "id": "platform-0-14",
-   "x": 14,
-   "y": 3,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 9,
-   "color": "#3b464f"
-  },
-  {
-   "id": "support-0-14",
-   "x": 14,
-   "y": 4,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": false,
-   "elevation": 6,
-   "color": "#3b464f"
-  },
-  {
-   "id": "platform-0-15",
-   "x": 15,
-   "y": 3,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 9,
-   "color": "#3b464f"
-  },
-  {
-   "id": "support-0-15",
-   "x": 15,
-   "y": 4,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": false,
-   "elevation": 6,
-   "color": "#3b464f"
-  },
-  {
-   "id": "platform-0-16",
-   "x": 16,
-   "y": 3,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 9,
-   "color": "#3b464f"
-  },
-  {
-   "id": "support-0-16",
-   "x": 16,
-   "y": 4,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": false,
-   "elevation": 6,
-   "color": "#3b464f"
-  },
-  {
-   "id": "platform-0-17",
-   "x": 17,
-   "y": 3,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 9,
-   "color": "#3b464f"
-  },
-  {
-   "id": "support-0-17",
-   "x": 17,
-   "y": 4,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": false,
-   "elevation": 6,
-   "color": "#3b464f"
-  },
-  {
-   "id": "platform-0-18",
-   "x": 18,
-   "y": 3,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 9,
-   "color": "#3b464f"
-  },
-  {
-   "id": "support-0-18",
-   "x": 18,
-   "y": 4,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": false,
-   "elevation": 6,
-   "color": "#3b464f"
-  },
-  {
-   "id": "platform-0-19",
-   "x": 19,
-   "y": 3,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 9,
-   "color": "#3b464f"
-  },
-  {
-   "id": "support-0-19",
-   "x": 19,
-   "y": 4,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": false,
-   "elevation": 6,
-   "color": "#3b464f"
-  },
-  {
-   "id": "platform-0-20",
-   "x": 20,
-   "y": 3,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 9,
-   "color": "#3b464f"
-  },
-  {
-   "id": "support-0-20",
-   "x": 20,
-   "y": 4,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": false,
-   "elevation": 6,
-   "color": "#3b464f"
-  },
-  {
-   "id": "stair-0-high",
-   "x": 12,
-   "y": 4,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 6,
-   "color": "#3b464f"
-  },
-  {
-   "id": "stair-0-low",
-   "x": 12,
-   "y": 5,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 3,
-   "color": "#3b464f"
-  },
-  {
-   "id": "platform-1-56",
-   "x": 56,
-   "y": 3,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 9,
-   "color": "#3b464f"
-  },
-  {
-   "id": "support-1-56",
-   "x": 56,
-   "y": 4,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": false,
-   "elevation": 6,
-   "color": "#3b464f"
-  },
-  {
-   "id": "platform-1-57",
-   "x": 57,
-   "y": 3,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 9,
-   "color": "#3b464f"
-  },
-  {
-   "id": "support-1-57",
-   "x": 57,
-   "y": 4,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": false,
-   "elevation": 6,
-   "color": "#3b464f"
-  },
-  {
-   "id": "platform-1-58",
-   "x": 58,
-   "y": 3,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 9,
-   "color": "#3b464f"
-  },
-  {
-   "id": "support-1-58",
-   "x": 58,
-   "y": 4,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": false,
-   "elevation": 6,
-   "color": "#3b464f"
-  },
-  {
-   "id": "platform-1-59",
-   "x": 59,
-   "y": 3,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 9,
-   "color": "#3b464f"
-  },
-  {
-   "id": "support-1-59",
-   "x": 59,
-   "y": 4,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": false,
-   "elevation": 6,
-   "color": "#3b464f"
-  },
-  {
-   "id": "platform-1-60",
-   "x": 60,
-   "y": 3,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 9,
-   "color": "#3b464f"
-  },
-  {
-   "id": "support-1-60",
-   "x": 60,
-   "y": 4,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": false,
-   "elevation": 6,
-   "color": "#3b464f"
-  },
-  {
-   "id": "platform-1-61",
-   "x": 61,
-   "y": 3,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 9,
-   "color": "#3b464f"
-  },
-  {
-   "id": "support-1-61",
-   "x": 61,
-   "y": 4,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": false,
-   "elevation": 6,
-   "color": "#3b464f"
-  },
-  {
-   "id": "platform-1-62",
-   "x": 62,
-   "y": 3,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 9,
-   "color": "#3b464f"
-  },
-  {
-   "id": "support-1-62",
-   "x": 62,
-   "y": 4,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": false,
-   "elevation": 6,
-   "color": "#3b464f"
-  },
-  {
-   "id": "platform-1-63",
-   "x": 63,
-   "y": 3,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 9,
-   "color": "#3b464f"
-  },
-  {
-   "id": "support-1-63",
-   "x": 63,
-   "y": 4,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": false,
-   "elevation": 6,
-   "color": "#3b464f"
-  },
-  {
-   "id": "platform-1-64",
-   "x": 64,
-   "y": 3,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 9,
-   "color": "#3b464f"
-  },
-  {
-   "id": "platform-1-65",
-   "x": 65,
-   "y": 3,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 9,
-   "color": "#3b464f"
-  },
-  {
-   "id": "support-1-65",
-   "x": 65,
-   "y": 4,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": false,
-   "elevation": 6,
-   "color": "#3b464f"
-  },
-  {
-   "id": "platform-1-66",
-   "x": 66,
-   "y": 3,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 9,
-   "color": "#3b464f"
-  },
-  {
-   "id": "support-1-66",
-   "x": 66,
-   "y": 4,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": false,
-   "elevation": 6,
-   "color": "#3b464f"
-  },
-  {
-   "id": "platform-1-67",
-   "x": 67,
-   "y": 3,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 9,
-   "color": "#3b464f"
-  },
-  {
-   "id": "support-1-67",
-   "x": 67,
-   "y": 4,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": false,
-   "elevation": 6,
-   "color": "#3b464f"
-  },
-  {
-   "id": "platform-1-68",
-   "x": 68,
-   "y": 3,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 9,
-   "color": "#3b464f"
-  },
-  {
-   "id": "support-1-68",
-   "x": 68,
-   "y": 4,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": false,
-   "elevation": 6,
-   "color": "#3b464f"
-  },
-  {
-   "id": "platform-1-69",
-   "x": 69,
-   "y": 3,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 9,
-   "color": "#3b464f"
-  },
-  {
-   "id": "support-1-69",
-   "x": 69,
-   "y": 4,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": false,
-   "elevation": 6,
-   "color": "#3b464f"
-  },
-  {
-   "id": "platform-1-70",
-   "x": 70,
-   "y": 3,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 9,
-   "color": "#3b464f"
-  },
-  {
-   "id": "support-1-70",
-   "x": 70,
-   "y": 4,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": false,
-   "elevation": 6,
-   "color": "#3b464f"
-  },
-  {
-   "id": "platform-1-71",
-   "x": 71,
-   "y": 3,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 9,
-   "color": "#3b464f"
-  },
-  {
-   "id": "support-1-71",
-   "x": 71,
-   "y": 4,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": false,
-   "elevation": 6,
-   "color": "#3b464f"
-  },
-  {
-   "id": "platform-1-72",
-   "x": 72,
-   "y": 3,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 9,
-   "color": "#3b464f"
-  },
-  {
-   "id": "support-1-72",
-   "x": 72,
-   "y": 4,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": false,
-   "elevation": 6,
-   "color": "#3b464f"
-  },
-  {
-   "id": "stair-1-high",
-   "x": 64,
-   "y": 4,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 6,
-   "color": "#3b464f"
-  },
-  {
-   "id": "stair-1-low",
-   "x": 64,
-   "y": 5,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 3,
-   "color": "#3b464f"
-  },
-  {
-   "id": "platform-2-112",
-   "x": 112,
-   "y": 3,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 9,
-   "color": "#3b464f"
-  },
-  {
-   "id": "support-2-112",
-   "x": 112,
-   "y": 4,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": false,
-   "elevation": 6,
-   "color": "#3b464f"
-  },
-  {
-   "id": "platform-2-113",
-   "x": 113,
-   "y": 3,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 9,
-   "color": "#3b464f"
-  },
-  {
-   "id": "support-2-113",
-   "x": 113,
-   "y": 4,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": false,
-   "elevation": 6,
-   "color": "#3b464f"
-  },
-  {
-   "id": "platform-2-114",
-   "x": 114,
-   "y": 3,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 9,
-   "color": "#3b464f"
-  },
-  {
-   "id": "support-2-114",
-   "x": 114,
-   "y": 4,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": false,
-   "elevation": 6,
-   "color": "#3b464f"
-  },
-  {
-   "id": "platform-2-115",
-   "x": 115,
-   "y": 3,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 9,
-   "color": "#3b464f"
-  },
-  {
-   "id": "support-2-115",
-   "x": 115,
-   "y": 4,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": false,
-   "elevation": 6,
-   "color": "#3b464f"
-  },
-  {
-   "id": "platform-2-116",
-   "x": 116,
-   "y": 3,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 9,
-   "color": "#3b464f"
-  },
-  {
-   "id": "platform-2-117",
-   "x": 117,
-   "y": 3,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 9,
-   "color": "#3b464f"
-  },
-  {
-   "id": "support-2-117",
-   "x": 117,
-   "y": 4,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": false,
-   "elevation": 6,
-   "color": "#3b464f"
-  },
-  {
-   "id": "platform-2-118",
-   "x": 118,
-   "y": 3,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 9,
-   "color": "#3b464f"
-  },
-  {
-   "id": "support-2-118",
-   "x": 118,
-   "y": 4,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": false,
-   "elevation": 6,
-   "color": "#3b464f"
-  },
-  {
-   "id": "platform-2-119",
-   "x": 119,
-   "y": 3,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 9,
-   "color": "#3b464f"
-  },
-  {
-   "id": "support-2-119",
-   "x": 119,
-   "y": 4,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": false,
-   "elevation": 6,
-   "color": "#3b464f"
-  },
-  {
-   "id": "platform-2-120",
-   "x": 120,
-   "y": 3,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 9,
-   "color": "#3b464f"
-  },
-  {
-   "id": "support-2-120",
-   "x": 120,
-   "y": 4,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": false,
-   "elevation": 6,
-   "color": "#3b464f"
-  },
-  {
-   "id": "platform-2-121",
-   "x": 121,
-   "y": 3,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 9,
-   "color": "#3b464f"
-  },
-  {
-   "id": "support-2-121",
-   "x": 121,
-   "y": 4,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": false,
-   "elevation": 6,
-   "color": "#3b464f"
-  },
-  {
-   "id": "stair-2-high",
-   "x": 116,
-   "y": 4,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 6,
-   "color": "#3b464f"
-  },
-  {
-   "id": "stair-2-low",
-   "x": 116,
-   "y": 5,
-   "width": 1,
-   "height": 1,
-   "surface": "platform",
-   "walkable": true,
-   "elevation": 3,
-   "color": "#3b464f"
-  },
-  {
-   "id": "block-0-0-a",
-   "x": 7,
-   "y": 7,
-   "width": 18,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 5,
-   "color": "#1a1f24"
-  },
-  {
-   "id": "block-0-0-b",
-   "x": 7,
-   "y": 17,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 5,
-   "color": "#1a1f24"
-  },
-  {
-   "id": "block-0-0-c",
-   "x": 17,
-   "y": 17,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 2,
-   "color": "#1d2227"
-  },
-  {
-   "id": "wall-0-0-north",
-   "x": 9,
-   "y": 6,
-   "width": 5,
-   "height": 1,
-   "surface": "service-wall",
-   "walkable": false,
-   "elevation": 2,
-   "color": "#46505a"
-  },
-  {
-   "id": "wall-0-0-east",
-   "x": 25,
-   "y": 11,
-   "width": 1,
-   "height": 5,
-   "surface": "service-wall",
-   "walkable": false,
-   "elevation": 2,
-   "color": "#46505a"
-  },
-  {
-   "id": "block-0-1-a",
-   "x": 7,
-   "y": 31,
-   "width": 18,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 3,
-   "color": "#232a30"
-  },
-  {
-   "id": "block-0-1-b",
-   "x": 7,
-   "y": 41,
-   "width": 18,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 3,
-   "color": "#1a1f24"
-  },
-  {
-   "id": "fence-0-1-north",
-   "x": 11,
-   "y": 30,
-   "width": 4,
-   "height": 1,
-   "surface": "service-fence",
-   "walkable": false,
-   "elevation": 1,
-   "color": "#3a4650"
-  },
-  {
-   "id": "fence-0-1-west",
-   "x": 6,
-   "y": 34,
-   "width": 1,
-   "height": 6,
-   "surface": "service-fence",
-   "walkable": false,
-   "elevation": 1,
-   "color": "#3a4650"
-  },
-  {
-   "id": "block-0-2-a",
-   "x": 7,
-   "y": 55,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 2,
-   "color": "#232a30"
-  },
-  {
-   "id": "block-0-2-b",
-   "x": 17,
-   "y": 55,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 5,
-   "color": "#20262c"
-  },
-  {
-   "id": "block-0-2-c",
-   "x": 7,
-   "y": 65,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 4,
-   "color": "#20262c"
-  },
-  {
-   "id": "block-0-2-d",
-   "x": 17,
-   "y": 65,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 3,
-   "color": "#20262c"
-  },
-  {
-   "id": "wall-0-2-south",
-   "x": 14,
-   "y": 73,
-   "width": 7,
-   "height": 1,
-   "surface": "service-wall",
-   "walkable": false,
-   "elevation": 2,
-   "color": "#46505a"
-  },
-  {
-   "id": "wall-0-2-west",
-   "x": 6,
-   "y": 59,
-   "width": 1,
-   "height": 5,
-   "surface": "service-wall",
-   "walkable": false,
-   "elevation": 2,
-   "color": "#46505a"
-  },
-  {
-   "id": "fence-0-2-east",
-   "x": 25,
-   "y": 61,
-   "width": 1,
-   "height": 5,
-   "surface": "service-fence",
-   "walkable": false,
-   "elevation": 1,
-   "color": "#3a4650"
-  },
-  {
-   "id": "block-0-3-a",
-   "x": 7,
-   "y": 79,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 2,
-   "color": "#1d2227"
-  },
-  {
-   "id": "block-0-3-b",
-   "x": 17,
-   "y": 79,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 5,
-   "color": "#1a1f24"
-  },
-  {
-   "id": "block-0-3-c",
-   "x": 7,
-   "y": 89,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 5,
-   "color": "#20262c"
-  },
-  {
-   "id": "block-0-3-d",
-   "x": 17,
-   "y": 89,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 5,
-   "color": "#232a30"
-  },
-  {
-   "id": "fence-0-3-south",
-   "x": 16,
-   "y": 97,
-   "width": 5,
-   "height": 1,
-   "surface": "service-fence",
-   "walkable": false,
-   "elevation": 1,
-   "color": "#3a4650"
-  },
-  {
-   "id": "wall-0-3-west",
-   "x": 6,
-   "y": 82,
-   "width": 1,
-   "height": 5,
-   "surface": "service-wall",
-   "walkable": false,
-   "elevation": 2,
-   "color": "#46505a"
-  },
-  {
-   "id": "wall-0-3-east",
-   "x": 25,
-   "y": 85,
-   "width": 1,
-   "height": 5,
-   "surface": "service-wall",
-   "walkable": false,
-   "elevation": 2,
-   "color": "#46505a"
-  },
-  {
-   "id": "block-0-4-a",
-   "x": 7,
-   "y": 103,
-   "width": 8,
-   "height": 18,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 5,
-   "color": "#1a1f24"
-  },
-  {
-   "id": "block-0-4-b",
-   "x": 17,
-   "y": 103,
-   "width": 8,
-   "height": 18,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 4,
-   "color": "#1d2227"
-  },
-  {
-   "id": "fence-0-4-south",
-   "x": 14,
-   "y": 121,
-   "width": 8,
-   "height": 1,
-   "surface": "service-fence",
-   "walkable": false,
-   "elevation": 1,
-   "color": "#3a4650"
-  },
-  {
-   "id": "wall-0-4-west",
-   "x": 6,
-   "y": 115,
-   "width": 1,
-   "height": 4,
-   "surface": "service-wall",
-   "walkable": false,
-   "elevation": 2,
-   "color": "#46505a"
-  },
-  {
-   "id": "block-1-0-a",
-   "x": 31,
-   "y": 7,
-   "width": 8,
-   "height": 18,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 2,
-   "color": "#1d2227"
-  },
-  {
-   "id": "block-1-0-b",
-   "x": 41,
-   "y": 7,
-   "width": 8,
-   "height": 18,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 3,
-   "color": "#232a30"
-  },
-  {
-   "id": "fence-1-0-north",
-   "x": 38,
-   "y": 6,
-   "width": 4,
-   "height": 1,
-   "surface": "service-fence",
-   "walkable": false,
-   "elevation": 1,
-   "color": "#3a4650"
-  },
-  {
-   "id": "wall-1-0-south",
-   "x": 39,
-   "y": 25,
-   "width": 6,
-   "height": 1,
-   "surface": "service-wall",
-   "walkable": false,
-   "elevation": 2,
-   "color": "#46505a"
-  },
-  {
-   "id": "fence-1-0-west",
-   "x": 30,
    "y": 16,
-   "width": 1,
-   "height": 7,
-   "surface": "service-fence",
-   "walkable": false,
-   "elevation": 1,
-   "color": "#3a4650"
+   "width": 168,
+   "height": 2,
+   "surface": "service-concrete",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#293138"
   },
   {
-   "id": "fence-1-0-east",
-   "x": 49,
-   "y": 15,
-   "width": 1,
-   "height": 8,
-   "surface": "service-fence",
-   "walkable": false,
-   "elevation": 1,
-   "color": "#3a4650"
+   "id": "ground-1aaaaaaaaaaaabbbbbbbr",
+   "x": 10,
+   "y": 14,
+   "width": 166,
+   "height": 2,
+   "surface": "service-concrete",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#293138"
   },
   {
-   "id": "block-1-1-a",
-   "x": 31,
-   "y": 31,
-   "width": 18,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 5,
-   "color": "#20262c"
+   "id": "ground-1aaaaaaaaaaaabbbbbbr",
+   "x": 12,
+   "y": 12,
+   "width": 164,
+   "height": 2,
+   "surface": "service-concrete",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#293138"
   },
   {
-   "id": "block-1-1-b",
-   "x": 31,
-   "y": 41,
-   "width": 18,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 4,
-   "color": "#1d2227"
+   "id": "ground-1aaaaaaaaaaaabbbbbr",
+   "x": 14,
+   "y": 10,
+   "width": 162,
+   "height": 2,
+   "surface": "service-concrete",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#293138"
   },
   {
-   "id": "fence-1-1-south",
-   "x": 33,
-   "y": 49,
-   "width": 4,
+   "id": "ground-1aaaaaaaaaaaabbbbr",
+   "x": 16,
+   "y": 8,
+   "width": 160,
+   "height": 2,
+   "surface": "service-concrete",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#293138"
+  },
+  {
+   "id": "ground-1aaaaaaaaaaaabbbr",
+   "x": 18,
+   "y": 6,
+   "width": 158,
+   "height": 2,
+   "surface": "service-concrete",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#293138"
+  },
+  {
+   "id": "ground-1aaaaaaaaaaaabbr",
+   "x": 20,
+   "y": 4,
+   "width": 156,
+   "height": 2,
+   "surface": "service-concrete",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#293138"
+  },
+  {
+   "id": "ground-1aaaaaaaaaaaabr",
+   "x": 22,
+   "y": 2,
+   "width": 154,
+   "height": 2,
+   "surface": "service-concrete",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#293138"
+  },
+  {
+   "id": "ground-1aaaaaaaaaaaar",
+   "x": 24,
+   "y": 0,
+   "width": 152,
+   "height": 2,
+   "surface": "service-concrete",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#293138"
+  },
+  {
+   "id": "ground-1aaaaaaaaaaar",
+   "x": 2,
+   "y": 120,
+   "width": 174,
+   "height": 2,
+   "surface": "service-concrete",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#293138"
+  },
+  {
+   "id": "ground-1aaaaaaaaaar",
+   "x": 4,
+   "y": 122,
+   "width": 172,
+   "height": 2,
+   "surface": "service-concrete",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#293138"
+  },
+  {
+   "id": "ground-1aaaaaaaaar",
+   "x": 6,
+   "y": 124,
+   "width": 170,
+   "height": 2,
+   "surface": "service-concrete",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#293138"
+  },
+  {
+   "id": "ground-1aaaaaaaar",
+   "x": 8,
+   "y": 126,
+   "width": 168,
+   "height": 2,
+   "surface": "service-concrete",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#293138"
+  },
+  {
+   "id": "ground-1aaaaaaar",
+   "x": 10,
+   "y": 128,
+   "width": 166,
+   "height": 2,
+   "surface": "service-concrete",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#293138"
+  },
+  {
+   "id": "ground-1aaaaaar",
+   "x": 12,
+   "y": 130,
+   "width": 164,
+   "height": 2,
+   "surface": "service-concrete",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#293138"
+  },
+  {
+   "id": "ground-1aaaaar",
+   "x": 14,
+   "y": 132,
+   "width": 162,
+   "height": 2,
+   "surface": "service-concrete",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#293138"
+  },
+  {
+   "id": "ground-1aaaar",
+   "x": 16,
+   "y": 134,
+   "width": 160,
+   "height": 2,
+   "surface": "service-concrete",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#293138"
+  },
+  {
+   "id": "ground-1aaar",
+   "x": 18,
+   "y": 136,
+   "width": 158,
+   "height": 2,
+   "surface": "service-concrete",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#293138"
+  },
+  {
+   "id": "ground-1aar",
+   "x": 20,
+   "y": 138,
+   "width": 156,
+   "height": 2,
+   "surface": "service-concrete",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#293138"
+  },
+  {
+   "id": "ground-1ar",
+   "x": 22,
+   "y": 140,
+   "width": 154,
+   "height": 2,
+   "surface": "service-concrete",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#293138"
+  },
+  {
+   "id": "ground-1r",
+   "x": 24,
+   "y": 142,
+   "width": 152,
+   "height": 2,
+   "surface": "service-concrete",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#293138"
+  },
+  {
+   "id": "avenue-2",
+   "x": 0,
+   "y": 54,
+   "width": 176,
+   "height": 4,
+   "surface": "street",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#2d363d"
+  },
+  {
+   "id": "water-3aaaaaaaaaaar",
+   "x": 2,
+   "y": 121,
+   "width": 12,
    "height": 1,
-   "surface": "service-fence",
+   "surface": "runoff-channel",
    "walkable": false,
-   "elevation": 1,
-   "color": "#3a4650"
+   "elevation": 0,
+   "color": "#143848"
   },
   {
-   "id": "wall-1-1-east",
-   "x": 49,
-   "y": 35,
-   "width": 1,
-   "height": 6,
-   "surface": "service-wall",
+   "id": "water-3aaaaaaaaaar",
+   "x": 4,
+   "y": 122,
+   "width": 10,
+   "height": 2,
+   "surface": "runoff-channel",
    "walkable": false,
-   "elevation": 2,
-   "color": "#46505a"
+   "elevation": 0,
+   "color": "#143848"
   },
   {
-   "id": "block-1-2-a",
-   "x": 31,
-   "y": 55,
+   "id": "water-3aaaaaaaaar",
+   "x": 6,
+   "y": 124,
    "width": 8,
-   "height": 8,
-   "surface": "utility-building",
+   "height": 2,
+   "surface": "runoff-channel",
    "walkable": false,
-   "elevation": 4,
-   "color": "#1a1f24"
+   "elevation": 0,
+   "color": "#143848"
   },
   {
-   "id": "block-1-2-b",
-   "x": 41,
-   "y": 55,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 3,
-   "color": "#1d2227"
-  },
-  {
-   "id": "block-1-2-c",
-   "x": 31,
-   "y": 65,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 3,
-   "color": "#20262c"
-  },
-  {
-   "id": "block-1-2-d",
-   "x": 41,
-   "y": 65,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 5,
-   "color": "#1a1f24"
-  },
-  {
-   "id": "fence-1-2-south",
-   "x": 35,
-   "y": 73,
+   "id": "water-3aaaaaaaar",
+   "x": 8,
+   "y": 126,
    "width": 6,
+   "height": 2,
+   "surface": "runoff-channel",
+   "walkable": false,
+   "elevation": 0,
+   "color": "#143848"
+  },
+  {
+   "id": "water-3aaaaaaar",
+   "x": 10,
+   "y": 128,
+   "width": 4,
+   "height": 2,
+   "surface": "runoff-channel",
+   "walkable": false,
+   "elevation": 0,
+   "color": "#143848"
+  },
+  {
+   "id": "water-3aaaaaar",
+   "x": 12,
+   "y": 130,
+   "width": 2,
+   "height": 2,
+   "surface": "runoff-channel",
+   "walkable": false,
+   "elevation": 0,
+   "color": "#143848"
+  },
+  {
+   "id": "lane-4a",
+   "x": 0,
+   "y": 117,
+   "width": 14,
+   "height": 3,
+   "surface": "dock",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#5b4a38"
+  },
+  {
+   "id": "lane-4r",
+   "x": 2,
+   "y": 120,
+   "width": 12,
    "height": 1,
-   "surface": "service-fence",
+   "surface": "dock",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#5b4a38"
+  },
+  {
+   "id": "water-5aaaaa",
+   "x": 14,
+   "y": 122,
+   "width": 14,
+   "height": 12,
+   "surface": "runoff-channel",
+   "walkable": false,
+   "elevation": 0,
+   "color": "#143848"
+  },
+  {
+   "id": "water-5aaaar",
+   "x": 16,
+   "y": 134,
+   "width": 12,
+   "height": 2,
+   "surface": "runoff-channel",
+   "walkable": false,
+   "elevation": 0,
+   "color": "#143848"
+  },
+  {
+   "id": "water-5aaar",
+   "x": 18,
+   "y": 136,
+   "width": 10,
+   "height": 2,
+   "surface": "runoff-channel",
+   "walkable": false,
+   "elevation": 0,
+   "color": "#143848"
+  },
+  {
+   "id": "water-5aar",
+   "x": 20,
+   "y": 138,
+   "width": 8,
+   "height": 2,
+   "surface": "runoff-channel",
+   "walkable": false,
+   "elevation": 0,
+   "color": "#143848"
+  },
+  {
+   "id": "water-5ar",
+   "x": 22,
+   "y": 140,
+   "width": 6,
+   "height": 2,
+   "surface": "runoff-channel",
+   "walkable": false,
+   "elevation": 0,
+   "color": "#143848"
+  },
+  {
+   "id": "water-5r",
+   "x": 24,
+   "y": 142,
+   "width": 4,
+   "height": 2,
+   "surface": "runoff-channel",
+   "walkable": false,
+   "elevation": 0,
+   "color": "#143848"
+  },
+  {
+   "id": "lane-6",
+   "x": 14,
+   "y": 118,
+   "width": 14,
+   "height": 4,
+   "surface": "dock",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#5b4a38"
+  },
+  {
+   "id": "water-7",
+   "x": 28,
+   "y": 122,
+   "width": 14,
+   "height": 22,
+   "surface": "runoff-channel",
+   "walkable": false,
+   "elevation": 0,
+   "color": "#143848"
+  },
+  {
+   "id": "lane-8",
+   "x": 28,
+   "y": 118,
+   "width": 14,
+   "height": 4,
+   "surface": "dock",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#5b4a38"
+  },
+  {
+   "id": "water-9",
+   "x": 42,
+   "y": 124,
+   "width": 14,
+   "height": 20,
+   "surface": "runoff-channel",
+   "walkable": false,
+   "elevation": 0,
+   "color": "#143848"
+  },
+  {
+   "id": "lane-10",
+   "x": 42,
+   "y": 120,
+   "width": 14,
+   "height": 4,
+   "surface": "dock",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#5b4a38"
+  },
+  {
+   "id": "water-11",
+   "x": 56,
+   "y": 119,
+   "width": 14,
+   "height": 25,
+   "surface": "runoff-channel",
+   "walkable": false,
+   "elevation": 0,
+   "color": "#143848"
+  },
+  {
+   "id": "lane-12",
+   "x": 56,
+   "y": 115,
+   "width": 14,
+   "height": 4,
+   "surface": "dock",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#5b4a38"
+  },
+  {
+   "id": "water-13",
+   "x": 70,
+   "y": 119,
+   "width": 14,
+   "height": 25,
+   "surface": "runoff-channel",
+   "walkable": false,
+   "elevation": 0,
+   "color": "#143848"
+  },
+  {
+   "id": "lane-14",
+   "x": 70,
+   "y": 115,
+   "width": 14,
+   "height": 4,
+   "surface": "dock",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#5b4a38"
+  },
+  {
+   "id": "water-15",
+   "x": 84,
+   "y": 122,
+   "width": 14,
+   "height": 22,
+   "surface": "runoff-channel",
+   "walkable": false,
+   "elevation": 0,
+   "color": "#143848"
+  },
+  {
+   "id": "lane-16",
+   "x": 84,
+   "y": 118,
+   "width": 14,
+   "height": 4,
+   "surface": "dock",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#5b4a38"
+  },
+  {
+   "id": "water-17",
+   "x": 98,
+   "y": 121,
+   "width": 14,
+   "height": 23,
+   "surface": "runoff-channel",
+   "walkable": false,
+   "elevation": 0,
+   "color": "#143848"
+  },
+  {
+   "id": "lane-18",
+   "x": 98,
+   "y": 117,
+   "width": 14,
+   "height": 4,
+   "surface": "dock",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#5b4a38"
+  },
+  {
+   "id": "water-19",
+   "x": 112,
+   "y": 120,
+   "width": 14,
+   "height": 24,
+   "surface": "runoff-channel",
+   "walkable": false,
+   "elevation": 0,
+   "color": "#143848"
+  },
+  {
+   "id": "lane-20",
+   "x": 112,
+   "y": 116,
+   "width": 14,
+   "height": 4,
+   "surface": "dock",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#5b4a38"
+  },
+  {
+   "id": "water-21",
+   "x": 126,
+   "y": 121,
+   "width": 14,
+   "height": 23,
+   "surface": "runoff-channel",
+   "walkable": false,
+   "elevation": 0,
+   "color": "#143848"
+  },
+  {
+   "id": "lane-22",
+   "x": 126,
+   "y": 117,
+   "width": 14,
+   "height": 4,
+   "surface": "dock",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#5b4a38"
+  },
+  {
+   "id": "water-23",
+   "x": 140,
+   "y": 120,
+   "width": 14,
+   "height": 24,
+   "surface": "runoff-channel",
+   "walkable": false,
+   "elevation": 0,
+   "color": "#143848"
+  },
+  {
+   "id": "lane-24",
+   "x": 140,
+   "y": 116,
+   "width": 14,
+   "height": 4,
+   "surface": "dock",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#5b4a38"
+  },
+  {
+   "id": "water-25",
+   "x": 154,
+   "y": 123,
+   "width": 22,
+   "height": 21,
+   "surface": "runoff-channel",
+   "walkable": false,
+   "elevation": 0,
+   "color": "#143848"
+  },
+  {
+   "id": "lane-26",
+   "x": 154,
+   "y": 119,
+   "width": 22,
+   "height": 4,
+   "surface": "dock",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#5b4a38"
+  },
+  {
+   "id": "water-27aaaaaaaaaar",
+   "x": 4,
+   "y": 122,
+   "width": 10,
+   "height": 2,
+   "surface": "runoff-channel",
+   "walkable": false,
+   "elevation": 0,
+   "color": "#143848"
+  },
+  {
+   "id": "water-27aaaaaaaaar",
+   "x": 6,
+   "y": 124,
+   "width": 8,
+   "height": 2,
+   "surface": "runoff-channel",
+   "walkable": false,
+   "elevation": 0,
+   "color": "#143848"
+  },
+  {
+   "id": "water-27aaaaaaaar",
+   "x": 8,
+   "y": 126,
+   "width": 6,
+   "height": 2,
+   "surface": "runoff-channel",
+   "walkable": false,
+   "elevation": 0,
+   "color": "#143848"
+  },
+  {
+   "id": "water-27aaaaaaar",
+   "x": 10,
+   "y": 128,
+   "width": 4,
+   "height": 2,
+   "surface": "runoff-channel",
+   "walkable": false,
+   "elevation": 0,
+   "color": "#143848"
+  },
+  {
+   "id": "water-27aaaaaar",
+   "x": 12,
+   "y": 130,
+   "width": 2,
+   "height": 2,
+   "surface": "runoff-channel",
+   "walkable": false,
+   "elevation": 0,
+   "color": "#143848"
+  },
+  {
+   "id": "lane-28a",
+   "x": 0,
+   "y": 118,
+   "width": 14,
+   "height": 2,
+   "surface": "dock",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#5b4a38"
+  },
+  {
+   "id": "lane-28r",
+   "x": 2,
+   "y": 120,
+   "width": 12,
+   "height": 2,
+   "surface": "dock",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#5b4a38"
+  },
+  {
+   "id": "lane-29",
+   "x": 20,
+   "y": 118,
+   "width": 4,
+   "height": 18,
+   "surface": "dock",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#5b4a38"
+  },
+  {
+   "id": "lane-30",
+   "x": 40,
+   "y": 118,
+   "width": 4,
+   "height": 20,
+   "surface": "dock",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#5b4a38"
+  },
+  {
+   "id": "lane-31",
+   "x": 60,
+   "y": 120,
+   "width": 4,
+   "height": 18,
+   "surface": "dock",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#5b4a38"
+  },
+  {
+   "id": "lane-32",
+   "x": 80,
+   "y": 120,
+   "width": 4,
+   "height": 19,
+   "surface": "dock",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#5b4a38"
+  },
+  {
+   "id": "lane-33",
+   "x": 100,
+   "y": 120,
+   "width": 4,
+   "height": 15,
+   "surface": "dock",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#5b4a38"
+  },
+  {
+   "id": "lane-34",
+   "x": 120,
+   "y": 120,
+   "width": 4,
+   "height": 20,
+   "surface": "dock",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#5b4a38"
+  },
+  {
+   "id": "lane-35",
+   "x": 140,
+   "y": 120,
+   "width": 4,
+   "height": 17,
+   "surface": "dock",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#5b4a38"
+  },
+  {
+   "id": "container-36",
+   "x": 18,
+   "y": 10,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
    "walkable": false,
    "elevation": 1,
-   "color": "#3a4650"
+   "color": "#5a4a73"
   },
   {
-   "id": "fence-1-2-east",
-   "x": 49,
-   "y": 61,
-   "width": 1,
-   "height": 7,
-   "surface": "service-fence",
+   "id": "container-37",
+   "x": 25,
+   "y": 10,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
    "walkable": false,
    "elevation": 1,
-   "color": "#3a4650"
+   "color": "#8a6a2c"
   },
   {
-   "id": "block-1-3-a",
+   "id": "container-38",
+   "x": 32,
+   "y": 10,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#7a3328"
+  },
+  {
+   "id": "container-39",
+   "x": 39,
+   "y": 10,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6e6e66"
+  },
+  {
+   "id": "container-40",
+   "x": 46,
+   "y": 10,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#7a3328"
+  },
+  {
+   "id": "container-41",
+   "x": 53,
+   "y": 10,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6e6e66"
+  },
+  {
+   "id": "container-42",
+   "x": 60,
+   "y": 10,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#3d6b45"
+  },
+  {
+   "id": "container-43",
+   "x": 67,
+   "y": 10,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#8a6a2c"
+  },
+  {
+   "id": "container-44",
+   "x": 74,
+   "y": 10,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#3d6b45"
+  },
+  {
+   "id": "container-45",
+   "x": 81,
+   "y": 10,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#6e6e66"
+  },
+  {
+   "id": "container-46",
+   "x": 88,
+   "y": 10,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#7a3328"
+  },
+  {
+   "id": "container-47",
+   "x": 95,
+   "y": 10,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#2f5873"
+  },
+  {
+   "id": "container-48",
+   "x": 102,
+   "y": 10,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#8a6a2c"
+  },
+  {
+   "id": "container-49",
+   "x": 109,
+   "y": 10,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#2f5873"
+  },
+  {
+   "id": "container-50",
+   "x": 116,
+   "y": 10,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#2f5873"
+  },
+  {
+   "id": "container-51",
+   "x": 123,
+   "y": 10,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#3d6b45"
+  },
+  {
+   "id": "container-52",
+   "x": 130,
+   "y": 10,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#8a6a2c"
+  },
+  {
+   "id": "container-53",
+   "x": 137,
+   "y": 10,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#3d6b45"
+  },
+  {
+   "id": "container-54",
+   "x": 18,
+   "y": 19,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#3d6b45"
+  },
+  {
+   "id": "container-55",
+   "x": 25,
+   "y": 19,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#2f5873"
+  },
+  {
+   "id": "container-56",
+   "x": 32,
+   "y": 19,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#8a6a2c"
+  },
+  {
+   "id": "container-57",
+   "x": 39,
+   "y": 19,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#3d6b45"
+  },
+  {
+   "id": "container-58",
+   "x": 46,
+   "y": 19,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#3d6b45"
+  },
+  {
+   "id": "container-59",
+   "x": 53,
+   "y": 19,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#7a3328"
+  },
+  {
+   "id": "container-60",
+   "x": 60,
+   "y": 19,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#8a6a2c"
+  },
+  {
+   "id": "container-61",
+   "x": 67,
+   "y": 19,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#3d6b45"
+  },
+  {
+   "id": "container-62",
+   "x": 74,
+   "y": 19,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#7a3328"
+  },
+  {
+   "id": "container-63",
+   "x": 81,
+   "y": 19,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#7a3328"
+  },
+  {
+   "id": "container-64",
+   "x": 88,
+   "y": 19,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#3d6b45"
+  },
+  {
+   "id": "container-65",
+   "x": 95,
+   "y": 19,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#2f5873"
+  },
+  {
+   "id": "container-66",
+   "x": 102,
+   "y": 19,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6e6e66"
+  },
+  {
+   "id": "container-67",
+   "x": 109,
+   "y": 19,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#5a4a73"
+  },
+  {
+   "id": "container-68",
+   "x": 116,
+   "y": 19,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#2f5873"
+  },
+  {
+   "id": "container-69",
+   "x": 123,
+   "y": 19,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#8a6a2c"
+  },
+  {
+   "id": "container-70",
+   "x": 130,
+   "y": 19,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#7a3328"
+  },
+  {
+   "id": "container-71",
+   "x": 137,
+   "y": 19,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#8a6a2c"
+  },
+  {
+   "id": "container-72",
+   "x": 18,
+   "y": 28,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6e6e66"
+  },
+  {
+   "id": "container-73",
+   "x": 25,
+   "y": 28,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6e6e66"
+  },
+  {
+   "id": "container-74",
+   "x": 32,
+   "y": 28,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#2f5873"
+  },
+  {
+   "id": "container-75",
+   "x": 39,
+   "y": 28,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#7a3328"
+  },
+  {
+   "id": "container-76",
+   "x": 46,
+   "y": 28,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6e6e66"
+  },
+  {
+   "id": "container-77",
+   "x": 53,
+   "y": 28,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#6e6e66"
+  },
+  {
+   "id": "container-78",
+   "x": 60,
+   "y": 28,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#7a3328"
+  },
+  {
+   "id": "container-79",
+   "x": 67,
+   "y": 28,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#3d6b45"
+  },
+  {
+   "id": "container-80",
+   "x": 74,
+   "y": 28,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#8a6a2c"
+  },
+  {
+   "id": "container-81",
+   "x": 81,
+   "y": 28,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#5a4a73"
+  },
+  {
+   "id": "container-82",
+   "x": 88,
+   "y": 28,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#8a6a2c"
+  },
+  {
+   "id": "container-83",
+   "x": 95,
+   "y": 28,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#6e6e66"
+  },
+  {
+   "id": "container-84",
+   "x": 102,
+   "y": 28,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6e6e66"
+  },
+  {
+   "id": "container-85",
+   "x": 109,
+   "y": 28,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#5a4a73"
+  },
+  {
+   "id": "container-86",
+   "x": 116,
+   "y": 28,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#2f5873"
+  },
+  {
+   "id": "container-87",
+   "x": 123,
+   "y": 28,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#5a4a73"
+  },
+  {
+   "id": "container-88",
+   "x": 130,
+   "y": 28,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#2f5873"
+  },
+  {
+   "id": "container-89",
+   "x": 137,
+   "y": 28,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#6e6e66"
+  },
+  {
+   "id": "container-90",
+   "x": 18,
+   "y": 37,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#3d6b45"
+  },
+  {
+   "id": "container-91",
+   "x": 25,
+   "y": 37,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#8a6a2c"
+  },
+  {
+   "id": "container-92",
+   "x": 32,
+   "y": 37,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#5a4a73"
+  },
+  {
+   "id": "container-93",
+   "x": 39,
+   "y": 37,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#2f5873"
+  },
+  {
+   "id": "container-94",
+   "x": 46,
+   "y": 37,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#7a3328"
+  },
+  {
+   "id": "container-95",
+   "x": 53,
+   "y": 37,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#6e6e66"
+  },
+  {
+   "id": "container-96",
+   "x": 60,
+   "y": 37,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#5a4a73"
+  },
+  {
+   "id": "container-97",
+   "x": 67,
+   "y": 37,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#3d6b45"
+  },
+  {
+   "id": "container-98",
+   "x": 74,
+   "y": 37,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#2f5873"
+  },
+  {
+   "id": "container-99",
+   "x": 81,
+   "y": 37,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#3d6b45"
+  },
+  {
+   "id": "container-100",
+   "x": 88,
+   "y": 37,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#3d6b45"
+  },
+  {
+   "id": "container-101",
+   "x": 95,
+   "y": 37,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#5a4a73"
+  },
+  {
+   "id": "container-102",
+   "x": 102,
+   "y": 37,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#3d6b45"
+  },
+  {
+   "id": "container-103",
+   "x": 109,
+   "y": 37,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#2f5873"
+  },
+  {
+   "id": "container-104",
+   "x": 116,
+   "y": 37,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#8a6a2c"
+  },
+  {
+   "id": "container-105",
+   "x": 123,
+   "y": 37,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#7a3328"
+  },
+  {
+   "id": "container-106",
+   "x": 130,
+   "y": 37,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#8a6a2c"
+  },
+  {
+   "id": "container-107",
+   "x": 137,
+   "y": 37,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#8a6a2c"
+  },
+  {
+   "id": "container-108",
+   "x": 18,
+   "y": 46,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#5a4a73"
+  },
+  {
+   "id": "container-109",
+   "x": 25,
+   "y": 46,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#5a4a73"
+  },
+  {
+   "id": "container-110",
+   "x": 32,
+   "y": 46,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#7a3328"
+  },
+  {
+   "id": "container-111",
+   "x": 39,
+   "y": 46,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#8a6a2c"
+  },
+  {
+   "id": "container-112",
+   "x": 46,
+   "y": 46,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#8a6a2c"
+  },
+  {
+   "id": "container-113",
+   "x": 53,
+   "y": 46,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#3d6b45"
+  },
+  {
+   "id": "container-114",
+   "x": 60,
+   "y": 46,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#2f5873"
+  },
+  {
+   "id": "container-115",
+   "x": 67,
+   "y": 46,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#6e6e66"
+  },
+  {
+   "id": "container-116",
+   "x": 74,
+   "y": 46,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#8a6a2c"
+  },
+  {
+   "id": "container-117",
+   "x": 81,
+   "y": 46,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#3d6b45"
+  },
+  {
+   "id": "container-118",
+   "x": 88,
+   "y": 46,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#7a3328"
+  },
+  {
+   "id": "container-119",
+   "x": 95,
+   "y": 46,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#3d6b45"
+  },
+  {
+   "id": "container-120",
+   "x": 102,
+   "y": 46,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#2f5873"
+  },
+  {
+   "id": "container-121",
+   "x": 109,
+   "y": 46,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#6e6e66"
+  },
+  {
+   "id": "container-122",
+   "x": 116,
+   "y": 46,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#2f5873"
+  },
+  {
+   "id": "container-123",
+   "x": 123,
+   "y": 46,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#6e6e66"
+  },
+  {
+   "id": "container-124",
+   "x": 130,
+   "y": 46,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#2f5873"
+  },
+  {
+   "id": "container-125",
+   "x": 137,
+   "y": 46,
+   "width": 2,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#2f5873"
+  },
+  {
+   "id": "building-126",
    "x": 31,
-   "y": 79,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 2,
-   "color": "#232a30"
-  },
-  {
-   "id": "block-1-3-b",
-   "x": 41,
-   "y": 79,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 2,
-   "color": "#232a30"
-  },
-  {
-   "id": "block-1-3-c",
-   "x": 31,
-   "y": 89,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 2,
-   "color": "#20262c"
-  },
-  {
-   "id": "block-1-3-d",
-   "x": 41,
-   "y": 89,
-   "width": 8,
+   "y": 80,
+   "width": 16,
    "height": 8,
    "surface": "utility-building",
    "walkable": false,
    "elevation": 3,
-   "color": "#1a1f24"
+   "color": "#30302a"
   },
   {
-   "id": "wall-1-3-west",
-   "x": 30,
-   "y": 83,
-   "width": 1,
-   "height": 7,
-   "surface": "service-wall",
+   "id": "building-127",
+   "x": 59,
+   "y": 95,
+   "width": 14,
+   "height": 10,
+   "surface": "utility-building",
    "walkable": false,
-   "elevation": 2,
-   "color": "#46505a"
+   "elevation": 3,
+   "color": "#30302a"
   },
   {
-   "id": "fence-1-3-east",
-   "x": 49,
+   "id": "building-128",
+   "x": 76,
+   "y": 86,
+   "width": 14,
+   "height": 4,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 3,
+   "color": "#2a2f33"
+  },
+  {
+   "id": "building-129",
+   "x": 76,
+   "y": 90,
+   "width": 7,
+   "height": 5,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 3,
+   "color": "#2a2f33"
+  },
+  {
+   "id": "building-130",
+   "x": 17,
+   "y": 70,
+   "width": 13,
+   "height": 8,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 3,
+   "color": "#30302a"
+  },
+  {
+   "id": "building-131",
+   "x": 62,
+   "y": 63,
+   "width": 10,
+   "height": 11,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 3,
+   "color": "#2a2f33"
+  },
+  {
+   "id": "building-132",
+   "x": 140,
+   "y": 74,
+   "width": 10,
+   "height": 1,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 3,
+   "color": "#33292a"
+  },
+  {
+   "id": "building-133",
+   "x": 147,
+   "y": 75,
+   "width": 3,
+   "height": 5,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 3,
+   "color": "#33292a"
+  },
+  {
+   "id": "building-134",
+   "x": 140,
+   "y": 75,
+   "width": 3,
+   "height": 5,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 3,
+   "color": "#33292a"
+  },
+  {
+   "id": "building-135",
+   "x": 148,
+   "y": 80,
+   "width": 2,
+   "height": 3,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 3,
+   "color": "#33292a"
+  },
+  {
+   "id": "building-136",
+   "x": 140,
+   "y": 80,
+   "width": 2,
+   "height": 3,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 3,
+   "color": "#33292a"
+  },
+  {
+   "id": "forecourt-137",
+   "x": 142,
+   "y": 80,
+   "width": 1,
+   "height": 1,
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
+  },
+  {
+   "id": "forecourt-138",
+   "x": 142,
    "y": 81,
    "width": 1,
-   "height": 4,
-   "surface": "service-fence",
+   "height": 1,
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
+  },
+  {
+   "id": "forecourt-139",
+   "x": 142,
+   "y": 82,
+   "width": 1,
+   "height": 1,
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
+  },
+  {
+   "id": "forecourt-140",
+   "x": 143,
+   "y": 80,
+   "width": 1,
+   "height": 1,
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
+  },
+  {
+   "id": "forecourt-141",
+   "x": 143,
+   "y": 81,
+   "width": 1,
+   "height": 1,
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
+  },
+  {
+   "id": "forecourt-142",
+   "x": 143,
+   "y": 82,
+   "width": 1,
+   "height": 1,
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
+  },
+  {
+   "id": "forecourt-143",
+   "x": 144,
+   "y": 80,
+   "width": 1,
+   "height": 1,
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
+  },
+  {
+   "id": "forecourt-144",
+   "x": 144,
+   "y": 81,
+   "width": 1,
+   "height": 1,
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
+  },
+  {
+   "id": "forecourt-145",
+   "x": 144,
+   "y": 82,
+   "width": 1,
+   "height": 1,
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
+  },
+  {
+   "id": "forecourt-146",
+   "x": 145,
+   "y": 80,
+   "width": 1,
+   "height": 1,
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
+  },
+  {
+   "id": "forecourt-147",
+   "x": 145,
+   "y": 81,
+   "width": 1,
+   "height": 1,
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
+  },
+  {
+   "id": "forecourt-148",
+   "x": 145,
+   "y": 82,
+   "width": 1,
+   "height": 1,
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
+  },
+  {
+   "id": "forecourt-149",
+   "x": 146,
+   "y": 80,
+   "width": 1,
+   "height": 1,
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
+  },
+  {
+   "id": "forecourt-150",
+   "x": 146,
+   "y": 81,
+   "width": 1,
+   "height": 1,
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
+  },
+  {
+   "id": "forecourt-151",
+   "x": 146,
+   "y": 82,
+   "width": 1,
+   "height": 1,
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
+  },
+  {
+   "id": "forecourt-152",
+   "x": 147,
+   "y": 80,
+   "width": 1,
+   "height": 1,
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
+  },
+  {
+   "id": "forecourt-153",
+   "x": 147,
+   "y": 81,
+   "width": 1,
+   "height": 1,
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
+  },
+  {
+   "id": "forecourt-154",
+   "x": 147,
+   "y": 82,
+   "width": 1,
+   "height": 1,
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
+  },
+  {
+   "id": "hall-155",
+   "x": 143,
+   "y": 75,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-156",
+   "x": 143,
+   "y": 76,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-157",
+   "x": 143,
+   "y": 77,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-158",
+   "x": 143,
+   "y": 78,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-159",
+   "x": 143,
+   "y": 79,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-160",
+   "x": 144,
+   "y": 75,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-161",
+   "x": 144,
+   "y": 76,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-162",
+   "x": 144,
+   "y": 77,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-163",
+   "x": 144,
+   "y": 78,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-164",
+   "x": 144,
+   "y": 79,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-165",
+   "x": 145,
+   "y": 75,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-166",
+   "x": 145,
+   "y": 76,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-167",
+   "x": 145,
+   "y": 77,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-168",
+   "x": 145,
+   "y": 78,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-169",
+   "x": 145,
+   "y": 79,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-170",
+   "x": 146,
+   "y": 75,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-171",
+   "x": 146,
+   "y": 76,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-172",
+   "x": 146,
+   "y": 77,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-173",
+   "x": 146,
+   "y": 78,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-174",
+   "x": 146,
+   "y": 79,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "building-175",
+   "x": 109,
+   "y": 69,
+   "width": 5,
+   "height": 3,
+   "surface": "utility-building",
    "walkable": false,
    "elevation": 1,
-   "color": "#3a4650"
+   "color": "#2a2f33"
   },
   {
-   "id": "block-1-4-a",
-   "x": 31,
-   "y": 103,
-   "width": 18,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 5,
-   "color": "#1d2227"
-  },
-  {
-   "id": "block-1-4-b",
-   "x": 31,
-   "y": 113,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 4,
-   "color": "#1a1f24"
-  },
-  {
-   "id": "block-1-4-c",
-   "x": 41,
-   "y": 113,
-   "width": 8,
-   "height": 8,
+   "id": "building-176",
+   "x": 104,
+   "y": 66,
+   "width": 5,
+   "height": 9,
    "surface": "utility-building",
    "walkable": false,
    "elevation": 3,
-   "color": "#20262c"
+   "color": "#2a2f33"
   },
   {
-   "id": "fence-1-4-north",
-   "x": 39,
-   "y": 102,
-   "width": 6,
-   "height": 1,
-   "surface": "service-fence",
+   "id": "building-177",
+   "x": 114,
+   "y": 66,
+   "width": 5,
+   "height": 9,
+   "surface": "utility-building",
    "walkable": false,
-   "elevation": 1,
-   "color": "#3a4650"
+   "elevation": 3,
+   "color": "#2a2f33"
   },
   {
-   "id": "fence-1-4-west",
-   "x": 30,
-   "y": 113,
+   "id": "building-178",
+   "x": 133,
+   "y": 96,
+   "width": 14,
+   "height": 3,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 3,
+   "color": "#2a2f33"
+  },
+  {
+   "id": "building-179",
+   "x": 142,
+   "y": 99,
+   "width": 5,
+   "height": 5,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 3,
+   "color": "#2a2f33"
+  },
+  {
+   "id": "building-180",
+   "x": 133,
+   "y": 99,
+   "width": 5,
+   "height": 5,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 3,
+   "color": "#2a2f33"
+  },
+  {
+   "id": "building-181",
+   "x": 143,
+   "y": 104,
+   "width": 4,
+   "height": 3,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 3,
+   "color": "#2a2f33"
+  },
+  {
+   "id": "building-182",
+   "x": 133,
+   "y": 104,
+   "width": 4,
+   "height": 3,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 3,
+   "color": "#2a2f33"
+  },
+  {
+   "id": "forecourt-183",
+   "x": 137,
+   "y": 104,
    "width": 1,
-   "height": 6,
-   "surface": "service-fence",
-   "walkable": false,
-   "elevation": 1,
-   "color": "#3a4650"
+   "height": 1,
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
   },
   {
-   "id": "fence-1-4-east",
-   "x": 49,
+   "id": "forecourt-184",
+   "x": 137,
+   "y": 105,
+   "width": 1,
+   "height": 1,
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
+  },
+  {
+   "id": "forecourt-185",
+   "x": 137,
    "y": 106,
    "width": 1,
-   "height": 8,
-   "surface": "service-fence",
-   "walkable": false,
-   "elevation": 1,
-   "color": "#3a4650"
-  },
-  {
-   "id": "block-2-0-a",
-   "x": 55,
-   "y": 7,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 2,
-   "color": "#20262c"
-  },
-  {
-   "id": "block-2-0-b",
-   "x": 65,
-   "y": 7,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 3,
-   "color": "#232a30"
-  },
-  {
-   "id": "block-2-0-c",
-   "x": 55,
-   "y": 17,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 5,
-   "color": "#20262c"
-  },
-  {
-   "id": "block-2-0-d",
-   "x": 65,
-   "y": 17,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 2,
-   "color": "#1d2227"
-  },
-  {
-   "id": "wall-2-0-north",
-   "x": 67,
-   "y": 6,
-   "width": 4,
    "height": 1,
-   "surface": "service-wall",
-   "walkable": false,
-   "elevation": 2,
-   "color": "#46505a"
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
   },
   {
-   "id": "wall-2-0-south",
-   "x": 64,
-   "y": 25,
-   "width": 4,
-   "height": 1,
-   "surface": "service-wall",
-   "walkable": false,
-   "elevation": 2,
-   "color": "#46505a"
-  },
-  {
-   "id": "wall-2-0-east",
-   "x": 73,
-   "y": 13,
+   "id": "forecourt-186",
+   "x": 138,
+   "y": 104,
    "width": 1,
-   "height": 5,
-   "surface": "service-wall",
-   "walkable": false,
-   "elevation": 2,
-   "color": "#46505a"
-  },
-  {
-   "id": "block-2-1-a",
-   "x": 55,
-   "y": 31,
-   "width": 18,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 4,
-   "color": "#20262c"
-  },
-  {
-   "id": "block-2-1-b",
-   "x": 55,
-   "y": 41,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 4,
-   "color": "#232a30"
-  },
-  {
-   "id": "block-2-1-c",
-   "x": 65,
-   "y": 41,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 2,
-   "color": "#1d2227"
-  },
-  {
-   "id": "fence-2-1-north",
-   "x": 58,
-   "y": 30,
-   "width": 6,
    "height": 1,
-   "surface": "service-fence",
-   "walkable": false,
-   "elevation": 1,
-   "color": "#3a4650"
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
   },
   {
-   "id": "wall-2-1-east",
-   "x": 73,
-   "y": 39,
+   "id": "forecourt-187",
+   "x": 138,
+   "y": 105,
    "width": 1,
-   "height": 4,
-   "surface": "service-wall",
-   "walkable": false,
-   "elevation": 2,
-   "color": "#46505a"
+   "height": 1,
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
   },
   {
-   "id": "block-2-2-a",
-   "x": 55,
-   "y": 55,
-   "width": 18,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 4,
-   "color": "#20262c"
-  },
-  {
-   "id": "block-2-2-b",
-   "x": 55,
-   "y": 65,
-   "width": 18,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 3,
-   "color": "#1a1f24"
-  },
-  {
-   "id": "wall-2-2-east",
-   "x": 73,
-   "y": 66,
+   "id": "forecourt-188",
+   "x": 138,
+   "y": 106,
    "width": 1,
-   "height": 4,
-   "surface": "service-wall",
-   "walkable": false,
-   "elevation": 2,
-   "color": "#46505a"
-  },
-  {
-   "id": "block-2-3-a",
-   "x": 55,
-   "y": 79,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 4,
-   "color": "#1a1f24"
-  },
-  {
-   "id": "block-2-3-b",
-   "x": 65,
-   "y": 79,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 4,
-   "color": "#1d2227"
-  },
-  {
-   "id": "block-2-3-c",
-   "x": 55,
-   "y": 89,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 5,
-   "color": "#20262c"
-  },
-  {
-   "id": "block-2-3-d",
-   "x": 65,
-   "y": 89,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 4,
-   "color": "#232a30"
-  },
-  {
-   "id": "wall-2-3-north",
-   "x": 57,
-   "y": 78,
-   "width": 8,
    "height": 1,
-   "surface": "service-wall",
-   "walkable": false,
-   "elevation": 2,
-   "color": "#46505a"
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
   },
   {
-   "id": "fence-2-3-east",
-   "x": 73,
-   "y": 86,
+   "id": "forecourt-189",
+   "x": 139,
+   "y": 104,
    "width": 1,
-   "height": 7,
-   "surface": "service-fence",
-   "walkable": false,
-   "elevation": 1,
-   "color": "#3a4650"
-  },
-  {
-   "id": "block-2-4-a",
-   "x": 55,
-   "y": 103,
-   "width": 8,
-   "height": 18,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 3,
-   "color": "#1d2227"
-  },
-  {
-   "id": "block-2-4-b",
-   "x": 65,
-   "y": 103,
-   "width": 8,
-   "height": 18,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 3,
-   "color": "#232a30"
-  },
-  {
-   "id": "wall-2-4-south",
-   "x": 62,
-   "y": 121,
-   "width": 4,
    "height": 1,
-   "surface": "service-wall",
-   "walkable": false,
-   "elevation": 2,
-   "color": "#46505a"
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
   },
   {
-   "id": "fence-2-4-west",
-   "x": 54,
-   "y": 107,
+   "id": "forecourt-190",
+   "x": 139,
+   "y": 105,
    "width": 1,
-   "height": 8,
-   "surface": "service-fence",
-   "walkable": false,
-   "elevation": 1,
-   "color": "#3a4650"
-  },
-  {
-   "id": "block-3-0-a",
-   "x": 79,
-   "y": 7,
-   "width": 18,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 2,
-   "color": "#20262c"
-  },
-  {
-   "id": "block-3-0-b",
-   "x": 79,
-   "y": 17,
-   "width": 18,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 5,
-   "color": "#1a1f24"
-  },
-  {
-   "id": "fence-3-0-north",
-   "x": 91,
-   "y": 6,
-   "width": 4,
    "height": 1,
-   "surface": "service-fence",
-   "walkable": false,
-   "elevation": 1,
-   "color": "#3a4650"
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
   },
   {
-   "id": "fence-3-0-south",
-   "x": 82,
-   "y": 25,
-   "width": 8,
-   "height": 1,
-   "surface": "service-fence",
-   "walkable": false,
-   "elevation": 1,
-   "color": "#3a4650"
-  },
-  {
-   "id": "block-3-1-a",
-   "x": 79,
-   "y": 31,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 5,
-   "color": "#232a30"
-  },
-  {
-   "id": "block-3-1-b",
-   "x": 89,
-   "y": 31,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 4,
-   "color": "#20262c"
-  },
-  {
-   "id": "block-3-1-c",
-   "x": 79,
-   "y": 41,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 2,
-   "color": "#1a1f24"
-  },
-  {
-   "id": "block-3-1-d",
-   "x": 89,
-   "y": 41,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 4,
-   "color": "#1d2227"
-  },
-  {
-   "id": "block-3-2-a",
-   "x": 79,
-   "y": 55,
-   "width": 18,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 2,
-   "color": "#20262c"
-  },
-  {
-   "id": "block-3-2-b",
-   "x": 79,
-   "y": 65,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 4,
-   "color": "#232a30"
-  },
-  {
-   "id": "block-3-2-c",
-   "x": 89,
-   "y": 65,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 2,
-   "color": "#1d2227"
-  },
-  {
-   "id": "block-3-3-a",
-   "x": 79,
-   "y": 79,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 4,
-   "color": "#232a30"
-  },
-  {
-   "id": "block-3-3-b",
-   "x": 89,
-   "y": 79,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 2,
-   "color": "#1d2227"
-  },
-  {
-   "id": "block-3-3-c",
-   "x": 79,
-   "y": 89,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 4,
-   "color": "#1d2227"
-  },
-  {
-   "id": "block-3-3-d",
-   "x": 89,
-   "y": 89,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 3,
-   "color": "#1a1f24"
-  },
-  {
-   "id": "wall-3-3-south",
-   "x": 83,
-   "y": 97,
-   "width": 6,
-   "height": 1,
-   "surface": "service-wall",
-   "walkable": false,
-   "elevation": 2,
-   "color": "#46505a"
-  },
-  {
-   "id": "wall-3-3-west",
-   "x": 78,
-   "y": 87,
+   "id": "forecourt-191",
+   "x": 139,
+   "y": 106,
    "width": 1,
-   "height": 8,
-   "surface": "service-wall",
-   "walkable": false,
-   "elevation": 2,
-   "color": "#46505a"
-  },
-  {
-   "id": "fence-3-3-east",
-   "x": 97,
-   "y": 84,
-   "width": 1,
-   "height": 7,
-   "surface": "service-fence",
-   "walkable": false,
-   "elevation": 1,
-   "color": "#3a4650"
-  },
-  {
-   "id": "block-3-4-a",
-   "x": 79,
-   "y": 103,
-   "width": 18,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 3,
-   "color": "#1d2227"
-  },
-  {
-   "id": "block-3-4-b",
-   "x": 79,
-   "y": 113,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 5,
-   "color": "#20262c"
-  },
-  {
-   "id": "block-3-4-c",
-   "x": 89,
-   "y": 113,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 3,
-   "color": "#232a30"
-  },
-  {
-   "id": "wall-3-4-south",
-   "x": 86,
-   "y": 121,
-   "width": 8,
    "height": 1,
-   "surface": "service-wall",
-   "walkable": false,
-   "elevation": 2,
-   "color": "#46505a"
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
   },
   {
-   "id": "fence-3-4-west",
-   "x": 78,
-   "y": 109,
+   "id": "forecourt-192",
+   "x": 140,
+   "y": 104,
    "width": 1,
-   "height": 8,
-   "surface": "service-fence",
-   "walkable": false,
-   "elevation": 1,
-   "color": "#3a4650"
-  },
-  {
-   "id": "block-4-0-a",
-   "x": 103,
-   "y": 7,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 3,
-   "color": "#20262c"
-  },
-  {
-   "id": "block-4-0-b",
-   "x": 113,
-   "y": 7,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 4,
-   "color": "#1a1f24"
-  },
-  {
-   "id": "block-4-0-c",
-   "x": 103,
-   "y": 17,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 3,
-   "color": "#1a1f24"
-  },
-  {
-   "id": "block-4-0-d",
-   "x": 113,
-   "y": 17,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 5,
-   "color": "#1d2227"
-  },
-  {
-   "id": "fence-4-0-north",
-   "x": 108,
-   "y": 6,
-   "width": 6,
    "height": 1,
-   "surface": "service-fence",
-   "walkable": false,
-   "elevation": 1,
-   "color": "#3a4650"
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
   },
   {
-   "id": "wall-4-0-south",
-   "x": 113,
-   "y": 25,
-   "width": 4,
-   "height": 1,
-   "surface": "service-wall",
-   "walkable": false,
-   "elevation": 2,
-   "color": "#46505a"
-  },
-  {
-   "id": "wall-4-0-east",
-   "x": 121,
-   "y": 14,
+   "id": "forecourt-193",
+   "x": 140,
+   "y": 105,
    "width": 1,
-   "height": 8,
-   "surface": "service-wall",
-   "walkable": false,
-   "elevation": 2,
-   "color": "#46505a"
-  },
-  {
-   "id": "block-4-1-a",
-   "x": 103,
-   "y": 31,
-   "width": 18,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 3,
-   "color": "#232a30"
-  },
-  {
-   "id": "block-4-1-b",
-   "x": 103,
-   "y": 41,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 5,
-   "color": "#232a30"
-  },
-  {
-   "id": "block-4-1-c",
-   "x": 113,
-   "y": 41,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 3,
-   "color": "#1a1f24"
-  },
-  {
-   "id": "block-4-2-a",
-   "x": 103,
-   "y": 55,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 4,
-   "color": "#20262c"
-  },
-  {
-   "id": "block-4-2-b",
-   "x": 113,
-   "y": 55,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 2,
-   "color": "#1d2227"
-  },
-  {
-   "id": "block-4-2-c",
-   "x": 103,
-   "y": 65,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 3,
-   "color": "#1d2227"
-  },
-  {
-   "id": "block-4-2-d",
-   "x": 113,
-   "y": 65,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 5,
-   "color": "#1d2227"
-  },
-  {
-   "id": "block-4-3-a",
-   "x": 103,
-   "y": 79,
-   "width": 18,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 5,
-   "color": "#1a1f24"
-  },
-  {
-   "id": "block-4-3-b",
-   "x": 103,
-   "y": 89,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 4,
-   "color": "#1d2227"
-  },
-  {
-   "id": "block-4-3-c",
-   "x": 113,
-   "y": 89,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 2,
-   "color": "#232a30"
-  },
-  {
-   "id": "wall-4-3-north",
-   "x": 109,
-   "y": 78,
-   "width": 5,
    "height": 1,
-   "surface": "service-wall",
-   "walkable": false,
-   "elevation": 2,
-   "color": "#46505a"
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
   },
   {
-   "id": "wall-4-3-south",
-   "x": 108,
-   "y": 97,
-   "width": 8,
+   "id": "forecourt-194",
+   "x": 140,
+   "y": 106,
+   "width": 1,
    "height": 1,
-   "surface": "service-wall",
-   "walkable": false,
-   "elevation": 2,
-   "color": "#46505a"
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
   },
   {
-   "id": "wall-4-3-west",
-   "x": 102,
-   "y": 86,
+   "id": "forecourt-195",
+   "x": 141,
+   "y": 104,
    "width": 1,
-   "height": 8,
-   "surface": "service-wall",
-   "walkable": false,
-   "elevation": 2,
-   "color": "#46505a"
+   "height": 1,
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
   },
   {
-   "id": "wall-4-3-east",
-   "x": 121,
-   "y": 86,
+   "id": "forecourt-196",
+   "x": 141,
+   "y": 105,
    "width": 1,
-   "height": 8,
-   "surface": "service-wall",
-   "walkable": false,
-   "elevation": 2,
-   "color": "#46505a"
+   "height": 1,
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
   },
   {
-   "id": "block-4-4-a",
-   "x": 103,
-   "y": 103,
-   "width": 18,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 4,
-   "color": "#1a1f24"
+   "id": "forecourt-197",
+   "x": 141,
+   "y": 106,
+   "width": 1,
+   "height": 1,
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
   },
   {
-   "id": "block-4-4-b",
-   "x": 103,
-   "y": 113,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 3,
-   "color": "#20262c"
+   "id": "forecourt-198",
+   "x": 142,
+   "y": 104,
+   "width": 1,
+   "height": 1,
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
   },
   {
-   "id": "block-4-4-c",
-   "x": 113,
-   "y": 113,
-   "width": 8,
-   "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 4,
-   "color": "#1d2227"
+   "id": "forecourt-199",
+   "x": 142,
+   "y": 105,
+   "width": 1,
+   "height": 1,
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
   },
   {
-   "id": "wall-4-4-north",
-   "x": 107,
+   "id": "forecourt-200",
+   "x": 142,
+   "y": 106,
+   "width": 1,
+   "height": 1,
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
+  },
+  {
+   "id": "hall-201",
+   "x": 138,
+   "y": 99,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-202",
+   "x": 138,
+   "y": 100,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-203",
+   "x": 138,
+   "y": 101,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-204",
+   "x": 138,
    "y": 102,
-   "width": 8,
+   "width": 1,
    "height": 1,
-   "surface": "service-wall",
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-205",
+   "x": 138,
+   "y": 103,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-206",
+   "x": 139,
+   "y": 99,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-207",
+   "x": 139,
+   "y": 100,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-208",
+   "x": 139,
+   "y": 101,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-209",
+   "x": 139,
+   "y": 102,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-210",
+   "x": 139,
+   "y": 103,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-211",
+   "x": 140,
+   "y": 99,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-212",
+   "x": 140,
+   "y": 100,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-213",
+   "x": 140,
+   "y": 101,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-214",
+   "x": 140,
+   "y": 102,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-215",
+   "x": 140,
+   "y": 103,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-216",
+   "x": 141,
+   "y": 99,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-217",
+   "x": 141,
+   "y": 100,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-218",
+   "x": 141,
+   "y": 101,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-219",
+   "x": 141,
+   "y": 102,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-220",
+   "x": 141,
+   "y": 103,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "building-221",
+   "x": 44,
+   "y": 69,
+   "width": 15,
+   "height": 8,
+   "surface": "utility-building",
    "walkable": false,
    "elevation": 2,
-   "color": "#46505a"
+   "color": "#252d33"
+  },
+  {
+   "id": "building-222",
+   "x": 83,
+   "y": 70,
+   "width": 15,
+   "height": 9,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#2a2f33"
+  },
+  {
+   "id": "building-223",
+   "x": 51,
+   "y": 83,
+   "width": 15,
+   "height": 10,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#33292a"
+  },
+  {
+   "id": "building-224",
+   "x": 122,
+   "y": 77,
+   "width": 10,
+   "height": 11,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 3,
+   "color": "#33292a"
+  },
+  {
+   "id": "building-225",
+   "x": 109,
+   "y": 99,
+   "width": 16,
+   "height": 3,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#33292a"
+  },
+  {
+   "id": "building-226",
+   "x": 120,
+   "y": 102,
+   "width": 5,
+   "height": 5,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#33292a"
+  },
+  {
+   "id": "building-227",
+   "x": 109,
+   "y": 102,
+   "width": 5,
+   "height": 5,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#33292a"
+  },
+  {
+   "id": "building-228",
+   "x": 109,
+   "y": 107,
+   "width": 16,
+   "height": 3,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#33292a"
+  },
+  {
+   "id": "building-229",
+   "x": 114,
+   "y": 102,
+   "width": 6,
+   "height": 5,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 4,
+   "color": "#33292a"
+  },
+  {
+   "id": "building-230",
+   "x": 35,
+   "y": 91,
+   "width": 13,
+   "height": 3,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 3,
+   "color": "#33292a"
+  },
+  {
+   "id": "building-231",
+   "x": 43,
+   "y": 94,
+   "width": 5,
+   "height": 5,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 3,
+   "color": "#33292a"
+  },
+  {
+   "id": "building-232",
+   "x": 35,
+   "y": 94,
+   "width": 4,
+   "height": 5,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 3,
+   "color": "#33292a"
+  },
+  {
+   "id": "building-233",
+   "x": 35,
+   "y": 99,
+   "width": 3,
+   "height": 3,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 3,
+   "color": "#33292a"
+  },
+  {
+   "id": "building-234",
+   "x": 44,
+   "y": 99,
+   "width": 4,
+   "height": 3,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 3,
+   "color": "#33292a"
+  },
+  {
+   "id": "forecourt-235",
+   "x": 38,
+   "y": 99,
+   "width": 1,
+   "height": 1,
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
+  },
+  {
+   "id": "forecourt-236",
+   "x": 38,
+   "y": 100,
+   "width": 1,
+   "height": 1,
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
+  },
+  {
+   "id": "forecourt-237",
+   "x": 38,
+   "y": 101,
+   "width": 1,
+   "height": 1,
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
+  },
+  {
+   "id": "forecourt-238",
+   "x": 39,
+   "y": 99,
+   "width": 1,
+   "height": 1,
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
+  },
+  {
+   "id": "forecourt-239",
+   "x": 39,
+   "y": 100,
+   "width": 1,
+   "height": 1,
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
+  },
+  {
+   "id": "forecourt-240",
+   "x": 39,
+   "y": 101,
+   "width": 1,
+   "height": 1,
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
+  },
+  {
+   "id": "forecourt-241",
+   "x": 40,
+   "y": 99,
+   "width": 1,
+   "height": 1,
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
+  },
+  {
+   "id": "forecourt-242",
+   "x": 40,
+   "y": 100,
+   "width": 1,
+   "height": 1,
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
+  },
+  {
+   "id": "forecourt-243",
+   "x": 40,
+   "y": 101,
+   "width": 1,
+   "height": 1,
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
+  },
+  {
+   "id": "forecourt-244",
+   "x": 41,
+   "y": 99,
+   "width": 1,
+   "height": 1,
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
+  },
+  {
+   "id": "forecourt-245",
+   "x": 41,
+   "y": 100,
+   "width": 1,
+   "height": 1,
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
+  },
+  {
+   "id": "forecourt-246",
+   "x": 41,
+   "y": 101,
+   "width": 1,
+   "height": 1,
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
+  },
+  {
+   "id": "forecourt-247",
+   "x": 42,
+   "y": 99,
+   "width": 1,
+   "height": 1,
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
+  },
+  {
+   "id": "forecourt-248",
+   "x": 42,
+   "y": 100,
+   "width": 1,
+   "height": 1,
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
+  },
+  {
+   "id": "forecourt-249",
+   "x": 42,
+   "y": 101,
+   "width": 1,
+   "height": 1,
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
+  },
+  {
+   "id": "forecourt-250",
+   "x": 43,
+   "y": 99,
+   "width": 1,
+   "height": 1,
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
+  },
+  {
+   "id": "forecourt-251",
+   "x": 43,
+   "y": 100,
+   "width": 1,
+   "height": 1,
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
+  },
+  {
+   "id": "forecourt-252",
+   "x": 43,
+   "y": 101,
+   "width": 1,
+   "height": 1,
+   "surface": "chevron",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#8a6a2a"
+  },
+  {
+   "id": "hall-253",
+   "x": 39,
+   "y": 94,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-254",
+   "x": 39,
+   "y": 95,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-255",
+   "x": 39,
+   "y": 96,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-256",
+   "x": 39,
+   "y": 97,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-257",
+   "x": 39,
+   "y": 98,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-258",
+   "x": 40,
+   "y": 94,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-259",
+   "x": 40,
+   "y": 95,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-260",
+   "x": 40,
+   "y": 96,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-261",
+   "x": 40,
+   "y": 97,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-262",
+   "x": 40,
+   "y": 98,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-263",
+   "x": 41,
+   "y": 94,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-264",
+   "x": 41,
+   "y": 95,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-265",
+   "x": 41,
+   "y": 96,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-266",
+   "x": 41,
+   "y": 97,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-267",
+   "x": 41,
+   "y": 98,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-268",
+   "x": 42,
+   "y": 94,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-269",
+   "x": 42,
+   "y": 95,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-270",
+   "x": 42,
+   "y": 96,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-271",
+   "x": 42,
+   "y": 97,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "hall-272",
+   "x": 42,
+   "y": 98,
+   "width": 1,
+   "height": 1,
+   "surface": "rooftop",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#3a2c22"
+  },
+  {
+   "id": "building-273",
+   "x": 18,
+   "y": 99,
+   "width": 15,
+   "height": 3,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#2a2f33"
+  },
+  {
+   "id": "building-274",
+   "x": 28,
+   "y": 102,
+   "width": 5,
+   "height": 4,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#2a2f33"
+  },
+  {
+   "id": "building-275",
+   "x": 18,
+   "y": 102,
+   "width": 5,
+   "height": 4,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#2a2f33"
+  },
+  {
+   "id": "building-276",
+   "x": 18,
+   "y": 106,
+   "width": 15,
+   "height": 3,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#2a2f33"
+  },
+  {
+   "id": "building-277",
+   "x": 23,
+   "y": 102,
+   "width": 5,
+   "height": 4,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 4,
+   "color": "#2a2f33"
+  },
+  {
+   "id": "building-278",
+   "x": 94,
+   "y": 82,
+   "width": 15,
+   "height": 3,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 3,
+   "color": "#30302a"
+  },
+  {
+   "id": "building-279",
+   "x": 104,
+   "y": 85,
+   "width": 5,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 3,
+   "color": "#30302a"
+  },
+  {
+   "id": "building-280",
+   "x": 94,
+   "y": 85,
+   "width": 5,
+   "height": 6,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 3,
+   "color": "#30302a"
+  },
+  {
+   "id": "building-281",
+   "x": 16,
+   "y": 82,
+   "width": 10,
+   "height": 11,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#252d33"
+  },
+  {
+   "id": "building-282",
+   "x": 93,
+   "y": 93,
+   "width": 12,
+   "height": 8,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#33292a"
+  },
+  {
+   "id": "pipe-283",
+   "x": 52,
+   "y": 111,
+   "width": 10,
+   "height": 1,
+   "surface": "pipe",
+   "walkable": false,
+   "elevation": 0,
+   "color": "#293138"
+  },
+  {
+   "id": "pipe-284",
+   "x": 102,
+   "y": 111,
+   "width": 18,
+   "height": 1,
+   "surface": "pipe",
+   "walkable": false,
+   "elevation": 0,
+   "color": "#293138"
+  },
+  {
+   "id": "pipe-285",
+   "x": 79,
+   "y": 111,
+   "width": 10,
+   "height": 1,
+   "surface": "pipe",
+   "walkable": false,
+   "elevation": 0,
+   "color": "#293138"
   },
   {
    "id": "relay-one-base",
-   "x": 27,
-   "y": 59,
+   "x": 91,
+   "y": 56,
    "width": 2,
    "height": 2,
    "surface": "relay-pad",
@@ -2611,8 +3601,8 @@
   },
   {
    "id": "relay-two-base",
-   "x": 111,
-   "y": 115,
+   "x": 39,
+   "y": 61,
    "width": 2,
    "height": 2,
    "surface": "relay-pad",
@@ -2622,8 +3612,8 @@
   },
   {
    "id": "relay-three-base",
-   "x": 53,
-   "y": 28,
+   "x": 83,
+   "y": 15,
    "width": 2,
    "height": 2,
    "surface": "relay-pad",
@@ -2633,8 +3623,8 @@
   },
   {
    "id": "gate-panel-base",
-   "x": 101,
-   "y": 4,
+   "x": 148,
+   "y": 54,
    "width": 2,
    "height": 2,
    "surface": "relay-pad",
@@ -2644,14 +3634,69 @@
   },
   {
    "id": "vault-server-base",
-   "x": 3,
-   "y": 90,
+   "x": 54,
+   "y": 6,
    "width": 2,
    "height": 2,
    "surface": "relay-pad",
    "walkable": true,
    "elevation": 1,
    "color": "#8b6b32"
+  },
+  {
+   "id": "compound-floor",
+   "x": 163,
+   "y": 56,
+   "width": 13,
+   "height": 33,
+   "surface": "service-concrete",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#2b3a36"
+  },
+  {
+   "id": "fence-north",
+   "x": 162,
+   "y": 55,
+   "width": 14,
+   "height": 1,
+   "surface": "service-fence",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#3a4650"
+  },
+  {
+   "id": "fence-south",
+   "x": 162,
+   "y": 89,
+   "width": 14,
+   "height": 1,
+   "surface": "service-fence",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#3a4650"
+  },
+  {
+   "id": "fence-west-upper",
+   "x": 162,
+   "y": 55,
+   "width": 1,
+   "height": 16,
+   "surface": "service-fence",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#3a4650"
+  },
+  {
+   "id": "fence-west-lower",
+   "x": 162,
+   "y": 73,
+   "width": 1,
+   "height": 16,
+   "surface": "service-fence",
+   "walkable": false,
+   "elevation": 1,
+   "color": "#3a4650"
   }
  ],
  "zones": [
@@ -2660,7 +3705,7 @@
    "kind": "entry",
    "position": {
     "x": 2,
-    "y": 64
+    "y": 56
    },
    "width": 2,
    "height": 2
@@ -2669,8 +3714,8 @@
    "id": "relay-one",
    "kind": "interaction",
    "position": {
-    "x": 27,
-    "y": 59
+    "x": 91,
+    "y": 56
    },
    "width": 2,
    "height": 2,
@@ -2680,8 +3725,8 @@
    "id": "relay-two",
    "kind": "interaction",
    "position": {
-    "x": 111,
-    "y": 115
+    "x": 39,
+    "y": 61
    },
    "width": 2,
    "height": 2,
@@ -2691,8 +3736,8 @@
    "id": "relay-three",
    "kind": "interaction",
    "position": {
-    "x": 53,
-    "y": 28
+    "x": 83,
+    "y": 15
    },
    "width": 2,
    "height": 2,
@@ -2702,8 +3747,8 @@
    "id": "gate-panel",
    "kind": "interaction",
    "position": {
-    "x": 101,
-    "y": 4
+    "x": 148,
+    "y": 54
    },
    "width": 2,
    "height": 2,
@@ -2713,8 +3758,8 @@
    "id": "vault-server",
    "kind": "interaction",
    "position": {
-    "x": 3,
-    "y": 90
+    "x": 54,
+    "y": 6
    },
    "width": 2,
    "height": 2,
@@ -2724,8 +3769,8 @@
    "id": "uplink-hold",
    "kind": "hold",
    "position": {
-    "x": 55,
-    "y": 73
+    "x": 124,
+    "y": 94
    },
    "width": 4,
    "height": 4,
@@ -2735,8 +3780,8 @@
    "id": "safe-exit",
    "kind": "exit",
    "position": {
-    "x": 121,
-    "y": 64
+    "x": 168,
+    "y": 69
    },
    "width": 4,
    "height": 4
@@ -2744,177 +3789,150 @@
  ],
  "objects": [
   {
-   "id": "door-0-4-alley",
+   "id": "door-entrance-1",
    "kind": "door",
    "position": {
-    "x": 15,
-    "y": 102
+    "x": 144,
+    "y": 79
    },
    "width": 2,
    "height": 1
   },
   {
-   "id": "door-2-4-alley",
+   "id": "door-entrance-2",
    "kind": "door",
    "position": {
-    "x": 63,
-    "y": 102
+    "x": 139,
+    "y": 103
    },
    "width": 2,
    "height": 1
+  },
+  {
+   "id": "door-entrance-3",
+   "kind": "door",
+   "position": {
+    "x": 40,
+    "y": 98
+   },
+   "width": 2,
+   "height": 1
+  },
+  {
+   "id": "service-gate",
+   "kind": "gate",
+   "position": {
+    "x": 162,
+    "y": 71
+   },
+   "width": 1,
+   "height": 2,
+   "control": "gate-panel"
   }
  ],
  "props": [
   {
-   "id": "tree-1",
-   "kind": "tree",
+   "id": "shrub-1",
+   "kind": "shrub",
    "position": {
-    "x": 1,
-    "y": 54
+    "x": 15,
+    "y": 87
    }
   },
   {
-   "id": "streetlight-1",
-   "kind": "streetlight",
+   "id": "shrub-2",
+   "kind": "shrub",
    "position": {
-    "x": 7,
-    "y": 97
+    "x": 17,
+    "y": 15
    }
   },
   {
    "id": "bin-1",
    "kind": "bin",
    "position": {
-    "x": 8,
-    "y": 54
-   }
-  },
-  {
-   "id": "tree-2",
-   "kind": "tree",
-   "position": {
-    "x": 9,
-    "y": 78
-   }
-  },
-  {
-   "id": "streetlight-2",
-   "kind": "streetlight",
-   "position": {
-    "x": 12,
-    "y": 97
-   }
-  },
-  {
-   "id": "tree-3",
-   "kind": "tree",
-   "position": {
-    "x": 13,
-    "y": 102
-   }
-  },
-  {
-   "id": "tree-4",
-   "kind": "tree",
-   "position": {
     "x": 17,
-    "y": 78
+    "y": 21
    }
   },
   {
-   "id": "streetlight-3",
-   "kind": "streetlight",
+   "id": "shrub-3",
+   "kind": "shrub",
    "position": {
-    "x": 19,
-    "y": 49
-   }
-  },
-  {
-   "id": "tree-5",
-   "kind": "tree",
-   "position": {
-    "x": 20,
-    "y": 54
-   }
-  },
-  {
-   "id": "streetlight-4",
-   "kind": "streetlight",
-   "position": {
-    "x": 22,
-    "y": 78
+    "x": 18,
+    "y": 45
    }
   },
   {
    "id": "bin-2",
    "kind": "bin",
    "position": {
-    "x": 23,
-    "y": 25
+    "x": 19,
+    "y": 52
    }
   },
   {
-   "id": "streetlight-5",
-   "kind": "streetlight",
+   "id": "shrub-4",
+   "kind": "shrub",
    "position": {
-    "x": 23,
-    "y": 30
-   }
-  },
-  {
-   "id": "tree-6",
-   "kind": "tree",
-   "position": {
-    "x": 23,
-    "y": 102
-   }
-  },
-  {
-   "id": "tree-7",
-   "kind": "tree",
-   "position": {
-    "x": 25,
-    "y": 17
-   }
-  },
-  {
-   "id": "tree-8",
-   "kind": "tree",
-   "position": {
-    "x": 25,
-    "y": 48
+    "x": 20,
+    "y": 39
    }
   },
   {
    "id": "bin-3",
    "kind": "bin",
    "position": {
-    "x": 25,
-    "y": 68
+    "x": 20,
+    "y": 109
    }
   },
   {
    "id": "bin-4",
    "kind": "bin",
    "position": {
-    "x": 25,
-    "y": 117
+    "x": 21,
+    "y": 81
+   }
+  },
+  {
+   "id": "shrub-5",
+   "kind": "shrub",
+   "position": {
+    "x": 24,
+    "y": 49
    }
   },
   {
    "id": "bin-5",
    "kind": "bin",
    "position": {
-    "x": 30,
-    "y": 14
+    "x": 25,
+    "y": 25
    }
   },
   {
-   "id": "tree-9",
-   "kind": "tree",
+   "id": "shrub-6",
+   "kind": "shrub",
    "position": {
-    "x": 30,
-    "y": 44
+    "x": 27,
+    "y": 19
+   }
+  },
+  {
+   "id": "shrub-7",
+   "kind": "shrub",
+   "position": {
+    "x": 27,
+    "y": 32
+   }
+  },
+  {
+   "id": "shrub-8",
+   "kind": "shrub",
+   "position": {
+    "x": 27,
+    "y": 51
    }
   },
   {
@@ -2922,31 +3940,23 @@
    "kind": "bin",
    "position": {
     "x": 30,
-    "y": 55
+    "y": 109
    }
   },
   {
-   "id": "streetlight-6",
+   "id": "streetlight-1",
    "kind": "streetlight",
    "position": {
-    "x": 30,
-    "y": 73
+    "x": 33,
+    "y": 58
    }
   },
   {
-   "id": "tree-10",
-   "kind": "tree",
+   "id": "shrub-9",
+   "kind": "shrub",
    "position": {
-    "x": 35,
-    "y": 78
-   }
-  },
-  {
-   "id": "tree-11",
-   "kind": "tree",
-   "position": {
-    "x": 35,
-    "y": 102
+    "x": 34,
+    "y": 21
    }
   },
   {
@@ -2954,647 +3964,855 @@
    "kind": "bin",
    "position": {
     "x": 38,
-    "y": 49
-   }
-  },
-  {
-   "id": "tree-12",
-   "kind": "tree",
-   "position": {
-    "x": 38,
-    "y": 121
+    "y": 10
    }
   },
   {
    "id": "bin-8",
    "kind": "bin",
    "position": {
-    "x": 42,
-    "y": 73
+    "x": 38,
+    "y": 24
    }
   },
   {
-   "id": "streetlight-7",
-   "kind": "streetlight",
+   "id": "shrub-10",
+   "kind": "shrub",
    "position": {
-    "x": 43,
-    "y": 121
+    "x": 38,
+    "y": 41
    }
   },
   {
-   "id": "streetlight-8",
-   "kind": "streetlight",
+   "id": "shrub-11",
+   "kind": "shrub",
    "position": {
-    "x": 43,
-    "y": 126
-   }
-  },
-  {
-   "id": "tree-13",
-   "kind": "tree",
-   "position": {
-    "x": 46,
-    "y": 30
-   }
-  },
-  {
-   "id": "tree-14",
-   "kind": "tree",
-   "position": {
-    "x": 48,
-    "y": 49
-   }
-  },
-  {
-   "id": "streetlight-9",
-   "kind": "streetlight",
-   "position": {
-    "x": 48,
-    "y": 121
-   }
-  },
-  {
-   "id": "streetlight-10",
-   "kind": "streetlight",
-   "position": {
-    "x": 49,
-    "y": 1
-   }
-  },
-  {
-   "id": "streetlight-11",
-   "kind": "streetlight",
-   "position": {
-    "x": 49,
-    "y": 43
-   }
-  },
-  {
-   "id": "tree-15",
-   "kind": "tree",
-   "position": {
-    "x": 49,
-    "y": 60
+    "x": 39,
+    "y": 27
    }
   },
   {
    "id": "bin-9",
    "kind": "bin",
    "position": {
-    "x": 54,
-    "y": 23
-   }
-  },
-  {
-   "id": "tree-16",
-   "kind": "tree",
-   "position": {
-    "x": 54,
-    "y": 126
-   }
-  },
-  {
-   "id": "tree-17",
-   "kind": "tree",
-   "position": {
-    "x": 57,
-    "y": 25
-   }
-  },
-  {
-   "id": "streetlight-12",
-   "kind": "streetlight",
-   "position": {
-    "x": 57,
-    "y": 102
-   }
-  },
-  {
-   "id": "tree-18",
-   "kind": "tree",
-   "position": {
-    "x": 59,
-    "y": 97
-   }
-  },
-  {
-   "id": "tree-19",
-   "kind": "tree",
-   "position": {
-    "x": 60,
-    "y": 54
-   }
-  },
-  {
-   "id": "streetlight-13",
-   "kind": "streetlight",
-   "position": {
-    "x": 60,
-    "y": 121
-   }
-  },
-  {
-   "id": "streetlight-14",
-   "kind": "streetlight",
-   "position": {
-    "x": 67,
-    "y": 102
-   }
-  },
-  {
-   "id": "streetlight-15",
-   "kind": "streetlight",
-   "position": {
-    "x": 69,
-    "y": 73
-   }
-  },
-  {
-   "id": "streetlight-16",
-   "kind": "streetlight",
-   "position": {
-    "x": 73,
-    "y": 37
+    "x": 39,
+    "y": 88
    }
   },
   {
    "id": "bin-10",
    "kind": "bin",
    "position": {
-    "x": 73,
-    "y": 57
+    "x": 39,
+    "y": 94
    }
   },
   {
-   "id": "streetlight-17",
-   "kind": "streetlight",
+   "id": "shrub-12",
+   "kind": "shrub",
    "position": {
-    "x": 73,
-    "y": 73
+    "x": 40,
+    "y": 18
    }
   },
   {
-   "id": "streetlight-18",
+   "id": "shrub-13",
+   "kind": "shrub",
+   "position": {
+    "x": 41,
+    "y": 46
+   }
+  },
+  {
+   "id": "streetlight-2",
    "kind": "streetlight",
    "position": {
-    "x": 73,
-    "y": 78
+    "x": 42,
+    "y": 58
+   }
+  },
+  {
+   "id": "shrub-14",
+   "kind": "shrub",
+   "position": {
+    "x": 43,
+    "y": 75
+   }
+  },
+  {
+   "id": "shrub-15",
+   "kind": "shrub",
+   "position": {
+    "x": 43,
+    "y": 79
+   }
+  },
+  {
+   "id": "shrub-16",
+   "kind": "shrub",
+   "position": {
+    "x": 43,
+    "y": 88
    }
   },
   {
    "id": "bin-11",
    "kind": "bin",
    "position": {
-    "x": 73,
-    "y": 84
+    "x": 45,
+    "y": 15
    }
   },
   {
    "id": "bin-12",
    "kind": "bin",
    "position": {
-    "x": 73,
-    "y": 112
-   }
-  },
-  {
-   "id": "streetlight-19",
-   "kind": "streetlight",
-   "position": {
-    "x": 78,
-    "y": 12
-   }
-  },
-  {
-   "id": "tree-20",
-   "kind": "tree",
-   "position": {
-    "x": 78,
-    "y": 38
+    "x": 45,
+    "y": 21
    }
   },
   {
    "id": "bin-13",
    "kind": "bin",
    "position": {
-    "x": 78,
-    "y": 44
+    "x": 45,
+    "y": 37
    }
   },
   {
-   "id": "tree-21",
-   "kind": "tree",
+   "id": "shrub-17",
+   "kind": "shrub",
    "position": {
-    "x": 78,
-    "y": 56
-   }
-  },
-  {
-   "id": "tree-22",
-   "kind": "tree",
-   "position": {
-    "x": 78,
-    "y": 63
-   }
-  },
-  {
-   "id": "tree-23",
-   "kind": "tree",
-   "position": {
-    "x": 78,
-    "y": 80
-   }
-  },
-  {
-   "id": "streetlight-20",
-   "kind": "streetlight",
-   "position": {
-    "x": 78,
-    "y": 108
-   }
-  },
-  {
-   "id": "tree-24",
-   "kind": "tree",
-   "position": {
-    "x": 78,
-    "y": 119
+    "x": 46,
+    "y": 43
    }
   },
   {
    "id": "bin-14",
    "kind": "bin",
    "position": {
-    "x": 79,
-    "y": 25
-   }
-  },
-  {
-   "id": "tree-25",
-   "kind": "tree",
-   "position": {
-    "x": 80,
-    "y": 126
+    "x": 48,
+    "y": 10
    }
   },
   {
    "id": "bin-15",
    "kind": "bin",
    "position": {
-    "x": 81,
-    "y": 30
+    "x": 48,
+    "y": 24
    }
   },
   {
-   "id": "tree-26",
-   "kind": "tree",
+   "id": "shrub-18",
+   "kind": "shrub",
    "position": {
-    "x": 81,
-    "y": 73
+    "x": 48,
+    "y": 48
    }
   },
   {
-   "id": "streetlight-21",
-   "kind": "streetlight",
+   "id": "shrub-19",
+   "kind": "shrub",
    "position": {
-    "x": 82,
-    "y": 97
-   }
-  },
-  {
-   "id": "tree-27",
-   "kind": "tree",
-   "position": {
-    "x": 82,
-    "y": 102
-   }
-  },
-  {
-   "id": "tree-28",
-   "kind": "tree",
-   "position": {
-    "x": 87,
-    "y": 102
-   }
-  },
-  {
-   "id": "tree-29",
-   "kind": "tree",
-   "position": {
-    "x": 89,
-    "y": 97
+    "x": 48,
+    "y": 99
    }
   },
   {
    "id": "bin-16",
    "kind": "bin",
    "position": {
-    "x": 90,
-    "y": 30
-   }
-  },
-  {
-   "id": "tree-30",
-   "kind": "tree",
-   "position": {
-    "x": 91,
-    "y": 73
-   }
-  },
-  {
-   "id": "streetlight-22",
-   "kind": "streetlight",
-   "position": {
-    "x": 91,
-    "y": 78
-   }
-  },
-  {
-   "id": "streetlight-23",
-   "kind": "streetlight",
-   "position": {
-    "x": 95,
-    "y": 126
+    "x": 52,
+    "y": 12
    }
   },
   {
    "id": "bin-17",
    "kind": "bin",
    "position": {
-    "x": 96,
-    "y": 25
-   }
-  },
-  {
-   "id": "streetlight-24",
-   "kind": "streetlight",
-   "position": {
-    "x": 97,
-    "y": 9
+    "x": 52,
+    "y": 19
    }
   },
   {
    "id": "bin-18",
    "kind": "bin",
    "position": {
-    "x": 97,
-    "y": 57
+    "x": 53,
+    "y": 25
    }
   },
   {
-   "id": "tree-31",
-   "kind": "tree",
+   "id": "shrub-20",
+   "kind": "shrub",
    "position": {
-    "x": 97,
-    "y": 83
+    "x": 53,
+    "y": 82
+   }
+  },
+  {
+   "id": "shrub-21",
+   "kind": "shrub",
+   "position": {
+    "x": 54,
+    "y": 93
    }
   },
   {
    "id": "bin-19",
    "kind": "bin",
    "position": {
-    "x": 102,
-    "y": 19
+    "x": 55,
+    "y": 22
    }
   },
   {
    "id": "bin-20",
    "kind": "bin",
    "position": {
-    "x": 102,
-    "y": 35
-   }
-  },
-  {
-   "id": "streetlight-25",
-   "kind": "streetlight",
-   "position": {
-    "x": 102,
-    "y": 71
-   }
-  },
-  {
-   "id": "streetlight-26",
-   "kind": "streetlight",
-   "position": {
-    "x": 102,
-    "y": 104
+    "x": 55,
+    "y": 68
    }
   },
   {
    "id": "bin-21",
    "kind": "bin",
    "position": {
-    "x": 102,
-    "y": 109
+    "x": 55,
+    "y": 77
    }
   },
   {
-   "id": "tree-32",
-   "kind": "tree",
-   "position": {
-    "x": 102,
-    "y": 113
-   }
-  },
-  {
-   "id": "tree-33",
-   "kind": "tree",
-   "position": {
-    "x": 103,
-    "y": 25
-   }
-  },
-  {
-   "id": "tree-34",
-   "kind": "tree",
-   "position": {
-    "x": 106,
-    "y": 49
-   }
-  },
-  {
-   "id": "tree-35",
-   "kind": "tree",
-   "position": {
-    "x": 107,
-    "y": 97
-   }
-  },
-  {
-   "id": "streetlight-27",
+   "id": "streetlight-3",
    "kind": "streetlight",
    "position": {
-    "x": 109,
-    "y": 121
-   }
-  },
-  {
-   "id": "tree-36",
-   "kind": "tree",
-   "position": {
-    "x": 110,
-    "y": 126
-   }
-  },
-  {
-   "id": "tree-37",
-   "kind": "tree",
-   "position": {
-    "x": 113,
-    "y": 30
-   }
-  },
-  {
-   "id": "tree-38",
-   "kind": "tree",
-   "position": {
-    "x": 115,
-    "y": 126
+    "x": 56,
+    "y": 58
    }
   },
   {
    "id": "bin-22",
    "kind": "bin",
    "position": {
-    "x": 116,
-    "y": 73
+    "x": 59,
+    "y": 12
    }
   },
   {
-   "id": "tree-39",
-   "kind": "tree",
+   "id": "bin-23",
+   "kind": "bin",
    "position": {
-    "x": 117,
-    "y": 25
-   }
-  },
-  {
-   "id": "streetlight-28",
-   "kind": "streetlight",
-   "position": {
-    "x": 118,
-    "y": 97
-   }
-  },
-  {
-   "id": "streetlight-29",
-   "kind": "streetlight",
-   "position": {
-    "x": 119,
-    "y": 102
-   }
-  },
-  {
-   "id": "tree-40",
-   "kind": "tree",
-   "position": {
-    "x": 121,
-    "y": 6
-   }
-  },
-  {
-   "id": "streetlight-30",
-   "kind": "streetlight",
-   "position": {
-    "x": 121,
-    "y": 32
-   }
-  },
-  {
-   "id": "tree-41",
-   "kind": "tree",
-   "position": {
-    "x": 121,
-    "y": 49
-   }
-  },
-  {
-   "id": "tree-42",
-   "kind": "tree",
-   "position": {
-    "x": 121,
-    "y": 59
-   }
-  },
-  {
-   "id": "streetlight-31",
-   "kind": "streetlight",
-   "position": {
-    "x": 121,
-    "y": 105
-   }
-  },
-  {
-   "id": "streetlight-32",
-   "kind": "streetlight",
-   "position": {
-    "x": 121,
-    "y": 111
-   }
-  },
-  {
-   "id": "tree-43",
-   "kind": "tree",
-   "position": {
-    "x": 126,
-    "y": 14
-   }
-  },
-  {
-   "id": "streetlight-33",
-   "kind": "streetlight",
-   "position": {
-    "x": 126,
+    "x": 59,
     "y": 24
    }
   },
   {
-   "id": "tree-44",
-   "kind": "tree",
+   "id": "bin-24",
+   "kind": "bin",
    "position": {
-    "x": 126,
+    "x": 59,
+    "y": 50
+   }
+  },
+  {
+   "id": "shrub-22",
+   "kind": "shrub",
+   "position": {
+    "x": 59,
+    "y": 72
+   }
+  },
+  {
+   "id": "bin-25",
+   "kind": "bin",
+   "position": {
+    "x": 60,
+    "y": 18
+   }
+  },
+  {
+   "id": "bin-26",
+   "kind": "bin",
+   "position": {
+    "x": 60,
+    "y": 45
+   }
+  },
+  {
+   "id": "bin-27",
+   "kind": "bin",
+   "position": {
+    "x": 61,
+    "y": 68
+   }
+  },
+  {
+   "id": "shrub-23",
+   "kind": "shrub",
+   "position": {
+    "x": 62,
+    "y": 22
+   }
+  },
+  {
+   "id": "bin-28",
+   "kind": "bin",
+   "position": {
+    "x": 62,
+    "y": 49
+   }
+  },
+  {
+   "id": "streetlight-4",
+   "kind": "streetlight",
+   "position": {
+    "x": 62,
+    "y": 58
+   }
+  },
+  {
+   "id": "shrub-24",
+   "kind": "shrub",
+   "position": {
+    "x": 62,
+    "y": 82
+   }
+  },
+  {
+   "id": "shrub-25",
+   "kind": "shrub",
+   "position": {
+    "x": 64,
+    "y": 93
+   }
+  },
+  {
+   "id": "bin-29",
+   "kind": "bin",
+   "position": {
+    "x": 66,
+    "y": 42
+   }
+  },
+  {
+   "id": "bin-30",
+   "kind": "bin",
+   "position": {
+    "x": 66,
+    "y": 48
+   }
+  },
+  {
+   "id": "bin-31",
+   "kind": "bin",
+   "position": {
+    "x": 68,
+    "y": 9
+   }
+  },
+  {
+   "id": "bin-32",
+   "kind": "bin",
+   "position": {
+    "x": 69,
+    "y": 39
+   }
+  },
+  {
+   "id": "shrub-26",
+   "kind": "shrub",
+   "position": {
+    "x": 71,
+    "y": 74
+   }
+  },
+  {
+   "id": "shrub-27",
+   "kind": "shrub",
+   "position": {
+    "x": 72,
+    "y": 70
+   }
+  },
+  {
+   "id": "bin-33",
+   "kind": "bin",
+   "position": {
+    "x": 73,
+    "y": 19
+   }
+  },
+  {
+   "id": "shrub-28",
+   "kind": "shrub",
+   "position": {
+    "x": 73,
+    "y": 104
+   }
+  },
+  {
+   "id": "shrub-29",
+   "kind": "shrub",
+   "position": {
+    "x": 76,
     "y": 32
    }
   },
   {
-   "id": "streetlight-34",
+   "id": "shrub-30",
+   "kind": "shrub",
+   "position": {
+    "x": 76,
+    "y": 48
+   }
+  },
+  {
+   "id": "streetlight-5",
    "kind": "streetlight",
    "position": {
-    "x": 126,
-    "y": 44
+    "x": 78,
+    "y": 53
    }
   },
   {
-   "id": "tree-45",
-   "kind": "tree",
+   "id": "bin-34",
+   "kind": "bin",
    "position": {
-    "x": 126,
-    "y": 55
+    "x": 80,
+    "y": 51
    }
   },
   {
-   "id": "streetlight-35",
+   "id": "bin-35",
+   "kind": "bin",
+   "position": {
+    "x": 83,
+    "y": 37
+   }
+  },
+  {
+   "id": "bin-36",
+   "kind": "bin",
+   "position": {
+    "x": 87,
+    "y": 48
+   }
+  },
+  {
+   "id": "streetlight-6",
    "kind": "streetlight",
    "position": {
-    "x": 126,
-    "y": 96
+    "x": 87,
+    "y": 53
    }
   },
   {
-   "id": "tree-46",
-   "kind": "tree",
+   "id": "bin-37",
+   "kind": "bin",
    "position": {
-    "x": 126,
-    "y": 111
+    "x": 88,
+    "y": 16
    }
   },
   {
-   "id": "tree-47",
-   "kind": "tree",
+   "id": "bin-38",
+   "kind": "bin",
    "position": {
-    "x": 126,
-    "y": 116
+    "x": 90,
+    "y": 13
+   }
+  },
+  {
+   "id": "bin-39",
+   "kind": "bin",
+   "position": {
+    "x": 90,
+    "y": 23
+   }
+  },
+  {
+   "id": "bin-40",
+   "kind": "bin",
+   "position": {
+    "x": 90,
+    "y": 42
+   }
+  },
+  {
+   "id": "shrub-31",
+   "kind": "shrub",
+   "position": {
+    "x": 92,
+    "y": 79
+   }
+  },
+  {
+   "id": "bin-41",
+   "kind": "bin",
+   "position": {
+    "x": 92,
+    "y": 95
+   }
+  },
+  {
+   "id": "shrub-32",
+   "kind": "shrub",
+   "position": {
+    "x": 93,
+    "y": 90
+   }
+  },
+  {
+   "id": "bin-42",
+   "kind": "bin",
+   "position": {
+    "x": 94,
+    "y": 15
+   }
+  },
+  {
+   "id": "bin-43",
+   "kind": "bin",
+   "position": {
+    "x": 95,
+    "y": 18
+   }
+  },
+  {
+   "id": "bin-44",
+   "kind": "bin",
+   "position": {
+    "x": 97,
+    "y": 47
+   }
+  },
+  {
+   "id": "bin-45",
+   "kind": "bin",
+   "position": {
+    "x": 100,
+    "y": 85
+   }
+  },
+  {
+   "id": "bin-46",
+   "kind": "bin",
+   "position": {
+    "x": 101,
+    "y": 30
+   }
+  },
+  {
+   "id": "bin-47",
+   "kind": "bin",
+   "position": {
+    "x": 102,
+    "y": 27
+   }
+  },
+  {
+   "id": "shrub-33",
+   "kind": "shrub",
+   "position": {
+    "x": 103,
+    "y": 67
+   }
+  },
+  {
+   "id": "bin-48",
+   "kind": "bin",
+   "position": {
+    "x": 104,
+    "y": 21
+   }
+  },
+  {
+   "id": "bin-49",
+   "kind": "bin",
+   "position": {
+    "x": 104,
+    "y": 49
+   }
+  },
+  {
+   "id": "streetlight-7",
+   "kind": "streetlight",
+   "position": {
+    "x": 105,
+    "y": 58
+   }
+  },
+  {
+   "id": "shrub-34",
+   "kind": "shrub",
+   "position": {
+    "x": 105,
+    "y": 75
+   }
+  },
+  {
+   "id": "shrub-35",
+   "kind": "shrub",
+   "position": {
+    "x": 110,
+    "y": 9
+   }
+  },
+  {
+   "id": "bin-50",
+   "kind": "bin",
+   "position": {
+    "x": 111,
+    "y": 12
+   }
+  },
+  {
+   "id": "bin-51",
+   "kind": "bin",
+   "position": {
+    "x": 111,
+    "y": 47
+   }
+  },
+  {
+   "id": "bin-52",
+   "kind": "bin",
+   "position": {
+    "x": 112,
+    "y": 72
+   }
+  },
+  {
+   "id": "bin-53",
+   "kind": "bin",
+   "position": {
+    "x": 113,
+    "y": 68
+   }
+  },
+  {
+   "id": "bin-54",
+   "kind": "bin",
+   "position": {
+    "x": 116,
+    "y": 16
+   }
+  },
+  {
+   "id": "shrub-36",
+   "kind": "shrub",
+   "position": {
+    "x": 116,
+    "y": 25
+   }
+  },
+  {
+   "id": "bin-55",
+   "kind": "bin",
+   "position": {
+    "x": 116,
+    "y": 98
+   }
+  },
+  {
+   "id": "bin-56",
+   "kind": "bin",
+   "position": {
+    "x": 117,
+    "y": 9
+   }
+  },
+  {
+   "id": "shrub-37",
+   "kind": "shrub",
+   "position": {
+    "x": 118,
+    "y": 46
+   }
+  },
+  {
+   "id": "shrub-38",
+   "kind": "shrub",
+   "position": {
+    "x": 118,
+    "y": 51
+   }
+  },
+  {
+   "id": "shrub-39",
+   "kind": "shrub",
+   "position": {
+    "x": 118,
+    "y": 75
+   }
+  },
+  {
+   "id": "shrub-40",
+   "kind": "shrub",
+   "position": {
+    "x": 119,
+    "y": 66
+   }
+  },
+  {
+   "id": "bin-57",
+   "kind": "bin",
+   "position": {
+    "x": 120,
+    "y": 98
+   }
+  },
+  {
+   "id": "bin-58",
+   "kind": "bin",
+   "position": {
+    "x": 122,
+    "y": 29
+   }
+  },
+  {
+   "id": "bin-59",
+   "kind": "bin",
+   "position": {
+    "x": 122,
+    "y": 33
+   }
+  },
+  {
+   "id": "shrub-41",
+   "kind": "shrub",
+   "position": {
+    "x": 122,
+    "y": 38
+   }
+  },
+  {
+   "id": "shrub-42",
+   "kind": "shrub",
+   "position": {
+    "x": 123,
+    "y": 76
+   }
+  },
+  {
+   "id": "shrub-43",
+   "kind": "shrub",
+   "position": {
+    "x": 125,
+    "y": 49
+   }
+  },
+  {
+   "id": "streetlight-8",
+   "kind": "streetlight",
+   "position": {
+    "x": 127,
+    "y": 58
+   }
+  },
+  {
+   "id": "bin-60",
+   "kind": "bin",
+   "position": {
+    "x": 129,
+    "y": 13
+   }
+  },
+  {
+   "id": "shrub-44",
+   "kind": "shrub",
+   "position": {
+    "x": 130,
+    "y": 18
+   }
+  },
+  {
+   "id": "bin-61",
+   "kind": "bin",
+   "position": {
+    "x": 132,
+    "y": 78
+   }
+  },
+  {
+   "id": "streetlight-9",
+   "kind": "streetlight",
+   "position": {
+    "x": 133,
+    "y": 58
+   }
+  },
+  {
+   "id": "bin-62",
+   "kind": "bin",
+   "position": {
+    "x": 136,
+    "y": 39
+   }
+  },
+  {
+   "id": "bin-63",
+   "kind": "bin",
+   "position": {
+    "x": 137,
+    "y": 104
+   }
+  },
+  {
+   "id": "shrub-45",
+   "kind": "shrub",
+   "position": {
+    "x": 139,
+    "y": 77
+   }
+  },
+  {
+   "id": "bin-64",
+   "kind": "bin",
+   "position": {
+    "x": 145,
+    "y": 95
+   }
+  },
+  {
+   "id": "bin-65",
+   "kind": "bin",
+   "position": {
+    "x": 147,
+    "y": 101
+   }
+  },
+  {
+   "id": "shrub-46",
+   "kind": "shrub",
+   "position": {
+    "x": 150,
+    "y": 80
+   }
+  },
+  {
+   "id": "streetlight-10",
+   "kind": "streetlight",
+   "position": {
+    "x": 155,
+    "y": 53
+   }
+  },
+  {
+   "id": "streetlight-11",
+   "kind": "streetlight",
+   "position": {
+    "x": 161,
+    "y": 58
+   }
+  },
+  {
+   "id": "streetlight-12",
+   "kind": "streetlight",
+   "position": {
+    "x": 166,
+    "y": 53
    }
   },
   {
@@ -3602,17 +4820,17 @@
    "kind": "wreck",
    "facing": "east-west",
    "position": {
-    "x": 69,
-    "y": 49
+    "x": 115,
+    "y": 58
    }
   },
   {
    "id": "wreck-2",
    "kind": "wreck",
-   "facing": "north-south",
+   "facing": "east-west",
    "position": {
-    "x": 54,
-    "y": 116
+    "x": 138,
+    "y": 53
    }
   },
   {
@@ -3620,17 +4838,8 @@
    "kind": "wreck",
    "facing": "east-west",
    "position": {
-    "x": 84,
-    "y": 49
-   }
-  },
-  {
-   "id": "wreck-4",
-   "kind": "wreck",
-   "facing": "north-south",
-   "position": {
-    "x": 49,
-    "y": 87
+    "x": 10,
+    "y": 58
    }
   }
  ]

@@ -180,6 +180,64 @@ until you choose to.
 
 ---
 
+## Theme H. Districts with character
+
+A district should be somewhere: its ground, its buildings and its clutter say what kind of place it is, and give the fight cover,
+heights and ways in. Most of the pieces below came from looking at screenshots of other games of this kind; they are inspiration,
+not copying, and the art stays our own. FreeSynd's own tile set (stairs in four directions, ground, road sides and curves,
+walls, hand-rails, roofs, pedestrian crossings, road marks) is the guide for what a map may hold.
+
+**Done so far**
+
+- **H1. Districts that differ (M). Done.** Eleven styles instead of one street grid: downtown, harbour, old town, industrial,
+  park, river, desert, high-rise, tundra, jungle and outskirts, each chosen for its territory (`tools/map_styles.py`,
+  `STYLE_OF` in `tools/generate_campaign.py`). A layout that wall-offs the exit is thrown away and laid out again.
+- **H2. Decent size (S). Done.** Districts are 128 to 176 tiles across (they were 96 to 128), growing with the campaign, with the
+  street grid and the amount of scenery scaled to match.
+- **H3. Ground that is not always road (S). Done.** Lawn, scrub, sand, snow, gravel, cobbled plaza, dock planks, mud and
+  hazard-striped paving, each with its own painted texture; plenty of open ground between the roads.
+- **H4. Steps and terraces (M). Done.** Raised paved terraces with a stone kerb round them and flights of steps up; four-sided
+  stepped ruins in the desert, temple platforms in the jungle, podiums in the high-rise districts, civic terraces in the old town.
+- **H5. Footpaths onto roofs (M). Done.** Houses and sheds with a walkable roof, railed with a kerb, reached by a ramp that climbs
+  two tiles to each level and has a kerb either side.
+- **H6. Roof dressing (S). Done.** Glass skylights in rows, vent domes, dome antennas on stalks, and roof gardens with shrubs.
+- **H7. Ways into buildings, first part (M). Done.** A recessed forecourt with hazard-striped paving cut into a facade, a door that
+  opens for anyone who walks up, and a small hall behind it; and painted double doors with a bracket lamp on plain facades.
+- **H8. Different architecture (M). Done.** Buildings that are an L, U, T, cross or H, a stepped tower, a podium with a tower on it,
+  or a ring round a courtyard, besides plain boxes; brick colours in the old town.
+- **H9. Pylons, piping and barrels (S). Done.** Lattice pylons beside roads and across scrub; runs of pipes on supports as low cover;
+  stacks of drums that burn, and shrubs; all sit in the scenery system so they take damage like a street light does.
+- **H10. Raised roadways and fencing (S). Done.** The outskirts style has the avenue on a raised roadway with mesh fencing down both
+  edges and a gap every so often to get off it; fenced yards and walled gardens elsewhere.
+
+**Still to do**
+
+- **H11. Real interiors (L, new).** Go through a door into rooms: the roof lifts away while the squad is inside, rooms hold
+  objectives and loot, and windows can be shot through. Needs a hidden-roof rule in the renderer and sight rules for rooms.
+  *Test:* a room's roof is hidden only while someone is inside; a shot through a window hits.
+- **H12. Working lights (M).** Wall and street lamps that can be shot out and leave a dark patch; lit windows that glow at night
+  (ties to D2). *Test:* a broken lamp stops lighting its patch.
+- **H13. More shapes and roofs (M).** Sloped and ribbed roofs, domes, brick courses and corner stones on walls, chimneys, loading
+  docks, balconies, awnings. *Test:* each shape draws without errors at every zoom.
+- **H14. Pillars under raised roads (S).** Support pillars where a roadway or walkway crosses, and a pedestrian crossing at each
+  road crossing (FreeSynd has both). *Test:* pillars block walking but not sight.
+- **H15. Pipes that matter (M).** Elbows, pipes that cross a walkway on a bridge, steam vents that hurt, and a pipe that bursts
+  when shot. *Test:* a burst pipe damages whoever stands in its steam.
+- **H16. More clutter (S).** Crates, pallets and container stacks, with barrels that explode (*check FreeSynd* for how). *Test:*
+  an exploding barrel hurts everyone within its radius once.
+- **H17. More gardens (S).** Planters, flower beds, hedges as low cover, different trees by region.
+- **H18. Sunken ground (M).** Trenches and sunken yards with pipes along them, reached by steps down; a unit in a trench is hidden
+  from level ground beyond a few tiles. *Test:* sight into and out of a trench follows the stated rule.
+- **H19. A police car that looks like one (S).** A dark hull, a red and blue light cluster that flashes, and a row of white lamps
+  across the front (the reference the owner supplied is a dark, blunt hover-car with exactly that). *Test:* the police car draws
+  in each of its facings with the lights flashing.
+- **H20. Fire that spreads across roofs (M).** Flames that run along a roof and leave smoke columns, as burning does on the street
+  today. *Test:* fire spreads a tile at a time at the stated rate and stops at a gap.
+- **H21. Clicking on raised ground (S).** Terraces and roofs sit up to three levels above the street; a click on them should land
+  on the tile you see, not the one under it. *Test:* a click on a roof tile selects that tile.
+- **H22. Per-territory themes (M).** A style is chosen for each territory today; give a territory its own palette and landmarks
+  (a named tower, a famous bridge) so no two feel alike even in the same style.
+
 ## A sensible order
 
 1. **Quick wins that change the feel:** C2 stances, F1 hit feedback, F2 directional audio, B2 side objectives, B3 timed events, B5 the tutorial.
