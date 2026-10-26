@@ -61,6 +61,9 @@ Two to four players, one operation, a squad each.
   shared. Rewards go to each player's own campaign.
 - **Feel:** your own agents respond instantly (predicted in your browser); everyone else's are smoothed between updates. Combat
   results always come from the server.
+  **Done for movement:** a move order is carried out on the page at once and your agents are shown moving on by the game's own movement
+  rules between reports (`web/src/predict.js`), pulled back smoothly to the server's word; others are shown a few steps in the past.
+  Not predicted: shooting, items, and following or chasing orders (those still wait for the server).
 - **Reconnects and drop-outs:** a dropped player rejoins the same game; while away an AI holds their agents. If everyone drops, the
   room keeps for a few minutes.
 - **Co-op operations:** the existing operations scaled to more agents, and a few built for it (a split objective that needs two

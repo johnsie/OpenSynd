@@ -4,10 +4,12 @@
 // updates drive it: where people are, what they carry, what is done. This module keeps that going: it applies updates to the page's
 // state (smoothing movement), plays the server's news (lines, sounds, effects) through the same hooks the local game uses, and
 // sends the player's orders to the server. It touches no page elements; the page hands it what it needs.
+import { applyCommand } from "./core/apply.js";
 import { silentHooks } from "./core/hooks.js";
 import { applyServerMessage, equipmentLookup } from "./core/sync.js";
 import { syncWorldGates } from "./core/step.js";
 import { OnlineClient, createSmoother } from "./online.js";
+import { createPredictor } from "./predict.js";
 
 export function createOnlinePlay({
   state,
@@ -18,6 +20,8 @@ export function createOnlinePlay({
 }) {
   const lookup = equipmentLookup(equipment);
   const smoother = createSmoother();
+  const predictor = createPredictor();
+  let lastFrameAt = null;
   let client = null;
   let attached = false;
   let pending = [];
@@ -41,6 +45,7 @@ export function createOnlinePlay({
   // The server sends a few steps' news at once. Events carry the step they happened in and are played when the people, who are shown a
   // little in the past (see createSmoother), have got to that step: a burst of shots is seen and heard as a burst, in step with them.
   const timers = new Set();
+  const ownIds = () => state.online?.squad ?? [];
   function playSpaced(events) {
     const early = [];
     for (const event of events ?? []) {
@@ -62,6 +67,12 @@ export function createOnlinePlay({
     if (message.t === "update") {
       const began = now();
       applyServerMessage(state, message, lookup, { smoother, now: began });
+      // Orders the server has now answered stop being guesses; the agents it reported are where it says, and are moved on from there.
+      predictor.answered((message.acks ?? []).map((ack) => ack.seq));
+      for (const change of message.units) {
+        const unit = state.units.find((item) => item.id === change.id);
+        if (unit && change.set?.position && ownIds().includes(unit.id)) predictor.report(unit, message.step);
+      }
       syncWorldGates(state, silentHooks()); // doors and gates follow from who stands where
       const applied = now();
       playSpaced(message.events);
@@ -134,6 +145,7 @@ export function createOnlinePlay({
         attached = false;
         pending = [];
         smoother.clear();
+        predictor.clear();
         if (asked) asked = false;
         else emit("start", message);
       });
@@ -175,11 +187,31 @@ export function createOnlinePlay({
     },
 
     /** Give the server an order for the player's agents. */
-    give: (command) => client.command(command),
+    give(command) {
+      const seq = client.command(command);
+      // A move is carried out on the page's own copy at once, so the agents set off without waiting for the server to answer: it is
+      // shown (see predictor) until the server says what really happened.
+      const step = smoother.currentStep(now());
+      if (command.type === "move" && step !== null && Number.isInteger(seq)) {
+        const own = ownIds();
+        const result = applyCommand(state, silentHooks(), command, { owns: (id) => own.includes(id) });
+        if (result.ok && result.moved !== false) {
+          for (const id of command.unitIds) {
+            const unit = state.units.find((item) => item.id === id);
+            if (unit) predictor.order(unit, step, seq);
+          }
+        }
+      }
+      return seq;
+    },
 
     /** Called every drawn frame: people walk between the server's updates, and a held weapon is kept firing at the server. */
     frame(unitIds, holdFire) {
-      smoother.show(state.units, now());
+      const current = now();
+      smoother.show(state.units, current);
+      const step = smoother.currentStep(current);
+      if (step !== null) predictor.show(state.units, ownIds(), step, lastFrameAt === null ? 0 : (current - lastFrameAt) / 1000);
+      lastFrameAt = current;
       const wanted = holdFire && unitIds.length > 0 ? `${holdFire.x.toFixed(1)},${holdFire.y.toFixed(1)}|${unitIds.join()}` : "";
       // Where the weapon points is told to the server at most twenty times a second; letting go is told at once.
       if (wanted !== holdFireSent && (wanted === "" || now() - holdFireAt >= 50)) {
@@ -206,6 +238,7 @@ export function createOnlinePlay({
       pending = [];
       holdFireSent = "";
       smoother.clear();
+      predictor.clear();
       client?.disconnect();
     },
   };

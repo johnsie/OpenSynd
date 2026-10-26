@@ -293,6 +293,11 @@ export function createSmoother({ delaySteps = 4, updateSteps = 3, snapDistance =
       tracks.set(unit.id, reports);
     },
 
+    /** The game step the server is at now, as far as the updates tell (no stepping back): for showing what is not yet reported. */
+    currentStep(now) {
+      return offsets.length === 0 ? null : (now - Math.min(...offsets)) / STEP_MS;
+    },
+
     /** The game step being shown at `now`. */
     shownStep(now) {
       return offsets.length === 0 ? null : (now - Math.min(...offsets)) / STEP_MS - delaySteps;

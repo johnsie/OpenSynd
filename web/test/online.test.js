@@ -214,6 +214,35 @@ test("the page's online play builds the operation, follows the server, plays its
   });
 });
 
+test("your own agents set off at once when ordered to move, without waiting for the server", async () => {
+  await withServer(async ({ server, advance, address }) => {
+    const state = {};
+    const clock = { t: 0 };
+    const play = createOnlinePlay({ state, hooks: recordingHooks(), equipment: content.equipment, now: () => clock.t });
+    play.configure({ server: `http://${address}`, content: server.content.hash, token: null });
+    const start = await play.start("solo");
+    Object.assign(state, makeWorld(content, start.mission, { seed: start.seed }));
+    applyServerMessage(state, start, lookup);
+    state.online = { squad: start.squad };
+    play.attach();
+    advance(1000); // some updates, so the page knows where the server's clock is
+    await waitFor(() => state.steps >= 20);
+    play.frame(start.squad, null);
+    const lead = state.units.find((unit) => unit.id === start.squad[0]);
+    const room = server.rooms.get(start.room);
+    const from = { x: Math.round(lead.position.x), y: Math.round(lead.position.y) };
+    const target = [...Array(13).keys()]
+      .flatMap((dx) => [...Array(13).keys()].map((dy) => ({ x: from.x + dx - 6, y: from.y + dy - 6 })))
+      .find((tile) => Math.hypot(tile.x - from.x, tile.y - from.y) >= 5 && findPath(room.world.grid, from, tile).length > 0);
+    const before = { ...lead.position };
+    play.give(commands.move([lead.id], target));
+    clock.t += 300; // a third of a second of the page's time, and no news from the server at all
+    play.frame(start.squad, null);
+    assert.ok(Math.hypot(lead.position.x - before.x, lead.position.y - before.y) > 0.25, "already on its way");
+    play.stop();
+  });
+});
+
 test("updates that arrive before the page has built the operation are kept and applied in order", async () => {
   await withServer(async ({ server, advance, address }) => {
     const state = {};
