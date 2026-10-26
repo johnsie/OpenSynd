@@ -29,7 +29,7 @@ The server needs Node.js 22 or newer and nothing else (no packages: it uses Node
 cd freesynd/web
 node build.mjs                      # the site, with the content the server must also have
 OPENSYND_SERVER=https://play.example.org node build.mjs     # build the site so it offers online play on that server
-PORT=8787 HOST=0.0.0.0 DATABASE=/var/lib/opensynd/opensynd.sqlite ORIGINS=https://example.org node server/main.js
+PORT=8791 HOST=0.0.0.0 DATABASE=/var/lib/opensynd/opensynd.sqlite ORIGINS=https://example.org node server/main.js
 ```
 
 - Put it behind HTTPS (a reverse proxy that passes WebSocket upgrades on `/ws` and plain requests on `/api/`).

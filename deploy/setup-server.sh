@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: GPL-2.0-or-later
 #
 # Once only, as root: set up the game server as a service. It runs as its own user, keeps its database in /var/lib/opensynd, listens
-# on 127.0.0.1:8787 (Apache passes /api and /ws to it, see deploy/apache/) and is restarted by deploy/deploy-server.sh. Safe to run again.
+# on 127.0.0.1:8791 (Apache passes /api and /ws to it, see deploy/apache/) and is restarted by deploy/deploy-server.sh. Safe to run again.
 # Usage: sudo sh deploy/setup-server.sh   (RUNNER_USER=gitlab-runner is allowed to restart it)
 set -eu
 RUNNER_USER=${RUNNER_USER:-gitlab-runner}
@@ -14,7 +14,7 @@ chown "$RUNNER_USER" /opt/opensynd
 chown opensynd /var/lib/opensynd
 if [ ! -f /etc/opensynd.env ]; then
   {
-    echo "PORT=8787"
+    echo "PORT=8791"
     echo "HOST=127.0.0.1"
     echo "DATABASE=/var/lib/opensynd/opensynd.sqlite"
     echo "ORIGINS=https://opensynd.outiva.com"
