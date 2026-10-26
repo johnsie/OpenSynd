@@ -2,6 +2,7 @@
 
 // Time passing in an operation: the fixed step the whole game runs on. Everything that happens between two orders happens here.
 import { useStreams } from "../simulation.js";
+import { missionOutcome } from "../mission.js";
 import { advanceWorld } from "./step.js";
 import { boardWaitingOperators, fireByHand, operatorsOf, runPendingOrders } from "./orders.js";
 import { syncWorldGates } from "./step.js";
@@ -24,5 +25,16 @@ export function stepWorld(world, deltaSeconds, hooks, chance = () => world.strea
     boardWaitingOperators(world, hooks);
     runPendingOrders(world, hooks);
     if (world.map.objects?.some((gate) => gate.key || gate.kind === "door")) syncWorldGates(world, hooks);
+  }
+  // A world that decides for itself when it is won or lost (a server's) does so here. The browser decides in its own way, since
+  // winning also changes the campaign, so it leaves this off.
+  if (world.options?.decidesOutcome && world.outcome === "active") {
+    const outcome = missionOutcome(world.objectives, world.units);
+    if (outcome !== "active") {
+      world.outcome = outcome;
+      world.opStats.outcome = outcome;
+      world.opStats.seconds = world.missionSeconds;
+      hooks.changed();
+    }
   }
 }

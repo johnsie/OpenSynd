@@ -18,16 +18,18 @@ const run = (args, options = {}) =>
     child.on("exit", (code) => done({ code, errors, args }));
   });
 
-// Every .js file under src/, folders included (the game core lives in src/core/).
-const sourceFiles = (folder) =>
-  readdirSync(join(root, "src", folder), { withFileTypes: true }).flatMap((entry) =>
-    entry.isDirectory() ? sourceFiles(join(folder, entry.name)) : entry.name.endsWith(".js") ? [join(folder, entry.name)] : [],
+// Every .js file under src/ and server/, folders included (the game core lives in src/core).
+const sourceFiles = (top, folder = "") =>
+  readdirSync(join(root, top, folder), { withFileTypes: true }).flatMap((entry) =>
+    entry.isDirectory()
+      ? sourceFiles(top, join(folder, entry.name))
+      : entry.name.endsWith(".js") ? [join(top, folder, entry.name)] : [],
   );
-const files = sourceFiles("").sort();
+const files = [...sourceFiles("src"), ...sourceFiles("server")].sort();
 const tests = readdirSync(join(root, "test")).filter((name) => name.endsWith(".test.js")).sort();
 const [unit, ...checks] = await Promise.all([
   run(["--test", ...tests.map((name) => join("test", name))]),
-  ...files.map((name) => run(["--check", join("src", name)], { quiet: true })),
+  ...files.map((name) => run(["--check", name], { quiet: true })),
 ]);
 const broken = checks.filter((check) => check.code !== 0);
 for (const check of broken) console.error(`syntax: ${check.args.at(-1)}\n${check.errors}`);

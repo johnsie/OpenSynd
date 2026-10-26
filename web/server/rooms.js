@@ -1,0 +1,147 @@
+// SPDX-License-Identifier: GPL-2.0-or-later
+
+// A room is one operation being played on the server. The server runs the world; each player sends commands for the agents they
+// control, and is sent what changes. Nothing a player's browser says is trusted beyond the commands, and each one is checked
+// like any other (see core/apply.js). The whole operation is recorded, so it can be played back to check a result.
+import { emptyCampaign } from "../src/campaign.js";
+import { applyCommand } from "../src/core/apply.js";
+import { recordingHooks } from "../src/core/hooks.js";
+import { startRecording, stateHash, stepRecorded } from "../src/core/replay.js";
+import { changedUnits, packWorld } from "../src/core/sync.js";
+import { FIXED_STEP_SECONDS } from "../src/simulation.js";
+import { makeWorld } from "./content.js";
+
+export const STEPS_PER_SECOND = Math.round(1 / FIXED_STEP_SECONDS);
+export const UPDATE_EVERY_STEPS = 3; // ten updates a second
+export const MAX_COMMANDS_PER_STEP = 8; // more than a person could give; the rest wait for the next step
+export const MAX_QUEUED_COMMANDS = 64;
+export const MAX_OPERATION_SECONDS = 20 * 60;
+
+/** Ask for events a player should hear (messages, sounds, effects) from a recording of a step. */
+const forPlayers = (events) => events.filter((event) => event.type !== "changed" && event.type !== "selectionChanged");
+
+export class Room {
+  /**
+   * `content` is the loaded pack; `mission` the path of the operation; `seed` starts its streams of chance. Players are added with
+   * addPlayer. Nothing runs on its own: tick() is called by whoever owns the clock (a timer on the server, a loop in a test).
+   */
+  constructor({ id, content, mission, variant = null, seed = 1, campaign = emptyCampaign(), options = { decidesOutcome: true } }) {
+    this.id = id;
+    this.content = content;
+    this.mission = mission;
+    this.variant = variant;
+    this.seed = seed;
+    this.campaign = campaign;
+    this.world = makeWorld(content, mission, { campaign, seed, options });
+    this.recording = startRecording({ mission, variant, seed, content: content.hash ?? null });
+    this.players = new Map();
+    this.stepHooks = recordingHooks();
+    this.finished = false;
+    this.result = null;
+  }
+
+  get squad() {
+    return this.world.units.filter((unit) => unit.side === "team").map((unit) => unit.id);
+  }
+
+  /**
+   * A player joins and controls these agents (all four if the squad is not shared out). `send(message)` is how they are told
+   * things. Returns the player, with the `start` message already sent.
+   */
+  addPlayer(id, { send, unitIds = this.squad, name = id }) {
+    const player = { id, name, send, unitIds, known: new Map(), queue: [], acks: [], feedback: recordingHooks(), lastSeq: -1 };
+    this.players.set(id, player);
+    this.sendStart(player);
+    return player;
+  }
+
+  /** Tell a player an operation has begun: how to build it, and everything about it as it stands. */
+  sendStart(player) {
+    player.known = new Map();
+    player.send({
+      t: "start",
+      room: this.id,
+      mission: this.mission,
+      variant: this.variant,
+      seed: this.seed,
+      squad: player.unitIds,
+      step: this.world.steps,
+      world: packWorld(this.world),
+      units: changedUnits(this.world, player.known),
+    });
+  }
+
+  removePlayer(id) {
+    this.players.delete(id);
+  }
+
+  /** A command from a player: queued for the next step, or refused at once if it is nonsense or the queue is full. */
+  receive(playerId, seq, command) {
+    const player = this.players.get(playerId);
+    if (!player || this.finished) return { ok: false, error: "not in this operation" };
+    if (!Number.isInteger(seq) || seq <= player.lastSeq) return { ok: false, error: "out of order" };
+    if (player.queue.length >= MAX_QUEUED_COMMANDS) return { ok: false, error: "too many orders at once" };
+    player.lastSeq = seq;
+    player.queue.push({ seq, command });
+    return { ok: true };
+  }
+
+  /** One fixed step: the queued commands are carried out, the world moves on, and every few steps the players are sent what changed. */
+  tick() {
+    if (this.finished) return;
+    for (const player of this.players.values()) this.runCommands(player);
+    this.stepHooks.events.length = 0;
+    stepRecorded(this.world, this.stepHooks, this.recording);
+    const events = forPlayers(this.stepHooks.events);
+    if (this.world.steps % UPDATE_EVERY_STEPS === 0 || this.world.outcome !== "active") this.sendUpdates(events);
+    if (this.world.outcome !== "active" || this.world.steps >= MAX_OPERATION_SECONDS * STEPS_PER_SECOND) this.finish();
+  }
+
+  runCommands(player) {
+    let carried = 0;
+    while (player.queue.length > 0 && carried < MAX_COMMANDS_PER_STEP) {
+      const { seq, command } = player.queue.shift();
+      carried += 1;
+      player.feedback.events.length = 0;
+      this.recording.commands.push({ step: this.world.steps, command: JSON.parse(JSON.stringify(command)), player: player.id });
+      const result = applyCommand(this.world, player.feedback, command, { owns: (unitId) => player.unitIds.includes(unitId) });
+      player.acks.push({ seq, ok: result.ok, ...(result.ok ? {} : { error: result.error }) });
+      // What the order did is told to whoever gave it; the world's own news goes to everyone, in the update.
+      const own = forPlayers(player.feedback.events);
+      if (own.length > 0) player.send({ t: "feedback", events: own });
+    }
+  }
+
+  sendUpdates(events) {
+    const world = packWorld(this.world);
+    for (const player of this.players.values()) {
+      player.send({
+        t: "update",
+        step: this.world.steps,
+        world,
+        units: changedUnits(this.world, player.known),
+        events,
+        acks: player.acks.splice(0),
+      });
+    }
+  }
+
+  /** The operation is over: it is recorded as it stands and the players are told how it went. */
+  finish() {
+    if (this.finished) return;
+    this.finished = true;
+    this.result = {
+      outcome: this.world.outcome === "active" ? "timeout" : this.world.outcome,
+      steps: this.world.steps,
+      hash: stateHash(this.world),
+      stats: this.world.opStats,
+      debrief: this.world.debrief,
+    };
+    for (const player of this.players.values()) player.send({ t: "end", ...this.result });
+  }
+
+  /** The recording, with what is needed to play it back and check the result. */
+  toRecording() {
+    return { ...this.recording, result: this.result };
+  }
+}

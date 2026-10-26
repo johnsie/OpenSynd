@@ -136,3 +136,77 @@ test("the rules report what happens through hooks: messages, sounds and effects"
   assert.ok(kinds.has("message") && kinds.has("sound"), "a weapon taken out is announced and heard");
   assert.equal(world.units.find((unit) => unit.id === squad[0]).activeSlot, 0);
 });
+
+// ---- Sending a world to another copy of it
+
+import { applyUnit, applyWorld, changedUnits, equipmentLookup, packUnit, packWorld } from "../src/core/sync.js";
+
+test("a world sent to a fresh copy of the same operation leaves the copy in the very same state", () => {
+  const { world } = play(31, true);
+  const copy = makeWorld(content, MISSION, { seed: 31 });
+  assert.notEqual(stateHash(copy), stateHash(world));
+  const lookup = equipmentLookup(content.equipment);
+  applyWorld(copy, JSON.parse(JSON.stringify(packWorld(world))), lookup);
+  for (const unit of world.units) applyUnit(copy.units.find((other) => other.id === unit.id), packUnit(unit), lookup);
+  assert.equal(stateHash(copy), stateHash(world));
+  // What the copy keeps for itself is still there and still whole.
+  const walker = copy.units.find((unit) => unit.patrol);
+  assert.ok(walker.patrol.route.length > 0, "its own long routes were not thrown away");
+  assert.ok(walker.definition?.name);
+  assert.equal(copy.units.find((unit) => unit.id === ids(world)[0]).equipment[0].definition.id, world.units[0].equipment[0].definition.id);
+});
+
+test("only what changed is sent again, a person's far-off route is not, and a whole update stays small", () => {
+  const world = makeWorld(content, MISSION);
+  const known = new Map();
+  const hooks = silentHooks();
+  const first = changedUnits(world, known);
+  assert.equal(first.length, world.units.length, "everyone the first time");
+  const size = (changes) => JSON.stringify(changes).length;
+  assert.equal(changedUnits(world, known).length, 0, "nobody if nothing moved");
+  applyCommand(world, hooks, commands.move([world.units[0].id], openTileFrom(world, world.units[0])));
+  for (let step = 0; step < 2; step += 1) stepWorld(world, FIXED_STEP_SECONDS, hooks);
+  const started = changedUnits(world, known);
+  assert.ok(started.length >= 1);
+  const mover = started.find((change) => change.id === world.units[0].id);
+  assert.ok(mover.set.path.length > 1, "the squad's own route goes whole");
+  for (let step = 0; step < 2; step += 1) stepWorld(world, FIXED_STEP_SECONDS, hooks);
+  const second = changedUnits(world, known);
+  const walking = second.find((change) => change.id === world.units[0].id);
+  assert.ok(Object.keys(walking.set).length <= 3, `once under way a walking person sends a few fields: ${Object.keys(walking.set)}`);
+  const walker = world.units.find((unit) => unit.side !== "team" && unit.path.length > 3 && !unit.vehicle);
+  const walkerChange = second.find((change) => change.id === walker?.id);
+  if (walkerChange?.set.path) {
+    assert.deepEqual(Object.keys(walkerChange.set.path).sort(), ["left", "next"], "someone else's route is just the next step");
+  }
+  assert.ok(size(second) < 12_000, `a two-step update of ${world.units.length} people is ${size(second)} bytes`);
+  assert.ok(size(first) < 400_000, `a full snapshot is ${size(first)} bytes`);
+});
+
+test("changes sent as fields bring a fresh copy up to date, step after step", () => {
+  const world = makeWorld(content, MISSION, { seed: 41 });
+  const copy = makeWorld(content, MISSION, { seed: 41 });
+  const lookup = equipmentLookup(content.equipment);
+  const known = new Map();
+  const hooks = silentHooks();
+  const squad = ids(world);
+  const send = () => {
+    for (const change of changedUnits(world, known)) {
+      applyUnit(copy.units.find((unit) => unit.id === change.id), JSON.parse(JSON.stringify(change.set)), lookup, change.remove ?? []);
+    }
+    applyWorld(copy, JSON.parse(JSON.stringify(packWorld(world))), lookup);
+  };
+  send();
+  applyCommand(world, hooks, commands.move(squad, openTileFrom(world, world.units[0], 7)));
+  for (let step = 0; step < seconds(10); step += 1) {
+    stepWorld(world, FIXED_STEP_SECONDS, hooks);
+    if (step % 3 === 0) send();
+  }
+  send();
+  for (const unit of world.units.filter((item) => item.side === "team")) {
+    const other = copy.units.find((item) => item.id === unit.id);
+    assert.deepEqual(other.position, unit.position, `${unit.id} is where the server has them`);
+    assert.equal(other.health, unit.health);
+  }
+  assert.equal(stateHash(copy), stateHash(world));
+});
