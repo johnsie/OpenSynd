@@ -167,12 +167,12 @@ export function changedUnits(world, known) {
  * their new places; leave it out for the first message.
  */
 export function applyServerMessage(world, message, lookup, { smoother = null, now = 0 } = {}) {
+  if (smoother && Number.isInteger(message.step)) smoother.arrived(message.step, now);
   for (const change of message.units) {
     const unit = world.units.find((item) => item.id === change.id);
     if (!unit) continue;
-    const shown = { ...unit.position };
     applyUnit(unit, change.set ?? change, lookup, change.remove ?? []);
-    if (smoother && change.set?.position) smoother.observe(unit, shown, now);
+    if (smoother && change.set?.position) smoother.observe(unit, message.step);
   }
   applyWorld(world, message.world, lookup);
 }

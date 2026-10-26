@@ -38,16 +38,13 @@ export function createOnlinePlay({
     }
   }
 
-  // The server sends a few steps' news at once, and people are shown walking from the last update's place to this one's over about that
-  // long. Events carry the step they happened in and are played when the walking has got there, so a burst of shots is seen and heard
-  // as a burst, in step with the people, and not all at the start of the update.
-  const STEP_MS = 1000 / 30;
-  const UPDATE_STEPS = 3; // the server's UPDATE_EVERY_STEPS (server/rooms.js)
+  // The server sends a few steps' news at once. Events carry the step they happened in and are played when the people, who are shown a
+  // little in the past (see createSmoother), have got to that step: a burst of shots is seen and heard as a burst, in step with them.
   const timers = new Set();
-  function playSpaced(events, updateStep) {
+  function playSpaced(events) {
     const early = [];
     for (const event of events ?? []) {
-      const delay = Number.isInteger(event.step) ? Math.max(0, (event.step - (updateStep - UPDATE_STEPS)) * STEP_MS) : 0;
+      const delay = Number.isInteger(event.step) ? smoother.delayFor(event.step, now()) : 0;
       if (delay < 1) {
         early.push(event);
         continue;
@@ -67,7 +64,7 @@ export function createOnlinePlay({
       applyServerMessage(state, message, lookup, { smoother, now: began });
       syncWorldGates(state, silentHooks()); // doors and gates follow from who stands where
       const applied = now();
-      playSpaced(message.events, message.step);
+      playSpaced(message.events);
       hooks.changed();
       emit("news", message);
       const cost = now() - began;

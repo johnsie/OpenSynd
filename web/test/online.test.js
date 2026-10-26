@@ -101,33 +101,67 @@ test("a client plays an operation on the server and its copy stays in step with 
   });
 });
 
-test("the smoother walks people between updates and does not drag them across the map", () => {
-  const smoother = createSmoother({ interval: 100 });
-  const unit = { id: "u", position: { x: 5, y: 5 } };
-  unit.position = { x: 6, y: 5 }; // the server's news
-  smoother.observe(unit, { x: 5, y: 5 }, 1000);
-  assert.deepEqual(unit.position, { x: 5, y: 5 }, "still where it was shown");
-  smoother.show([unit], 1050);
-  assert.deepEqual(unit.position, { x: 5.5, y: 5 }, "halfway there halfway through");
-  smoother.show([unit], 1200);
-  assert.deepEqual(unit.position, { x: 6, y: 5 }, "arrived");
-  const jumper = { id: "j", position: { x: 40, y: 5 } };
-  smoother.observe(jumper, { x: 5, y: 5 }, 2000);
-  assert.deepEqual(jumper.position, { x: 40, y: 5 }, "a long way at once is shown at once");
+const STEP = 1000 / 30;
+
+// Updates reach the page `late` ms behind the game's clock; `at(ms)` is what the smoother shows for the unit at that moment.
+function feed(smoother, reports, lateFor = () => 0) {
+  const unit = { id: "u", position: { x: 0, y: 0 } };
+  for (const { step, x } of reports) {
+    unit.position = { x, y: 0 };
+    smoother.arrived(step, step * STEP + lateFor(step));
+    smoother.observe(unit, step);
+  }
+  return (ms) => {
+    smoother.show([unit], ms);
+    return unit.position.x;
+  };
+}
+
+test("people are shown a little in the past, moving at a steady pace between the two reports around that moment", () => {
+  const smoother = createSmoother({ delaySteps: 4 });
+  // A walker at one tile every three steps (a report every three steps).
+  const at = feed(smoother, [3, 6, 9, 12, 15].map((step) => ({ step, x: step / 3 })));
+  // At game step 15 the page shows step 11: between the reports for 9 and 12.
+  assert.ok(Math.abs(at(15 * STEP) - 11 / 3) < 1e-9, "a third of the way from 3 to 4 tiles... at step 11");
+  // A bit later, still moving at the same pace, with no pause between reports.
+  assert.ok(Math.abs(at(16 * STEP) - 12 / 3) < 1e-9);
+  assert.ok(Math.abs(at(15.5 * STEP) - 11.5 / 3) < 1e-9);
 });
 
-test("the smoother takes as long as updates have been taking, so people do not stop between slower ones", () => {
-  const smoother = createSmoother({ interval: 100 });
-  const unit = { id: "u", position: { x: 0, y: 0 } };
-  let shown = { x: 0, y: 0 };
-  // Updates arrive every 130 ms: after a few, a person is still moving 120 ms into the next one.
-  for (let step = 1; step <= 8; step += 1) {
-    unit.position = { x: step, y: 0 };
-    smoother.observe(unit, shown, step * 130);
-    smoother.show([unit], step * 130 + 120);
-    shown = { ...unit.position };
-  }
-  assert.ok(unit.position.x < 8 && unit.position.x > 7.5, `still on the way at 120 ms of 130: ${unit.position.x}`);
+test("a late update does not make people stop and then rush: they keep walking at the same pace", () => {
+  const smoother = createSmoother({ delaySteps: 4 });
+  // The report for step 12 arrives 80 ms (2.4 steps) late; the others on time.
+  const at = feed(smoother, [3, 6, 9, 12].map((step) => ({ step, x: step / 3 })), (step) => (step === 12 ? 80 : 0));
+  const speeds = [];
+  for (let ms = 13 * STEP; ms < 15 * STEP; ms += STEP) speeds.push(at(ms + STEP) - at(ms));
+  for (const speed of speeds) assert.ok(Math.abs(speed - 1 / 3) < 1e-9, `steady pace, got ${speed}`);
+});
+
+test("someone who stood still then set off does not drift across the time they stood, and a long jump is not dragged", () => {
+  const smoother = createSmoother({ delaySteps: 4 });
+  const unit = { id: "u", position: { x: 5, y: 0 } };
+  smoother.arrived(3, 3 * STEP);
+  smoother.observe(unit, 3);
+  unit.position = { x: 6, y: 0 }; // 90 steps later, the first report of them moving again
+  smoother.arrived(93, 93 * STEP);
+  smoother.observe(unit, 93);
+  smoother.show([unit], 50 * STEP); // while they were still
+  assert.equal(unit.position.x, 5);
+  const jumper = { id: "j", position: { x: 5, y: 0 } };
+  smoother.observe(jumper, 90);
+  jumper.position = { x: 40, y: 0 };
+  smoother.observe(jumper, 93);
+  smoother.show([jumper], 93 * STEP + 4 * STEP); // the moment reaches step 93
+  assert.equal(jumper.position.x, 40);
+  smoother.show([jumper], 91 * STEP + 4 * STEP);
+  assert.equal(jumper.position.x, 5, "not dragged across");
+});
+
+test("what happened at a step is shown when the people have got to it", () => {
+  const smoother = createSmoother({ delaySteps: 4 });
+  smoother.arrived(30, 30 * STEP + 10);
+  assert.ok(Math.abs(smoother.delayFor(30, 30 * STEP + 10) - 4 * STEP) < 1e-6, "four steps after it was sent");
+  assert.equal(smoother.delayFor(20, 30 * STEP + 10), 0, "already past");
 });
 
 // ---- The page's side of playing online (src/online-play.js), with a plain object standing in for the page's state

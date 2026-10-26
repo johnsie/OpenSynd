@@ -258,47 +258,82 @@ export class OnlineClient {
   }
 }
 
+export const STEP_MS = 1000 / 30; // the game's fixed step
+
 /**
- * Smooths what the server sends. Updates arrive about ten times a second, so people would jump a little each time; instead each one
- * walks from where it is shown to where the server says it is, taking as long as updates have been taking to arrive (measured, so a
- * server or connection that is a little slower does not leave everyone standing still between updates). `show(units, now)` sets their
- * positions for drawing. A person who has moved a long way at once (out of a car, say) is shown there straight away.
+ * Shows people moving smoothly from what the server sends. Updates arrive about ten times a second and not quite evenly, so instead of
+ * walking people towards the newest position (which makes them stop when an update is late and rush when it comes) everybody is shown
+ * a little in the past: the page works out which game step the server is at now, steps back `delaySteps`, and draws each person
+ * between the two reports either side of that moment, at a steady pace. A report that arrives a bit late is still in time.
+ * A person who has moved a long way at once (out of a car, say) is shown there as soon as the moment reaches the report.
  */
-export function createSmoother({ interval = 100, snapDistance = 3, shortest = 80, longest = 300 } = {}) {
-  const tracks = new Map();
-  let batchAt = null;
-  let typical = interval;
+export function createSmoother({ delaySteps = 4, updateSteps = 3, snapDistance = 3, keep = 8, window = 40 } = {}) {
+  const tracks = new Map(); // unit id -> reports [{ step, position }], oldest first
+  let offsets = []; // how late (ms) recent updates arrived against the game's own clock; the smallest is the least delayed
   return {
-    /** Call when the server has told us where a unit now is, with where it is being shown (before the news was applied). */
-    observe(unit, shown, now) {
-      if (batchAt !== null && now !== batchAt) {
-        const gap = now - batchAt;
-        if (gap < 1000) typical = typical * 0.7 + gap * 0.3;
-      }
-      batchAt = now;
-      const target = unit.position;
-      if (Math.hypot(target.x - shown.x, target.y - shown.y) > snapDistance) {
-        tracks.delete(unit.id);
-        return;
-      }
-      const duration = Math.min(longest, Math.max(shortest, typical));
-      tracks.set(unit.id, { from: { ...shown }, to: { ...target }, at: now, duration });
-      unit.position = { ...shown };
+    delaySteps,
+
+    /** Note that the update for `step` arrived at `now` (ms). Call once per update, before observing people. */
+    arrived(step, now) {
+      offsets.push(now - step * STEP_MS);
+      if (offsets.length > window) offsets.shift();
     },
+
+    /** Note where the server says a unit is at `step`. */
+    observe(unit, step) {
+      const reports = tracks.get(unit.id) ?? [];
+      if (reports.length > 0 && reports.at(-1).step >= step) return;
+      // Only people who move are reported. One who was still until just now stayed where they were until this update's span began, not
+      // since their last report, or they would seem to drift for the whole time they stood.
+      if (reports.length > 0 && reports.at(-1).step < step - updateSteps) {
+        reports.push({ step: step - updateSteps, position: { ...reports.at(-1).position } });
+      }
+      reports.push({ step, position: { ...unit.position } });
+      if (reports.length > keep) reports.shift();
+      tracks.set(unit.id, reports);
+    },
+
+    /** The game step being shown at `now`. */
+    shownStep(now) {
+      return offsets.length === 0 ? null : (now - Math.min(...offsets)) / STEP_MS - delaySteps;
+    },
+
+    /** How long after `now` something that happened at `step` should be shown to line up with the people. */
+    delayFor(step, now) {
+      const at = this.shownStep(now);
+      return at === null ? 0 : Math.max(0, (step - at) * STEP_MS);
+    },
+
+    /** Set the positions of `units` for drawing at `now`. */
     show(units, now) {
+      const at = this.shownStep(now);
+      if (at === null) return;
       for (const unit of units) {
-        const track = tracks.get(unit.id);
-        if (!track) continue;
-        const progress = Math.min(1, (now - track.at) / track.duration);
-        const along = (from, to) => from + (to - from) * progress;
-        unit.position = { x: along(track.from.x, track.to.x), y: along(track.from.y, track.to.y) };
-        if (progress >= 1) tracks.delete(unit.id);
+        const reports = tracks.get(unit.id);
+        if (!reports || reports.length === 0) continue;
+        let after = reports.findIndex((report) => report.step > at);
+        if (after === -1) after = reports.length; // the moment is past the newest report: stay at it
+        const before = reports[after - 1];
+        const next = reports[after];
+        if (!before) {
+          unit.position = { ...reports[0].position };
+        } else if (!next) {
+          unit.position = { ...before.position };
+        } else if (Math.hypot(next.position.x - before.position.x, next.position.y - before.position.y) > snapDistance) {
+          unit.position = { ...before.position };
+        } else {
+          const along = (at - before.step) / (next.step - before.step);
+          unit.position = {
+            x: before.position.x + (next.position.x - before.position.x) * along,
+            y: before.position.y + (next.position.y - before.position.y) * along,
+          };
+        }
       }
     },
+
     clear() {
       tracks.clear();
-      batchAt = null;
-      typical = interval;
+      offsets = [];
     },
   };
 }
