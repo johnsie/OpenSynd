@@ -290,6 +290,19 @@ export function openStore(path = ":memory:", { now = Date.now } = {}) {
     recentRaids: (account, limit = 10) =>
       statements.recentRaids.all(account, account, limit).map((row) => ({ ...row, id: Number(row.id), created: Number(row.created) })),
 
+    /**
+     * Work every won run's score out again with `scoreOf({ seconds, lost })`, once for each formula number (so a changed formula
+     * reaches the runs already kept, and the boards stay fair between old and new).
+     */
+    rescoreOnce(formula, scoreOf) {
+      if (Number(statements.getMeta.get("score-formula")?.value ?? 0) >= formula) return false;
+      const update = db.prepare("UPDATE runs SET score = ? WHERE id = ?");
+      for (const row of db.prepare("SELECT id, seconds, lost FROM runs WHERE outcome = 'success'").all()) {
+        update.run(scoreOf(Number(row.seconds), Number(row.lost)), row.id);
+      }
+      statements.setMeta.run("score-formula", String(formula));
+      return true;
+    },
     season: () => Number(statements.getMeta.get("season")?.value ?? 0),
     /** A new season: every territory is nobody's again (funds and the raid log stay). */
     newSeason(season) {

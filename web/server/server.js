@@ -17,6 +17,8 @@ import {
   dayNumber,
   resultOf,
   rewardWithStreak,
+  SCORE_FORMULA,
+  scoreFrom,
   scoreOf,
   streakOf,
 } from "./daily.js";
@@ -91,6 +93,7 @@ export function createGameServer({
   oidc = createOidc(),
 }) {
   content.hash ??= contentHash(content.root);
+  store.rescoreOnce(SCORE_FORMULA, scoreFrom);
   const rooms = new Map();
   const connections = new Set();
   const perAddress = new Map();

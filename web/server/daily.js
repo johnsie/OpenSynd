@@ -69,11 +69,17 @@ export function dailyOperation(content, day) {
 /** The chores of the day that an operation's result earned. */
 export const choresEarned = (operation, result) => operation.chores.filter((chore) => chore.done(result));
 
-/** The score of a win: faster is better, and every operative lost costs. Anything but a win scores nothing. */
-export function scoreOf(result) {
-  if (!won(result)) return 0;
-  return Math.max(0, 10_000 - 15 * result.seconds - 2000 * result.lost);
-}
+export const SCORE_FORMULA = 2; // bump when the score changes: the server then works out earlier scores again (store.rescoreOnce)
+
+/**
+ * The score of a win from its time and the operatives lost: 3000 for winning, up to 5000 more for speed (half of it at ten minutes), and
+ * 1000 off for each operative lost, but never below 500, so a win always counts and faster is always better.
+ */
+export const scoreFrom = (seconds, lost) =>
+  Math.max(500, Math.round(3000 + (5000 * 600) / (600 + Math.max(0, seconds)) - 1000 * Math.max(0, lost)));
+
+/** The score of an operation's result. Anything but a win scores nothing. */
+export const scoreOf = (result) => (won(result) ? scoreFrom(result.seconds, result.lost) : 0);
 
 /** What a chore pays today, with the streak's bonus (a tenth more for each day, up to half as much again). */
 export const rewardWithStreak = (reward, streak) => Math.round(reward * (1 + 0.1 * Math.min(streak, 5)));

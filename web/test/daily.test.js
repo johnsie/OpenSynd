@@ -71,14 +71,17 @@ test("a chore is earned by a win that does what it says, and only then", () => {
   assert.deepEqual(choresEarned(operation, good).map((chore) => chore.id), ["flawless", "quick"]);
 });
 
-test("the score rewards a quick win with the whole squad, and a loss scores nothing", () => {
+test("the score rewards a quick win with the whole squad, any win counts, and a loss scores nothing", () => {
   const win = { outcome: "success", seconds: 120, lost: 0 };
-  assert.equal(scoreOf(win), 10_000 - 1800);
+  assert.equal(scoreOf(win), Math.round(3000 + (5000 * 600) / 720));
   assert.ok(scoreOf({ ...win, seconds: 60 }) > scoreOf(win));
+  assert.ok(scoreOf({ ...win, seconds: 900 }) > 0, "a slow win still scores");
   assert.ok(scoreOf({ ...win, lost: 1 }) < scoreOf(win));
+  // The win in the game's own report: 13:49 with one operative lost.
+  assert.ok(scoreOf({ outcome: "success", seconds: 829, lost: 1 }) > 3000);
   assert.equal(scoreOf({ ...win, outcome: "failure" }), 0);
   assert.equal(scoreOf({ ...win, outcome: "timeout" }), 0);
-  assert.equal(scoreOf({ outcome: "success", seconds: 10_000, lost: 4 }), 0, "never below nothing");
+  assert.equal(scoreOf({ outcome: "success", seconds: 10_000, lost: 4 }), 500, "never below 500 for a win");
 });
 
 test("streaks count days in a row, forgive one missed day a week, and a long break ends them", () => {
@@ -154,4 +157,22 @@ test("the store keeps runs, ranks each player's best, and pays a chore only once
   assert.deepEqual(store.choresOn(anna.id, 10), ["quick"]);
   store.deleteAccount(anna.id);
   assert.equal(store.board("daily", 10, 10).length, 1, "a deleted account's runs go with it");
+});
+
+test("scores kept under an older formula are worked out again, once", async () => {
+  const { openStore } = await import("../server/store.js");
+  const { scoreFrom } = await import("../server/daily.js");
+  const store = openStore();
+  const account = store.createAccount("Anna", { salt: "s", hash: "h" }).id;
+  const record = (outcome, seconds, lost, score) =>
+    store.recordRun({ account, day: 1, mode: "daily", mission: "m", seed: 1, outcome, seconds, lost, score, recording: {} });
+  const won = record("success", 829, 1, 0);
+  const lost = record("failure", 100, 4, 0);
+  assert.equal(store.rescoreOnce(2, scoreFrom), true);
+  const scores = Object.fromEntries(store.board("daily", 1, 1, 10).map((row) => [row.run, row.score]));
+  const idOf = (run) => run.id ?? run;
+  assert.equal(scores[idOf(won)], scoreFrom(829, 1));
+  assert.equal(idOf(lost) in scores, false, "a loss stays unscored");
+  assert.equal(store.rescoreOnce(2, scoreFrom), false, "not again");
+  store.close();
 });
