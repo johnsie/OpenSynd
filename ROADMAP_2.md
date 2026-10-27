@@ -237,6 +237,62 @@ walls, hand-rails, roofs, pedestrian crossings, road marks) is the guide for wha
   on the tile you see, not the one under it. *Test:* a click on a roof tile selects that tile.
 - **H22. Per-territory themes (M).** A style is chosen for each territory today; give a territory its own palette and landmarks
   (a named tower, a famous bridge) so no two feel alike even in the same style.
+- **H23. Industrial compound architecture kit (L).** Build an original modular kit from the shape and function ideas in the
+  supplied references. It should support large facilities that read as working infrastructure rather than enlarged house-shaped
+  boxes.
+
+  - **Silhouette:** combine broad black slab roofs, shallow pitched or ribbed sections, stepped annexes, deep loading awnings and
+    raised central plant rooms. A compound should have a recognisable mass at minimap scale and a varied roofline in the main view.
+  - **Roof machinery:** place extractor fans in disciplined banks, along with vent stacks, ducts, dish antennas, cooling units,
+    service hatches and occasional warning beacons. Equipment clusters should communicate the building's purpose and provide
+    roof-level cover without filling every walkable tile.
+  - **Facades and entrances:** add clerestory window strips, illuminated service panels, reinforced double or roller doors,
+    recessed loading bays and hazard-striped aprons. Main entrances need a strong visual hierarchy; secondary maintenance doors
+    can be quieter routes for infiltration.
+  - **Structural pieces:** support corner pylons, lattice towers, external braces, pipe bridges, cable gantries, raised conduits,
+    fenced machinery courts and low service walls. Pipes and cables should visibly enter a building instead of ending beside it.
+  - **Compound layouts:** assemble the modules as a main hall plus one to three annexes around a service court. Variants include a
+    power-conversion station, communications plant, processing hall, guarded depot and vehicle-maintenance works. Do not stamp a
+    complete reference building into the map; recombine original parts, proportions, materials and colours for each territory.
+  - **Materials and light:** use charcoal roof panels, mineral or painted-metal walls, restrained grime below vents and a limited
+    functional-light palette. Cyan can identify public network equipment, amber can mark hazardous machinery and coral can mark
+    alarms, while local territory palettes keep compounds from all looking alike.
+  - **Gameplay:** preserve a clear perimeter route, readable entrances and at least two useful approaches on major objectives.
+    Annex corners, pylons and pipe supports can provide cover; roofs can hold patrols or uplinks once H11 and H21 are complete.
+    Large machinery must not conceal the only door, objective marker or route behind an opaque silhouette.
+  - **Generation and data:** expose building footprint, hall height, annex count, roof-equipment density, entrance sides and yard
+    type as generator parameters. Keep the pieces as map regions, props and structures rather than baking a compound into one
+    bitmap, so collision, damage, lighting and minimap rendering continue to follow shared rules.
+  - **Acceptance:** every module draws at every zoom and facing; doors connect exterior and interior walkable areas; machinery
+    occupies valid roof tiles; the perimeter remains navigable; and sight, cover and pathfinding tests cover every compound type.
+
+- **H24. Deliberate road endings (M).** Let streets end with an authored-looking relationship to the place they serve instead of
+  making every road cross the whole district. The supplied reference's short access road ending beside an industrial compound is
+  the target composition, especially the clear change from transport space to a controlled service yard.
+
+  - **End types:** support a kerbed dead end, compact turning head, factory gate, checkpoint, loading apron, fenced service yard,
+    collapsed or barricaded street and a ramp into a raised compound. Each type needs a valid reason for traffic to stop there.
+  - **Surface language:** close the kerbs cleanly, terminate centre and lane markings, change the paving at the threshold and use
+    bollards, fence returns, lamps, signs, drains or barriers to frame the end. Road texture must never simply stop on a square edge
+    or leak underneath a building, fence or open ground.
+  - **Relationship to architecture:** align service-road endings with loading doors, guard posts and yard entrances, while leaving
+    a pedestrian route around or through the vehicle barrier. A road may finish alongside a building rather than directly against
+    it when that makes a better delivery court or ambush space.
+  - **Topology rules:** mark roads as through, access or terminal during generation. Mission-critical through-routes, emergency
+    approaches and escape routes must stay connected. A terminal branch has exactly one road mouth and cannot isolate an entry,
+    exit, objective or required vehicle spawn.
+  - **Vehicle behaviour:** civilian traffic does not choose a dead end unless it has a destination there. Scripted and player cars
+    may enter; they stop at a gate or loading point and may reverse direction only in the marked turning area at the road's end.
+    Parked cars can line an access road without blocking its usable lane.
+  - **Gameplay uses:** dead ends can create guarded deliveries, vehicle ambushes, extraction courts, police checkpoints and quiet
+    infiltration routes behind a main facility. They should offer cover and tactical commitment without becoming unavoidable kill
+    boxes; important dead ends need a pedestrian escape route or a second breachable approach.
+  - **Minimap and navigation:** draw the closed end distinctly enough that a player can read it before committing a vehicle. Path
+    planning should distinguish “road ends here” from “route data is broken,” and unreachable clicks must preserve a moving car's
+    existing route as they do now.
+  - **Acceptance:** generated terminal roads have one connected mouth, a finished end cap, legal left-side vehicle approach, room
+    to turn at the end, pedestrian access around the barrier and no stranded objective. Snapshot tests cover every end type and a
+    topology test proves that all required mission routes remain connected.
 
 ## A sensible order
 
