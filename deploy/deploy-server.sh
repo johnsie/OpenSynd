@@ -9,7 +9,10 @@ APP=${APP:-/opt/opensynd/app}
 HASH_FILE=${1:-web/dist/content/hash.json}
 [ -f "$HASH_FILE" ] || { echo "$HASH_FILE does not exist: build the website before deploying the server" >&2; exit 1; }
 EXPECTED=$(node -e 'const fs = require("node:fs"); process.stdout.write(JSON.parse(fs.readFileSync(process.argv[1])).hash)' "$HASH_FILE")
-mkdir -p "$APP/web"
+if ! mkdir -p "$APP/web"; then
+  echo "cannot write $APP: run sudo RUNNER_USER=gitlab-runner sh deploy/setup-server.sh on the host once" >&2
+  exit 1
+fi
 rm -rf "$APP/web.new"
 mkdir -p "$APP/web.new"
 cp -a web/server web/src web/content "$APP/web.new"/

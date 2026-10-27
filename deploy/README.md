@@ -77,6 +77,10 @@ Pushes to the project's default branch deploy by themselves. Any other branch ca
 button on its pipeline. Every deploy includes the game server automatically; there is no separate CI/CD switch for it. Run
 `sudo sh deploy/setup-server.sh` once on the host before the first pipeline deploy.
 
+If the server was previously installed manually under another account, run
+`sudo RUNNER_USER=gitlab-runner sh deploy/setup-server.sh` once to give the runner ownership of `/opt/opensynd/app`, then retry
+the failed deploy job. The setup script is safe to run again.
+
 The runner needs: the **shell executor**, Node.js 20 or newer, Python 3, and the right to write in
 `/var/www/neuroreign.outiva.com` (the set-up script gives that to the runner's user). Nothing else is installed: the game has no
 build dependencies. The runner only picks up jobs tagged `ubuntu-server`, so every job in `.gitlab-ci.yml` carries that tag
