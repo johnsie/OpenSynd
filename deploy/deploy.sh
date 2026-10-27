@@ -25,9 +25,18 @@ ln -sfn "$TARGET" "$DOCROOT/current.new"
 mv -T "$DOCROOT/current.new" "$DOCROOT/current"
 echo "deployed $RELEASE to $DOCROOT/current"
 
-# Keep the newest releases. Anyone playing stays on the release they started from (it is served under /r/<name>/), so
-# the older ones are kept for a good while.
+# Keep the newest CI releases. Manual installs use descriptive release names and may be owned by a different account, so leave
+# those alone instead of letting retention cleanup turn an otherwise successful deployment into a failed job.
 cd "$DOCROOT/releases"
-ls -1t | tail -n +"$((KEEP + 1))" | while read -r old; do
-  [ "$old" = "$RELEASE" ] || rm -rf "./$old"
+kept=0
+ls -1t | while read -r old; do
+  [ -d "./$old" ] || continue
+  case "$old" in
+    [0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]) ;;
+    *) continue ;;
+  esac
+  kept=$((kept + 1))
+  if [ "$kept" -gt "$KEEP" ] && ! rm -rf "./$old"; then
+    echo "warning: could not remove old CI release $old" >&2
+  fi
 done
