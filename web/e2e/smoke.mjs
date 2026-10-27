@@ -91,6 +91,27 @@ for (const [name, type, executablePath] of targets) {
     // many (default: up to 3). The long first one goes first so it overlaps with all the others. E2E_TIMING=1 lists how long each took.
     const scenarios = [];
     const scenario = (title, body) => scenarios.push({ title, body });
+    const beginMission = async (page) => {
+      await page.click("#begin-button");
+      await page.waitForSelector("#research-dialog[open]");
+      await page.click("#research-begin");
+    };
+
+    scenario("Accepting a mission opens the armoury before deployment", async () => {
+      const deployment = await browser.newPage();
+      await deployment.goto(`${url}?e2e`);
+      await deployment.waitForSelector(".roster-select");
+      assert.equal(await deployment.locator("#begin-button").innerText(), "Accept mission");
+      await deployment.click("#begin-button");
+      await deployment.waitForSelector("#research-dialog[open]");
+      assert.equal(await deployment.locator("#research-begin").innerText(), "Begin mission");
+      assert.equal(await deployment.locator("#title-dialog").getAttribute("open"), "");
+      await deployment.click("#research-begin");
+      await deployment.waitForFunction(() => !document.querySelector("#research-dialog").open);
+      await deployment.waitForFunction(() => !document.querySelector("#title-dialog").open);
+      await deployment.waitForFunction(() => document.querySelector("#status-message").textContent.includes("Local map established"));
+      await deployment.close();
+    });
 
     scenario("The game screen, selection, camera, combat, progress and the armoury", async () => {
       const page = await browser.newPage();
@@ -116,7 +137,7 @@ for (const [name, type, executablePath] of targets) {
       assert.equal(await missionButtons.nth(0).isDisabled(), false);
       assert.equal(await missionButtons.nth(1).isDisabled(), true);
       assert.match(await missionButtons.nth(1).innerText(), /LOCKED/);
-      await page.click("#begin-button");
+      await beginMission(page);
       // Watchers patrol: their positions change on their own.
       const before = await page.evaluate(() => window.opensyndTest.positions());
       await page.waitForTimeout(1500);
@@ -441,7 +462,7 @@ for (const [name, type, executablePath] of targets) {
       await page.waitForSelector("#title-dialog[open]");
       assert.match(await page.locator("#title-heading").innerText(), /Quiet Hours/);
       assert.match(await page.locator("#title-story").innerText(), /Audit Yard/);
-      await page.click("#begin-button");
+      await beginMission(page);
       assert.match(await page.locator("#operation-eyebrow").innerText(), /OPERATION 02/);
       assert.match(await page.locator("#operation-title").innerText(), /Quiet Hours/);
       await page.waitForFunction(() =>
@@ -455,7 +476,7 @@ for (const [name, type, executablePath] of targets) {
       await page.click("#next-button");
       await page.waitForSelector("#title-dialog[open]");
       assert.match(await page.locator("#title-heading").innerText(), /Dead Drop/);
-      await page.click("#begin-button");
+      await beginMission(page);
       assert.match(await page.locator("#operation-eyebrow").innerText(), /OPERATION 03/);
       const objectiveText = await page.locator("#objective-list").innerText();
       assert.match(objectiveText, /Disable the site warden/);
@@ -468,7 +489,7 @@ for (const [name, type, executablePath] of targets) {
       for (const number of ["04", "05", "06"]) {
         await page.click("#next-button");
         await page.waitForSelector("#title-dialog[open]");
-        await page.click("#begin-button");
+        await beginMission(page);
         assert.match(await page.locator("#operation-eyebrow").innerText(), new RegExp(`OPERATION ${number}`));
         if (number === "06") break; // finished below
         await page.evaluate(() => window.opensyndTest.completeObjectives());
@@ -615,7 +636,7 @@ for (const [name, type, executablePath] of targets) {
       await page.waitForFunction(() => document.querySelector("#title-heading").textContent.includes("Last Departure"));
       await missionButtons.nth(1).click();
       await page.waitForFunction(() => document.querySelector("#title-heading").textContent.includes("Quiet Hours"));
-      await page.click("#begin-button");
+      await beginMission(page);
       await page.waitForFunction(() =>
         document.querySelector("#status-message").textContent.includes("Local map established"),
       );
@@ -659,7 +680,7 @@ for (const [name, type, executablePath] of targets) {
       const finale = await browser.newPage();
       await finale.goto(`${url}?e2e`);
       await finale.waitForSelector(".roster-select");
-      await finale.click("#begin-button");
+      await beginMission(finale);
       await finale.evaluate(() => {
         window.opensyndTest.completeAllOtherOperations();
         window.opensyndTest.completeObjectives();
@@ -675,7 +696,7 @@ for (const [name, type, executablePath] of targets) {
       const queuePage = await browser.newPage();
       await queuePage.goto(`${url}?e2e`);
       await queuePage.waitForSelector(".roster-select");
-      await queuePage.click("#begin-button");
+      await beginMission(queuePage);
       await queuePage.evaluate(() => {
         const test = window.opensyndTest;
         test.giveItem("enemy-agent-three", "developer.scanner");
@@ -707,7 +728,7 @@ for (const [name, type, executablePath] of targets) {
       const spentPage = await browser.newPage();
       await spentPage.goto(`${url}?e2e`);
       await spentPage.waitForSelector(".roster-select");
-      await spentPage.click("#begin-button");
+      await beginMission(spentPage);
       await spentPage.evaluate(() => window.opensyndTest.giveItem("operator-one", "developer.scatter-emitter", 0));
       await spentPage.getByLabel(/Field Operator 1 slot 3: Scatter Emitter/).click();
       assert.equal(await spentPage.getByLabel("Field Operator 1 slot 3: empty").count(), 1, "the spent item left the slot");
@@ -720,7 +741,7 @@ for (const [name, type, executablePath] of targets) {
       const tongue = await browser.newPage();
       await tongue.goto(`${url}?e2e`);
       await tongue.waitForSelector(".roster-select");
-      await tongue.click("#begin-button");
+      await beginMission(tongue);
       await tongue.click("#settings-button");
       await tongue.selectOption("#setting-language", "es");
       assert.equal(await tongue.locator("html").getAttribute("lang"), "es");
@@ -746,7 +767,7 @@ for (const [name, type, executablePath] of targets) {
       private_.on("console", (message) => /content security policy/i.test(message.text()) && violations.push(message.text()));
       await private_.goto(`${url}?e2e`);
       await private_.waitForSelector(".roster-select");
-      await private_.click("#begin-button");
+      await beginMission(private_);
       await private_.waitForFunction(() => document.querySelector("#status-message").textContent.includes("Local map established"));
       await private_.waitForTimeout(1500);
       assert.deepEqual(strangers, [], "no request leaves the site");
@@ -793,7 +814,7 @@ for (const [name, type, executablePath] of targets) {
           return found;
         });
       assert.deepEqual(await problems(), [], "the title screen");
-      await audit.click("#begin-button");
+      await beginMission(audit);
       await audit.waitForFunction(() => document.querySelector("#status-message").textContent.includes("Local map established"));
       assert.deepEqual(await problems(), [], "the operation screen");
       await audit.click("#settings-button");
@@ -810,7 +831,7 @@ for (const [name, type, executablePath] of targets) {
       const tail = await browser.newPage();
       await tail.goto(`${url}?e2e`);
       await tail.waitForSelector(".roster-select");
-      await tail.click("#begin-button");
+      await beginMission(tail);
       await tail.waitForFunction(() => document.querySelector("#status-message").textContent.includes("Local map established"));
       await tail.evaluate(() => {
         window.opensyndTest.placeNear("civilian-1", "operator-one", 0, 4);
@@ -850,7 +871,7 @@ for (const [name, type, executablePath] of targets) {
       const beside = await browser.newPage({ viewport: { width: 1400, height: 900 } });
       await beside.goto(`${url}?e2e`);
       await beside.waitForSelector(".roster-select");
-      await beside.click("#begin-button");
+      await beginMission(beside);
       await beside.waitForFunction(() => document.querySelector("#status-message").textContent.includes("Local map established"));
       await beside.evaluate(() => {
         const test = window.opensyndTest;
@@ -900,7 +921,7 @@ for (const [name, type, executablePath] of targets) {
         .first()
         .click();
       await rail.waitForFunction((name) => document.querySelector("#title-heading").textContent.includes(name), target.name);
-      await rail.click("#begin-button");
+      await beginMission(rail);
       await rail.waitForFunction(() => document.querySelector("#status-message").textContent.includes("Local map established"));
       const firstTrain = await rail.evaluate(() => window.opensyndTest.trains()[0]);
       assert.equal(firstTrain.cars.length, 5, "an engine and four carriages");
@@ -950,7 +971,7 @@ for (const [name, type, executablePath] of targets) {
       await updating.waitForFunction(() => window.updateMarker === undefined, null, { timeout: 15000 });
       await updating.waitForSelector(".roster-select");
       // The new page begins an operation; a newer release then waits, even with the tab out of sight.
-      await updating.click("#begin-button");
+      await beginMission(updating);
       await updating.waitForFunction(() => document.querySelector("#status-message").textContent.includes("Local map established"));
       await updating.evaluate(() => (window.updateMarker = "mid-operation"));
       published = "rev-c";
@@ -997,7 +1018,7 @@ for (const [name, type, executablePath] of targets) {
           .some((button) => button.textContent.includes(name) && button.getAttribute("aria-pressed") === "true"),
         defectionName,
       );
-      await defection.click("#begin-button");
+      await beginMission(defection);
       await defection.waitForFunction(() => document.querySelector("#status-message").textContent.includes("Local map established"));
       assert.match(await defection.locator("#objective-list").innerText(), /Win the defector over/);
       await defection.evaluate(() => {
@@ -1016,7 +1037,7 @@ for (const [name, type, executablePath] of targets) {
       const crowd = await browser.newPage({ viewport: { width: 1400, height: 900 } });
       await crowd.goto(`${url}?e2e`);
       await crowd.waitForSelector(".roster-select");
-      await crowd.click("#begin-button");
+      await beginMission(crowd);
       await crowd.waitForFunction(() => document.querySelector("#status-message").textContent.includes("Local map established"));
       await crowd.evaluate(() => {
         const test = window.opensyndTest;
@@ -1044,7 +1065,7 @@ for (const [name, type, executablePath] of targets) {
       await returning.goto(`${url}?e2e`);
       await returning.waitForSelector(".roster-select");
       assert.equal(await returning.locator("#resume-box").isVisible(), false, "nothing saved yet");
-      await returning.click("#begin-button");
+      await beginMission(returning);
       await returning.waitForFunction(() => document.querySelector("#status-message").textContent.includes("Local map established"));
       const there = await returning.evaluate(() => {
         window.opensyndTest.placeUnit("operator-one", 5, 52);
@@ -1217,7 +1238,7 @@ for (const [name, type, executablePath] of targets) {
       await buyer.getByLabel("Operator 1 slot 3: empty", { exact: true }).click();
       await buyer.getByRole("button", { name: /^Buy Persuader for Operator 1 slot 3/ }).click();
       await buyer.click("#close-research");
-      await buyer.click("#begin-button");
+      await beginMission(buyer);
       await buyer.waitForFunction(() => document.querySelector("#status-message").textContent.includes("Local map established"));
       assert.equal(await buyer.getByLabel(/Field Operator 1 slot 3: Persuader/).count(), 1, "the purchase is in the inventory");
       await buyer.close();
@@ -1228,7 +1249,7 @@ for (const [name, type, executablePath] of targets) {
       const later = await browser.newPage();
       await later.goto(`${url}?e2e`);
       await later.waitForSelector(".roster-select");
-      await later.click("#begin-button");
+      await beginMission(later);
       await later.evaluate(() => window.opensyndTest.giveItem("operator-one", "developer.scatter-emitter"));
       await later.waitForTimeout(500);
       const here = await later.evaluate(() => window.opensyndTest.positionOf("operator-one"));
@@ -1248,7 +1269,7 @@ for (const [name, type, executablePath] of targets) {
       const dropper = await browser.newPage();
       await dropper.goto(`${url}?e2e`);
       await dropper.waitForSelector(".roster-select");
-      await dropper.click("#begin-button");
+      await beginMission(dropper);
       await dropper.evaluate(() => window.opensyndTest.giveItem("operator-one", "developer.scatter-emitter"));
       const heavySlot = dropper.getByLabel(/Field Operator 1 slot 3: Scatter Emitter/);
       await heavySlot.click({ button: "right" });
@@ -1269,7 +1290,7 @@ for (const [name, type, executablePath] of targets) {
       const bombPage = await browser.newPage();
       await bombPage.goto(`${url}?e2e`);
       await bombPage.waitForSelector(".roster-select");
-      await bombPage.click("#begin-button");
+      await beginMission(bombPage);
       await bombPage.evaluate(() => {
         window.opensyndTest.giveItem("operator-one", "developer.delay-charge");
         window.opensyndTest.focusOn("operator-one");
@@ -1298,7 +1319,7 @@ for (const [name, type, executablePath] of targets) {
       const street = await browser.newPage();
       await street.goto(`${url}?e2e`);
       await street.waitForSelector(".roster-select");
-      await street.click("#begin-button");
+      await beginMission(street);
       await street.evaluate(() => {
         const test = window.opensyndTest;
         test.giveItem("operator-one", "developer.persuader");
@@ -1347,7 +1368,7 @@ for (const [name, type, executablePath] of targets) {
       });
       await crew.goto(`${url}?e2e`);
       await crew.waitForSelector(".roster-select");
-      await crew.click("#begin-button");
+      await beginMission(crew);
       await crew.waitForFunction(() => document.querySelector("#status-message").textContent.includes("Local map established"));
       await crew.locator("#game-canvas").focus();
       for (const [key, id] of [["2", "operator-two"], ["1", "operator-one"]]) {
@@ -1373,7 +1394,7 @@ for (const [name, type, executablePath] of targets) {
       });
       await garage.goto(`${url}?e2e`);
       await garage.waitForSelector(".roster-select");
-      await garage.click("#begin-button");
+      await beginMission(garage);
       await garage.waitForFunction(() => document.querySelector("#status-message").textContent.includes("Local map established"));
       await garage.evaluate(() => {
         window.opensyndTest.placeNear("operator-one", "parked-city-car-1", 1, 1);
@@ -1443,7 +1464,7 @@ for (const [name, type, executablePath] of targets) {
       const convoy = await browser.newPage();
       await convoy.goto(`${url}?e2e`);
       await convoy.waitForSelector(".roster-select");
-      await convoy.click("#begin-button");
+      await beginMission(convoy);
       await convoy.evaluate(() => {
         for (const id of ["operator-one", "operator-two", "operator-three", "operator-four"]) {
           window.opensyndTest.placeNear(id, "parked-city-car-1", 4, 0);
@@ -1532,7 +1553,7 @@ for (const [name, type, executablePath] of targets) {
       assert.match(await page.locator("#territory-panel").innerText(), /IN REVOLT/);
       assert.match(await page.locator("#mission-list").innerText(), /IN REVOLT/);
       assert.match(await page.locator("#operation-eyebrow").innerText(), /UPRISING/);
-      await page.click("#begin-button");
+      await beginMission(page);
       await page.waitForFunction(() => document.querySelector("#status-message").textContent.includes("Local map established"));
       assert.match(await page.locator("#objective-list").innerText(), /ringleaders/);
       await page.evaluate(() => window.opensyndTest.completeObjectives());
@@ -1548,7 +1569,7 @@ for (const [name, type, executablePath] of targets) {
       assert.match(await page.locator("#territory-panel").innerText(), /TAKEOVER ATTEMPT/);
       assert.match(await page.locator("#territory-panel").innerText(), /is moving to take it over: 99 days left/);
       assert.match(await page.locator("#operation-eyebrow").innerText(), /DEFENCE/);
-      await page.click("#begin-button");
+      await beginMission(page);
       await page.waitForFunction(() => document.querySelector("#status-message").textContent.includes("Local map established"));
       assert.match(await page.locator("#objective-list").innerText(), /Hold the .* for \d+ seconds/);
       // The rival's agents head for the position: they are patrolling toward it.
@@ -1561,7 +1582,7 @@ for (const [name, type, executablePath] of targets) {
 
     scenario("An unanswered takeover attempt loses the territory when the deadline passes", async () => {
       const page = await withTerritory({ status: "finished", threat: { until: 2 }, hours: 40 });
-      await page.click("#begin-button");
+      await beginMission(page);
       await page.waitForFunction(() => document.querySelector("#status-message").textContent.includes("Local map established"));
       await page.evaluate(() => window.opensyndTest.advanceHours(10)); // the clock reaches day 2
       assert.match(await page.locator("#status-message").innerText(), /has taken .* It must be taken again/);
@@ -1863,7 +1884,7 @@ for (const [name, type, executablePath] of targets) {
       const roster = await browser.newPage();
       await roster.goto(`${url}?e2e`);
       await roster.waitForSelector(".roster-select");
-      await roster.click("#begin-button");
+      await beginMission(roster);
       await roster.waitForFunction(() =>
         document.querySelector("#status-message").textContent.includes("Local map established"),
       );
@@ -1885,7 +1906,7 @@ for (const [name, type, executablePath] of targets) {
       assert.ok(record.squad.includes("agent-5"));
       await roster.click("#next-button");
       await roster.waitForSelector("#title-dialog[open]");
-      await roster.click("#begin-button");
+      await beginMission(roster);
       assert.equal(await roster.locator(".roster-select").count(), 4);
       await roster.close();
     });

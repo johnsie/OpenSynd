@@ -540,7 +540,7 @@
           <div class="title-actions">
             <button id="menu-button" data-i18n="title.menu" type="button">Main menu</button>
             <button id="open-research" data-i18n="title.research" type="button">Research &amp; Armoury</button>
-            <button id="begin-button" data-i18n="title.begin" type="button" class="primary">Begin operation</button>
+            <button id="begin-button" data-i18n="title.accept" type="button" class="primary">Accept mission</button>
           </div>
         </aside>
       </div>
@@ -629,6 +629,13 @@
         <div id="parts-dial" class="research-dial"></div>
         <div id="parts-items" class="research-items"></div>
       </section>
+      <div id="research-deployment" class="research-deployment" hidden>
+        <div>
+          <p class="eyebrow">DEPLOYMENT READY</p>
+          <p>Check the squad, equipment and active research before entering the field.</p>
+        </div>
+        <button id="research-begin" data-i18n="title.begin" type="button" class="primary">Begin mission</button>
+      </div>
     </dialog>
 
     <dialog id="confirm-dialog" aria-labelledby="confirm-heading">

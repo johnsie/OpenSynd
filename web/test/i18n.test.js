@@ -14,12 +14,14 @@ test("every key has a real translation in every language, and the languages are 
   }
   const differing = KEYS.filter((key) => translate("es", key) !== translate("en", key) && translate("fr", key) !== translate("en", key));
   assert.ok(differing.length >= KEYS.length - 4, "nearly everything is really translated (a few words, like Mission, are the same)");
-  assert.equal(translate("es", "title.begin"), "Comenzar la operación");
-  assert.equal(translate("fr", "title.begin"), "Commencer l'opération");
+  assert.equal(translate("es", "title.accept"), "Aceptar misión");
+  assert.equal(translate("fr", "title.accept"), "Accepter la mission");
+  assert.equal(translate("es", "title.begin"), "Comenzar misión");
+  assert.equal(translate("fr", "title.begin"), "Commencer la mission");
 });
 
 test("unknown languages fall back to English and unknown keys come back as they are", () => {
-  assert.equal(translate("de", "title.begin"), "Begin operation");
+  assert.equal(translate("de", "title.begin"), "Begin mission");
   assert.equal(translate("es", "no.such.key"), "no.such.key");
 });
 
@@ -39,7 +41,7 @@ test("every key the page marks exists in the table, and every table key is used 
 
 test("applying a language changes the text of an element, keeps the checkbox inside a label, and sets the page language", () => {
   const text = (value) => ({ nodeType: 3, textContent: value });
-  const button = { childNodes: [text("Begin operation")], children: [], getAttribute: () => "title.begin", textContent: "Begin operation" };
+  const button = { childNodes: [text("Begin mission")], children: [], getAttribute: () => "title.begin", textContent: "Begin mission" };
   const label = {
     childNodes: [text(" Mute sound")],
     children: [{ tag: "input" }],
@@ -47,7 +49,7 @@ test("applying a language changes the text of an element, keeps the checkbox ins
   };
   const root = { querySelectorAll: () => [button, label], documentElement: {} };
   applyTranslations(root, "es");
-  assert.equal(button.childNodes[0].textContent, "Comenzar la operación");
+  assert.equal(button.childNodes[0].textContent, "Comenzar misión");
   assert.equal(label.childNodes[0].textContent, " Silenciar el sonido", "the checkbox is not touched, only the words");
   assert.equal(root.documentElement.lang, "es");
 });

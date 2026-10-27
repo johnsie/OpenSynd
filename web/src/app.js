@@ -802,6 +802,8 @@ function describeMission(mission, map, index) {
 }
 
 const researchDialog = document.querySelector("#research-dialog");
+let researchCanDeploy = false;
+let researchStartsMission = false;
 
 function startingLoadout(placement) {
   const byPath = new Map(state.catalogPaths);
@@ -1237,18 +1239,43 @@ wireTabs(document.querySelector(".list-filter"), (tab) => {
   renderMissionList();
 });
 
-function openResearch() {
+function openResearch(canDeploy = titleDialog.open) {
+  researchCanDeploy = canDeploy;
+  document.querySelector("#research-deployment").hidden = !canDeploy;
   renderResearch();
   researchDialog.showModal();
 }
 
-document.querySelector("#open-research").addEventListener("click", openResearch);
-document.querySelector("#outcome-research").addEventListener("click", openResearch);
+document.querySelector("#open-research").addEventListener("click", () => openResearch(true));
+document.querySelector("#outcome-research").addEventListener("click", () => openResearch(false));
 document.querySelector("#close-research").addEventListener("click", () => researchDialog.close());
 // Before an operation starts, what was bought, fitted or changed in the squad has to be on the operatives when it begins:
 // the operation is set up again from the saved loadouts.
 researchDialog.addEventListener("close", () => {
-  if (titleDialog.open && state.missionList?.length) loadGame(state.missionIndex).catch(showFatalError);
+  researchCanDeploy = false;
+  if (!researchStartsMission && titleDialog.open && state.missionList?.length) {
+    loadGame(state.missionIndex).catch(showFatalError);
+  }
+});
+
+document.querySelector("#research-begin").addEventListener("click", async (event) => {
+  if (!researchCanDeploy || !titleDialog.open) return;
+  const button = event.currentTarget;
+  button.disabled = true;
+  try {
+    clearAutosave();
+    document.querySelector("#resume-box").hidden = true;
+    await loadGame(state.missionIndex, { variant: state.variant });
+    researchCanDeploy = false;
+    researchStartsMission = true;
+    researchDialog.close();
+    titleDialog.close();
+  } catch (error) {
+    showFatalError(error);
+  } finally {
+    researchStartsMission = false;
+    button.disabled = false;
+  }
 });
 
 const confirmDialog = document.querySelector("#confirm-dialog");
@@ -5377,11 +5404,7 @@ document.querySelector("#reset-progress").addEventListener("click", () => {
 });
 document.querySelector("#confirm-accept").addEventListener("click", () => confirmDialog.close("accept"));
 document.querySelector("#confirm-cancel").addEventListener("click", () => confirmDialog.close("cancel"));
-document.querySelector("#begin-button").addEventListener("click", () => {
-  clearAutosave(); // starting afresh: what was saved is no longer wanted
-  document.querySelector("#resume-box").hidden = true;
-  titleDialog.close();
-});
+document.querySelector("#begin-button").addEventListener("click", () => openResearch(true));
 document.querySelector("#resume-button").addEventListener("click", () => resumeAutosave().catch(showFatalError));
 document.querySelector("#resume-discard").addEventListener("click", () => {
   clearAutosave();
