@@ -48,6 +48,58 @@ export function currentObjective(objectives) {
   return objectives.find((item) => item.required && !item.complete) ?? null;
 }
 
+const DIRECTIVE_BY_TYPE = Object.freeze({
+  disable: "ASSASSINATE",
+  eliminate: "ELIMINATE",
+  extract: "ASSEMBLE AT EXIT",
+  interact: "USE TARGET",
+  hold: "HOLD POSITION",
+  persuade: "PERSUADE",
+  protect: "PROTECT",
+  "reach-zone": "REACH AREA",
+  "destroy-vehicle": "DESTROY VEHICLE",
+  "use-vehicle": "TAKE VEHICLE",
+  "take-item": "RECOVER ITEM",
+  evacuate: "EVACUATE",
+});
+
+/** A short, glanceable order for the strip beneath the squad selector. */
+export function objectiveDirective(objective) {
+  return objective ? (DIRECTIVE_BY_TYPE[objective.type] ?? "COMPLETE OBJECTIVE") : "";
+}
+
+const named = (units, id, fallback) => units.find((unit) => unit.id === id)?.definition?.name ?? fallback;
+
+/** A short live status for the selected operative, paired with useful target context. */
+export function operativeDirective(unit, units = [], drops = []) {
+  if (!unit) return null;
+  const prefix = `${unit.definition.name} · `;
+  if (unit.disabled) return { action: "DOWN", detail: `${prefix}incapacitated` };
+  if (unit.tailId) return { action: "FOLLOWING", detail: `${prefix}${named(units, unit.tailId, "target")}` };
+  if (unit.followId) {
+    return { action: unit.targetId ? "ENGAGING" : "PURSUING", detail: `${prefix}${named(units, unit.followId, "target")}` };
+  }
+  if (unit.targetId) return { action: "FIRING", detail: `${prefix}${named(units, unit.targetId, "target")}` };
+  if (unit.persuading) return { action: "PERSUADING", detail: `${prefix}persuader active` };
+  if (unit.lootTargetId) {
+    const item = drops.find((drop) => drop.id === unit.lootTargetId);
+    return { action: "COLLECTING", detail: `${prefix}${item?.definition?.name ?? "equipment"}` };
+  }
+  if (unit.enterTargetId) return { action: "BOARDING", detail: `${prefix}${named(units, unit.enterTargetId, "vehicle")}` };
+  if (unit.inVehicle) {
+    const vehicle = units.find((candidate) => candidate.id === unit.inVehicle);
+    const driving = vehicle?.vehicle?.controlledBy === unit.id;
+    const moving = (vehicle?.path?.length ?? 0) > 0;
+    return {
+      action: driving && moving ? "DRIVING" : moving ? "RIDING" : "IN VEHICLE",
+      detail: `${prefix}${vehicle?.definition?.name ?? "vehicle"}`,
+    };
+  }
+  if (unit.path?.length) return { action: "GOING", detail: `${prefix}${unit.path.length} steps remain` };
+  if (unit.pending?.length) return { action: "QUEUED", detail: `${prefix}${unit.pending.length} orders waiting` };
+  return { action: "WAITING", detail: `${prefix}awaiting orders` };
+}
+
 function canProgress(objectives, objective) {
   return !objective.sequence || !objective.required || currentObjective(objectives) === objective;
 }

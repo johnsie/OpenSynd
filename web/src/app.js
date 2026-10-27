@@ -253,6 +253,8 @@ import {
   missionComplete as isMissionComplete,
   missionOutcome,
   currentObjective,
+  objectiveDirective,
+  operativeDirective,
   failureReason,
   objectiveFocus,
   resolveUnitObjectives,
@@ -295,6 +297,10 @@ const threatsElement = document.querySelector("#threats");
 const enemyCount = document.querySelector("#enemy-count");
 const objectiveList = document.querySelector("#objective-list");
 const objectiveCount = document.querySelector("#objective-count");
+const currentObjectiveStrip = document.querySelector("#current-objective-strip");
+const currentObjectiveKicker = document.querySelector("#current-objective-kicker");
+const currentObjectiveAction = document.querySelector("#current-objective-action");
+const currentObjectiveDetail = document.querySelector("#current-objective-detail");
 const pauseLabel = document.querySelector("#pause-label");
 const briefingText = document.querySelector("#briefing-text");
 const selectedReadout = document.querySelector("#selected-readout");
@@ -5739,6 +5745,32 @@ function setText(element, text) {
   if (element.textContent !== text) element.textContent = text;
 }
 
+function renderCurrentDirective(warPoints, warContracts) {
+  let objectiveStatus = null;
+  if (state.outcome === "active" && warPoints) {
+    const contract = warContracts.find((candidate) => candidate.assignment?.status === "active");
+    const point = contract && warPoints.find((candidate) => candidate.id === contract.pointId);
+    objectiveStatus = {
+      action: contract ? "CAPTURE RELAY" : "CONTROL RELAYS",
+      detail: contract
+        ? `${point?.name ?? "Marked relay"} · +${contract.reward} coalition points`
+        : "Capture relays, or speak to a mission giver for a contract.",
+    };
+  } else if (state.outcome === "active") {
+    const objective = currentObjective(state.objectives);
+    if (objective) objectiveStatus = { action: objectiveDirective(objective), detail: objective.description };
+  }
+
+  const operativeStatus = state.outcome === "active" ? operativeDirective(selectedUnit(), state.units, state.drops) : null;
+  const showOperative = operativeStatus && (!objectiveStatus || Math.floor(state.elapsed / 3) % 2 === 1);
+  const status = showOperative ? operativeStatus : objectiveStatus;
+  currentObjectiveStrip.hidden = !status;
+  if (!status) return;
+  setText(currentObjectiveKicker, showOperative ? "Selected operative" : "Current objective");
+  setText(currentObjectiveAction, status.action);
+  setText(currentObjectiveDetail, status.detail);
+}
+
 let shownObjectivesKey = "";
 let shownRosterKey = "";
 let shownThreatsKey = "";
@@ -5749,6 +5781,7 @@ function renderInterface() {
   const warContracts = warPoints
     ? (state.war?.contracts ?? []).map((contract) => ({ ...contract, assignment: contract.assignments?.[state.online.coalition] }))
     : [];
+  renderCurrentDirective(warPoints, warContracts);
   const objectivesKey = JSON.stringify([
     warPoints
       ? warPoints.map((point) => [point.id, point.owner, point.claiming, Math.floor(point.progress ?? 0)])

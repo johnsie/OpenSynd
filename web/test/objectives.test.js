@@ -10,6 +10,8 @@ import {
   failureReason,
   gateOpen,
   missionOutcome,
+  objectiveDirective,
+  operativeDirective,
   objectiveFocus,
   resolveArrival,
   resolveDisabled,
@@ -39,6 +41,46 @@ const unit = (id, side, x, y, over = {}) => ({
   ...over,
 });
 const objective = (over) => ({ id: over.type, required: true, description: over.type, complete: false, sequence: false, ...over });
+
+test("objectives provide compact orders for the squad HUD", () => {
+  assert.equal(objectiveDirective({ type: "disable" }), "ASSASSINATE");
+  assert.equal(objectiveDirective({ type: "extract" }), "ASSEMBLE AT EXIT");
+  assert.equal(objectiveDirective({ type: "hold" }), "HOLD POSITION");
+  assert.equal(objectiveDirective({ type: "unknown" }), "COMPLETE OBJECTIVE");
+  assert.equal(objectiveDirective(null), "");
+});
+
+test("operative status reports live movement, following, combat and vehicle activity", () => {
+  const agent = unit("agent", "team", 1, 1, { definition: { name: "Agent One", role: "operator", stats: {} }, path: [] });
+  const contact = unit("contact", "civilian", 2, 2, { definition: { name: "Witness", role: "civilian", stats: {} } });
+  assert.deepEqual(operativeDirective(agent, [agent, contact]), {
+    action: "WAITING",
+    detail: "Agent One · awaiting orders",
+  });
+  agent.path = [{ x: 2, y: 1 }, { x: 3, y: 1 }];
+  assert.equal(operativeDirective(agent, [agent, contact]).action, "GOING");
+  agent.path = [];
+  agent.tailId = contact.id;
+  assert.deepEqual(operativeDirective(agent, [agent, contact]), {
+    action: "FOLLOWING",
+    detail: "Agent One · Witness",
+  });
+  agent.tailId = null;
+  agent.followId = contact.id;
+  assert.equal(operativeDirective(agent, [agent, contact]).action, "PURSUING");
+  agent.targetId = contact.id;
+  assert.equal(operativeDirective(agent, [agent, contact]).action, "ENGAGING");
+
+  const car = unit("car", "vehicle", 1, 1, {
+    definition: { name: "Executive car", role: "vehicle", stats: {} },
+    path: [{ x: 2, y: 1 }],
+    vehicle: { controlledBy: agent.id },
+  });
+  agent.followId = null;
+  agent.targetId = null;
+  agent.inVehicle = car.id;
+  assert.equal(operativeDirective(agent, [agent, car]).action, "DRIVING");
+});
 
 test("persuade completes when the named targets (or enough of them) follow the squad", () => {
   const units = [unit("a", "civilian", 1, 1), unit("b", "civilian", 2, 2)];
