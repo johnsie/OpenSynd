@@ -7,6 +7,7 @@
 set -eu
 RUNNER_USER=${RUNNER_USER:-gitlab-runner}
 HERE=$(cd "$(dirname "$0")" && pwd)
+SYSTEMCTL=$(command -v systemctl)
 
 id opensynd >/dev/null 2>&1 || useradd --system --home /var/lib/opensynd --shell /usr/sbin/nologin opensynd
 mkdir -p /opt/opensynd/app /var/lib/opensynd
@@ -26,10 +27,11 @@ if [ ! -f /etc/opensynd.env ]; then
   chmod 600 /etc/opensynd.env
 fi
 cp "$HERE/opensynd-server.service" /etc/systemd/system/opensynd-server.service
-echo "$RUNNER_USER ALL=(root) NOPASSWD: /usr/bin/systemctl restart opensynd-server" > /etc/sudoers.d/opensynd-server
+echo "$RUNNER_USER ALL=(root) NOPASSWD: $SYSTEMCTL restart opensynd-server" > /etc/sudoers.d/opensynd-server
 chmod 440 /etc/sudoers.d/opensynd-server
+visudo -cf /etc/sudoers.d/opensynd-server >/dev/null
 a2enmod proxy proxy_http proxy_wstunnel >/dev/null 2>&1 || true
-systemctl daemon-reload
-systemctl enable opensynd-server
+"$SYSTEMCTL" daemon-reload
+"$SYSTEMCTL" enable opensynd-server
 echo "Set up. Run deploy/deploy-server.sh to put the code there and start it, then re-run deploy/setup-apache.sh to add the proxy."
 echo "The moderation token is in /etc/opensynd.env."

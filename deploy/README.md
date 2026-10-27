@@ -79,7 +79,8 @@ button on its pipeline. Every deploy includes the game server automatically; the
 
 If the server was previously installed manually under another account, run
 `sudo RUNNER_USER=gitlab-runner sh deploy/setup-server.sh` once to give the runner ownership of `/opt/opensynd/app`, then retry
-the failed deploy job. The setup script is safe to run again.
+the newest pipeline's failed deploy job. This also installs the narrowly scoped permission to restart `opensynd-server`; the setup
+script is safe to run again.
 
 The runner needs: the **shell executor**, Node.js 20 or newer, Python 3, and the right to write in
 `/var/www/neuroreign.outiva.com` (the set-up script gives that to the runner's user). Nothing else is installed: the game has no

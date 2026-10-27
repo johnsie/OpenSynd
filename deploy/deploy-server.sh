@@ -7,8 +7,13 @@
 set -eu
 APP=${APP:-/opt/opensynd/app}
 HASH_FILE=${1:-web/dist/content/hash.json}
+SYSTEMCTL=$(command -v systemctl)
 [ -f "$HASH_FILE" ] || { echo "$HASH_FILE does not exist: build the website before deploying the server" >&2; exit 1; }
 EXPECTED=$(node -e 'const fs = require("node:fs"); process.stdout.write(JSON.parse(fs.readFileSync(process.argv[1])).hash)' "$HASH_FILE")
+if ! sudo -n -l "$SYSTEMCTL" restart opensynd-server >/dev/null 2>&1; then
+  echo "gitlab-runner cannot restart opensynd-server: run sudo RUNNER_USER=gitlab-runner sh deploy/setup-server.sh once" >&2
+  exit 1
+fi
 if ! mkdir -p "$APP/web"; then
   echo "cannot write $APP: run sudo RUNNER_USER=gitlab-runner sh deploy/setup-server.sh on the host once" >&2
   exit 1
@@ -21,7 +26,7 @@ ACTUAL=$(cd "$APP/web.new" && node --input-type=module -e 'import { contentHash 
 rm -rf "$APP/web.old"
 [ -d "$APP/web" ] && mv "$APP/web" "$APP/web.old"
 mv "$APP/web.new" "$APP/web"
-if sudo systemctl restart opensynd-server && node deploy/check-server.mjs "$EXPECTED"; then
+if sudo -n "$SYSTEMCTL" restart opensynd-server && node deploy/check-server.mjs "$EXPECTED"; then
   rm -rf "$APP/web.old"
   echo "game server deployed with content $EXPECTED"
   exit 0
@@ -32,6 +37,6 @@ rm -rf "$APP/web.failed"
 mv "$APP/web" "$APP/web.failed"
 if [ -d "$APP/web.old" ]; then
   mv "$APP/web.old" "$APP/web"
-  sudo systemctl restart opensynd-server || true
+  sudo -n "$SYSTEMCTL" restart opensynd-server || true
 fi
 exit 1
