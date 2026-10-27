@@ -80,6 +80,7 @@ test("Last Departure begins when the squad approaches and ends with whole-squad 
   const [valeDefinition, guardDefinition] = await Promise.all([read(target.unit), read("units/guard.unit.json")]);
   assert.equal(valeDefinition.role, "guard");
   assert.deepEqual(valeDefinition.appearance, guardDefinition.appearance, "Vale looks like every other guard");
+  assert.ok(valeDefinition.stats.speed > guardDefinition.stats.speed, "Vale runs for the car faster than the guards patrol");
   assert.ok(game.mission.opponents.filter((unit) => unit !== target).every((unit) => unit.unit === "units/guard.unit.json"));
   assert.ok(game.mission.opponents.filter((unit) => unit.id !== target.id).every((unit) => unit.patrol?.length));
   assert.equal(target.passive, true, "Vale never turns to fight the squad");
@@ -87,6 +88,7 @@ test("Last Departure begins when the squad approaches and ends with whole-squad 
   assert.deepEqual(target.script.map((step) => step.type), ["trigger", "say", "enter", "drive", "escape"]);
   assert.equal(target.script[2].vehicle, "vale-escape-car");
   const car = game.mission.vehicles.find((vehicle) => vehicle.id === "vale-escape-car");
+  assert.deepEqual(car.position, { x: 106, y: 51 }, "the car is fully visible on the open eastbound road");
   assert.ok(Math.hypot(car.position.x - target.position.x, car.position.y - target.position.y) >= 10);
   assert.equal(game.grid[car.position.y][car.position.x].surface, "street");
   assert.equal(game.grid[target.script[3].to.y][target.script[3].to.x].surface, "street");

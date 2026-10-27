@@ -763,6 +763,23 @@ main { grid-template-columns: minmax(0, 1fr) minmax(250px, 300px); gap: 0.6rem; 
   font-size: 0.7rem;
   line-height: 1.25;
 }
+.current-objective-strip.operative {
+  border-color: rgba(66, 214, 208, 0.95);
+  animation: operative-status-flash 1.1s steps(2, end) infinite;
+}
+.current-objective-strip.operative .current-objective-kicker {
+  color: rgba(170, 248, 244, 0.82);
+  border-bottom-color: rgba(66, 214, 208, 0.4);
+}
+.current-objective-strip.operative #current-objective-action {
+  background: linear-gradient(90deg, #42d6d0, #8ff3ee);
+}
+@keyframes operative-status-flash {
+  50% {
+    border-color: #b7fffb;
+    box-shadow: inset 0 0 0 1px rgba(183, 255, 251, 0.25), 0 0 0.7rem rgba(66, 214, 208, 0.65);
+  }
+}
 
 @media (min-width: 981px) and (min-height: 560px) {
   .app-shell { grid-template-rows: auto minmax(0, 1fr) auto; }

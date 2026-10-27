@@ -5766,6 +5766,7 @@ function renderCurrentDirective(warPoints, warContracts) {
   const status = showOperative ? operativeStatus : objectiveStatus;
   currentObjectiveStrip.hidden = !status;
   if (!status) return;
+  currentObjectiveStrip.classList.toggle("operative", Boolean(showOperative));
   setText(currentObjectiveKicker, showOperative ? "Selected operative" : "Current objective");
   setText(currentObjectiveAction, status.action);
   setText(currentObjectiveDetail, status.detail);
