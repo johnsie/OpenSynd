@@ -1269,6 +1269,15 @@ document.querySelector("#research-begin").addEventListener("click", async (event
     researchStartsMission = true;
     researchDialog.close();
     titleDialog.close();
+    // Closing stacked dialogs normally clears this through the title dialog's close event. Do it explicitly as well: restored tabs
+    // and some browsers can dispatch those close events later, leaving a visible field whose simulation is still gated as modal.
+    state.modal = false;
+    state.paused = false;
+    state.clock.accumulator = 0;
+    state.lastFrame = performance.now();
+    pauseButton.setAttribute("aria-pressed", "false");
+    pauseLabel.textContent = "Pause";
+    canvas.focus();
   } catch (error) {
     showFatalError(error);
   } finally {
@@ -3897,6 +3906,9 @@ function completeObjectivesAt(position) {
 }
 
 function frame(time) {
+  // Queue the next frame before doing any work. A one-off canvas or browser rendering error must not permanently stop the visual
+  // loop while the simulation's already-started sounds continue around a frozen picture.
+  requestAnimationFrame(frame);
   const delta = Math.min((time - state.lastFrame) / 1000, 0.05);
   state.lastFrame = time;
   if (state.map && state.viewport) {
@@ -3920,8 +3932,18 @@ function frame(time) {
   // How long the game's own work took this frame (kept for the last few seconds: the performance check reads it).
   (state.frameWork ??= []).push(performance.now() - began);
   if (state.frameWork.length > 240) state.frameWork.shift();
-  requestAnimationFrame(frame);
 }
+
+canvas.addEventListener("contextlost", (event) => {
+  event.preventDefault();
+  setStatus("Display interrupted. Recovering the tactical view…");
+});
+canvas.addEventListener("contextrestored", () => {
+  state.lastFrame = performance.now();
+  state.clock.accumulator = 0;
+  draw();
+  setStatus("Tactical view restored.");
+});
 
 function selectedUnit() {
   return state.units.find((unit) => unit.id === state.selectedId) ?? null;
@@ -5440,6 +5462,14 @@ showMainMenu();
 // Browser tests add ?e2e to reach states that take too long to play out.
 if (new URLSearchParams(location.search).has("e2e")) {
   window.opensyndTest = {
+    runtimeState() {
+      return {
+        paused: state.paused,
+        modal: state.modal,
+        outcome: state.outcome,
+        missionSeconds: state.missionSeconds,
+      };
+    },
     camera() {
       return { x: state.camera.x, y: state.camera.y };
     },

@@ -99,6 +99,8 @@ for (const [name, type, executablePath] of targets) {
 
     scenario("Accepting a mission opens the armoury before deployment", async () => {
       const deployment = await browser.newPage();
+      const errors = [];
+      deployment.on("pageerror", (error) => errors.push(error.message));
       await deployment.goto(`${url}?e2e`);
       await deployment.waitForSelector(".roster-select");
       assert.equal(await deployment.locator("#begin-button").innerText(), "Accept mission");
@@ -110,6 +112,23 @@ for (const [name, type, executablePath] of targets) {
       await deployment.waitForFunction(() => !document.querySelector("#research-dialog").open);
       await deployment.waitForFunction(() => !document.querySelector("#title-dialog").open);
       await deployment.waitForFunction(() => document.querySelector("#status-message").textContent.includes("Local map established"));
+      await deployment.waitForTimeout(500);
+      const runtime = await deployment.evaluate(() => window.opensyndTest.runtimeState());
+      assert.equal(runtime.paused, false);
+      assert.equal(runtime.modal, false);
+      assert.equal(runtime.outcome, "active");
+      assert.ok(runtime.missionSeconds > 0.25, `mission clock stopped at ${runtime.missionSeconds}`);
+      await deployment.evaluate(() => {
+        for (const id of ["operator-one", "operator-two", "operator-four"]) window.opensyndTest.disableUnit(id);
+      });
+      await deployment.locator(".roster-select").nth(2).click();
+      const before = await deployment.evaluate(() => window.opensyndTest.positionOf("operator-three"));
+      const destination = await deployment.evaluate(() => window.opensyndTest.openTileNear("operator-three", 5));
+      await deployment.evaluate((to) => window.opensyndTest.moveSelected(to.x, to.y), destination);
+      await deployment.waitForTimeout(750);
+      const after = await deployment.evaluate(() => window.opensyndTest.positionOf("operator-three"));
+      assert.notDeepEqual(after, before, "the surviving operative still moves while bodies and traffic are drawn");
+      assert.deepEqual(errors, []);
       await deployment.close();
     });
 
