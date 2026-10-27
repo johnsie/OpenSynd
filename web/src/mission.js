@@ -68,6 +68,23 @@ export function objectiveDirective(objective) {
   return objective ? (DIRECTIVE_BY_TYPE[objective.type] ?? "COMPLETE OBJECTIVE") : "";
 }
 
+/** The classic mission class shown on the pre-operation dossier. */
+export function missionClass(objectives) {
+  const types = new Set(objectives.map((objective) => objective.type));
+  const namedTargets = objectives.find((objective) => objective.type === "disable")?.targets?.length ?? 0;
+  if (namedTargets > 1) return "MULTIPLE ASSASSINATION";
+  if (namedTargets === 1) return "ASSASSINATION";
+  if (types.has("persuade")) return "PERSONNEL ACQUISITION";
+  if (types.has("protect")) return "ESCORT / PROTECTION";
+  if (types.has("destroy-vehicle")) return "DESTRUCTION";
+  if (types.has("eliminate")) return "COMBAT SWEEP";
+  if (types.has("hold")) return "HOLD POSITION";
+  if (types.has("take-item")) return "EQUIPMENT ACQUISITION";
+  if (types.has("interact")) return "INFILTRATION";
+  if (types.has("evacuate") || types.has("extract")) return "EVACUATION";
+  return "FIELD OPERATION";
+}
+
 const named = (units, id, fallback) => units.find((unit) => unit.id === id)?.definition?.name ?? fallback;
 
 /** A short live status for the selected operative, paired with useful target context. */

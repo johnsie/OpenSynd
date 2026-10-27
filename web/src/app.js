@@ -254,6 +254,7 @@ import {
   missionOutcome,
   currentObjective,
   objectiveDirective,
+  missionClass,
   operativeDirective,
   failureReason,
   objectiveFocus,
@@ -784,7 +785,17 @@ function describeMission(mission, map, index) {
   document.querySelector("#operation-title").textContent = mission.name;
   document.querySelector("#brief-title").textContent = mission.name;
   document.querySelector("#title-heading").textContent = `NeuroReign: ${mission.name}`;
-  document.querySelector("#title-story").textContent = mission.story ?? mission.briefing;
+  document.querySelector("#dossier-heading").textContent = mission.name;
+  document.querySelector("#title-story").textContent = mission.briefing;
+  document.querySelector("#title-operation-type").textContent = missionClass(mission.objectives);
+  document.querySelector("#title-objectives").replaceChildren(
+    ...mission.objectives.map((objective) => {
+      const item = document.createElement("li");
+      item.textContent = objective.description;
+      item.classList.toggle("optional", objective.required === false);
+      return item;
+    }),
+  );
   document.title = `NeuroReign — ${mission.name}`;
   canvas.setAttribute("aria-label", `Isometric view of ${map.name}. Select an operator and choose a destination.`);
   minimap.setAttribute("aria-label", `Minimap of ${map.name}. Click to move the view.`);

@@ -80,6 +80,7 @@ test("Last Departure begins when the squad approaches and ends with whole-squad 
   const [valeDefinition, guardDefinition] = await Promise.all([read(target.unit), read("units/guard.unit.json")]);
   assert.equal(valeDefinition.role, "guard");
   assert.deepEqual(valeDefinition.appearance, guardDefinition.appearance, "Vale looks like every other guard");
+  assert.equal(valeDefinition.stats.vitality, guardDefinition.stats.vitality * 2, "Vale can take twice as many hits as a guard");
   assert.equal(valeDefinition.stats.speed, 4.8, "Vale runs quickly without reaching the operative's full pace");
   assert.ok(valeDefinition.stats.speed > guardDefinition.stats.speed, "Vale runs for the car faster than the guards patrol");
   assert.ok(game.mission.opponents.filter((unit) => unit !== target).every((unit) => unit.unit === "units/guard.unit.json"));

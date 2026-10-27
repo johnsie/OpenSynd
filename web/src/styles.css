@@ -417,7 +417,65 @@ dialog.title-screen[open] {
 }
 .title-map { min-height: 0; display: flex; flex-direction: column; }
 .title-side { min-height: 0; display: flex; flex-direction: column; gap: 0.7rem; }
-.title-side #title-story { margin: 0; font-size: 0.95rem; line-height: 1.45; }
+.mission-dossier {
+  position: relative;
+  flex: none;
+  overflow: hidden;
+  border: 1px solid #72612d;
+  background:
+    linear-gradient(rgba(225, 179, 90, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(225, 179, 90, 0.035) 1px, transparent 1px),
+    #101719;
+  background-size: 18px 18px;
+  box-shadow: inset 0 0 2.5rem rgba(0, 0, 0, 0.48);
+}
+.mission-dossier::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(0deg, transparent 0 3px, rgba(0, 0, 0, 0.12) 4px);
+}
+.dossier-head {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding: 0.55rem 0.7rem;
+  color: #141006;
+  background: var(--amber);
+  border-bottom: 3px solid #7d642b;
+}
+.dossier-head h3 { margin: 0; font-size: 1.05rem; letter-spacing: 0.035em; }
+.dossier-label {
+  margin: 0 0 0.2rem;
+  font: 0.65rem/1.2 ui-monospace, SFMono-Regular, Consolas, monospace;
+  letter-spacing: 0.18em;
+}
+.dossier-type {
+  max-width: 52%;
+  padding: 0.3rem 0.45rem;
+  border: 1px solid rgba(20, 16, 6, 0.55);
+  font: 700 0.65rem/1.2 ui-monospace, SFMono-Regular, Consolas, monospace;
+  letter-spacing: 0.08em;
+  text-align: right;
+}
+.dossier-body { position: relative; z-index: 1; padding: 0.8rem; }
+.title-side #title-story { margin: 0; color: var(--ink); font-size: 0.91rem; line-height: 1.5; }
+.dossier-orders { margin-top: 0.8rem; padding-top: 0.65rem; border-top: 1px solid rgba(225, 179, 90, 0.35); }
+.dossier-orders .dossier-label { color: var(--amber); }
+.brief-objectives { display: grid; gap: 0.35rem; margin: 0.45rem 0 0; padding: 0; list-style: none; }
+.brief-objectives li {
+  position: relative;
+  padding-left: 1.25rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+.brief-objectives li::before { content: "◇"; position: absolute; left: 0; color: var(--amber); }
+.brief-objectives li.optional::after { content: " · OPTIONAL"; color: var(--public); font: 0.65rem ui-monospace, monospace; }
 .title-side .mission-list { margin: 0; }
 .title-actions { margin-top: auto; display: flex; flex-wrap: wrap; gap: 0.5rem; }
 .title-actions button { margin: 0; }

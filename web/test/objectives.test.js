@@ -10,6 +10,7 @@ import {
   failureReason,
   gateOpen,
   missionOutcome,
+  missionClass,
   objectiveDirective,
   operativeDirective,
   objectiveFocus,
@@ -48,6 +49,18 @@ test("objectives provide compact orders for the squad HUD", () => {
   assert.equal(objectiveDirective({ type: "hold" }), "HOLD POSITION");
   assert.equal(objectiveDirective({ type: "unknown" }), "COMPLETE OBJECTIVE");
   assert.equal(objectiveDirective(null), "");
+});
+
+test("mission dossiers classify the objective mix in player-facing terms", () => {
+  assert.equal(missionClass([{ type: "disable", targets: ["executive"] }]), "ASSASSINATION");
+  assert.equal(missionClass([{ type: "disable", targets: ["a", "b"] }]), "MULTIPLE ASSASSINATION");
+  assert.equal(missionClass([{ type: "persuade" }, { type: "protect" }]), "PERSONNEL ACQUISITION");
+  assert.equal(missionClass([{ type: "protect" }]), "ESCORT / PROTECTION");
+  assert.equal(missionClass([{ type: "eliminate" }]), "COMBAT SWEEP");
+  assert.equal(missionClass([{ type: "hold" }]), "HOLD POSITION");
+  assert.equal(missionClass([{ type: "take-item" }]), "EQUIPMENT ACQUISITION");
+  assert.equal(missionClass([{ type: "interact" }]), "INFILTRATION");
+  assert.equal(missionClass([{ type: "extract" }]), "EVACUATION");
 });
 
 test("operative status reports live movement, following, combat and vehicle activity", () => {

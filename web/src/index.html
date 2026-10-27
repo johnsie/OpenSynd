@@ -460,7 +460,22 @@
           <div id="territory-panel" class="territory-panel" aria-label="Territory"></div>
         </section>
         <aside class="title-side">
-          <p id="title-story">Loading the operation…</p>
+          <section class="mission-dossier" aria-labelledby="dossier-heading">
+            <header class="dossier-head">
+              <div>
+                <p class="dossier-label">MISSION BRIEF</p>
+                <h3 id="dossier-heading">Incoming operation</h3>
+              </div>
+              <span id="title-operation-type" class="dossier-type">CLASSIFYING</span>
+            </header>
+            <div class="dossier-body">
+              <p id="title-story">Loading the operation…</p>
+              <div class="dossier-orders">
+                <p class="dossier-label">PRIMARY ORDERS</p>
+                <ol id="title-objectives" class="brief-objectives"></ol>
+              </div>
+            </div>
+          </section>
           <div class="tabs list-filter" role="tablist" aria-label="Which operations to list">
             <button
               id="filter-open" data-i18n="filter.open"

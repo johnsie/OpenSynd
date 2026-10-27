@@ -98,7 +98,7 @@ for (const [name, type, executablePath] of targets) {
       page.on("pageerror", (error) => errors.push(error.message));
       await page.goto(`${url}?e2e`);
       await page.waitForSelector(".roster-select");
-      assert.match(await page.locator("#title-dialog").innerText(), /First Light/);
+      assert.match(await page.locator("#title-dialog").innerText(), /Last Departure/);
       // A fresh browser has only the first operation open.
       const missionButtons = page.locator("#mission-list button");
       // The list shows what is open to play by default (one operation on a fresh browser); All lists the 50 operations.
@@ -486,13 +486,13 @@ for (const [name, type, executablePath] of targets) {
       assert.equal(await missionButtons.nth(1).isDisabled(), false);
       // Territories pay tax at a rate you set; their mood follows it.
       await missionButtons.nth(0).click();
-      await page.waitForFunction(() => document.querySelector("#territory-panel").textContent.includes("First Light"));
-      assert.match(await page.locator("#territory-panel").innerText(), /First Light: 4\.\d+ million people · held/);
+      await page.waitForFunction(() => document.querySelector("#territory-panel").textContent.includes("Last Departure"));
+      assert.match(await page.locator("#territory-panel").innerText(), /Last Departure: 4\.\d+ million people · held/);
       assert.match(await page.locator("#territory-panel").innerText(), /Tax 30% · pays \d+\.\d funds a day/);
-      await page.getByRole("button", { name: "Raise tax on First Light" }).click();
+      await page.getByRole("button", { name: "Raise tax on Last Departure" }).click();
       assert.match(await page.locator("#territory-panel").innerText(), /Tax 40%/);
       assert.match(await page.locator("#territory-panel").innerText(), /worsening in \d+ days/);
-      await page.getByRole("button", { name: "Lower tax on First Light" }).click();
+      await page.getByRole("button", { name: "Lower tax on Last Departure" }).click();
 
       // The Research & Armoury screen: research, then buy weapons into specific slots.
       await page.evaluate(() => window.opensyndTest.setFunds(100000));
@@ -612,7 +612,7 @@ for (const [name, type, executablePath] of targets) {
       await page.waitForFunction(() => !document.querySelector("#research-dialog").open);
 
       await missionButtons.nth(0).click();
-      await page.waitForFunction(() => document.querySelector("#title-heading").textContent.includes("First Light"));
+      await page.waitForFunction(() => document.querySelector("#title-heading").textContent.includes("Last Departure"));
       await missionButtons.nth(1).click();
       await page.waitForFunction(() => document.querySelector("#title-heading").textContent.includes("Quiet Hours"));
       await page.click("#begin-button");
