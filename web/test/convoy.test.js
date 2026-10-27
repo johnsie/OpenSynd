@@ -23,7 +23,15 @@ test("the Northern Ireland squad deploys in the escort and the procession holds 
   const world = makeWorld(content, mission, { options: { decidesOutcome: true, harmless: true } });
   assert.equal(world.map.dimensions.width * world.map.dimensions.height, 2 * 128 * 96, "the city covers twice the old area");
   assert.equal(world.mission.opponents.length, 6, "the procession faces six enemy agents");
-  assert.equal(world.mission.bystanders.filter((unit) => unit.id.startsWith("civilian-")).length, 72, "the original crowd is quadrupled");
+  const spectators = world.units.filter((unit) => unit.id.startsWith("civilian-"));
+  assert.equal(spectators.length, 288, "the 72-person crowd is quadrupled");
+  assert.ok(spectators.every((unit) => unit.passive && Number.isInteger(unit.facing)), "every spectator stands facing the road");
+  const stepByFacing = new Map([[1, { x: 1, y: 0 }], [3, { x: 0, y: -1 }], [5, { x: -1, y: 0 }], [7, { x: 0, y: 1 }]]);
+  assert.ok(spectators.every((unit) => {
+    const step = stepByFacing.get(unit.facing);
+    return step && [1, 2, 3, 4, 5, 6].some((distance) =>
+      world.grid[unit.position.y + step.y * distance]?.[unit.position.x + step.x * distance]?.surface === "street");
+  }), "every spectator looks directly toward a nearby procession road");
   const squad = world.units.filter((unit) => unit.side === "team");
   assert.deepEqual(squad.map((unit) => unit.inVehicle), Array(4).fill("convoy-armoured-escort"));
   const dignitary = world.units.find((unit) => unit.id === "dignitary");
@@ -35,6 +43,7 @@ test("the Northern Ireland squad deploys in the escort and the procession holds 
     "dignitary-armoured-car",
     "convoy-ambulance",
     "convoy-police-rear",
+    "convoy-response-armoured-car",
   ];
   assert.ok(order.every((id) => world.units.find((unit) => unit.id === id).vehicle.cruiseSpeed === 5));
   advance(world, 20);
@@ -78,6 +87,23 @@ test("the stolen car blocks the convoy until its assassin driver is forced out",
   assert.equal(ejectDriver(blockade, world.units, world.grid), assassin);
   advance(world, 6);
   assert.ok(Math.hypot(lead.position.x - stoppedAt.x, lead.position.y - stoppedAt.y) > 4, "the lead car moves once the blockade is empty");
+});
+
+test("eight response guards leave the rear armoured car at the blockade and hunt the assassins", () => {
+  const world = makeWorld(content, mission, { options: { decidesOutcome: false } });
+  const target = world.units.find((unit) => unit.id === "assassin-five");
+  for (const unit of world.units.filter((candidate) => candidate.side === "opposition" && candidate !== target)) unit.disabled = true;
+  target.passive = true;
+  const guards = world.units.filter((unit) => unit.id.startsWith("response-guard-"));
+  const responseCar = world.units.find((unit) => unit.id === "convoy-response-armoured-car");
+  assert.equal(responseCar.vehicle.occupantIds.filter((id) => id.startsWith("response-guard-")).length, 8);
+  assert.ok(guards.every((guard) => guard.inVehicle === responseCar.id));
+
+  advance(world, 42);
+  assert.ok(guards.every((guard) => !guard.inVehicle), "all eight guards disembark when the escort reaches the blockade");
+  assert.ok(guards.some((guard) => guard.alertedBy === target.id || guard.targetId === target.id || guard.path.length > 0),
+    "the response team advances on an enemy agent");
+  assert.ok(target.health < target.definition.stats.vitality, "the response team engages the assassin");
 });
 
 test("the assassins recognise and attack Mara's armoured car", () => {

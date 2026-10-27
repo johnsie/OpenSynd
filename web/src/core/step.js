@@ -60,6 +60,7 @@ function harmBystander(world, hooks, cost, counter) {
 export function countDisabled(world, hooks, down) {
   if (down.side === "vehicle") return;
   if (down.side === "opposition") world.opStats.enemiesDisabled += 1;
+  else if (down.side === "ally") return;
   else if (down.side === "civilian") harmBystander(world, hooks, CIVILIAN_PENALTY, "civiliansHarmed");
   else if (down.side === "police") harmBystander(world, hooks, POLICE_PENALTY, "policeHarmed");
   else world.opStats.operatorsDisabled += 1;

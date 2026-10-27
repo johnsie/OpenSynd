@@ -2514,7 +2514,8 @@ function spriteSheetFor(unit) {
     const carrying = unit.equipment.some((item) => item.definition.action === "disable-pulse" && item.charges !== 0);
     const armed =
       !unit.disabled &&
-      (unit.side === "opposition" ||
+      (unit.side === "ally" ||
+        unit.side === "opposition" ||
         unit.side === "criminal" ||
         (unit.side === "police" && Boolean(unit.alertedBy)) ||
         (unit.persuaded && carrying && Boolean(owner) && Boolean(heldWeapon(owner, state.elapsed))));
@@ -3034,7 +3035,7 @@ function drawMinimap(viewport) {
     }
   }
   // The map shows the squad and its followers, and anyone within sight of them or picked up by a scanner.
-  const friends = state.units.filter((unit) => (unit.side === "team" || unit.persuaded) && !unit.disabled);
+  const friends = state.units.filter((unit) => (unit.side === "team" || unit.side === "ally" || unit.persuaded) && !unit.disabled);
   const scanned = new Set(scannedUnits(state.units).map((unit) => unit.id));
   const survey = intelLevel(state.campaign, state.mission.id);
   for (const unit of state.units) {
@@ -3042,6 +3043,7 @@ function drawMinimap(viewport) {
     const known =
       Boolean(unit.missionGiver) ||
       unit.side === "team" ||
+      unit.side === "ally" ||
       unit.persuaded ||
       scanned.has(unit.id) ||
       (survey >= 1 && unit.side === "opposition") ||

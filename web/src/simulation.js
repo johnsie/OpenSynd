@@ -315,6 +315,16 @@ function nearestVisibleOperator(unit, units, sight, grid = null, accept = null) 
   return best;
 }
 
+function nearestOpposition(unit, units) {
+  return units
+    .filter((candidate) => candidate.side === "opposition" && !candidate.disabled && !candidate.inVehicle)
+    .sort(
+      (left, right) =>
+        distanceBetween(unit, left) - distanceBetween(unit, right) ||
+        (left.id < right.id ? -1 : left.id > right.id ? 1 : 0),
+    )[0] ?? null;
+}
+
 /** Whether a unit has its weapon out: what civilians run from and police react to. */
 export function armedOut(unit, now, byId = null) {
   if (unit.disabled || unit.inVehicle || now === null || now === undefined) return false;
@@ -707,7 +717,7 @@ function advanceHostile(unit, units, byId, deltaSeconds, grid, now, events) {
   const called = units.some(
     (other) =>
       other !== unit &&
-      other.side === "opposition" &&
+      other.side === unit.side &&
       !other.disabled &&
       other.alertedBy &&
       distanceBetween(unit, other) <= CALL_RADIUS,
@@ -720,6 +730,8 @@ function advanceHostile(unit, units, byId, deltaSeconds, grid, now, events) {
       const close = attacker && !attacker.disabled && distanceBetween(unit, attacker) <= CRIMINAL_GIVE_UP;
       if (close) seen = attacker;
       else unit.hostileTo = null;
+    } else if (unit.side === "ally") {
+      seen = priorityTarget(unit, units) ?? nearestOpposition(unit, units);
     } else {
       seen = priorityTarget(unit, units) ?? nearestVisibleOperator(unit, units, unit.alertedBy ? sight * LOSE_SIGHT_FACTOR : sight, grid);
     }
@@ -846,8 +858,9 @@ function isHostileTo(attacker, candidate, units) {
     return (candidate.side === "criminal" && Boolean(candidate.hostileTo)) || (candidate.side === "police" && Boolean(candidate.alertedBy));
   }
   if (attacker.side === "criminal") return Boolean(attacker.hostileTo) && candidate.id === attacker.hostileTo;
+  if (attacker.side === "ally") return candidate.side === "opposition" && !candidate.inVehicle;
   if (attacker.side === "opposition") {
-    const onFoot = !candidate.inVehicle && (candidate.side === "team" || Boolean(candidate.persuaded));
+    const onFoot = !candidate.inVehicle && (candidate.side === "team" || candidate.side === "ally" || Boolean(candidate.persuaded));
     return onFoot || isSquadVehicle(candidate);
   }
   return false;
@@ -991,7 +1004,7 @@ export function advanceCombat(units, deltaSeconds, grid = null, now = null) {
       (attacker.persuaded && Boolean(owner) && gunOut(owner, now) && combatStats(attacker).attack > 0) ||
       (!attacker.playerUnit &&
         !attacker.persuaded &&
-        (attacker.side === "opposition" || (attacker.side === "criminal" && attacker.hostileTo)));
+        (attacker.side === "ally" || attacker.side === "opposition" || (attacker.side === "criminal" && attacker.hostileTo)));
     if (hostile && attacker.targetId === null) {
       attacker.targetId = automaticTarget(attacker, units, grid)?.id ?? null;
     }

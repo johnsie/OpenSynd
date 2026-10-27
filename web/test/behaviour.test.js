@@ -107,6 +107,17 @@ test("a passive scripted target flees when the squad comes close and never attac
   assert.equal(squad.health, startingHealth, "the armed target does not fire while escaping");
 });
 
+test("allied guards hunt opposition and both sides return fire", () => {
+  const ally = person("ally", "ally", 8, { definition: { role: "guard", stats: stats() }, equipment: [pistol()], patrol: null });
+  const enemy = person("enemy", "opposition", 20, { definition: { role: "enemy-agent", stats: stats() }, equipment: [pistol()] });
+  const allyHealth = ally.health;
+  const enemyHealth = enemy.health;
+  clock([ally, enemy], 8);
+  assert.ok(ally.position.x > 8, "the allied guard advances on the enemy");
+  assert.ok(enemy.health < enemyHealth, "the allied guard attacks the enemy");
+  assert.ok(ally.health < allyHealth, "the enemy recognises the allied guard as hostile");
+});
+
 test("civilians run from anyone with a weapon out within about six tiles, and ignore everyone else", () => {
   const civilian = person("civ", "civilian", 20, { definition: { role: "civilian", stats: stats({ speed: 2.2 }) } });
   const near = operator(20 + CIVILIAN_SCOUT - 1, true);

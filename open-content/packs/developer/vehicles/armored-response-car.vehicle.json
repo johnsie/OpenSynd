@@ -1,0 +1,18 @@
+{
+  "formatVersion": 1,
+  "id": "developer.armored-response-car",
+  "name": "Armored Response Car",
+  "license": "CC0-1.0",
+  "kind": "armored-car",
+  "stats": {
+    "health": 340,
+    "speed": 5.0,
+    "seats": 10,
+    "blastRadius": 3.2,
+    "blastDamage": 60
+  },
+  "appearance": {
+    "primaryColor": "#34453d",
+    "accentColor": "#79d59b"
+  }
+}
