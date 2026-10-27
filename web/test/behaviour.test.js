@@ -77,6 +77,36 @@ test("what counts as having a weapon out: a selected weapon, an engaged enemy, a
   assert.equal(armedOut(follower, 10, byId), false);
 });
 
+test("a passive scripted target flees when the squad comes close and never attacks", () => {
+  const target = person("target", "opposition", 20, {
+    passive: true,
+    equipment: [pistol()],
+    patrol: null,
+    script: {
+      steps: [
+        { type: "trigger", at: { x: 20, y: 2 }, radius: 6 },
+        { type: "walk", to: { x: 30, y: 2 } },
+      ],
+      index: 0,
+      waitLeft: null,
+      loop: false,
+      done: false,
+    },
+  });
+  const squad = operator(0, true);
+  clock([target, squad], 2);
+  assert.equal(target.script.index, 0, "distance, not elapsed time, keeps the target waiting");
+  assert.equal(target.targetId, null);
+
+  squad.position.x = 25;
+  const startingHealth = squad.health;
+  clock([target, squad], 2);
+  assert.ok(target.position.x > 20, "the nearby operative starts the escape script");
+  assert.equal(target.targetId, null);
+  assert.equal(target.alertedBy, null);
+  assert.equal(squad.health, startingHealth, "the armed target does not fire while escaping");
+});
+
 test("civilians run from anyone with a weapon out within about six tiles, and ignore everyone else", () => {
   const civilian = person("civ", "civilian", 20, { definition: { role: "civilian", stats: stats({ speed: 2.2 }) } });
   const near = operator(20 + CIVILIAN_SCOUT - 1, true);

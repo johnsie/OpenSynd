@@ -41,14 +41,15 @@ test("an operation is made from content in Node, with its people, vehicles and o
   assert.deepEqual(world.units.filter((unit) => unit.side === "team").map((unit) => unit.number), [1, 2, 3, 4]);
 });
 
-test("Director Vale waits, escapes by car and fails the first operation", () => {
+test("Director Vale waits for the squad to approach, then escapes by car and fails the first operation", () => {
   const world = makeWorld(content, MISSION, { options: { decidesOutcome: true } });
   const hooks = silentHooks();
   const vale = world.units.find((unit) => unit.id === "director-vale");
   const car = world.units.find((unit) => unit.id === "vale-escape-car");
   const start = { ...vale.position };
   for (let step = 0; step < seconds(74); step += 1) stepWorld(world, FIXED_STEP_SECONDS, hooks);
-  assert.deepEqual(vale.position, start, "the squad gets time to find the target");
+  assert.deepEqual(vale.position, start, "elapsed time alone does not start the escape");
+  world.units.find((unit) => unit.side === "team").position = { x: start.x - 10, y: start.y };
   for (let step = 0; step < seconds(90) && world.outcome === "active"; step += 1) {
     stepWorld(world, FIXED_STEP_SECONDS, hooks);
   }

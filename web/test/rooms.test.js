@@ -166,7 +166,7 @@ test("everything that happens between updates reaches the players, stamped with 
   };
   // A fight: the squad is put next to an enemy and told to attack it.
   const squad = room.world.units.filter((unit) => unit.side === "team");
-  const enemy = room.world.units.find((unit) => unit.side === "opposition");
+  const enemy = room.world.units.find((unit) => unit.side === "opposition" && !unit.passive);
   squad.forEach((unit, index) => {
     unit.position = { x: enemy.position.x + 3 + index, y: enemy.position.y };
   });

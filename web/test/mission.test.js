@@ -69,7 +69,7 @@ function interact(game) {
   return objective;
 }
 
-test("Last Departure is a timed assassination followed by whole-squad extraction", async () => {
+test("Last Departure begins when the squad approaches and ends with whole-squad extraction", async () => {
   const game = await loadMission();
   const target = game.mission.opponents.find((unit) => unit.id === "director-vale");
   assert.deepEqual(game.mission.objectives.map((objective) => objective.type), ["disable", "extract"]);
@@ -82,11 +82,12 @@ test("Last Departure is a timed assassination followed by whole-squad extraction
   assert.deepEqual(valeDefinition.appearance, guardDefinition.appearance, "Vale looks like every other guard");
   assert.ok(game.mission.opponents.filter((unit) => unit !== target).every((unit) => unit.unit === "units/guard.unit.json"));
   assert.ok(game.mission.opponents.filter((unit) => unit.id !== target.id).every((unit) => unit.patrol?.length));
-  assert.equal(target.script[0].type, "wait");
-  assert.ok(target.script[0].seconds >= 60);
-  assert.deepEqual(target.script.map((step) => step.type), ["wait", "say", "enter", "drive", "escape"]);
+  assert.equal(target.passive, true, "Vale never turns to fight the squad");
+  assert.deepEqual(target.script[0], { type: "trigger", at: target.position, radius: 12 });
+  assert.deepEqual(target.script.map((step) => step.type), ["trigger", "say", "enter", "drive", "escape"]);
   assert.equal(target.script[2].vehicle, "vale-escape-car");
   const car = game.mission.vehicles.find((vehicle) => vehicle.id === "vale-escape-car");
+  assert.ok(Math.hypot(car.position.x - target.position.x, car.position.y - target.position.y) >= 10);
   assert.equal(game.grid[car.position.y][car.position.x].surface, "street");
   assert.equal(game.grid[target.script[3].to.y][target.script[3].to.x].surface, "street");
   const exit = game.map.zones.find((zone) => zone.id === game.mission.objectives[1].targetZone);

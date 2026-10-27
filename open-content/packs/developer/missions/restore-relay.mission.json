@@ -4,7 +4,7 @@
   "name": "Last Departure",
   "license": "CC0-1.0",
   "title": "Vale missed his last departure",
-  "briefing": "Tidewater Consortium's security director, Lucan Vale, is preparing to abandon the district with the access ledger that names every paid informant in Northern Europe. He is hiding in plain sight among his own guards at the Signal Yard. Vale will remain inside the eastern administration block while his extraction route is checked, giving the team a short window to locate the building and set an ambush. When the all-clear comes, he will walk out in a guard's uniform, cross to a waiting patrol car and drive east along the service road. Assassinate Vale before the car leaves the map. Once he is dead, assemble every surviving operative at the east-side extraction point. If Vale reaches the boundary, the operation is lost.",
+  "briefing": "Tidewater Consortium's security director, Lucan Vale, is preparing to abandon the district with the access ledger that names every paid informant in Northern Europe. He is hiding in plain sight among his own guards at the Signal Yard. Vale will remain inside the eastern administration block until your operatives breach his security perimeter. Once he realizes the team is close, he will walk out in a guard's uniform, cross the yard to a waiting patrol car and drive east along the service road. Vale is no fighter; he will concentrate entirely on escaping. Assassinate him before the car leaves the map. Once he is dead, assemble every surviving operative at the east-side extraction point. If Vale reaches the boundary, the operation is lost.",
   "story": "Last Departure: Lucan Vale built Tidewater's Northern Europe network by buying names, debts and loyalties. Tonight he intends to leave with the only ledger that can expose it. He looks like any other yard guard, but only one guard has a car waiting and a road out.",
   "debrief": {
     "success": "Vale never reached the border. The ledger is ash, Tidewater's informants are blind, and the team leaves the silent yard together.",
@@ -65,9 +65,10 @@
       "unit": "units/lucan-vale.unit.json",
       "position": { "x": 97, "y": 45 },
       "equipment": [],
+      "passive": true,
       "script": [
-        { "type": "wait", "seconds": 75 },
-        { "type": "say", "text": "Extraction route confirmed. Bring the car around." },
+        { "type": "trigger", "at": { "x": 97, "y": 45 }, "radius": 12 },
+        { "type": "say", "text": "They're inside the perimeter. I am leaving now." },
         { "type": "enter", "vehicle": "vale-escape-car" },
         { "type": "drive", "to": { "x": 127, "y": 51 } },
         { "type": "escape", "to": { "x": 127, "y": 51 } }
@@ -157,7 +158,7 @@
     {
       "id": "vale-escape-car",
       "vehicle": "vehicles/patrol-car.vehicle.json",
-      "position": { "x": 96, "y": 51 }
+      "position": { "x": 100, "y": 55 }
     }
   ],
   "unlocks": [
@@ -169,7 +170,7 @@
     "developer.op-scandinavia"
   ],
   "intel": [
-    "Vale's car is parked on the eastbound road beside the administration block. He waits inside for 75 seconds before moving.",
+    "Vale's car is parked farther down the eastbound road. He will make for it as soon as an operative enters the 12-tile security perimeter around his starting position.",
     "Every other hostile in the yard is a patrolling guard. Vale wears the same uniform; identify him by the waiting patrol car."
   ]
 }

@@ -766,7 +766,9 @@ function advanceHostile(unit, units, byId, deltaSeconds, grid, now, events) {
 export function investigateNoise(units, at, radius, seconds = 12) {
   for (const unit of units) {
     const role = unit.definition?.role;
-    if (unit.side !== "opposition" || unit.disabled || unit.alertedBy || (role !== "guard" && role !== "enemy-agent")) continue;
+    if (unit.side !== "opposition" || unit.passive || unit.disabled || unit.alertedBy || (role !== "guard" && role !== "enemy-agent")) {
+      continue;
+    }
     if (Math.hypot(unit.position.x - at.x, unit.position.y - at.y) <= radius) unit.investigate = { x: at.x, y: at.y, left: seconds };
   }
 }
@@ -793,6 +795,12 @@ export function advancePatrols(units, deltaSeconds, grid = null, now = null, dro
       continue;
     }
     if (unit.side === "team" || unit.playerUnit || unit.disabled || unit.inVehicle || isVehicle(unit) || unit.hitStun > 0) continue;
+    if (unit.passive) {
+      unit.alertedBy = null;
+      unit.targetId = null;
+      walkPatrol(unit, deltaSeconds, grid);
+      continue;
+    }
     if (unit.persuaded) {
       if (grid) advanceFollower(unit, byId, units, grid, deltaSeconds, now, events, drops);
       continue;
@@ -955,6 +963,10 @@ export function advanceCombat(units, deltaSeconds, grid = null, now = null) {
     );
     if (attacker.hitStun > 0) {
       attacker.hitStun = Math.max(0, attacker.hitStun - deltaSeconds);
+      continue;
+    }
+    if (attacker.passive) {
+      attacker.targetId = null;
       continue;
     }
 
