@@ -5,8 +5,8 @@
  "license": "CC0-1.0",
  "projection": "isometric-diamond",
  "dimensions": {
-  "width": 128,
-  "height": 96
+  "width": 192,
+  "height": 128
  },
  "cellSize": {
   "width": 80,
@@ -639,6 +639,160 @@
    "walkable": false,
    "elevation": 2,
    "color": "#4a5058"
+  },
+  {
+   "id": "city-east-ground",
+   "x": 128,
+   "y": 0,
+   "width": 64,
+   "height": 128,
+   "surface": "lawn",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#2d4a34"
+  },
+  {
+   "id": "city-south-ground",
+   "x": 0,
+   "y": 96,
+   "width": 128,
+   "height": 32,
+   "surface": "lawn",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#2d4a34"
+  },
+  {
+   "id": "outer-north-road",
+   "x": 85,
+   "y": 20,
+   "width": 77,
+   "height": 3,
+   "surface": "street",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#2d363d"
+  },
+  {
+   "id": "outer-east-road",
+   "x": 159,
+   "y": 20,
+   "width": 3,
+   "height": 89,
+   "surface": "street",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#2d363d"
+  },
+  {
+   "id": "outer-south-road",
+   "x": 85,
+   "y": 106,
+   "width": 77,
+   "height": 3,
+   "surface": "street",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#2d363d"
+  },
+  {
+   "id": "east-avenue-extension",
+   "x": 128,
+   "y": 46,
+   "width": 64,
+   "height": 4,
+   "surface": "street",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#2d363d"
+  },
+  {
+   "id": "outer-north-connector",
+   "x": 85,
+   "y": 20,
+   "width": 3,
+   "height": 9,
+   "surface": "street",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#2d363d"
+  },
+  {
+   "id": "outer-south-connector",
+   "x": 85,
+   "y": 68,
+   "width": 3,
+   "height": 41,
+   "surface": "street",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#2d363d"
+  },
+  {
+   "id": "east-block-north-west",
+   "x": 132,
+   "y": 26,
+   "width": 21,
+   "height": 18,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 3,
+   "color": "#303a42"
+  },
+  {
+   "id": "east-block-north-east",
+   "x": 166,
+   "y": 26,
+   "width": 19,
+   "height": 18,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 4,
+   "color": "#343d43"
+  },
+  {
+   "id": "east-block-centre-west",
+   "x": 132,
+   "y": 54,
+   "width": 21,
+   "height": 18,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 4,
+   "color": "#303a42"
+  },
+  {
+   "id": "east-block-centre-east",
+   "x": 166,
+   "y": 54,
+   "width": 19,
+   "height": 18,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 3,
+   "color": "#343d43"
+  },
+  {
+   "id": "east-block-south-west",
+   "x": 132,
+   "y": 80,
+   "width": 21,
+   "height": 21,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 5,
+   "color": "#303a42"
+  },
+  {
+   "id": "east-block-south-east",
+   "x": 166,
+   "y": 80,
+   "width": 19,
+   "height": 21,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 4,
+   "color": "#343d43"
   }
  ],
  "zones": [

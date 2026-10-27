@@ -6,6 +6,7 @@ import test from "node:test";
 import { silentHooks } from "../src/core/hooks.js";
 import { stepWorld } from "../src/core/world.js";
 import { FIXED_STEP_SECONDS } from "../src/simulation.js";
+import { ejectDriver } from "../src/vehicles.js";
 import { loadContent, makeWorld } from "../server/content.js";
 
 const content = loadContent();
@@ -20,6 +21,9 @@ const advance = (world, count) => {
 
 test("the Northern Ireland squad deploys in the escort and the procession holds formation", () => {
   const world = makeWorld(content, mission, { options: { decidesOutcome: true, harmless: true } });
+  assert.equal(world.map.dimensions.width * world.map.dimensions.height, 2 * 128 * 96, "the city covers twice the old area");
+  assert.equal(world.mission.opponents.length, 12, "the four-agent threat has been tripled");
+  assert.equal(world.mission.bystanders.filter((unit) => unit.id.startsWith("civilian-")).length, 54, "the route has a large crowd");
   const squad = world.units.filter((unit) => unit.side === "team");
   assert.deepEqual(squad.map((unit) => unit.inVehicle), Array(4).fill("convoy-armoured-escort"));
   const dignitary = world.units.find((unit) => unit.id === "dignitary");
@@ -47,13 +51,33 @@ test("the Northern Ireland squad deploys in the escort and the procession holds 
 
 test("Mara completes a full circuit before walking through reception", () => {
   const world = makeWorld(content, mission, { options: { decidesOutcome: true, harmless: true } });
-  advance(world, 90);
+  for (const unit of world.units.filter((candidate) => candidate.side === "opposition")) unit.disabled = true;
+  advance(world, 130);
   const dignitary = world.units.find((unit) => unit.id === "dignitary");
   assert.equal(world.outcome, "success");
-  assert.ok(world.elapsed > 60 && world.elapsed < 80, `procession finished after ${world.elapsed} seconds`);
+  assert.ok(world.elapsed > 95 && world.elapsed < 115, `the expanded procession finished after ${world.elapsed} seconds`);
   assert.equal(dignitary.inVehicle, null);
   assert.ok(dignitary.position.x >= 92 && dignitary.position.x < 95);
   assert.equal(world.objectives[0].complete, true);
+});
+
+test("the stolen car blocks the convoy until its assassin driver is forced out", () => {
+  const world = makeWorld(content, mission, { options: { decidesOutcome: true, harmless: true } });
+  for (const unit of world.units.filter((candidate) => candidate.side === "opposition" && candidate.id !== "assassin-roadblock")) {
+    unit.disabled = true;
+  }
+  advance(world, 35);
+  const assassin = world.units.find((unit) => unit.id === "assassin-roadblock");
+  const blockade = world.units.find((unit) => unit.id === "blockade-stolen-car");
+  const lead = world.units.find((unit) => unit.id === "convoy-police-lead");
+  assert.equal(assassin.inVehicle, blockade.id);
+  assert.equal(blockade.vehicle.driverId, assassin.id);
+  assert.ok(Math.hypot(lead.position.x - blockade.position.x, lead.position.y - blockade.position.y) < 3);
+  const stoppedAt = { ...lead.position };
+
+  assert.equal(ejectDriver(blockade, world.units, world.grid), assassin);
+  advance(world, 6);
+  assert.ok(Math.hypot(lead.position.x - stoppedAt.x, lead.position.y - stoppedAt.y) > 4, "the lead car moves once the blockade is empty");
 });
 
 test("the assassins recognise and attack Mara's armoured car", () => {
