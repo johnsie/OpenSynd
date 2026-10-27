@@ -12,10 +12,10 @@
   },
   "map": "maps/northern-ireland.map.json",
   "team": [
-    {"id": "operator-one", "unit": "units/field-operator.unit.json", "position": {"x": 8, "y": 40}, "equipment": ["equipment/civic-pulse-emitter.equipment.json", "equipment/field-repair-kit.equipment.json"]},
-    {"id": "operator-two", "unit": "units/field-operator.unit.json", "position": {"x": 9, "y": 40}, "equipment": ["equipment/civic-pulse-emitter.equipment.json", "equipment/field-repair-kit.equipment.json"]},
-    {"id": "operator-three", "unit": "units/field-operator.unit.json", "position": {"x": 8, "y": 41}, "equipment": ["equipment/civic-pulse-emitter.equipment.json", "equipment/field-repair-kit.equipment.json"]},
-    {"id": "operator-four", "unit": "units/field-operator.unit.json", "position": {"x": 9, "y": 41}, "equipment": ["equipment/civic-pulse-emitter.equipment.json", "equipment/field-repair-kit.equipment.json"]}
+    {"id": "operator-one", "unit": "units/field-operator.unit.json", "position": {"x": 2, "y": 48}, "equipment": ["equipment/civic-pulse-emitter.equipment.json", "equipment/field-repair-kit.equipment.json"]},
+    {"id": "operator-two", "unit": "units/field-operator.unit.json", "position": {"x": 3, "y": 48}, "equipment": ["equipment/civic-pulse-emitter.equipment.json", "equipment/field-repair-kit.equipment.json"]},
+    {"id": "operator-three", "unit": "units/field-operator.unit.json", "position": {"x": 2, "y": 49}, "equipment": ["equipment/civic-pulse-emitter.equipment.json", "equipment/field-repair-kit.equipment.json"]},
+    {"id": "operator-four", "unit": "units/field-operator.unit.json", "position": {"x": 3, "y": 49}, "equipment": ["equipment/civic-pulse-emitter.equipment.json", "equipment/field-repair-kit.equipment.json"]}
   ],
   "opponents": [
     {"id": "assassin-one", "unit": "units/enemy-agent.unit.json", "position": {"x": 55, "y": 34}, "equipment": ["equipment/civic-pulse-emitter.equipment.json", "equipment/delay-charge.equipment.json"], "priorityTarget": "dignitary"},
