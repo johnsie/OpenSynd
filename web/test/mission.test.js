@@ -90,6 +90,19 @@ test("Last Departure begins when the squad approaches and ends with whole-squad 
   const car = game.mission.vehicles.find((vehicle) => vehicle.id === "vale-escape-car");
   assert.deepEqual(car.position, { x: 106, y: 51 }, "the car is fully visible on the open eastbound road");
   assert.ok(Math.hypot(car.position.x - target.position.x, car.position.y - target.position.y) >= 10);
+  const forecourt = game.map.regions.filter((region) => region.id.startsWith("vale-forecourt"));
+  assert.deepEqual(forecourt.map((region) => region.id).sort(), [
+    "vale-forecourt-apron",
+    "vale-forecourt-north",
+    "vale-forecourt-south",
+  ]);
+  assert.ok(forecourt.every((region) => region.walkable && region.elevation === 0), "the escape scene is open ground");
+  const nearbyBuildings = game.map.regions.filter((region) => region.surface === "utility-building");
+  const distanceFromCar = (region) => Math.hypot(
+    Math.max(region.x - car.position.x, car.position.x - (region.x + region.width - 1), 0),
+    Math.max(region.y - car.position.y, car.position.y - (region.y + region.height - 1), 0),
+  );
+  assert.ok(Math.min(...nearbyBuildings.map(distanceFromCar)) > 7, "no building crowds or obscures the getaway car");
   assert.equal(game.grid[car.position.y][car.position.x].surface, "street");
   assert.equal(game.grid[target.script[3].to.y][target.script[3].to.x].surface, "street");
   const exit = game.map.zones.find((zone) => zone.id === game.mission.objectives[1].targetZone);

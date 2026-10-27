@@ -4,7 +4,7 @@
   "name": "Last Departure",
   "license": "CC0-1.0",
   "title": "Vale missed his last departure",
-  "briefing": "Tidewater Consortium's security director, Lucan Vale, is preparing to abandon the district with the access ledger that names every paid informant in Northern Europe. He is hiding in plain sight among his own guards at the Signal Yard. Vale will remain inside the eastern administration block until your operatives breach his security perimeter. Once he realizes the team is close, he will walk out in a guard's uniform, cross the yard to a waiting patrol car and drive east along the service road. Vale is no fighter; he will concentrate entirely on escaping. Assassinate him before the car leaves the map. Once he is dead, assemble every surviving operative at the east-side extraction point. If Vale reaches the boundary, the operation is lost.",
+  "briefing": "Tidewater Consortium's security director, Lucan Vale, is preparing to abandon the district with the access ledger that names every paid informant in Northern Europe. He is hiding in plain sight among his own guards at the Signal Yard. Vale will remain inside the eastern administration block until your operatives breach his security perimeter. Once he realizes the team is close, he will walk out in a guard's uniform, sprint across the cleared forecourt to a waiting patrol car and drive east along the open service road. Vale is no fighter; he will concentrate entirely on escaping. Assassinate him before the car leaves the map. Once he is dead, assemble every surviving operative at the east-side extraction point. If Vale reaches the boundary, the operation is lost.",
   "story": "Last Departure: Lucan Vale built Tidewater's Northern Europe network by buying names, debts and loyalties. Tonight he intends to leave with the only ledger that can expose it. He looks like any other yard guard, but only one guard has a car waiting and a road out.",
   "debrief": {
     "success": "Vale never reached the border. The ledger is ash, Tidewater's informants are blind, and the team leaves the silent yard together.",
@@ -170,7 +170,7 @@
     "developer.op-scandinavia"
   ],
   "intel": [
-    "Vale's car is parked farther down the eastbound road. He will make for it as soon as an operative enters the 12-tile security perimeter around his starting position.",
+    "Vale's car is exposed on the eastbound road beyond the cleared forecourt. He will make for it as soon as an operative enters the 12-tile security perimeter around his starting position.",
     "Every other hostile in the yard is a patrolling guard. Vale wears the same uniform; identify him by the waiting patrol car."
   ]
 }

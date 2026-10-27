@@ -1158,15 +1158,15 @@
    "color": "#46505a"
   },
   {
-   "id": "block-4-1-a",
+   "id": "vale-forecourt-north",
    "x": 103,
    "y": 31,
    "width": 8,
    "height": 18,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 4,
-   "color": "#1a1f24"
+   "surface": "service-concrete",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#343d43"
   },
   {
    "id": "block-4-1-b",
@@ -1191,15 +1191,15 @@
    "color": "#46505a"
   },
   {
-   "id": "block-4-2-a",
+   "id": "vale-forecourt-south",
    "x": 103,
    "y": 55,
    "width": 18,
    "height": 8,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 5,
-   "color": "#1a1f24"
+   "surface": "service-concrete",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#343d43"
   },
   {
    "id": "block-4-2-b",
@@ -1224,15 +1224,15 @@
    "color": "#232a30"
   },
   {
-   "id": "fence-4-2-north",
+   "id": "vale-forecourt-apron",
    "x": 105,
    "y": 54,
    "width": 5,
    "height": 1,
-   "surface": "service-fence",
-   "walkable": false,
-   "elevation": 1,
-   "color": "#3a4650"
+   "surface": "service-concrete",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#343d43"
   },
   {
    "id": "wall-4-2-south",
