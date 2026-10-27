@@ -163,6 +163,28 @@ test("a controlled vehicle drives where it is told, along roads, with its passen
   assert.notDeepEqual(one.position, vehicle.position);
 });
 
+test("a controlled car goes to the end of the road before turning back", () => {
+  const vehicle = car("c", 10, 5);
+  vehicle.vehicle.controlledBy = "one";
+  vehicle.vehicle.heading = { x: 1, y: 0 };
+  assert.equal(driveTo(vehicle, { x: 5, y: 5 }, roads), true);
+  assert.deepEqual(vehicle.path[0], { x: 11, y: 5 }, "it carries on in the direction it faces");
+  const roadEnd = vehicle.path.findIndex((point) => point.x === 39 && point.y === 5);
+  const destination = vehicle.path.findIndex((point) => point.x === 5 && point.y === 5);
+  assert.ok(roadEnd >= 0 && destination > roadEnd, "it turns only after reaching the road end");
+});
+
+test("an unreachable click does not stop a controlled car", () => {
+  const vehicle = car("c", 10, 5, null, { path: [{ x: 20, y: 5 }] });
+  vehicle.vehicle.controlledBy = "one";
+  vehicle.vehicle.heading = { x: 1, y: 0 };
+  assert.equal(driveTo(vehicle, { x: 200, y: 200 }, roads), true);
+  assert.deepEqual(vehicle.path, [{ x: 20, y: 5 }], "the route it was already driving is kept");
+  for (let step = 0; step < 200; step += 1) advanceVehicles([vehicle], 0.1, roads, grid);
+  assert.ok(vehicle.position.x !== 20, "it carries on after the old route ends");
+  assert.equal(vehicle.vehicle.continueDriving, true);
+});
+
 test("a destroyed car drops its passengers, explodes once, and hurts everyone nearby, friend or foe", () => {
   const driver = person("d", 10, 5, { inVehicle: "c", health: 40 });
   const vehicle = car("c", 10, 5, "d");
@@ -201,7 +223,7 @@ test("ENTER_RANGE is a short walk", () => {
   assert.ok(ENTER_RANGE >= 1.5 && ENTER_RANGE <= 4);
 });
 
-test("a moving car runs over people on foot: harder when faster, never twice in a second, never someone riding", () => {
+test("a squad-driven car knocks down and kills people on foot, never someone riding", () => {
   assert.equal(runOverDamage(6.5), 33);
   assert.ok(runOverDamage(8) > runOverDamage(4));
     const lorry = car("car", 10, 5, null, { path: [{ x: 30, y: 5 }] });
@@ -212,10 +234,11 @@ test("a moving car runs over people on foot: harder when faster, never twice in 
   const hits = events.filter((event) => event.type === "runover");
   assert.equal(hits.length, 1);
   assert.equal(hits[0].unitId, "walker");
-  assert.equal(walker.health, walker.definition.stats.vitality - runOverDamage(lorry.definition.stats.speed));
+  assert.equal(walker.health, 0);
+  assert.equal(walker.disabled, true);
   assert.ok(walker.hitStun > 0);
   const again = advanceVehicles([lorry, walker, rider], 1 / 30, roads, grid).filter((event) => event.type === "runover");
-  assert.equal(again.length, 0, "not hit twice at once");
+  assert.equal(again.length, 0, "a fallen person is not hit twice");
   assert.ok(RUNOVER_COOLDOWN >= 1);
 
   // The city's own cars, driven by civilians, never run anyone down.
@@ -241,6 +264,14 @@ test("a moving car runs over people on foot: harder when faster, never twice in 
   assert.equal(guard.disabled, true);
   assert.equal(guard.lastDamageType, "collision");
   assert.equal(bystander.health, bystander.definition.stats.vitality);
+
+  const stoppingCar = car("stopping-car", 10, 5, null, { path: [{ x: 10.2, y: 5 }] });
+  stoppingCar.vehicle.controlledBy = "op";
+  const atDestination = person("at-destination", 10.2, 5);
+  advanceVehicles([stoppingCar, atDestination], 1 / 30, roads, grid);
+  assert.equal(stoppingCar.path.length, 0, "the car used its last route step");
+  assert.equal(atDestination.disabled, true, "it still kills the person it reached on that final step");
+
   lorry.path = [];
   walker.runOverLeft = 0;
   const parked = advanceVehicles([lorry, walker], 1 / 30, roads, grid).filter((event) => event.type === "runover");

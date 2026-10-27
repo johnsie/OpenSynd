@@ -51,6 +51,7 @@ export function newVehicleState(driverId = null) {
     exploded: false,
     wreckLeft: 0,
     heading: { x: 1, y: 0 },
+    continueDriving: false,
     train: null,
   };
 }
@@ -274,13 +275,59 @@ export function leaveVehicle(vehicle, units, grid) {
   return ejectAll(vehicle, units, grid);
 }
 
-/** Order a controlled vehicle to a point: it drives to the nearest road tile. Returns whether it has a route. */
+const roadHeading = (heading) => Math.abs(heading.x) >= Math.abs(heading.y)
+  ? { x: Math.sign(heading.x || 1), y: 0 }
+  : { x: 0, y: Math.sign(heading.y || 1) };
+
+// The road ahead to its end. This is also where a car may turn round; it never reverses in the middle of a road.
+function roadAhead(vehicle, roadGrid, heading = roadHeading(vehicle.vehicle.heading)) {
+  const path = [];
+  let at = tileOf(vehicle.position);
+  while (roadGrid[at.y + heading.y]?.[at.x + heading.x]?.walkable) {
+    at = { x: at.x + heading.x, y: at.y + heading.y };
+    path.push(at);
+  }
+  return path;
+}
+
+// If the shortest route begins by turning or reversing, carry on to the end of this road before taking that route.
+function routeWithoutMidRoadTurn(vehicle, goal, roadGrid) {
+  const start = tileOf(vehicle.position);
+  const direct = findPath(roadGrid, start, goal);
+  if (direct.length === 0) return [];
+  const heading = roadHeading(vehicle.vehicle.heading);
+  const first = direct[0];
+  const beginsStraight = (first.x - start.x) * heading.x + (first.y - start.y) * heading.y > 0;
+  if (beginsStraight) return direct;
+  const onward = roadAhead(vehicle, roadGrid, heading);
+  if (onward.length === 0) return direct; // already at the road end: turning here is allowed
+  const afterTurn = findPath(roadGrid, onward.at(-1), goal);
+  return afterTurn.length > 0 || onward.at(-1).x === goal.x && onward.at(-1).y === goal.y
+    ? [...onward, ...afterTurn]
+    : [];
+}
+
+/**
+ * Order a controlled vehicle to a point: it drives to the nearest road tile. A turn starts at the end of the road, never beneath
+ * the car. If the point cannot be reached, its present route is kept and it carries on along the road instead of stopping.
+ */
 export function driveTo(vehicle, point, roadGrid) {
   const goal = nearestRoadTile(roadGrid, point, 12);
-  if (!goal) return false;
-  const path = findPath(roadGrid, tileOf(vehicle.position), goal);
-  vehicle.path = path;
-  return path.length > 0;
+  const path = goal ? routeWithoutMidRoadTurn(vehicle, goal, roadGrid) : [];
+  if (path.length > 0) {
+    vehicle.path = path;
+    vehicle.vehicle.continueDriving = false;
+    return true;
+  }
+  vehicle.vehicle.continueDriving = true;
+  if (vehicle.path.length === 0) {
+    vehicle.path = roadAhead(vehicle, roadGrid);
+    if (vehicle.path.length === 0) {
+      const heading = roadHeading(vehicle.vehicle.heading);
+      vehicle.path = roadAhead(vehicle, roadGrid, { x: -heading.x, y: -heading.y });
+    }
+  }
+  return vehicle.path.length > 0;
 }
 
 function moveAlongPath(vehicle, seconds, speed) {
@@ -400,15 +447,15 @@ export function runOverDamage(speed) {
   return Math.round(speed * 5);
 }
 
-function runOver(vehicle, units, seconds) {
+function runOver(vehicle, units, seconds, moving) {
   const events = [];
-  if (vehicle.path.length === 0 || !vehicle.vehicle.controlledBy) return events;
-  const amount = runOverDamage(vehicle.definition.stats.speed);
+  if (!moving || !vehicle.vehicle.controlledBy) return events;
   for (const unit of units) {
     if (unit === vehicle || isVehicle(unit) || unit.disabled || unit.inVehicle) continue;
     unit.runOverLeft = Math.max(0, (unit.runOverLeft ?? 0) - seconds);
     if (unit.runOverLeft > 0) continue;
     if (Math.hypot(unit.position.x - vehicle.position.x, unit.position.y - vehicle.position.y) > RUNOVER_RADIUS) continue;
+    const amount = Math.max(unit.health, runOverDamage(vehicle.definition.stats.speed));
     unit.runOverLeft = RUNOVER_COOLDOWN;
     unit.health = Math.max(0, unit.health - amount);
     unit.hitStun = 0.4;
@@ -648,7 +695,17 @@ export function advanceVehicles(units, seconds, roadGrid, grid, time = 0) {
       continue;
     }
     const driver = state.driverId ? units.find((unit) => unit.id === state.driverId) : null;
-    if (state.controlledBy) moveAlongPath(vehicle, seconds, vehicle.definition.stats.speed);
+    const beforeMove = { ...vehicle.position };
+    if (state.controlledBy) {
+      if (state.continueDriving && vehicle.path.length === 0) {
+        vehicle.path = roadAhead(vehicle, roadGrid);
+        if (vehicle.path.length === 0) {
+          const heading = roadHeading(state.heading);
+          vehicle.path = roadAhead(vehicle, roadGrid, { x: -heading.x, y: -heading.y });
+        }
+      }
+      moveAlongPath(vehicle, seconds, vehicle.definition.stats.speed);
+    }
     else if (driver && !driver.disabled && !blockedAhead(vehicle, units) && !stoppedBySignal(vehicle, roadGrid.crossings, time)) {
       driveRoute(vehicle, seconds, roadGrid);
     }
@@ -656,7 +713,8 @@ export function advanceVehicles(units, seconds, roadGrid, grid, time = 0) {
       const unit = units.find((other) => other.id === id);
       if (unit) unit.position = { ...vehicle.position };
     }
-    events.push(...runOver(vehicle, units, seconds));
+    const moving = Math.hypot(vehicle.position.x - beforeMove.x, vehicle.position.y - beforeMove.y) > 1e-6;
+    events.push(...runOver(vehicle, units, seconds, moving));
   }
   return events;
 }
