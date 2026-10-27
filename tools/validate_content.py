@@ -383,6 +383,7 @@ class Validation:
                 self.error(path, "region must have a name, a longitude from -180 to 180 and a latitude from -58 to 84")
 
         placement_ids: set[str] = set()
+        priority_targets: list[tuple[str, str]] = []
         for group_name in ("team", "opponents", "bystanders"):
             group = value.get(group_name, [])
             if not isinstance(group, list):
@@ -461,6 +462,17 @@ class Validation:
                                 f"script step of {placement_id}",
                             )
 
+                priority_target = placement.get("priorityTarget")
+                if priority_target is not None and not isinstance(priority_target, str):
+                    self.error(path, f"placement {placement_id} has an invalid priority target")
+                elif priority_target is not None:
+                    priority_targets.append((placement_id, priority_target))
+
+        for placement_id, priority_target in priority_targets:
+            if priority_target not in placement_ids:
+                self.error(path, f"placement {placement_id} names an unknown priority target")
+
+        person_ids = set(placement_ids)
         for placement in value.get("vehicles", []):
             if not isinstance(placement, dict):
                 self.error(path, "vehicles must be objects")
@@ -477,6 +489,11 @@ class Validation:
                 driver_path = self.resolve_reference(pack_root, path, driver)
                 if driver_path not in unit_paths:
                     self.error(path, f"driver unit is not declared by its pack: {driver}")
+            passengers = placement.get("passengers", [])
+            if not isinstance(passengers, list) or len(passengers) != len(set(passengers)):
+                self.error(path, f"vehicle {vehicle_id} passengers must be a unique list")
+            elif not set(passengers) <= person_ids:
+                self.error(path, f"vehicle {vehicle_id} names an unknown passenger")
             position = placement.get("position")
             rectangle = dict(position) if isinstance(position, dict) else {}
             rectangle.update({"width": 1, "height": 1})

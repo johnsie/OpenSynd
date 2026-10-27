@@ -91,6 +91,9 @@
         "unit": { "$ref": "#/$defs/path" },
         "position": { "$ref": "#/$defs/position" },
         "equipment": { "$ref": "#/$defs/pathList" },
+        "side": { "enum": ["team", "opposition", "civilian", "criminal", "police"], "description": "Optional mission-specific allegiance override." },
+        "passive": { "type": "boolean", "description": "Stand or follow the script without looking for a fight." },
+        "priorityTarget": { "$ref": "#/$defs/id", "description": "A person this placement pursues in preference to the squad, including while that person rides in a vehicle." },
         "patrol": {
           "type": "array",
           "description": "Waypoints an opposition unit walks after its start, returning to the start and repeating.",
@@ -135,6 +138,13 @@
         "vehicle": { "$ref": "#/$defs/path" },
         "position": { "$ref": "#/$defs/position" },
         "driver": { "$ref": "#/$defs/path", "description": "The unit definition of the person at the wheel, if any." },
+        "cruiseSpeed": { "type": "number", "exclusiveMinimum": 0, "description": "Optional AI route speed in tiles per second; player control still uses the vehicle's normal speed." },
+        "passengers": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/id" },
+          "description": "Mission placements already riding in the vehicle when the operation begins."
+        },
         "patrol": {
           "type": "array",
           "description": "Waypoints along the roads the driver follows, returning to the start and repeating.",

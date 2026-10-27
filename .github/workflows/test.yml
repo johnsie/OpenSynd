@@ -41,6 +41,7 @@ jobs:
       working-directory: web
       env:
         E2E_STRICT: "1"
+        E2E_JOBS: "3"
       run: |
         npx playwright-core install --with-deps chromium firefox
         node e2e/smoke.mjs

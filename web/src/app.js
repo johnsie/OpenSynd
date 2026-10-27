@@ -1246,7 +1246,6 @@ function openResearch(canDeploy = titleDialog.open) {
   researchDialog.showModal();
 }
 
-document.querySelector("#outcome-research").addEventListener("click", () => openResearch(false));
 document.querySelector("#close-research").addEventListener("click", () => researchDialog.close());
 // Before an operation starts, what was bought, fitted or changed in the squad has to be on the operatives when it begins:
 // the operation is set up again from the saved loadouts.
@@ -3607,7 +3606,6 @@ function showOutcome(outcome) {
     if (online.heading) document.querySelector("#outcome-heading").textContent = online.heading;
     if (online.text) document.querySelector("#outcome-text").textContent = reason ? `${reason} ${online.text}` : online.text;
   }
-  document.querySelector("#outcome-research").hidden = Boolean(state.online);
   document.querySelector("#outcome-close").textContent = state.online ? "Back to the menu" : "Review the map";
   const hasNext = won && !state.online && nextOperation() !== -1;
   document.querySelector("#next-button").hidden = !hasNext;
@@ -3644,6 +3642,9 @@ function showOutcome(outcome) {
         ]
       : []),
     ...(state.opStats.discovered?.length > 0 ? [["Discovered", state.opStats.discovered.join(", ")]] : []),
+    ...(won && state.opStats.researchCompleted?.length > 0
+      ? [["Research completed", state.opStats.researchCompleted.join(", ")]]
+      : []),
     ...(state.opStats.resupply > 0 ? [["Resupply bill", `${state.opStats.resupply} funds`]] : []),
     ...(state.online && state.dailyResult
       ? [
@@ -3703,8 +3704,10 @@ function passHours(hours) {
   state.campaign = result.campaign;
   for (const event of result.events) {
     if (event.type === "researched") {
-      const item = state.catalog.find((entry) => entry.id === event.itemId);
-      setStatus(`Research complete: ${item.name}. It is ready in the Armoury.`);
+      const name = state.catalog.find((entry) => entry.id === event.itemId)?.name ?? event.itemId;
+      state.opStats.researchCompleted ??= [];
+      if (!state.opStats.researchCompleted.includes(name)) state.opStats.researchCompleted.push(name);
+      setStatus(`Research complete: ${name}. It is ready in the Armoury.`);
       audio.play("objective");
     } else if (event.type === "revolt") {
       const territory = state.missionList.find((entry) => entry.id === event.id);
@@ -3733,6 +3736,10 @@ function discover(itemIds) {
   state.campaign = found.campaign;
   for (const event of found.events) {
     const name = state.catalog.find((item) => item.id === event.itemId)?.name ?? event.itemId;
+    if (event.finished) {
+      state.opStats.researchCompleted ??= [];
+      if (!state.opStats.researchCompleted.includes(name)) state.opStats.researchCompleted.push(name);
+    }
     state.opStats.discovered.push(event.finished ? `${name} (research finished)` : `${name} (+25% research)`);
   }
 }
@@ -4441,7 +4448,7 @@ wireTabs(document.querySelector("#mission-panel > .tabs"));
 actionButton.addEventListener("click", performInteraction);
 repairButton.addEventListener("click", useRepairKit);
 document.querySelector("#loot-button").addEventListener("click", lootAction);
-document.querySelector("#vehicle-button").addEventListener("click", toggleVehicle);
+document.querySelector("#vehicle-button").addEventListener("click", () => toggleVehicle());
 saveButton.addEventListener("click", saveLocally);
 loadButton.addEventListener("click", loadLocally);
 exportButton.addEventListener("click", exportSave);

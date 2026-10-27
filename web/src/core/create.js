@@ -147,6 +147,7 @@ export function createWorld({ mission, map, content, campaign, seed = 1, options
     vehicle.side = "vehicle";
     vehicle.patrol = null;
     vehicle.vehicle = newVehicleState(driverId);
+    vehicle.vehicle.cruiseSpeed = placement.cruiseSpeed ?? null;
     if (placement.stops) {
       startTrain(vehicle, placement.stops, definition.carriages || 4);
       // The railway is a viaduct: the train runs at the height of the track under its first stop.
@@ -156,6 +157,14 @@ export function createWorld({ mission, map, content, campaign, seed = 1, options
       vehicle.vehicle.route = { route: buildPatrolRoute(world.roadGrid, placement.position, placement.patrol), index: 0 };
     }
     world.units.push(vehicle);
+    for (const passengerId of placement.passengers ?? []) {
+      const passenger = world.units.find((unit) => unit.id === passengerId);
+      if (!passenger || passenger.disabled || passenger.inVehicle) continue;
+      passenger.inVehicle = placement.id;
+      passenger.position = { ...placement.position };
+      passenger.path = [];
+      vehicle.vehicle.occupantIds.push(passenger.id);
+    }
     if (driverDefinition) {
       const driver = buildUnit({ id: driverId, position: placement.position, equipment: [] }, driverDefinition);
       driver.inVehicle = placement.id;

@@ -287,6 +287,13 @@ export function gunOut(unit, now) {
   return now !== null && now !== undefined && Boolean(heldWeapon(unit, now));
 }
 
+function priorityTarget(unit, units) {
+  const named = unit.priorityTarget ? units.find((candidate) => candidate.id === unit.priorityTarget) : null;
+  if (!named || named.disabled) return null;
+  if (!named.inVehicle) return named;
+  return units.find((candidate) => candidate.id === named.inVehicle && isVehicle(candidate) && !candidate.disabled) ?? named;
+}
+
 function nearestVisibleOperator(unit, units, sight, grid = null, accept = null) {
   let best = null;
   let bestDistance = Infinity;
@@ -439,6 +446,10 @@ export function advanceScript(unit, deltaSeconds, grid, units) {
     }
   } else if (step.type === "leave") {
     const vehicle = units.find((other) => other.id === unit.inVehicle);
+    if (vehicle && step.at) {
+      const radius = step.radius ?? ENTER_RANGE;
+      if (Math.hypot(vehicle.position.x - step.at.x, vehicle.position.y - step.at.y) > radius) return;
+    }
     if (vehicle) {
       ejectAll(vehicle, units, grid ?? []);
       vehicle.vehicle.route = null;
@@ -710,7 +721,7 @@ function advanceHostile(unit, units, byId, deltaSeconds, grid, now, events) {
       if (close) seen = attacker;
       else unit.hostileTo = null;
     } else {
-      seen = nearestVisibleOperator(unit, units, unit.alertedBy ? sight * LOSE_SIGHT_FACTOR : sight, grid);
+      seen = priorityTarget(unit, units) ?? nearestVisibleOperator(unit, units, unit.alertedBy ? sight * LOSE_SIGHT_FACTOR : sight, grid);
     }
   }
 
@@ -825,8 +836,10 @@ function distanceBetween(left, right) {
 // Who an armed unit may open fire on by itself. Enemy agents and guards shoot the squad and anyone it has
 // persuaded; a criminal only the person who attacked it; a persuaded follower shoots whoever is hostile
 // to the squad. Police are handled by their own behaviour, which picks their target.
-function isHostileTo(attacker, candidate) {
+function isHostileTo(attacker, candidate, units) {
   if (candidate.disabled || candidate === attacker) return false;
+  const priority = priorityTarget(attacker, units);
+  if (priority === candidate) return true;
   if (attacker.persuaded) {
     if (candidate.persuaded) return false;
     if (candidate.side === "opposition") return true;
@@ -845,7 +858,7 @@ function automaticTarget(attacker, units, grid = null) {
   return units
     .filter(
       (candidate) =>
-        isHostileTo(attacker, candidate) &&
+        isHostileTo(attacker, candidate, units) &&
         distanceBetween(attacker, candidate) <= stats.range &&
         hasLineOfSight(grid, attacker.position, candidate.position),
     )

@@ -98,6 +98,18 @@ test("an AI driver drives the route along the road and carries the driver with i
   assert.ok(vehicle.position.x <= 25.0001 && vehicle.position.x >= 4.9999, "never leaves its route");
 });
 
+test("an AI route can use a formation cruise speed without changing the vehicle's top speed", () => {
+  const driver = person("d", 5, 5, { inVehicle: "c" });
+  const vehicle = car("c", 5, 5, "d");
+  vehicle.vehicle.cruiseSpeed = 2;
+  vehicle.vehicle.route = { route: [{ x: 25, y: 5 }], index: 0 };
+  const start = { ...vehicle.position };
+  for (let step = 0; step < 10; step += 1) advanceVehicles([vehicle, driver], 0.1, roads, grid);
+  const travelled = Math.hypot(vehicle.position.x - start.x, vehicle.position.y - start.y);
+  assert.ok(travelled > 1.5 && travelled <= 2.1, `cruised ${travelled} tiles in one second`);
+  assert.equal(vehicle.definition.stats.speed, 6, "taking control would still expose the vehicle's normal top speed");
+});
+
 test("a parked vehicle with no driver stays where it is", () => {
   const vehicle = car("c", 5, 5);
   vehicle.vehicle.route = { route: [{ x: 5, y: 5 }, { x: 25, y: 5 }], index: 1 };

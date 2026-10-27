@@ -29,6 +29,7 @@ legacy FreeSynd assets or assets from other games.
 cd web
 npm test                  # syntax checks and the unit tests
 npm run e2e               # builds, then drives a real browser through the game
+E2E_JOBS=3 npm run e2e    # opt into parallel scenarios on a machine with ample memory
 node tools/balance.mjs 20 # the balance bot: 20 runs per policy; add a name to pick one operation
 cd ..
 python3 tools/validate_content.py && python3 tools/check_web_sync.py && python3 tools/check_style.py

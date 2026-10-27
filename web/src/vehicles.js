@@ -392,7 +392,7 @@ function driveRoute(vehicle, seconds, roadGrid) {
     state.route.from = route[at];
     state.route.index = (at + 1) % route.length;
   }
-  moveAlongPath(vehicle, seconds, vehicle.definition.stats.speed);
+  moveAlongPath(vehicle, seconds, vehicle.vehicle.cruiseSpeed ?? vehicle.definition.stats.speed);
 }
 
 // Traffic does not drive through itself: an AI-driven car waits when a person on foot or another vehicle is close ahead of it, unless that

@@ -1,0 +1,23 @@
+{
+  "formatVersion": 1,
+  "id": "developer.mara-quinn",
+  "name": "CEO Mara Quinn",
+  "license": "CC0-1.0",
+  "role": "civilian",
+  "stats": {
+    "vitality": 90,
+    "speed": 3.0,
+    "awareness": 75,
+    "attack": 1,
+    "range": 1.2,
+    "cooldown": 1.5
+  },
+  "abilities": ["observe"],
+  "appearance": {
+    "shape": "diamond",
+    "primaryColor": "#f0d9a6",
+    "accentColor": "#d6a83d",
+    "marker": "CEO",
+    "sprites": ["civilian-woman-2"]
+  }
+}

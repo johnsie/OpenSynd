@@ -162,7 +162,7 @@
    "y": 26,
    "width": 96,
    "height": 3,
-   "surface": "plaza",
+   "surface": "street",
    "walkable": true,
    "elevation": 0,
    "color": "#6c6a5c"
@@ -173,7 +173,7 @@
    "y": 68,
    "width": 96,
    "height": 3,
-   "surface": "plaza",
+   "surface": "street",
    "walkable": true,
    "elevation": 0,
    "color": "#6c6a5c"
@@ -184,7 +184,7 @@
    "y": 26,
    "width": 3,
    "height": 45,
-   "surface": "plaza",
+   "surface": "street",
    "walkable": true,
    "elevation": 0,
    "color": "#6c6a5c"
@@ -195,7 +195,7 @@
    "y": 26,
    "width": 3,
    "height": 45,
-   "surface": "plaza",
+   "surface": "street",
    "walkable": true,
    "elevation": 0,
    "color": "#6c6a5c"
@@ -573,6 +573,72 @@
    "walkable": false,
    "elevation": 1,
    "color": "#3a4650"
+  },
+  {
+   "id": "reception-floor",
+   "x": 91,
+   "y": 33,
+   "width": 9,
+   "height": 10,
+   "surface": "service-concrete",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#59636a"
+  },
+  {
+   "id": "reception-north-wall",
+   "x": 90,
+   "y": 32,
+   "width": 11,
+   "height": 1,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#4a5058"
+  },
+  {
+   "id": "reception-south-wall",
+   "x": 90,
+   "y": 43,
+   "width": 11,
+   "height": 1,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#4a5058"
+  },
+  {
+   "id": "reception-east-wall",
+   "x": 100,
+   "y": 33,
+   "width": 1,
+   "height": 10,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#4a5058"
+  },
+  {
+   "id": "reception-west-upper",
+   "x": 90,
+   "y": 33,
+   "width": 1,
+   "height": 4,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#4a5058"
+  },
+  {
+   "id": "reception-west-lower",
+   "x": 90,
+   "y": 39,
+   "width": 1,
+   "height": 4,
+   "surface": "utility-building",
+   "walkable": false,
+   "elevation": 2,
+   "color": "#4a5058"
   }
  ],
  "zones": [
@@ -661,6 +727,16 @@
    },
    "width": 4,
    "height": 4
+  },
+  {
+   "id": "dignitary-reception",
+   "kind": "exit",
+   "position": {
+    "x": 92,
+    "y": 36
+   },
+   "width": 3,
+   "height": 4
   }
  ],
  "objects": [
@@ -674,6 +750,16 @@
    "width": 1,
    "height": 2,
    "control": "gate-panel"
+  },
+  {
+   "id": "reception-door",
+   "kind": "door",
+   "position": {
+    "x": 90,
+    "y": 37
+   },
+   "width": 1,
+   "height": 2
   }
  ],
  "props": [

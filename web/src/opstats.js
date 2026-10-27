@@ -12,6 +12,7 @@ export function newStats(enemiesTotal) {
     spotted: 0,
     civiliansHarmed: 0,
     policeHarmed: 0,
+    researchCompleted: [],
     seconds: 0,
     outcome: "active",
   };

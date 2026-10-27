@@ -6,10 +6,10 @@
 // to use browsers installed by `npx playwright-core install`.
 
 import assert from "node:assert/strict";
+import { AsyncLocalStorage } from "node:async_hooks";
 import { readFile } from "node:fs/promises";
 import { generateKeyPairSync, sign } from "node:crypto";
 import { createServer } from "node:http";
-import { availableParallelism } from "node:os";
 import { dirname, extname, join, normalize, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -55,6 +55,7 @@ const targets = [
   ["chromium", chromium, process.env.CHROMIUM_PATH],
   ["firefox", firefox, process.env.FIREFOX_PATH],
 ];
+const scenarioPages = new AsyncLocalStorage();
 
 let failed = false;
 for (const [name, type, executablePath] of targets) {
@@ -66,6 +67,9 @@ for (const [name, type, executablePath] of targets) {
     const rawNewPage = browser.newPage.bind(browser);
     browser.newPage = async (options) => {
       const made = await rawNewPage(options);
+      const ownedPages = scenarioPages.getStore();
+      ownedPages?.add(made);
+      made.on("close", () => ownedPages?.delete(made));
       made.on("load", () =>
         made
           .evaluate(() => {
@@ -493,6 +497,7 @@ for (const [name, type, executablePath] of targets) {
       await page.evaluate(() => window.opensyndTest.completeObjectives());
       await page.waitForSelector("#outcome-dialog[open]");
       assert.match(await page.locator("#outcome-heading").innerText(), /back on the mesh/);
+      assert.equal(await page.locator("#outcome-research").count(), 0, "the debrief has no Armoury button");
       // Finishing an operation is remembered in this browser.
       const remembered = await page.evaluate(() => localStorage.getItem("opensynd.progress.v1"));
       assert.match(remembered, /developer\.restore-relay/);
@@ -1465,6 +1470,10 @@ for (const [name, type, executablePath] of targets) {
       await garage.keyboard.press("v");
       assert.match(await garage.locator("#status-message").innerText(), /got into the City Car/);
       assert.match(await garage.locator("#vehicle-label").innerText(), /Leave vehicle/);
+      await garage.click("#vehicle-button");
+      assert.match(await garage.locator("#status-message").innerText(), /left the City Car/);
+      await garage.keyboard.press("v");
+      assert.match(await garage.locator("#status-message").innerText(), /got into the City Car/);
       const carBefore = await garage.evaluate(() => window.opensyndTest.positions()["parked-city-car-1"]);
       await garage.evaluate(() => window.opensyndTest.moveSelected(33, 60));
       assert.match(await garage.locator("#status-message").innerText(), /driving off/);
@@ -1954,8 +1963,8 @@ for (const [name, type, executablePath] of targets) {
       await roster.close();
     });
 
-    // Three at a time suits an eight-core machine; more only makes the pages fight over the processor and slows each one down.
-    const jobs = Math.max(1, Number(process.env.E2E_JOBS) || Math.min(3, Math.floor(availableParallelism() / 2)));
+    // A single 3D browser page is the memory-safe local default. CI opts into more workers with E2E_JOBS.
+    const jobs = Math.max(1, Number(process.env.E2E_JOBS) || 1);
     // E2E_ONLY=<words> runs just the scenarios whose title has those words (handy while working on one).
     const only = (process.env.E2E_ONLY ?? "").toLowerCase();
     const waiting = scenarios.filter((item) => item.title.toLowerCase().includes(only));
@@ -1967,11 +1976,14 @@ for (const [name, type, executablePath] of targets) {
         while (waiting.length > 0) {
           const next = waiting.shift();
           const began = Date.now();
+          const ownedPages = new Set();
           try {
-            await next.body();
+            await scenarioPages.run(ownedPages, () => next.body());
             timings.push([Date.now() - began, next.title]);
           } catch (error) {
             problems.push({ title: next.title, error });
+          } finally {
+            await Promise.allSettled([...ownedPages].map((page) => page.close()));
           }
         }
       }),
