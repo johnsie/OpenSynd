@@ -427,7 +427,8 @@ test("the squad holds at most four living operatives and always at least one", (
   assert.equal(deploy(lone, "ghost"), lone);
 });
 
-test("recruits bring their gear and parts, and the roster is capped at eight", () => {
+test("recruits bring their gear and parts, and the roster is capped at sixteen", () => {
+  assert.equal(ROSTER_MAX, 16);
   let campaign = emptyCampaign();
   const result = recruit(campaign, { items: ["heavy", "stim"], upgrades: { legs: 2 } });
   assert.deepEqual(result.campaign.loadouts[result.member.id], ["heavy", "stim"]);

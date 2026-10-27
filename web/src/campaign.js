@@ -27,10 +27,10 @@ export const SLOTS_PER_OPERATIVE = 8;
 const OLD_TRACK_COSTS = [20, 30, 40, 50, 60];
 const refundOldTrack = (level) => OLD_TRACK_COSTS.slice(0, Math.min(5, wholeNumber(level))).reduce((sum, cost) => sum + cost, 0);
 
-// The roster (FreeSynd's cryo chamber): up to eight operatives, four of whom deploy on any operation. A fallen
+// The roster (FreeSynd's cryo chamber): up to sixteen operatives, four of whom deploy on any operation. A fallen
 // operative is lost for good unless permadeath is switched off, and the only way to get new ones is capturing
 // enemy agents or paying to hire a replacement. The first four use the ids of the operation's starting slots.
-export const ROSTER_MAX = 8;
+export const ROSTER_MAX = 16;
 export const SQUAD_MAX = 4;
 export const HIRE_PRICE = 60;
 export const STARTING_IDS = Object.freeze(["operator-one", "operator-two", "operator-three", "operator-four"]);
