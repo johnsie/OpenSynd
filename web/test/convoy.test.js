@@ -22,8 +22,8 @@ const advance = (world, count) => {
 test("the Northern Ireland squad deploys in the escort and the procession holds formation", () => {
   const world = makeWorld(content, mission, { options: { decidesOutcome: true, harmless: true } });
   assert.equal(world.map.dimensions.width * world.map.dimensions.height, 2 * 128 * 96, "the city covers twice the old area");
-  assert.equal(world.mission.opponents.length, 12, "the four-agent threat has been tripled");
-  assert.equal(world.mission.bystanders.filter((unit) => unit.id.startsWith("civilian-")).length, 54, "the route has a large crowd");
+  assert.equal(world.mission.opponents.length, 6, "the procession faces six enemy agents");
+  assert.equal(world.mission.bystanders.filter((unit) => unit.id.startsWith("civilian-")).length, 72, "the original crowd is quadrupled");
   const squad = world.units.filter((unit) => unit.side === "team");
   assert.deepEqual(squad.map((unit) => unit.inVehicle), Array(4).fill("convoy-armoured-escort"));
   const dignitary = world.units.find((unit) => unit.id === "dignitary");

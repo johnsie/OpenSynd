@@ -4,10 +4,10 @@
   "name": "The Northern Procession",
   "license": "CC0-1.0",
   "title": "The procession reaches the reception",
-  "briefing": "Northstar Mutual's CEO, Mara Quinn, is touring Northern Ireland in a civic procession. Twelve Tidewater agents intend to assassinate her at any cost, and one has stolen a car to blockade the route. Your squad begins aboard the armoured escort; leave it with V when you need to intercept a threat. Protect Quinn while the convoy circles the expanded city, clear the roadblock, then cover her walk through the reception doors. The roadside guards are friendly and will not attack your operatives. Police are neutral, but they will warn and then fire if they see an operative carrying a weapon openly.",
+  "briefing": "Northstar Mutual's CEO, Mara Quinn, is touring Northern Ireland in a civic procession. Six Tidewater agents intend to assassinate her at any cost, and one has stolen a car to blockade the route. Your squad begins aboard the armoured escort; leave it with V when you need to intercept a threat. Protect Quinn while the convoy circles the expanded city, clear the roadblock, then cover her walk through the reception doors. The roadside guards are friendly and will not attack your operatives. Police are neutral, but they will warn and then fire if they see an operative carrying a weapon openly.",
   "story": "The Northern Procession: civilians, police and Northstar guards line the cleared streets while patrol cars, armoured escorts and an ambulance lead Mara Quinn around town. The ceremony ends only when Quinn leaves her armoured car and enters the reception building alive.",
   "debrief": {
-    "success": "Mara Quinn crosses the reception threshold unharmed. Northstar keeps its leadership, the crowd disperses safely, and the twelve assassins have failed.",
+    "success": "Mara Quinn crosses the reception threshold unharmed. Northstar keeps its leadership, the crowd disperses safely, and the six assassins have failed.",
     "failure": "Mara Quinn is lost before she reaches the reception. The procession becomes a public catastrophe and Northstar's alliance fractures."
   },
   "map": "maps/northern-ireland.map.json",
@@ -23,12 +23,6 @@
     {"id": "assassin-three", "unit": "units/enemy-agent.unit.json", "position": {"x": 76, "y": 62}, "equipment": ["equipment/civic-pulse-emitter.equipment.json", "equipment/delay-charge.equipment.json"], "priorityTarget": "dignitary"},
     {"id": "assassin-four", "unit": "units/enemy-agent.unit.json", "position": {"x": 53, "y": 62}, "equipment": ["equipment/civic-pulse-emitter.equipment.json"], "priorityTarget": "dignitary"},
     {"id": "assassin-five", "unit": "units/enemy-agent.unit.json", "position": {"x": 124, "y": 30}, "equipment": ["equipment/civic-pulse-emitter.equipment.json"], "priorityTarget": "dignitary"},
-    {"id": "assassin-six", "unit": "units/enemy-agent.unit.json", "position": {"x": 154, "y": 36}, "equipment": ["equipment/civic-pulse-emitter.equipment.json", "equipment/delay-charge.equipment.json"], "priorityTarget": "dignitary"},
-    {"id": "assassin-seven", "unit": "units/enemy-agent.unit.json", "position": {"x": 154, "y": 64}, "equipment": ["equipment/civic-pulse-emitter.equipment.json"], "priorityTarget": "dignitary"},
-    {"id": "assassin-eight", "unit": "units/enemy-agent.unit.json", "position": {"x": 154, "y": 92}, "equipment": ["equipment/civic-pulse-emitter.equipment.json", "equipment/delay-charge.equipment.json"], "priorityTarget": "dignitary"},
-    {"id": "assassin-nine", "unit": "units/enemy-agent.unit.json", "position": {"x": 140, "y": 103}, "equipment": ["equipment/civic-pulse-emitter.equipment.json"], "priorityTarget": "dignitary"},
-    {"id": "assassin-ten", "unit": "units/enemy-agent.unit.json", "position": {"x": 105, "y": 103}, "equipment": ["equipment/civic-pulse-emitter.equipment.json"], "priorityTarget": "dignitary"},
-    {"id": "assassin-eleven", "unit": "units/enemy-agent.unit.json", "position": {"x": 95, "y": 30}, "equipment": ["equipment/civic-pulse-emitter.equipment.json", "equipment/delay-charge.equipment.json"], "priorityTarget": "dignitary"},
     {"id": "assassin-roadblock", "unit": "units/enemy-agent.unit.json", "position": {"x": 100, "y": 24}, "equipment": ["equipment/civic-pulse-emitter.equipment.json"], "script": [{"type": "enter", "vehicle": "blockade-stolen-car"}, {"type": "drive", "to": {"x": 120, "y": 21}}, {"type": "say", "text": "Route blocked. Bring the procession to me."}]}
   ],
   "objectives": [
@@ -113,6 +107,24 @@
     {"id": "civilian-52", "unit": "units/civilian-man.unit.json", "position": {"x": 112, "y": 111}, "equipment": []},
     {"id": "civilian-53", "unit": "units/civilian-woman.unit.json", "position": {"x": 128, "y": 111}, "equipment": []},
     {"id": "civilian-54", "unit": "units/civilian-man.unit.json", "position": {"x": 144, "y": 111}, "equipment": []},
+    {"id": "civilian-55", "unit": "units/civilian-woman.unit.json", "position": {"x": 92, "y": 17}, "equipment": []},
+    {"id": "civilian-56", "unit": "units/civilian-man.unit.json", "position": {"x": 104, "y": 17}, "equipment": []},
+    {"id": "civilian-57", "unit": "units/civilian-woman.unit.json", "position": {"x": 116, "y": 17}, "equipment": []},
+    {"id": "civilian-58", "unit": "units/civilian-man.unit.json", "position": {"x": 128, "y": 17}, "equipment": []},
+    {"id": "civilian-59", "unit": "units/civilian-woman.unit.json", "position": {"x": 140, "y": 17}, "equipment": []},
+    {"id": "civilian-60", "unit": "units/civilian-man.unit.json", "position": {"x": 152, "y": 17}, "equipment": []},
+    {"id": "civilian-61", "unit": "units/civilian-woman.unit.json", "position": {"x": 92, "y": 25}, "equipment": []},
+    {"id": "civilian-62", "unit": "units/civilian-man.unit.json", "position": {"x": 104, "y": 25}, "equipment": []},
+    {"id": "civilian-63", "unit": "units/civilian-woman.unit.json", "position": {"x": 116, "y": 25}, "equipment": []},
+    {"id": "civilian-64", "unit": "units/civilian-man.unit.json", "position": {"x": 128, "y": 25}, "equipment": []},
+    {"id": "civilian-65", "unit": "units/civilian-woman.unit.json", "position": {"x": 140, "y": 25}, "equipment": []},
+    {"id": "civilian-66", "unit": "units/civilian-man.unit.json", "position": {"x": 152, "y": 25}, "equipment": []},
+    {"id": "civilian-67", "unit": "units/civilian-woman.unit.json", "position": {"x": 92, "y": 115}, "equipment": []},
+    {"id": "civilian-68", "unit": "units/civilian-man.unit.json", "position": {"x": 108, "y": 115}, "equipment": []},
+    {"id": "civilian-69", "unit": "units/civilian-woman.unit.json", "position": {"x": 124, "y": 115}, "equipment": []},
+    {"id": "civilian-70", "unit": "units/civilian-man.unit.json", "position": {"x": 140, "y": 115}, "equipment": []},
+    {"id": "civilian-71", "unit": "units/civilian-woman.unit.json", "position": {"x": 156, "y": 115}, "equipment": []},
+    {"id": "civilian-72", "unit": "units/civilian-man.unit.json", "position": {"x": 152, "y": 102}, "equipment": []},
     {"id": "police-1", "unit": "units/city-police.unit.json", "position": {"x": 39, "y": 30}, "equipment": []},
     {"id": "police-2", "unit": "units/city-police.unit.json", "position": {"x": 47, "y": 43}, "equipment": []},
     {"id": "police-3", "unit": "units/city-police.unit.json", "position": {"x": 82, "y": 30}, "equipment": []},
@@ -179,7 +191,7 @@
     }
   ],
   "intel": [
-    "Patrol survey: twelve Tidewater assassins are converging on Mara Quinn; all twelve know which armoured car carries her.",
+    "Patrol survey: six Tidewater assassins are converging on Mara Quinn; all six know which armoured car carries her.",
     "Full survey: one assassin steals a city car and stops it across the northern route. Hit the car to force the driver out and let the convoy pass."
   ],
   "unlocks": []
