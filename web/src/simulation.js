@@ -755,6 +755,7 @@ export function advancePatrols(units, deltaSeconds, grid = null, now = null, dro
   scriptUnits = units;
   scriptEvents = events;
   for (const unit of units) {
+    if (unit.missionGiver) continue;
     // Someone riding in a vehicle can only be following a script (drive on, get out).
     if (unit.inVehicle && unit.script && !unit.disabled && unit.side !== "team") {
       advanceScript(unit, deltaSeconds, grid, units);
@@ -932,7 +933,9 @@ export function advanceCombat(units, deltaSeconds, grid = null, now = null) {
     if (attacker.persuaded && !(owner && !owner.disabled && gunOut(owner, now))) attacker.targetId = null;
     const hostile =
       (attacker.persuaded && Boolean(owner) && gunOut(owner, now) && combatStats(attacker).attack > 0) ||
-      (!attacker.playerUnit && !attacker.persuaded && (attacker.side === "opposition" || (attacker.side === "criminal" && attacker.hostileTo)));
+      (!attacker.playerUnit &&
+        !attacker.persuaded &&
+        (attacker.side === "opposition" || (attacker.side === "criminal" && attacker.hostileTo)));
     if (hostile && attacker.targetId === null) {
       attacker.targetId = automaticTarget(attacker, units, grid)?.id ?? null;
     }

@@ -12,6 +12,7 @@ export const WAR_OPERATIVES_PER_COMPANY = 4;
 export const WAR_CAPTURE_SECONDS = 10;
 export const WAR_SCORE_SECONDS = 10;
 export const WAR_RESPAWN_SECONDS = 15;
+export const WAR_CONTRACT_COOLDOWN_SECONDS = 60;
 export const WAR_COALITIONS = Object.freeze([
   { id: "cyan", name: "Cyan Coalition", side: "team" },
   { id: "ember", name: "Ember Coalition", side: "opposition" },
@@ -84,9 +85,35 @@ export function warMission(content, missionPath = content.pack.missions[0]) {
     width: 3,
     height: 3,
   }));
+  const civilian = base.bystanders?.[0] ?? {
+    unit: [...content.units.entries()].find(([, definition]) => definition.role === "civilian")?.[0],
+    equipment: [],
+  };
+  if (!civilian.unit) throw new Error("The war needs a civilian definition for its mission givers.");
+  const contractDetails = [
+    { giver: "Mara Venn", title: "Secure the North Relay", reward: 25 },
+    { giver: "Ivo Chen", title: "Take the Central Exchange", reward: 35 },
+    { giver: "Sable Okafor", title: "Control the South Relay", reward: 25 },
+  ];
+  const missionGivers = points.map((point, index) => ({
+    ...clone(civilian),
+    id: `war-giver-${index + 1}`,
+    position: nearestWalkable(grid, { x: point.position.x + 4, y: point.position.y + 1 }, used),
+    equipment: [],
+    patrol: undefined,
+    script: undefined,
+    missionGiver: {
+      contractId: `war-contract-${index + 1}`,
+      name: contractDetails[index].giver,
+      title: contractDetails[index].title,
+      pointId: point.id,
+      reward: contractDetails[index].reward,
+    },
+  }));
   return {
     missionPath,
     points,
+    contracts: missionGivers.map((giver) => ({ ...giver.missionGiver })),
     mission: {
       ...base,
       id: "persistent-company-war",
@@ -95,6 +122,7 @@ export function warMission(content, missionPath = content.pack.missions[0]) {
       briefing: "Capture and hold all three relays. Every company and objective shares this battlefield; the war never times out.",
       team,
       opponents: [],
+      bystanders: [...(base.bystanders ?? []), ...missionGivers],
       objectives: [],
       sequence: false,
       zones: [
@@ -127,6 +155,7 @@ export class WarRoom extends Room {
     this.slots = new Map();
     this.accountSlots = new Map();
     this.respawns = new Map();
+    this.giverRespawns = new Map();
     this.scoreCarry = 0;
     this.world.war = {
       coalitions: WAR_COALITIONS.map((coalition) => ({
@@ -140,8 +169,17 @@ export class WarRoom extends Room {
         claiming: null,
         progress: 0,
       })),
+      contracts: generated.contracts.map((contract) => ({
+        ...contract,
+        assignments: Object.fromEntries(WAR_COALITIONS.map((coalition) => {
+          const kept = persisted.contracts?.[contract.contractId]?.[coalition.id];
+          return [coalition.id, { status: kept?.status === "active" ? "active" : "available", availableAt: 0 }];
+        })),
+      })),
       captureSeconds: WAR_CAPTURE_SECONDS,
+      revision: 0,
     };
+    this.warRevision = this.world.war.revision;
     for (const coalition of WAR_COALITIONS) {
       for (let slot = 0; slot < WAR_COMPANIES_PER_COALITION; slot += 1) {
         const ids = Array.from({ length: WAR_OPERATIVES_PER_COMPANY }, (_, operative) => keyOf(coalition.id, slot, operative));
@@ -222,6 +260,17 @@ export class WarRoom extends Room {
         this.respawns.delete(unit.id);
       }
     }
+    for (const giver of this.world.units.filter((candidate) => candidate.missionGiver)) {
+      if (giver.disabled && !this.giverRespawns.has(giver.id)) this.giverRespawns.set(giver.id, this.world.elapsed + WAR_RESPAWN_SECONDS);
+      if (giver.disabled && this.world.elapsed >= this.giverRespawns.get(giver.id)) {
+        giver.disabled = false;
+        giver.health = maxHealth(giver);
+        giver.position = { ...giver.initialPosition };
+        giver.path = [];
+        giver.targetId = null;
+        this.giverRespawns.delete(giver.id);
+      }
+    }
     for (const point of this.world.war.points) {
       const present = WAR_COALITIONS.filter((coalition) => this.world.units.some((unit) => unit.warSide === coalition.id && inside(unit, point)));
       if (present.length !== 1 || present[0].id === point.owner) {
@@ -250,12 +299,40 @@ export class WarRoom extends Room {
       }
       this.persist();
     }
+    for (const contract of this.world.war.contracts) {
+      for (const coalition of WAR_COALITIONS) {
+        const assignment = contract.assignments[coalition.id];
+        if (assignment.status === "cooldown" && this.world.elapsed >= assignment.availableAt) {
+          assignment.status = "available";
+          assignment.availableAt = 0;
+          this.world.war.revision += 1;
+        }
+        const point = this.world.war.points.find((candidate) => candidate.id === contract.pointId);
+        if (assignment.status !== "active" || point?.owner !== coalition.id) continue;
+        const score = this.world.war.coalitions.find((candidate) => candidate.id === coalition.id);
+        score.score += contract.reward;
+        assignment.status = "cooldown";
+        assignment.availableAt = this.world.elapsed + WAR_CONTRACT_COOLDOWN_SECONDS;
+        assignment.completed = (assignment.completed ?? 0) + 1;
+        this.world.war.revision += 1;
+      }
+    }
+    if (this.world.war.revision !== this.warRevision) {
+      this.warRevision = this.world.war.revision;
+      this.persist();
+    }
   }
 
   persist() {
     this.save({
       scores: Object.fromEntries(this.world.war.coalitions.map((coalition) => [coalition.id, coalition.score])),
       points: Object.fromEntries(this.world.war.points.map((point) => [point.id, point.owner])),
+      contracts: Object.fromEntries(this.world.war.contracts.map((contract) => [
+        contract.contractId,
+        Object.fromEntries(WAR_COALITIONS.map((coalition) => [coalition.id, {
+          status: contract.assignments[coalition.id].status === "active" ? "active" : "available",
+        }])),
+      ])),
     });
   }
 }

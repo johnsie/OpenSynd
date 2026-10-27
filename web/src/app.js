@@ -2695,6 +2695,23 @@ function drawUnit(unit, viewport) {
     context.fillStyle = unit.disabled ? "rgba(225, 179, 90, .45)" : "#f2c14e";
     context.fillText(String(unit.number), 0, -size * 5.6);
   }
+  if (unit.missionGiver && !unit.disabled) {
+    const pulse = reduceMotion ? 1 : 0.82 + 0.18 * Math.sin(state.elapsed * 4);
+    const top = -size * 4.1;
+    context.font = `900 ${Math.max(18, size * 1.8) / UNIT_SCALE}px ui-sans-serif, sans-serif`;
+    context.textAlign = "center";
+    context.textBaseline = "alphabetic";
+    context.lineWidth = 5;
+    context.strokeStyle = "rgba(3, 8, 10, .92)";
+    context.strokeText("?", 0, top);
+    context.fillStyle = `rgba(225, 179, 90, ${pulse})`;
+    context.fillText("?", 0, top);
+    context.font = `700 ${Math.max(9, size * 0.72) / UNIT_SCALE}px ui-sans-serif, sans-serif`;
+    context.lineWidth = 3;
+    context.strokeText(unit.missionGiver.name, 0, top - size * 1.35);
+    context.fillStyle = "#f4d18d";
+    context.fillText(unit.missionGiver.name, 0, top - size * 1.35);
+  }
   if ((unit.shieldLeft ?? 0) > 0 && !unit.disabled) {
     // A raised shield: a shimmering bubble that flickers as it is about to fail.
     const fading = unit.shieldLeft < 2;
@@ -2925,6 +2942,7 @@ function drawMinimap(viewport) {
   for (const unit of state.units) {
     if (unit.disabled || unit.inVehicle) continue;
     const known =
+      Boolean(unit.missionGiver) ||
       unit.side === "team" ||
       unit.persuaded ||
       scanned.has(unit.id) ||
@@ -2938,7 +2956,7 @@ function drawMinimap(viewport) {
       miniContext.strokeRect(Math.round(point.x) - 3, Math.round(point.y) - 3, 6, 6);
     }
     const marker = markerFor(unit, isVehicle(unit));
-    miniContext.fillStyle = marker.fill;
+    miniContext.fillStyle = unit.missionGiver ? "#e1b35a" : marker.fill;
     if (marker.shape === "dot") {
       miniContext.beginPath();
       miniContext.arc(point.x, point.y, marker.radius, 0, Math.PI * 2);
@@ -3333,7 +3351,7 @@ function interactionCandidate() {
 }
 
 function nearbyInteraction() {
-  return interactionCandidate()?.objective ?? null;
+  return interactionCandidate();
 }
 
 // The vehicle the selected squad could use right now: the one they are in (to leave), or the nearest one to enter.
@@ -4732,7 +4750,13 @@ async function enterOnlineOperation(start, mode) {
   resetButton.disabled = true;
   canvas.focus();
   const coalition = state.online?.coalition ? `${state.online.coalition === "cyan" ? "Cyan" : "Ember"} Coalition` : null;
-  setStatus(resuming ? "Back in the operation." : coalition ? `Joined ${coalition}.` : "Connected: this operation is running on the server.");
+  setStatus(
+    resuming
+      ? "Back in the operation."
+      : coalition
+        ? `Joined ${coalition}.`
+        : "Connected: this operation is running on the server.",
+  );
 }
 
 async function startOnlineGame(mode = "solo") {
@@ -5675,10 +5699,15 @@ let shownThreatsKey = "";
 function renderInterface() {
   if (!state.mission) return;
   const warPoints = state.online?.mode === "war" ? (state.war?.points ?? []) : null;
+  const warContracts = warPoints
+    ? (state.war?.contracts ?? []).map((contract) => ({ ...contract, assignment: contract.assignments?.[state.online.coalition] }))
+    : [];
   const objectivesKey = JSON.stringify([
     warPoints
       ? warPoints.map((point) => [point.id, point.owner, point.claiming, Math.floor(point.progress ?? 0)])
       : state.objectives.map((o) => [o.id, o.complete, o.type === "hold" ? Math.floor(o.progress ?? 0) : 0]),
+    warContracts.map((contract) => [contract.contractId, contract.assignment?.status, Math.ceil(contract.assignment?.availableAt ?? 0)]),
+    warContracts.some((contract) => contract.assignment?.status === "cooldown") ? Math.floor(state.elapsed) : null,
     currentObjective(state.objectives)?.id ?? null,
     state.mission.id,
   ]);
@@ -5686,14 +5715,29 @@ function renderInterface() {
     shownObjectivesKey = objectivesKey;
     if (warPoints) {
       const names = Object.fromEntries((state.war?.coalitions ?? []).map((coalition) => [coalition.id, coalition.name]));
-      objectiveList.replaceChildren(...warPoints.map((point) => {
+      const pointItems = warPoints.map((point) => {
         const item = document.createElement("li");
         const owner = point.owner ? names[point.owner] : "Neutral";
         const capture = point.claiming ? ` · ${names[point.claiming]} ${Math.floor(point.progress)} / ${state.war.captureSeconds} s` : "";
         item.textContent = `${point.name}: ${owner}${capture}`;
         item.classList.toggle("complete", point.owner === state.online.coalition);
         return item;
-      }));
+      });
+      const contractItems = warContracts.map((contract) => {
+        const item = document.createElement("li");
+        const status = contract.assignment?.status ?? "available";
+        const point = warPoints.find((candidate) => candidate.id === contract.pointId);
+        const suffix = status === "active"
+          ? `ACTIVE · capture ${point?.name ?? "the relay"} · +${contract.reward}`
+          : status === "cooldown"
+            ? `complete · available again in ${Math.max(0, Math.ceil(contract.assignment.availableAt - state.elapsed))} s`
+            : `available from ${contract.giver}`;
+        item.textContent = `${contract.title}: ${suffix}`;
+        item.classList.toggle("current", status === "active");
+        item.classList.toggle("complete", status === "cooldown");
+        return item;
+      });
+      objectiveList.replaceChildren(...pointItems, ...contractItems);
     } else objectiveList.replaceChildren(
       ...state.objectives.map((objective) => {
         const item = document.createElement("li");
@@ -5859,8 +5903,17 @@ function renderInterface() {
   const unit = selectedUnit();
   const interaction = nearbyInteraction();
   actionButton.disabled = interaction === null;
-  const prop = interaction ? state.map.zones.find((zone) => zone.id === interaction.targetZone)?.prop : null;
-  setText(actionLabel, prop === "server" ? "Download data" : interaction ? "Restore nearby relay" : "Restore relay");
+  const prop = interaction?.objective ? state.map.zones.find((zone) => zone.id === interaction.objective.targetZone)?.prop : null;
+  setText(
+    actionLabel,
+    interaction?.giver
+      ? `Speak to ${interaction.giver.missionGiver.name}`
+      : prop === "server"
+        ? "Download data"
+        : interaction
+          ? "Restore nearby relay"
+          : "Restore relay",
+  );
   const repairKit = equipmentWithAction(unit, "restore-vitality");
   const canRepair = Boolean(
     unit &&

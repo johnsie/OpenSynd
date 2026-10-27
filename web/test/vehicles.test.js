@@ -18,7 +18,7 @@ import {
   enterVehicle,
   isSquadVehicle,
   isVehicle,
-  keepRight,
+  keepLeft,
   leaveVehicle,
   nearestRoadTile,
   newVehicleState,
@@ -91,7 +91,7 @@ test("an AI driver drives the route along the road and carries the driver with i
   const units = [vehicle, driver];
   for (let step = 0; step < 30; step += 1) advanceVehicles(units, 0.1, roads, grid);
   assert.ok(vehicle.position.x > 15, `drove ${vehicle.position.x - 5} tiles in 3 s at 6 tiles/s`);
-  assert.equal(vehicle.position.y, 6, "keeps to its lane, one tile to the right of the line it follows (heading east)");
+  assert.equal(vehicle.position.y, 4, "keeps to its lane, one tile to the left of the line it follows (heading east)");
   assert.deepEqual(driver.position, vehicle.position, "the driver rides inside");
   assert.ok(vehicle.vehicle.heading.x > 0.9, "heading along the road");
   for (let step = 0; step < 100; step += 1) advanceVehicles(units, 0.1, roads, grid);
@@ -154,7 +154,7 @@ test("a controlled vehicle drives where it is told, along roads, with its passen
   enterVehicle(vehicle, [one], [vehicle, one], grid);
   assert.equal(driveTo(vehicle, { x: 30, y: 1 }, roads), true, "the nearest road tile to the pavement point");
   for (let step = 0; step < 50; step += 1) advanceVehicles([vehicle, one], 0.1, roads, grid);
-  assert.ok(vehicle.position.x > 29 && vehicle.position.y >= 4 && vehicle.position.y <= 6);
+  assert.ok(vehicle.position.x >= 29 && vehicle.position.y === 4, "the player-driven car also uses the left lane");
   assert.deepEqual(one.position, vehicle.position);
   const out = leaveVehicle(vehicle, [vehicle, one], grid);
   assert.deepEqual(out.map((unit) => unit.id), ["one"]);
@@ -168,9 +168,9 @@ test("a controlled car goes to the end of the road before turning back", () => {
   vehicle.vehicle.controlledBy = "one";
   vehicle.vehicle.heading = { x: 1, y: 0 };
   assert.equal(driveTo(vehicle, { x: 5, y: 5 }, roads), true);
-  assert.deepEqual(vehicle.path[0], { x: 11, y: 5 }, "it carries on in the direction it faces");
-  const roadEnd = vehicle.path.findIndex((point) => point.x === 39 && point.y === 5);
-  const destination = vehicle.path.findIndex((point) => point.x === 5 && point.y === 5);
+  assert.deepEqual(vehicle.path[0], { x: 11, y: 4 }, "it carries on in the direction it faces, in the left lane");
+  const roadEnd = vehicle.path.findIndex((point) => point.x === 39);
+  const destination = vehicle.path.findIndex((point) => point.x <= 5);
   assert.ok(roadEnd >= 0 && destination > roadEnd, "it turns only after reaching the road end");
 });
 
@@ -397,8 +397,8 @@ test("a scripted person walks to a car, gets in as its driver, drives to a point
   assert.equal(skipper.inVehicle ?? null, null);
 });
 
-test("cars keep to their lane: oncoming traffic on a wide street passes without meeting or stopping", () => {
-  // The road is three tiles wide (rows 4 to 6). East-bound cars keep right (south of the line they follow), west-bound north.
+test("cars keep left: oncoming traffic on a wide street passes without meeting or stopping", () => {
+  // The road is three tiles wide (rows 4 to 6). East-bound cars use the north lane, west-bound the south lane.
   const east = car("east", 2, 5, "de");
   east.vehicle.route = { route: [{ x: 2, y: 5 }, { x: 30, y: 5 }], index: 1 };
   const west = car("west", 30, 5, "dw");
@@ -417,13 +417,13 @@ test("cars keep to their lane: oncoming traffic on a wide street passes without 
   assert.equal(stopped, 0, "nobody waited for the other");
 });
 
-test("keeping right shifts a path to the right-hand side where that is road, and leaves it alone where it is not", () => {
+test("keeping left shifts a path to the left-hand side where that is road, and leaves it alone where it is not", () => {
   const path = [{ x: 6, y: 5 }, { x: 7, y: 5 }, { x: 8, y: 5 }];
-  assert.deepEqual(keepRight(path, roads, { x: 5, y: 5 }).map((node) => node.y), [6, 6, 6], "east: the south side");
+  assert.deepEqual(keepLeft(path, roads, { x: 5, y: 5 }).map((node) => node.y), [4, 4, 4], "east: the north side");
   const back = [{ x: 7, y: 5 }, { x: 6, y: 5 }];
-  assert.deepEqual(keepRight(back, roads, { x: 8, y: 5 }).map((node) => node.y), [4, 4], "west: the north side");
-  const edge = [{ x: 7, y: 6 }, { x: 8, y: 6 }];
-  assert.deepEqual(keepRight(edge, roads, { x: 6, y: 6 }).map((node) => node.y), [6, 6], "no road beyond the kerb: stay put");
+  assert.deepEqual(keepLeft(back, roads, { x: 8, y: 5 }).map((node) => node.y), [6, 6], "west: the south side");
+  const edge = [{ x: 7, y: 4 }, { x: 8, y: 4 }];
+  assert.deepEqual(keepLeft(edge, roads, { x: 6, y: 4 }).map((node) => node.y), [4, 4], "no road beyond the kerb: stay put");
 });
 
 test("a train runs between its stations, waits at each and turns round at the end of the line", async () => {
@@ -543,7 +543,7 @@ test("a car on a street-long route keeps to one lane instead of weaving across i
     if (vehicle.position.x > 8) lanes.add(vehicle.position.y);
   }
   assert.ok(vehicle.position.x > 12, "it drove");
-  assert.deepEqual([...lanes], [6], "one lane, the tile to the right of its heading, all the way");
+  assert.deepEqual([...lanes], [4], "one lane, the tile to the left of its heading, all the way");
 
   // Coming back the other way it uses the other side, so the two never share a lane.
   const back = car("b", 25, 5, "e");
@@ -554,5 +554,5 @@ test("a car on a street-long route keeps to one lane instead of weaving across i
     advanceVehicles(there, 0.05, roads, grid);
     if (back.position.x < 22) sides.add(back.position.y);
   }
-  assert.deepEqual([...sides], [4], "west-bound traffic is on the north side");
+  assert.deepEqual([...sides], [6], "west-bound traffic is on the south side");
 });

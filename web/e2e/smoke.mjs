@@ -992,7 +992,11 @@ for (const [name, type, executablePath] of targets) {
       await defection.waitForSelector(".roster-select");
       await defection.click("#filter-all");
       await defection.locator("#mission-list button", { hasText: defectionName }).first().click();
-      await defection.waitForFunction(() => document.querySelector("#title-heading").textContent.length > 0);
+      await defection.waitForFunction(
+        (name) => [...document.querySelectorAll("#mission-list button")]
+          .some((button) => button.textContent.includes(name) && button.getAttribute("aria-pressed") === "true"),
+        defectionName,
+      );
       await defection.click("#begin-button");
       await defection.waitForFunction(() => document.querySelector("#status-message").textContent.includes("Local map established"));
       assert.match(await defection.locator("#objective-list").innerText(), /Win the defector over/);
@@ -1072,7 +1076,11 @@ for (const [name, type, executablePath] of targets) {
       assert.equal(await menuPage.locator("#menu-continue").isVisible(), false, "nothing to continue yet");
       assert.equal(await menuPage.locator("#menu-campaign").isVisible(), true, "a fresh browser starts a campaign");
       assert.equal(await menuPage.locator("#menu-new-game").isVisible(), false, "nothing to wipe yet");
-      assert.equal(await menuPage.locator("#menu-dialog button:disabled").count(), 3, "the online modes are listed but planned");
+      assert.equal(
+        await menuPage.locator("#menu-dialog button:disabled").count(),
+        4,
+        "the online modes are listed while the server is unavailable",
+      );
       await menuPage.keyboard.press("Escape");
       assert.equal(await menuPage.locator("#menu-dialog").evaluate((dialog) => dialog.open), true, "Escape leaves the menu up");
       await menuPage.click("#menu-about");

@@ -358,60 +358,80 @@
 
     <dialog id="menu-dialog" class="main-menu" aria-labelledby="menu-heading">
       <header class="menu-head">
-        <p class="eyebrow">OPEN CIVIC OPERATIONS NETWORK</p>
-        <h2 id="menu-heading">NeuroReign</h2>
+        <div class="menu-brand-mark" aria-hidden="true"><span></span><span></span><span></span></div>
+        <div class="menu-brand-copy">
+          <p class="eyebrow">OPEN CIVIC OPERATIONS NETWORK</p>
+          <h2 id="menu-heading">NeuroReign</h2>
+          <p class="menu-tagline">Command the company. Shape the world.</p>
+        </div>
         <p class="menu-company">
-          <span id="menu-company-name"></span>
+          <span class="menu-company-label">ACTIVE COMPANY</span>
+          <strong id="menu-company-name"></strong>
           <button id="menu-company-edit" type="button" class="link-button" data-i18n="company.rename">Rename company</button>
         </p>
       </header>
       <nav class="menu-list" aria-label="Main menu">
-        <button id="menu-continue" type="button" class="primary" hidden>
-          <span data-i18n="menu.continue">Continue</span>
-          <small id="menu-continue-note"></small>
-        </button>
-        <button id="menu-campaign" type="button">
-          <span data-i18n="menu.campaign">Campaign</span>
-          <small data-i18n="menu.campaign_note">Fight for the territories on the world map.</small>
-        </button>
-        <button id="menu-tutorial" type="button">
-          <span data-i18n="menu.tutorial">Tutorial</span>
-          <small id="menu-tutorial-note" data-i18n="menu.tutorial_note">Learn the controls in a few minutes. Nothing counts.</small>
-        </button>
-        <button id="menu-new-game" type="button" hidden>
-          <span data-i18n="menu.new_game">New game</span>
-          <small data-i18n="menu.new_game_note">Start the whole campaign again.</small>
-        </button>
-        <p class="menu-group" data-i18n="menu.online">Online</p>
-        <p id="menu-online-note" class="menu-note" hidden></p>
-        <button id="menu-signin" type="button" hidden>
-          <span id="menu-signin-label" data-i18n="menu.signin">Sign in</span>
-          <small id="menu-signin-note" data-i18n="menu.signin_note">An account keeps your name and scores on the server.</small>
-        </button>
-        <button id="menu-online-test" type="button" hidden>
-          <span data-i18n="menu.online_test">Play on the server</span>
-          <small data-i18n="menu.online_test_note">A test operation run by the server, to check the connection.</small>
-        </button>
-        <button id="menu-coop" type="button" disabled>
-          <span data-i18n="menu.coop">Co-op operations</span>
-          <small id="menu-coop-note" data-i18n="menu.coop_note">Two to four players, one squad each.</small>
-        </button>
-        <button id="menu-war" type="button" disabled>
-          <span>Company war</span>
-          <small>Two player coalitions share one always-open battlefield.</small>
-        </button>
-        <button id="menu-daily" type="button" disabled>
-          <span data-i18n="menu.daily">Daily operation</span>
-          <small id="menu-daily-note" data-i18n="menu.daily_note">The same operation for everyone, ranked.</small>
-        </button>
-        <button id="menu-world" type="button" disabled>
-          <span data-i18n="menu.rivals">Rival companies</span>
-          <small id="menu-world-note" data-i18n="menu.rivals_note">Raid other players' territories.</small>
-        </button>
-        <p class="menu-group" data-i18n="menu.more">More</p>
-        <button id="menu-settings" type="button" data-i18n="menu.settings">Settings</button>
-        <a id="menu-editor" class="button" href="editor.html" data-i18n="menu.editor">Mission editor</a>
-        <button id="menu-about" type="button" data-i18n="menu.about">About &amp; licenses</button>
+        <section class="menu-section menu-section-command" aria-labelledby="menu-command-heading">
+          <div class="menu-section-head">
+            <p id="menu-command-heading" class="menu-group">Command</p>
+            <span>Local operations</span>
+          </div>
+          <button id="menu-continue" type="button" class="primary menu-feature" data-glyph="▶" hidden>
+            <span data-i18n="menu.continue">Continue</span>
+            <small id="menu-continue-note"></small>
+          </button>
+          <button id="menu-campaign" type="button" data-glyph="◈">
+            <span data-i18n="menu.campaign">Campaign</span>
+            <small data-i18n="menu.campaign_note">Fight for the territories on the world map.</small>
+          </button>
+          <button id="menu-tutorial" type="button" data-glyph="△">
+            <span data-i18n="menu.tutorial">Tutorial</span>
+            <small id="menu-tutorial-note" data-i18n="menu.tutorial_note">Learn the controls in a few minutes. Nothing counts.</small>
+          </button>
+          <button id="menu-new-game" type="button" data-glyph="↻" hidden>
+            <span data-i18n="menu.new_game">New game</span>
+            <small data-i18n="menu.new_game_note">Start the whole campaign again.</small>
+          </button>
+        </section>
+        <section class="menu-section menu-section-online" aria-labelledby="menu-online-heading">
+          <div class="menu-section-head">
+            <p id="menu-online-heading" class="menu-group" data-i18n="menu.online">Online</p>
+            <span class="menu-live"><i></i> Network</span>
+          </div>
+          <p id="menu-online-note" class="menu-note" hidden></p>
+          <button id="menu-signin" type="button" data-glyph="◎" hidden>
+            <span id="menu-signin-label" data-i18n="menu.signin">Sign in</span>
+            <small id="menu-signin-note" data-i18n="menu.signin_note">An account keeps your name and scores on the server.</small>
+          </button>
+          <button id="menu-online-test" type="button" data-glyph="◇" hidden>
+            <span data-i18n="menu.online_test">Play on the server</span>
+            <small data-i18n="menu.online_test_note">A test operation run by the server, to check the connection.</small>
+          </button>
+          <button id="menu-war" type="button" class="menu-feature" data-glyph="⚔" disabled>
+            <span>Company war</span>
+            <small>Two player coalitions share one always-open battlefield.</small>
+          </button>
+          <button id="menu-coop" type="button" data-glyph="◆" disabled>
+            <span data-i18n="menu.coop">Co-op operations</span>
+            <small id="menu-coop-note" data-i18n="menu.coop_note">Two to four players, one squad each.</small>
+          </button>
+          <button id="menu-daily" type="button" data-glyph="◷" disabled>
+            <span data-i18n="menu.daily">Daily operation</span>
+            <small id="menu-daily-note" data-i18n="menu.daily_note">The same operation for everyone, ranked.</small>
+          </button>
+          <button id="menu-world" type="button" data-glyph="⌾" disabled>
+            <span data-i18n="menu.rivals">Rival companies</span>
+            <small id="menu-world-note" data-i18n="menu.rivals_note">Raid other players' territories.</small>
+          </button>
+        </section>
+        <section class="menu-section menu-section-utility" aria-labelledby="menu-more-heading">
+          <p id="menu-more-heading" class="menu-group" data-i18n="menu.more">More</p>
+          <div class="menu-utility-row">
+            <button id="menu-settings" type="button" data-i18n="menu.settings">Settings</button>
+            <a id="menu-editor" class="button" href="editor.html" data-i18n="menu.editor">Mission editor</a>
+            <button id="menu-about" type="button" data-i18n="menu.about">About &amp; licenses</button>
+          </div>
+        </section>
       </nav>
     </dialog>
 

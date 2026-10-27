@@ -179,6 +179,10 @@ test("a player joins, starts an operation, gives an order, and is sent the resul
     for (let second = 0; second < 3; second += 1) advance(1000);
     const update = await client.next("update");
     assert.ok(update.step > 0);
+    // The server writes these synchronously, but a real WebSocket delivers the buffered frames on later event-loop turns.
+    for (let index = 0; index < 100 && client.received.filter((message) => message.t === "update").length < 5; index += 1) {
+      await new Promise((done) => setTimeout(done, 10));
+    }
     assert.ok(client.received.filter((message) => message.t === "update").length >= 5, "updates keep coming");
     const acks = client.received.filter((message) => message.t === "update").flatMap((message) => message.acks);
     assert.deepEqual(acks, [{ seq: 1, ok: true }]);

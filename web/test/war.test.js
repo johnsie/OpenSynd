@@ -16,10 +16,12 @@ test("the company war reuses an existing map and preallocates both coalitions", 
   const generated = warMission(content, mission);
   assert.equal(generated.mission.map, content.read(mission).map);
   assert.equal(generated.points.length, 3);
+  assert.equal(generated.contracts.length, 3);
   assert.equal(generated.mission.objectives.length, 0);
   assert.equal(generated.mission.team.filter((unit) => unit.warSide === "cyan").length, 16);
   assert.equal(generated.mission.team.filter((unit) => unit.warSide === "ember").length, 16);
   assert.ok(generated.mission.team.every((unit) => unit.playerUnit && unit.warReserve));
+  assert.equal(generated.mission.bystanders.filter((unit) => unit.missionGiver).length, 3);
 });
 
 test("companies are balanced across coalitions and the ember company can receive authoritative orders", () => {
@@ -56,13 +58,30 @@ test("a sole coalition captures a point and persistent rooms do not time out", (
   for (let step = 0; step < WAR_CAPTURE_SECONDS * 30 + 1; step += 1) room.tick();
   assert.equal(point.owner, company.coalition);
   assert.equal(room.finished, false);
-  assert.deepEqual(saved, {
-    scores: { cyan: 1, ember: 0 },
-    points: { "war-point-1": "cyan", "war-point-2": null, "war-point-3": null },
-  });
+  assert.deepEqual(saved.scores, { cyan: 1, ember: 0 });
+  assert.deepEqual(saved.points, { "war-point-1": "cyan", "war-point-2": null, "war-point-3": null });
   const restored = new WarRoom({ content, mission, persisted: saved });
   assert.equal(restored.world.war.points[0].owner, "cyan");
   assert.equal(restored.world.war.coalitions[0].score, 1);
+});
+
+test("mission-giver NPCs issue repeatable coalition contracts that pay on capture", () => {
+  const room = new WarRoom({ content, mission });
+  const company = room.claimCompany("player", 1);
+  const operator = room.world.units.find((unit) => unit.id === company.ids[0]);
+  const giver = room.world.units.find((unit) => unit.missionGiver);
+  operator.position = { ...giver.position };
+  const result = applyCommand(room.world, silentHooks(), { type: "interact", unitIds: [operator.id] }, {
+    owns: (id) => company.ids.includes(id),
+  });
+  assert.equal(result.ok, true);
+  const contract = room.world.war.contracts.find((item) => item.contractId === giver.missionGiver.contractId);
+  assert.equal(contract.assignments[company.coalition].status, "active");
+  const point = room.world.war.points.find((item) => item.id === contract.pointId);
+  point.owner = company.coalition;
+  room.tick();
+  assert.equal(contract.assignments[company.coalition].status, "cooldown");
+  assert.equal(room.world.war.coalitions.find((item) => item.id === company.coalition).score, contract.reward);
 });
 
 test("the protocol accepts the signed-in company-war mode", () => {

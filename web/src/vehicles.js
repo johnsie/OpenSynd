@@ -313,7 +313,8 @@ function routeWithoutMidRoadTurn(vehicle, goal, roadGrid) {
  */
 export function driveTo(vehicle, point, roadGrid) {
   const goal = nearestRoadTile(roadGrid, point, 12);
-  const path = goal ? routeWithoutMidRoadTurn(vehicle, goal, roadGrid) : [];
+  const centrePath = goal ? routeWithoutMidRoadTurn(vehicle, goal, roadGrid) : [];
+  const path = keepLeft(centrePath, roadGrid, tileOf(vehicle.position));
   if (path.length > 0) {
     vehicle.path = path;
     vehicle.vehicle.continueDriving = false;
@@ -321,10 +322,10 @@ export function driveTo(vehicle, point, roadGrid) {
   }
   vehicle.vehicle.continueDriving = true;
   if (vehicle.path.length === 0) {
-    vehicle.path = roadAhead(vehicle, roadGrid);
+    vehicle.path = keepLeft(roadAhead(vehicle, roadGrid), roadGrid, tileOf(vehicle.position));
     if (vehicle.path.length === 0) {
       const heading = roadHeading(vehicle.vehicle.heading);
-      vehicle.path = roadAhead(vehicle, roadGrid, { x: -heading.x, y: -heading.y });
+      vehicle.path = keepLeft(roadAhead(vehicle, roadGrid, { x: -heading.x, y: -heading.y }), roadGrid, tileOf(vehicle.position));
     }
   }
   return vehicle.path.length > 0;
@@ -351,11 +352,11 @@ function moveAlongPath(vehicle, seconds, speed) {
 
 // The AI driver follows the route: on to the next waypoint along the roads, forever.
 /**
- * Keep to the lane (FreeSynd's cars keep to the direction of traffic): the way a car goes decides which side of the street it
- * uses, one tile to the right of the line it is following whenever that is road too. Cars passing in opposite directions on a
+ * Keep to the left lane: the way a car goes decides which side of the street it
+ * uses, one tile to the left of the line it is following whenever that is road too. Cars passing in opposite directions on a
  * wide street are in different lanes, so they never drive through each other. Returns a new path.
  */
-export function keepRight(path, roadGrid, from = null) {
+export function keepLeft(path, roadGrid, from = null) {
   const lane = [];
   let before = from;
   for (let index = 0; index < path.length; index += 1) {
@@ -365,7 +366,7 @@ export function keepRight(path, roadGrid, from = null) {
       : path[index + 1]
         ? { x: Math.sign(path[index + 1].x - node.x), y: Math.sign(path[index + 1].y - node.y) }
         : { x: 0, y: 0 };
-    const side = { x: -heading.y, y: heading.x };
+    const side = { x: heading.y, y: -heading.x };
     const shifted = { x: node.x + side.x, y: node.y + side.y };
     const usable = (side.x !== 0 || side.y !== 0) && roadGrid[shifted.y]?.[shifted.x]?.walkable;
     lane.push(usable ? shifted : { x: node.x, y: node.y });
@@ -374,17 +375,20 @@ export function keepRight(path, roadGrid, from = null) {
   return lane;
 }
 
+// Kept as an import-compatible alias for extensions; traffic itself is left-hand.
+export const keepRight = keepLeft;
+
 function driveRoute(vehicle, seconds, roadGrid) {
   const state = vehicle.vehicle;
   if (!state.route || state.route.route.length === 0) return;
   if (vehicle.path.length === 0) {
-    // The route is the street's centre line. The lane is that line moved one tile to the right of the way it is going, worked out
+    // The route is the street's centre line. The lane is that line moved one tile to the left of the way it is going, worked out
     // from the line itself (the tile this leg starts from, remembered as `from`), never from where the car happens to be: a car
     // already in its lane would otherwise be moved over again and weave from side to side down a straight street.
     const { route } = state.route;
     const at = state.route.index % route.length;
     const from = state.route.from ?? tileOf(vehicle.position);
-    vehicle.path = keepRight(findPath(roadGrid, from, route[at]), roadGrid, from);
+    vehicle.path = keepLeft(findPath(roadGrid, from, route[at]), roadGrid, from);
     state.route.from = route[at];
     state.route.index = (at + 1) % route.length;
   }
@@ -698,10 +702,10 @@ export function advanceVehicles(units, seconds, roadGrid, grid, time = 0) {
     const beforeMove = { ...vehicle.position };
     if (state.controlledBy) {
       if (state.continueDriving && vehicle.path.length === 0) {
-        vehicle.path = roadAhead(vehicle, roadGrid);
+        vehicle.path = keepLeft(roadAhead(vehicle, roadGrid), roadGrid, tileOf(vehicle.position));
         if (vehicle.path.length === 0) {
           const heading = roadHeading(state.heading);
-          vehicle.path = roadAhead(vehicle, roadGrid, { x: -heading.x, y: -heading.y });
+          vehicle.path = keepLeft(roadAhead(vehicle, roadGrid, { x: -heading.x, y: -heading.y }), roadGrid, tileOf(vehicle.position));
         }
       }
       moveAlongPath(vehicle, seconds, vehicle.definition.stats.speed);

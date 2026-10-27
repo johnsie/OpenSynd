@@ -936,47 +936,180 @@ main { grid-template-columns: minmax(0, 1fr) minmax(250px, 300px); gap: 0.6rem; 
 .resume-box[hidden] { display: none; }
 .resume-box p { margin: 0 0 0.5rem; }
 
-/* The main menu: a short column of choices in front of the world map. */
+/* Main command console: strong hierarchy, compact mode cards and a visible network state. */
 dialog.main-menu[open] {
-  display: flex;
-  flex-direction: column;
-  gap: 0.9rem;
-  width: min(92vw, 26rem);
+  position: relative;
+  display: grid;
+  gap: 1.15rem;
+  width: min(94vw, 64rem);
   max-height: 94vh;
   overflow-y: auto;
-  padding: 1.2rem 1.4rem 1.4rem;
+  padding: 0;
+  border: 1px solid rgba(66, 214, 208, 0.7);
+  border-radius: 12px;
+  background:
+    linear-gradient(90deg, rgba(66, 214, 208, 0.035) 1px, transparent 1px) 0 0 / 34px 34px,
+    linear-gradient(rgba(66, 214, 208, 0.035) 1px, transparent 1px) 0 0 / 34px 34px,
+    radial-gradient(circle at 15% 0%, rgba(66, 214, 208, 0.18), transparent 34rem),
+    #091217;
+  box-shadow: 0 2.5rem 9rem #000, inset 0 1px rgba(255, 255, 255, 0.05);
 }
-.menu-head .eyebrow { margin: 0; }
-.menu-head h2 { margin: 0; font-size: 1.8rem; }
-.menu-list { display: flex; flex-direction: column; gap: 0.45rem; }
-.menu-list button,
-.menu-list a.button {
+.main-menu::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: linear-gradient(var(--public), var(--amber) 55%, transparent);
+}
+.menu-head {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.35rem 1.55rem 1.2rem;
+  border-bottom: 1px solid rgba(66, 214, 208, 0.28);
+  background: linear-gradient(100deg, rgba(22, 42, 49, 0.92), rgba(8, 17, 22, 0.82));
+}
+.menu-brand-mark {
+  width: 3.25rem;
+  display: grid;
+  gap: 0.38rem;
+  transform: skewY(-18deg);
+  filter: drop-shadow(0 0 12px rgba(66, 214, 208, 0.35));
+}
+.menu-brand-mark span { display: block; height: 0.42rem; background: var(--public); }
+.menu-brand-mark span:nth-child(2) { width: 78%; background: var(--amber); }
+.menu-brand-mark span:nth-child(3) { width: 52%; }
+.menu-head .eyebrow { margin: 0; color: var(--public); font-size: 0.68rem; letter-spacing: 0.18em; }
+.menu-head h2 {
+  margin: 0.08rem 0 0;
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 0.95;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.menu-tagline { margin: 0.45rem 0 0; color: var(--muted); font-size: 0.84rem; letter-spacing: 0.04em; }
+.menu-company {
+  min-width: 12rem;
+  margin: 0;
+  padding: 0.65rem 0.8rem;
+  display: grid;
+  gap: 0.12rem;
+  align-items: start;
+  border-left: 2px solid var(--amber);
+  background: rgba(225, 179, 90, 0.07);
+}
+.menu-company-label { color: var(--amber); font: 700 0.62rem ui-monospace, monospace; letter-spacing: 0.14em; }
+.menu-company strong { font-size: 1rem; }
+.menu-company .link-button { justify-self: start; color: var(--muted); font-size: 0.72rem; }
+.menu-list {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.35fr);
+  gap: 1rem;
+  padding: 0 1.55rem 1.4rem;
+}
+.menu-section {
+  min-width: 0;
+  padding: 0.85rem;
   display: flex;
   flex-direction: column;
+  gap: 0.48rem;
+  border: 1px solid rgba(143, 163, 170, 0.2);
+  border-radius: 8px;
+  background: rgba(10, 20, 25, 0.78);
+}
+.menu-section-online { border-color: rgba(66, 214, 208, 0.3); }
+.menu-section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 0.8rem; margin-bottom: 0.2rem; }
+.menu-section-head > span { color: var(--muted); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em; }
+.menu-live { display: inline-flex; align-items: center; gap: 0.35rem; }
+.menu-live i { width: 0.42rem; height: 0.42rem; border-radius: 50%; background: var(--restored); box-shadow: 0 0 8px var(--restored); }
+.menu-list button,
+.menu-list a.button {
+  position: relative;
+  display: grid;
+  grid-template-columns: 2.25rem 1fr;
   align-items: flex-start;
-  gap: 0.15rem;
+  gap: 0.12rem 0.65rem;
   margin: 0;
-  padding: 0.6rem 0.8rem;
+  min-height: 3.65rem;
+  padding: 0.65rem 0.75rem;
   text-align: left;
   text-decoration: none;
   color: var(--ink);
-  border: 1px solid var(--line);
-  background: rgba(24, 35, 41, 0.9);
+  border: 1px solid rgba(143, 163, 170, 0.25);
+  border-radius: 5px;
+  background: linear-gradient(105deg, rgba(28, 42, 49, 0.94), rgba(18, 29, 35, 0.84));
   cursor: pointer;
+  transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
 }
+.menu-list button::before,
+.menu-list a.button::before {
+  content: attr(data-glyph);
+  grid-row: 1 / span 2;
+  display: grid;
+  place-items: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  color: var(--public);
+  border: 1px solid rgba(66, 214, 208, 0.35);
+  background: rgba(66, 214, 208, 0.06);
+  font: 800 1rem ui-monospace, monospace;
+}
+.menu-list button > span { font-weight: 750; letter-spacing: 0.015em; }
+.menu-list button:hover:not(:disabled), .menu-list button:focus-visible,
 .menu-list a.button:hover, .menu-list a.button:focus-visible {
+  transform: translateX(3px);
   border-color: var(--public);
-  background: rgba(38, 61, 66, 0.95);
+  background: linear-gradient(105deg, rgba(33, 59, 65, 0.98), rgba(20, 35, 41, 0.95));
   outline: none;
 }
-.menu-list button[hidden] { display: none; }
-.menu-list small { font-size: 0.8rem; opacity: 0.8; }
+.menu-list .menu-feature {
+  border-color: rgba(225, 179, 90, 0.55);
+  background: linear-gradient(105deg, rgba(73, 57, 31, 0.5), rgba(24, 34, 38, 0.9));
+}
+.menu-list .menu-feature::before { color: var(--amber); border-color: rgba(225, 179, 90, 0.55); background: rgba(225, 179, 90, 0.09); }
+.menu-list button.primary { color: #071012; border-color: var(--public); background: linear-gradient(100deg, #55e4dd, #8ee9bc); }
+.menu-list button.primary::before { color: #071012; border-color: rgba(7, 16, 18, 0.35); background: rgba(7, 16, 18, 0.08); }
+.menu-list button:disabled { filter: saturate(0.35); }
+.menu-list button[hidden], .menu-list .menu-note[hidden] { display: none; }
+.menu-list small { grid-column: 2; color: var(--muted); font-size: 0.76rem; line-height: 1.25; }
+.menu-list .primary small { color: rgba(7, 16, 18, 0.72); }
+.menu-note {
+  margin: 0;
+  padding: 0.45rem 0.6rem;
+  color: var(--muted);
+  border-left: 2px solid var(--public);
+  background: rgba(66, 214, 208, 0.055);
+  font-size: 0.78rem;
+}
+.menu-section-utility { grid-column: 1 / -1; padding: 0.65rem 0.85rem; }
+.menu-section-utility .menu-group { margin-bottom: 0.2rem; }
+.menu-utility-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.48rem; }
+.menu-utility-row button, .menu-utility-row a.button {
+  display: flex;
+  min-height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0.45rem 0.65rem;
+  text-align: center;
+  color: var(--muted);
+  background: rgba(14, 24, 29, 0.8);
+}
+.menu-utility-row button::before, .menu-utility-row a.button::before { display: none; }
 .menu-group {
-  margin: 0.6rem 0 0;
-  font-size: 0.75rem;
-  letter-spacing: 0.12em;
+  margin: 0;
+  color: var(--public);
+  font-size: 0.69rem;
+  font-weight: 800;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  opacity: 0.7;
+}
+@media (max-width: 720px) {
+  .menu-head { grid-template-columns: auto 1fr; padding: 1rem; }
+  .menu-company { grid-column: 1 / -1; min-width: 0; grid-template-columns: auto 1fr auto; align-items: baseline; }
+  .menu-list { grid-template-columns: 1fr; padding: 0 1rem 1rem; }
+  .menu-section-utility { grid-column: auto; }
+  .menu-utility-row { grid-template-columns: 1fr; }
 }
 
 dialog.company-dialog[open] {
@@ -988,7 +1121,7 @@ dialog.company-dialog[open] {
 .company-dialog input { font: inherit; padding: 0.5rem 0.6rem; min-height: 2.5rem; }
 .company-error { color: #ff8a80; margin: 0; }
 .company-actions { display: flex; justify-content: flex-end; gap: 0.5rem; }
-.menu-company, .title-company { margin: 0.25rem 0 0; opacity: 0.85; display: flex; gap: 0.6rem; align-items: baseline; }
+.title-company { margin: 0.25rem 0 0; opacity: 0.85; display: flex; gap: 0.6rem; align-items: baseline; }
 .menu-company[hidden] { display: none; }
 .link-button { background: none; border: 0; padding: 0; color: inherit; text-decoration: underline; cursor: pointer; font: inherit; }
 

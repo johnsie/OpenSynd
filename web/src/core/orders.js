@@ -691,6 +691,15 @@ export function interactionCandidate(world, operators) {
     const objective = findObjectiveAtPosition(world.objectives, world.map.zones, spot, "interact");
     if (objective) return { unit, objective };
   }
+  let nearest = null;
+  for (const unit of operators) {
+    if (!unit || unit.disabled || unit.path.length > 0) continue;
+    for (const giver of world.units.filter((candidate) => candidate.missionGiver && !candidate.disabled)) {
+      const distance = Math.hypot(unit.position.x - giver.position.x, unit.position.y - giver.position.y);
+      if (distance <= ENTER_RANGE && (!nearest || distance < nearest.distance)) nearest = { unit, giver, distance };
+    }
+  }
+  if (nearest) return { unit: nearest.unit, giver: nearest.giver };
   return null;
 }
 
@@ -702,6 +711,29 @@ export function performInteraction(world, hooks, operators) {
     return;
   }
   const { unit, objective } = candidate;
+  if (candidate.giver) {
+    const details = candidate.giver.missionGiver;
+    const contract = world.war?.contracts?.find((item) => item.contractId === details.contractId);
+    const assignment = contract?.assignments?.[unit.warSide];
+    if (!assignment) {
+      hooks.message(`${details.name} has no work for this operative.`);
+      return;
+    }
+    if (assignment.status === "available") {
+      assignment.status = "active";
+      world.war.revision = (world.war.revision ?? 0) + 1;
+      hooks.sound("objective");
+      hooks.effect("restore", { unitId: candidate.giver.id });
+      hooks.message(`${details.name}: ${details.title}. Reward: ${details.reward} coalition points.`);
+      hooks.changed();
+    } else if (assignment.status === "active") {
+      hooks.message(`${details.name}: the contract is still active—take and hold the marked relay.`);
+    } else {
+      const left = Math.max(1, Math.ceil((assignment.availableAt - world.elapsed)));
+      hooks.message(`${details.name}: return in ${left} seconds for another contract.`);
+    }
+    return;
+  }
   objective.complete = true;
   world.opStats.objectivesCompleted += 1;
   syncWorldGates(world, hooks);
