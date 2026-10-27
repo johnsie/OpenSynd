@@ -56,10 +56,11 @@ build:
 deploy:
   stage: deploy
   needs: [check, build]
+  resource_group: production
   script:
+    # Publish and verify the server first. The public site is switched only after the server reports the same content hash.
+    - sh deploy/deploy-server.sh web/dist/content/hash.json
     - sh deploy/deploy.sh web/dist "$CI_COMMIT_SHORT_SHA"
-    # The game server (once deploy/setup-server.sh has been run): set the CI/CD variable DEPLOY_SERVER to 1 to turn this on.
-    - if [ -n "${DEPLOY_SERVER:-}" ]; then sh deploy/deploy-server.sh; fi
   environment:
     name: production
     url: https://neuroreign.outiva.com

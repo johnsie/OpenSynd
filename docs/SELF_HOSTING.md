@@ -42,7 +42,7 @@ PORT=8791 HOST=0.0.0.0 DATABASE=/var/lib/opensynd/opensynd.sqlite ORIGINS=https:
   `POST /api/admin/ban` (`{ "name": "...", "banned": true }`), both with the header `x-admin-token`. A closed account cannot sign
   in and is disconnected at once. Without the token these endpoints refuse everything.
 - On the project's own host: `sudo sh deploy/setup-server.sh` once (a service, its user, a database folder, a restart permission for the
-  runner), then the deploy job runs `deploy/deploy-server.sh` when the CI/CD variable `DEPLOY_SERVER` is set, and the site is built
+  runner), then every deploy job runs and verifies `deploy/deploy-server.sh` before publishing the matching website. The site is built
   offering that server when `OPENSYND_SERVER` is set. Apache passes `/api` and `/ws` to it (`deploy/apache/neuroreign.outiva.com.conf`).
 - **Sign in with Outiva** (OpenID Connect): on by default against `https://accounts.outiva.com/realms/outiva` with the client
   `opensynd-web` (`OIDC_ISSUER`, `OIDC_CLIENT`; `OIDC_ISSUER=` switches it off). Register the client once with

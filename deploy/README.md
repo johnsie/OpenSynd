@@ -49,9 +49,10 @@ backend opensyn
 
 1. **check**: the content, style and provenance checks and the unit tests.
 2. **build**: builds the site into `web/dist`.
-3. **deploy**: `deploy/deploy.sh` copies the build into `releases/<commit>` and switches the `current` link to it in one
-   step, so visitors never see a half-copied site. The newest twelve releases are kept (roll back by pointing `current` at an
-   older folder).
+3. **deploy**: deployments are serialized. The job installs and restarts the game server, verifies that its health endpoint reports
+   the website build's content fingerprint, then `deploy/deploy.sh` copies the build into `releases/<commit>` and switches the
+   `current` link to it in one step. If the server does not start with matching content, it is rolled back and the website is not
+   switched. The newest twelve website releases are kept (roll back by pointing `current` at an older folder).
 
 ## Hot updates: pushing without disturbing anyone playing
 
@@ -73,7 +74,8 @@ host), then set the project's CI/CD variable `HOT_UPDATES` to `1` (Settings, CI/
 pinned and a deploy is only announced to the open games, not isolated from them.
 
 Pushes to the project's default branch deploy by themselves. Any other branch can be deployed with the manual **deploy**
-button on its pipeline.
+button on its pipeline. Every deploy includes the game server automatically; there is no separate CI/CD switch for it. Run
+`sudo sh deploy/setup-server.sh` once on the host before the first pipeline deploy.
 
 The runner needs: the **shell executor**, Node.js 20 or newer, Python 3, and the right to write in
 `/var/www/neuroreign.outiva.com` (the set-up script gives that to the runner's user). Nothing else is installed: the game has no

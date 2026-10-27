@@ -22,10 +22,8 @@ fi
 # This machine cannot look up the public name of the identity service, but Keycloak is on it.
 grep -q '^OIDC_INTERNAL=' /etc/opensynd.env || echo "OIDC_INTERNAL=http://127.0.0.1:8180" >> /etc/opensynd.env
 
-sh "$HERE/deploy/deploy.sh" "$HERE/dist" "$RELEASE"
 (cd "$HERE" && sudo -u "$OWNER" sh deploy/deploy-server.sh)
-systemctl is-active opensynd-server
-curl -s -m 10 http://127.0.0.1:8791/api/health && echo
+sh "$HERE/deploy/deploy.sh" "$HERE/dist" "$RELEASE"
 
 if [ "${KEYCLOAK:-yes}" = yes ]; then
   echo "Registering $SITE with Outiva sign-in (Keycloak administrator needed; Ctrl+C to skip)."
