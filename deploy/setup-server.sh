@@ -12,7 +12,8 @@ id opensynd >/dev/null 2>&1 || useradd --system --home /var/lib/opensynd --shell
 mkdir -p /opt/opensynd/app /var/lib/opensynd
 # The deployer replaces app/web atomically, so it must own both the service root and an app folder an earlier manual install may
 # already have created under another account.
-chown "$RUNNER_USER" /opt/opensynd /opt/opensynd/app
+chown "$RUNNER_USER" /opt/opensynd
+chown -R "$RUNNER_USER" /opt/opensynd/app
 chown opensynd /var/lib/opensynd
 if [ ! -f /etc/opensynd.env ]; then
   {
