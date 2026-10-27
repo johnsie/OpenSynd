@@ -41,6 +41,38 @@ test("an operation is made from content in Node, with its people, vehicles and o
   assert.deepEqual(world.units.filter((unit) => unit.side === "team").map((unit) => unit.number), [1, 2, 3, 4]);
 });
 
+test("Director Vale waits, escapes by car and fails the first operation", () => {
+  const world = makeWorld(content, MISSION, { options: { decidesOutcome: true } });
+  const hooks = silentHooks();
+  const vale = world.units.find((unit) => unit.id === "director-vale");
+  const car = world.units.find((unit) => unit.id === "vale-escape-car");
+  const start = { ...vale.position };
+  for (let step = 0; step < seconds(74); step += 1) stepWorld(world, FIXED_STEP_SECONDS, hooks);
+  assert.deepEqual(vale.position, start, "the squad gets time to find the target");
+  for (let step = 0; step < seconds(90) && world.outcome === "active"; step += 1) {
+    stepWorld(world, FIXED_STEP_SECONDS, hooks);
+  }
+  assert.equal(vale.escaped, true);
+  assert.equal(car.escaped, true);
+  assert.equal(world.objectives[0].complete, false);
+  assert.equal(world.outcome, "failure");
+});
+
+test("killing Vale and assembling the surviving squad at the exit wins the first operation", () => {
+  const world = makeWorld(content, MISSION, { options: { decidesOutcome: true } });
+  const hooks = silentHooks();
+  const vale = world.units.find((unit) => unit.id === "director-vale");
+  const exit = world.map.zones.find((zone) => zone.id === "team-exit");
+  vale.disabled = true;
+  vale.health = 0;
+  world.units.filter((unit) => unit.side === "team").forEach((unit, index) => {
+    unit.position = { x: exit.position.x + index % 2, y: exit.position.y + Math.floor(index / 2) };
+  });
+  stepWorld(world, FIXED_STEP_SECONDS, hooks);
+  assert.deepEqual(world.objectives.map((objective) => objective.complete), [true, true]);
+  assert.equal(world.outcome, "success");
+});
+
 test("orders given to the core move people, and the world steps without any browser", () => {
   const world = makeWorld(content, MISSION);
   const hooks = recordingHooks();

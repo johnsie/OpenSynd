@@ -3,7 +3,7 @@
 # Districts: how the maps are made
 
 Every territory's operation is played on a district of its own: 50 operations, 50 different maps. The three hand-made operations
-(First Light, Quiet Hours, Dead Drop) have hand-laid maps; the other 47 are generated, in a style chosen for the place.
+(Last Departure, Quiet Hours, Dead Drop) have hand-laid maps; the other 47 are generated, in a style chosen for the place.
 
 ## The pipeline
 

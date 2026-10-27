@@ -1,18 +1,31 @@
 {
   "formatVersion": 1,
   "id": "developer.restore-relay",
-  "name": "First Light",
+  "name": "Last Departure",
   "license": "CC0-1.0",
-  "briefing": "Two public communication relays across the district have been cut off from the mesh. Cross the yard, restore both, unlock the eastern service gate at its control panel, then leave through the fenced compound in the south-east. Watchers patrol the streets and the runoff channel can only be crossed at its four bridges.",
+  "title": "Vale missed his last departure",
+  "briefing": "Tidewater Consortium's security director, Lucan Vale, is preparing to abandon the district with the access ledger that names every paid informant in Northern Europe. He is hiding in plain sight among his own guards at the Signal Yard. Vale will remain inside the eastern administration block while his extraction route is checked, giving the team a short window to locate the building and set an ambush. When the all-clear comes, he will walk out in a guard's uniform, cross to a waiting patrol car and drive east along the service road. Assassinate Vale before the car leaves the map. Once he is dead, assemble every surviving operative at the east-side extraction point. If Vale reaches the boundary, the operation is lost.",
+  "story": "Last Departure: Lucan Vale built Tidewater's Northern Europe network by buying names, debts and loyalties. Tonight he intends to leave with the only ledger that can expose it. He looks like any other yard guard, but only one guard has a car waiting and a road out.",
+  "debrief": {
+    "success": "Vale never reached the border. The ledger is ash, Tidewater's informants are blind, and the team leaves the silent yard together.",
+    "failure": "Vale escaped with the ledger, or the team was lost before extraction. Tidewater will replace the car by dawn; it cannot replace this opportunity."
+  },
   "map": "maps/signal-yard.map.json",
+  "sequence": true,
+  "zones": [
+    {
+      "id": "team-exit",
+      "kind": "exit",
+      "position": { "x": 112, "y": 98 },
+      "width": 4,
+      "height": 4
+    }
+  ],
   "team": [
     {
       "id": "operator-one",
       "unit": "units/field-operator.unit.json",
-      "position": {
-        "x": 2,
-        "y": 62
-      },
+      "position": { "x": 2, "y": 62 },
       "equipment": [
         "equipment/civic-pulse-emitter.equipment.json",
         "equipment/field-repair-kit.equipment.json"
@@ -21,10 +34,7 @@
     {
       "id": "operator-two",
       "unit": "units/field-operator.unit.json",
-      "position": {
-        "x": 3,
-        "y": 62
-      },
+      "position": { "x": 3, "y": 62 },
       "equipment": [
         "equipment/civic-pulse-emitter.equipment.json",
         "equipment/field-repair-kit.equipment.json"
@@ -33,10 +43,7 @@
     {
       "id": "operator-three",
       "unit": "units/field-operator.unit.json",
-      "position": {
-        "x": 2,
-        "y": 63
-      },
+      "position": { "x": 2, "y": 63 },
       "equipment": [
         "equipment/civic-pulse-emitter.equipment.json",
         "equipment/field-repair-kit.equipment.json"
@@ -45,10 +52,7 @@
     {
       "id": "operator-four",
       "unit": "units/field-operator.unit.json",
-      "position": {
-        "x": 3,
-        "y": 63
-      },
+      "position": { "x": 3, "y": 63 },
       "equipment": [
         "equipment/civic-pulse-emitter.equipment.json",
         "equipment/field-repair-kit.equipment.json"
@@ -57,652 +61,92 @@
   ],
   "opponents": [
     {
-      "id": "enemy-agent-one",
-      "unit": "units/enemy-agent.unit.json",
-      "position": {
-        "x": 28,
-        "y": 34
-      },
-      "equipment": [
-        "equipment/scatter-emitter.equipment.json"
-      ],
-      "patrol": [
-        {
-          "x": 28,
-          "y": 46
-        }
-      ]
-    },
-    {
-      "id": "enemy-agent-two",
-      "unit": "units/enemy-agent.unit.json",
-      "position": {
-        "x": 44,
-        "y": 52
-      },
+      "id": "director-vale",
+      "unit": "units/lucan-vale.unit.json",
+      "position": { "x": 97, "y": 45 },
       "equipment": [],
-      "patrol": [
-        {
-          "x": 58,
-          "y": 52
-        }
-      ]
-    },
-    {
-      "id": "enemy-agent-three",
-      "unit": "units/enemy-agent.unit.json",
-      "position": {
-        "x": 70,
-        "y": 56
-      },
-      "equipment": [],
-      "patrol": [
-        {
-          "x": 70,
-          "y": 70
-        }
-      ]
-    },
-    {
-      "id": "enemy-agent-four",
-      "unit": "units/enemy-agent.unit.json",
-      "position": {
-        "x": 80,
-        "y": 75
-      },
-      "equipment": [],
-      "patrol": [
-        {
-          "x": 96,
-          "y": 75
-        }
-      ]
-    },
-    {
-      "id": "enemy-agent-five",
-      "unit": "units/enemy-agent.unit.json",
-      "position": {
-        "x": 100,
-        "y": 84
-      },
-      "equipment": [
-        "equipment/field-repair-kit.equipment.json"
-      ],
-      "patrol": [
-        {
-          "x": 100,
-          "y": 96
-        }
-      ]
-    },
-    {
-      "id": "enemy-agent-six",
-      "unit": "units/enemy-agent.unit.json",
-      "position": {
-        "x": 104,
-        "y": 99
-      },
-      "equipment": [],
-      "patrol": [
-        {
-          "x": 114,
-          "y": 99
-        }
-      ]
-    },
-    {
-      "id": "enemy-agent-seven",
-      "unit": "units/enemy-agent.unit.json",
-      "position": {
-        "x": 98,
-        "y": 76
-      },
-      "equipment": []
-    },
-    {
-      "id": "enemy-agent-eight",
-      "unit": "units/enemy-agent.unit.json",
-      "position": {
-        "x": 104,
-        "y": 100
-      },
-      "equipment": [
-        "equipment/scatter-emitter.equipment.json"
+      "script": [
+        { "type": "wait", "seconds": 75 },
+        { "type": "say", "text": "Extraction route confirmed. Bring the car around." },
+        { "type": "enter", "vehicle": "vale-escape-car" },
+        { "type": "drive", "to": { "x": 127, "y": 51 } },
+        { "type": "escape", "to": { "x": 127, "y": 51 } }
       ]
     },
     {
       "id": "guard-1",
       "unit": "units/guard.unit.json",
-      "position": {
-        "x": 52,
-        "y": 10
-      },
+      "position": { "x": 28, "y": 34 },
       "equipment": [],
-      "patrol": [
-        {
-          "x": 52,
-          "y": 10
-        },
-        {
-          "x": 52,
-          "y": 18
-        }
-      ]
+      "patrol": [{ "x": 28, "y": 46 }]
     },
     {
       "id": "guard-2",
       "unit": "units/guard.unit.json",
-      "position": {
-        "x": 10,
-        "y": 100
-      },
+      "position": { "x": 44, "y": 52 },
       "equipment": [],
-      "patrol": [
-        {
-          "x": 10,
-          "y": 100
-        },
-        {
-          "x": 24,
-          "y": 100
-        }
-      ]
+      "patrol": [{ "x": 58, "y": 52 }]
     },
     {
       "id": "guard-3",
       "unit": "units/guard.unit.json",
-      "position": {
-        "x": 28,
-        "y": 45
-      },
+      "position": { "x": 70, "y": 56 },
       "equipment": [],
-      "patrol": [
-        {
-          "x": 28,
-          "y": 45
-        },
-        {
-          "x": 28,
-          "y": 55
-        }
-      ]
+      "patrol": [{ "x": 70, "y": 70 }]
     },
     {
       "id": "guard-4",
       "unit": "units/guard.unit.json",
-      "position": {
-        "x": 76,
-        "y": 87
-      },
+      "position": { "x": 80, "y": 75 },
       "equipment": [],
-      "patrol": [
-        {
-          "x": 76,
-          "y": 87
-        },
-        {
-          "x": 76,
-          "y": 96
-        }
-      ]
+      "patrol": [{ "x": 96, "y": 75 }]
+    },
+    {
+      "id": "guard-5",
+      "unit": "units/guard.unit.json",
+      "position": { "x": 100, "y": 84 },
+      "equipment": [],
+      "patrol": [{ "x": 100, "y": 96 }]
+    },
+    {
+      "id": "guard-6",
+      "unit": "units/guard.unit.json",
+      "position": { "x": 104, "y": 99 },
+      "equipment": [],
+      "patrol": [{ "x": 114, "y": 99 }]
+    },
+    {
+      "id": "guard-7",
+      "unit": "units/guard.unit.json",
+      "position": { "x": 52, "y": 10 },
+      "equipment": [],
+      "patrol": [{ "x": 52, "y": 18 }]
+    },
+    {
+      "id": "guard-8",
+      "unit": "units/guard.unit.json",
+      "position": { "x": 10, "y": 100 },
+      "equipment": [],
+      "patrol": [{ "x": 24, "y": 100 }]
     }
   ],
   "objectives": [
     {
-      "id": "restore-west",
-      "type": "interact",
-      "targetZone": "west-relay",
+      "id": "assassinate-vale",
+      "type": "disable",
+      "targets": ["director-vale"],
       "required": true,
-      "description": "Reconnect the western relay."
+      "description": "Assassinate Director Lucan Vale before his car escapes."
     },
     {
-      "id": "restore-east",
-      "type": "interact",
-      "targetZone": "east-relay",
-      "required": true,
-      "description": "Reconnect the eastern relay."
-    },
-    {
-      "id": "open-gate",
-      "type": "interact",
-      "targetZone": "gate-panel",
-      "required": true,
-      "description": "Unlock the eastern service gate."
-    },
-    {
-      "id": "leave-yard",
+      "id": "extract-team",
       "type": "extract",
-      "targetZone": "safe-exit",
+      "targetZone": "team-exit",
       "required": true,
-      "description": "Extract through the eastern service gate."
+      "description": "After Vale is dead, assemble every surviving operative at the east-side exit."
     }
   ],
-  "story": "The Signal Yard has gone quiet. Two public relays that carried the district's voice have been cut off by remote administrators, and the service gate to the east is locked. Your four-person field team has one night to reconnect the district, unlock the gate, and leave before the watchers raise the alarm.",
-  "debrief": {
-    "success": "Both relays carry the district's voice again, the gate stands open, and your team slips away before the watchers can respond.",
-    "failure": "Every operator has been disabled. The relays stay silent and the gate stays locked. Regroup and try a different approach."
-  },
-  "title": "Signal Yard is back on the mesh",
-  "bystanders": [
-    {
-      "id": "civilian-1",
-      "unit": "units/civilian-woman.unit.json",
-      "position": {
-        "x": 8,
-        "y": 76
-      },
-      "equipment": [],
-      "patrol": [
-        {
-          "x": 8,
-          "y": 76
-        },
-        {
-          "x": 21,
-          "y": 76
-        }
-      ]
-    },
-    {
-      "id": "civilian-2",
-      "unit": "units/civilian-man.unit.json",
-      "position": {
-        "x": 124,
-        "y": 8
-      },
-      "equipment": [],
-      "patrol": [
-        {
-          "x": 124,
-          "y": 8
-        },
-        {
-          "x": 124,
-          "y": 20
-        }
-      ]
-    },
-    {
-      "id": "civilian-3",
-      "unit": "units/civilian-woman.unit.json",
-      "position": {
-        "x": 27,
-        "y": 32
-      },
-      "equipment": [],
-      "patrol": [
-        {
-          "x": 27,
-          "y": 32
-        },
-        {
-          "x": 27,
-          "y": 42
-        }
-      ]
-    },
-    {
-      "id": "civilian-4",
-      "unit": "units/civilian-man.unit.json",
-      "position": {
-        "x": 50,
-        "y": 100
-      },
-      "equipment": [],
-      "patrol": [
-        {
-          "x": 50,
-          "y": 100
-        },
-        {
-          "x": 63,
-          "y": 100
-        }
-      ]
-    },
-    {
-      "id": "civilian-5",
-      "unit": "units/civilian-woman.unit.json",
-      "position": {
-        "x": 32,
-        "y": 123
-      },
-      "equipment": [],
-      "patrol": [
-        {
-          "x": 32,
-          "y": 123
-        },
-        {
-          "x": 45,
-          "y": 123
-        }
-      ]
-    },
-    {
-      "id": "civilian-6",
-      "unit": "units/civilian-man.unit.json",
-      "position": {
-        "x": 99,
-        "y": 50
-      },
-      "equipment": [],
-      "patrol": [
-        {
-          "x": 99,
-          "y": 50
-        },
-        {
-          "x": 99,
-          "y": 68
-        }
-      ]
-    },
-    {
-      "id": "civilian-7",
-      "unit": "units/civilian-woman.unit.json",
-      "position": {
-        "x": 86,
-        "y": 75
-      },
-      "equipment": [],
-      "patrol": [
-        {
-          "x": 86,
-          "y": 75
-        },
-        {
-          "x": 103,
-          "y": 75
-        }
-      ]
-    },
-    {
-      "id": "civilian-8",
-      "unit": "units/civilian-man.unit.json",
-      "position": {
-        "x": 51,
-        "y": 68
-      },
-      "equipment": [],
-      "patrol": [
-        {
-          "x": 51,
-          "y": 68
-        },
-        {
-          "x": 51,
-          "y": 82
-        }
-      ]
-    },
-    {
-      "id": "civilian-9",
-      "unit": "units/civilian-woman.unit.json",
-      "position": {
-        "x": 38,
-        "y": 52
-      },
-      "equipment": [],
-      "patrol": [
-        {
-          "x": 38,
-          "y": 52
-        },
-        {
-          "x": 51,
-          "y": 52
-        }
-      ]
-    },
-    {
-      "id": "civilian-10",
-      "unit": "units/civilian-man.unit.json",
-      "position": {
-        "x": 8,
-        "y": 100
-      },
-      "equipment": [],
-      "patrol": [
-        {
-          "x": 8,
-          "y": 100
-        },
-        {
-          "x": 22,
-          "y": 100
-        }
-      ]
-    },
-    {
-      "id": "civilian-11",
-      "unit": "units/civilian-woman.unit.json",
-      "position": {
-        "x": 27,
-        "y": 14
-      },
-      "equipment": [],
-      "patrol": [
-        {
-          "x": 27,
-          "y": 14
-        },
-        {
-          "x": 27,
-          "y": 25
-        }
-      ]
-    },
-    {
-      "id": "civilian-12",
-      "unit": "units/civilian-man.unit.json",
-      "position": {
-        "x": 123,
-        "y": 62
-      },
-      "equipment": [],
-      "patrol": [
-        {
-          "x": 123,
-          "y": 62
-        },
-        {
-          "x": 123,
-          "y": 73
-        }
-      ]
-    },
-    {
-      "id": "civilian-13",
-      "unit": "units/civilian-woman.unit.json",
-      "position": {
-        "x": 51,
-        "y": 26
-      },
-      "equipment": [],
-      "patrol": [
-        {
-          "x": 51,
-          "y": 26
-        },
-        {
-          "x": 51,
-          "y": 43
-        }
-      ]
-    },
-    {
-      "id": "civilian-14",
-      "unit": "units/civilian-man.unit.json",
-      "position": {
-        "x": 27,
-        "y": 86
-      },
-      "equipment": [],
-      "patrol": [
-        {
-          "x": 27,
-          "y": 86
-        },
-        {
-          "x": 27,
-          "y": 104
-        }
-      ]
-    },
-    {
-      "id": "police-15",
-      "unit": "units/city-police.unit.json",
-      "position": {
-        "x": 76,
-        "y": 69
-      },
-      "equipment": [],
-      "patrol": [
-        {
-          "x": 76,
-          "y": 69
-        },
-        {
-          "x": 76,
-          "y": 56
-        }
-      ]
-    },
-    {
-      "id": "police-16",
-      "unit": "units/city-police.unit.json",
-      "position": {
-        "x": 38,
-        "y": 51
-      },
-      "equipment": [],
-      "patrol": [
-        {
-          "x": 38,
-          "y": 51
-        },
-        {
-          "x": 49,
-          "y": 51
-        }
-      ]
-    },
-    {
-      "id": "police-17",
-      "unit": "units/city-police.unit.json",
-      "position": {
-        "x": 20,
-        "y": 52
-      },
-      "equipment": [],
-      "patrol": [
-        {
-          "x": 20,
-          "y": 52
-        },
-        {
-          "x": 8,
-          "y": 52
-        }
-      ]
-    },
-    {
-      "id": "police-18",
-      "unit": "units/city-police.unit.json",
-      "position": {
-        "x": 52,
-        "y": 78
-      },
-      "equipment": [],
-      "patrol": [
-        {
-          "x": 52,
-          "y": 78
-        },
-        {
-          "x": 52,
-          "y": 68
-        }
-      ]
-    },
-    {
-      "id": "criminal-1",
-      "unit": "units/criminal.unit.json",
-      "position": {
-        "x": 45,
-        "y": 100
-      },
-      "equipment": [],
-      "patrol": [
-        {
-          "x": 45,
-          "y": 100
-        },
-        {
-          "x": 56,
-          "y": 100
-        }
-      ]
-    },
-    {
-      "id": "criminal-2",
-      "unit": "units/criminal.unit.json",
-      "position": {
-        "x": 28,
-        "y": 87
-      },
-      "equipment": [],
-      "patrol": [
-        {
-          "x": 28,
-          "y": 87
-        },
-        {
-          "x": 28,
-          "y": 96
-        }
-      ]
-    },
-    {
-      "id": "criminal-3",
-      "unit": "units/criminal.unit.json",
-      "position": {
-        "x": 76,
-        "y": 80
-      },
-      "equipment": [],
-      "patrol": [
-        {
-          "x": 76,
-          "y": 80
-        },
-        {
-          "x": 76,
-          "y": 91
-        }
-      ]
-    },
-    {
-      "id": "criminal-4",
-      "unit": "units/criminal.unit.json",
-      "position": {
-        "x": 99,
-        "y": 38
-      },
-      "equipment": [],
-      "patrol": [
-        {
-          "x": 99,
-          "y": 38
-        },
-        {
-          "x": 99,
-          "y": 46
-        }
-      ]
-    }
-  ],
+  "bystanders": [],
   "region": {
     "name": "Northern Europe",
     "lon": 6,
@@ -711,115 +155,9 @@
   },
   "vehicles": [
     {
-      "id": "city-car-1",
-      "vehicle": "vehicles/city-car.vehicle.json",
-      "position": {
-        "x": 89,
-        "y": 51
-      },
-      "driver": "units/civilian-man.unit.json",
-      "patrol": [
-        {
-          "x": 89,
-          "y": 51
-        },
-        {
-          "x": 125,
-          "y": 51
-        }
-      ]
-    },
-    {
-      "id": "city-car-2",
-      "vehicle": "vehicles/city-car.vehicle.json",
-      "position": {
-        "x": 51,
-        "y": 66
-      },
-      "driver": "units/civilian-woman.unit.json",
-      "patrol": [
-        {
-          "x": 51,
-          "y": 66
-        },
-        {
-          "x": 51,
-          "y": 104
-        }
-      ]
-    },
-    {
-      "id": "city-car-3",
-      "vehicle": "vehicles/city-car.vehicle.json",
-      "position": {
-        "x": 106,
-        "y": 75
-      },
-      "driver": "units/civilian-man.unit.json",
-      "patrol": [
-        {
-          "x": 106,
-          "y": 75
-        },
-        {
-          "x": 125,
-          "y": 75
-        }
-      ]
-    },
-    {
-      "id": "ambulance-4",
-      "vehicle": "vehicles/ambulance.vehicle.json",
-      "position": {
-        "x": 51,
-        "y": 35
-      },
-      "driver": "units/civilian-woman.unit.json",
-      "patrol": [
-        {
-          "x": 51,
-          "y": 35
-        },
-        {
-          "x": 51,
-          "y": 59
-        }
-      ]
-    },
-    {
-      "id": "patrol-car-5",
+      "id": "vale-escape-car",
       "vehicle": "vehicles/patrol-car.vehicle.json",
-      "position": {
-        "x": 36,
-        "y": 51
-      },
-      "driver": "units/city-police.unit.json",
-      "patrol": [
-        {
-          "x": 36,
-          "y": 51
-        },
-        {
-          "x": 60,
-          "y": 51
-        }
-      ]
-    },
-    {
-      "id": "parked-city-car-1",
-      "vehicle": "vehicles/city-car.vehicle.json",
-      "position": {
-        "x": 27,
-        "y": 60
-      }
-    },
-    {
-      "id": "parked-ambulance-2",
-      "vehicle": "vehicles/ambulance.vehicle.json",
-      "position": {
-        "x": 28,
-        "y": 67
-      }
+      "position": { "x": 96, "y": 51 }
     }
   ],
   "unlocks": [
@@ -831,7 +169,7 @@
     "developer.op-scandinavia"
   ],
   "intel": [
-    "Patrol survey: 8 enemy agents and 4 guards hold the yard; most patrol the roads between the relays.",
-    "Full survey: the gate console sits at the south-east plaza, and the channel bridges are the only crossings from the west."
+    "Vale's car is parked on the eastbound road beside the administration block. He waits inside for 75 seconds before moving.",
+    "Every other hostile in the yard is a patrolling guard. Vale wears the same uniform; identify him by the waiting patrol car."
   ]
 }

@@ -327,7 +327,7 @@ export function armedOut(unit, now, byId = null) {
 //   wait {seconds}   stand still
 //   trigger {at, radius}   stand until an operator comes within `radius` tiles of `at`
 //   say {text}       speak a line (shown as a caption and in the status line)
-//   escape {to}      walk to a tile and leave the map: a target that does this has got away
+//   escape {to}      walk, or drive the vehicle they occupy, to a tile and leave the map
 // The list repeats when the placement says `scriptLoop`. Anyone alerted drops the script and fights or flees as usual.
 const SCRIPT_SPEED_FACTOR = 0.8;
 const SCRIPT_TRIGGER_RADIUS = 8;
@@ -405,6 +405,37 @@ export function advanceScript(unit, deltaSeconds, grid, units) {
       vehicle.vehicle.route = null;
       vehicle.path = [];
       next();
+    }
+  } else if (step.type === "escape" && unit.inVehicle) {
+    // A scripted target can flee in the car they entered. At the edge, the car and everyone in it leave the operation; marking
+    // the target escaped makes an unfinished disable objective fail immediately rather than treating the target as killed.
+    const vehicle = units.find((other) => other.id === unit.inVehicle && isVehicle(other));
+    if (!vehicle || vehicle.disabled) {
+      next();
+      return;
+    }
+    const goal = tileOf(step.to);
+    if (Math.hypot(vehicle.position.x - goal.x, vehicle.position.y - goal.y) <= 1.6) {
+      for (const id of vehicle.vehicle.occupantIds) {
+        const rider = units.find((other) => other.id === id);
+        if (!rider) continue;
+        rider.escaped = true;
+        rider.disabled = true;
+        rider.health = 0;
+        rider.inVehicle = null;
+        rider.path = [];
+      }
+      vehicle.escaped = true;
+      vehicle.path = [];
+      vehicle.vehicle.route = null;
+      vehicle.vehicle.driverId = null;
+      vehicle.vehicle.occupantIds = [];
+      next();
+      return;
+    }
+    if (!vehicle.vehicle.route || vehicle.vehicle.route.scripted !== step) {
+      vehicle.vehicle.route = { route: [goal], index: 0, scripted: step };
+      vehicle.path = [];
     }
   } else if (step.type === "leave") {
     const vehicle = units.find((other) => other.id === unit.inVehicle);

@@ -14,7 +14,7 @@ main one by `tools/generate_variants.py`; `BALANCE_VARIANTS=1 node web/tools/bal
 
 | # | Territory | Mission | Tier | Enemies | Objective types | Map | Opened by |
 |---|-----------|---------|------|---------|-----------------|-----|-----------|
-| 1 | Northern Europe | First Light (hand-made) | 1 | 8 enemy agent, 4 guard | extract, interact | 128x128 | start |
+| 1 | Northern Europe | Last Departure (hand-made) | 1 | Director Vale, 8 guards | disable, extract | 128x128 | start |
 | 2 | Balkans | Balkans Uplink (generated) | 1 | 5 enemy agent, 2 guard | extract, hold, interact | 128x104 | Northern Europe |
 | 3 | Iberia | Iberia Audit (generated) | 1 | 5 enemy agent, 2 guard, 1 site warden | extract, interact | 128x104 | Northern Europe |
 | 4 | Maghreb | Maghreb Uplink (generated) | 1 | 5 enemy agent, 2 guard | extract, hold, interact | 128x104 | Northern Europe |

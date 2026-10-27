@@ -29,7 +29,8 @@ test("every shipped mission is a valid draft", async () => {
   const pack = await read("pack.json");
   for (const file of pack.missions) {
     const mission = await read(file);
-    const map = await read(mission.map);
+    const base = await read(mission.map);
+    const map = mission.zones?.length ? { ...base, zones: [...base.zones, ...mission.zones] } : base;
     assert.deepEqual(validateDraft(mission, map), [], file);
   }
 });
@@ -46,14 +47,14 @@ test("placements lists everyone and can pick the nearest within reach", async ()
 test("moving, adding and removing return new missions and leave the old one alone", async () => {
   const { mission } = await draft();
   const before = JSON.stringify(mission);
-  const moved = moveItem(mission, "opponents", "enemy-agent-one", { x: 30.4, y: 40.6 });
-  assert.deepEqual(moved.opponents.find((item) => item.id === "enemy-agent-one").position, { x: 30, y: 41 });
+  const moved = moveItem(mission, "opponents", "director-vale", { x: 30.4, y: 40.6 });
+  assert.deepEqual(moved.opponents.find((item) => item.id === "director-vale").position, { x: 30, y: 41 });
   assert.equal(JSON.stringify(mission), before);
   assert.equal(moveItem(mission, "opponents", "ghost", { x: 1, y: 1 }), mission);
 
   const added = addItem(mission, "opponents", { kind: "units/guard.unit.json", stem: "guard", position: { x: 30, y: 40 } });
   const guard = added.opponents.at(-1);
-  assert.equal(guard.id, "guard-5", "the next free number: guards 1 to 4 exist");
+  assert.equal(guard.id, "guard-9", "the next free number: guards 1 to 8 exist");
   assert.deepEqual(guard.equipment, []);
   const car = addItem(mission, "vehicles", {
     kind: "vehicles/city-car.vehicle.json",
@@ -67,7 +68,7 @@ test("moving, adding and removing return new missions and leave the old one alon
   const removed = removeItem(added, "opponents", guard.id);
   assert.equal(removed.opponents.length, mission.opponents.length);
   assert.equal(removeItem(mission, "opponents", "ghost"), mission);
-  assert.equal(freeId(added, "guard"), "guard-6");
+  assert.equal(freeId(added, "guard"), "guard-10");
 });
 
 test("a squad can hold no more than four", async () => {
@@ -81,17 +82,17 @@ test("a squad can hold no more than four", async () => {
 
 test("validation reports the problems a creator would hit", async () => {
   const { mission, map } = await draft();
-  const off = moveItem(mission, "opponents", "enemy-agent-one", { x: 500, y: 5 });
-  assert.match(validateDraft(off, map).join(" "), /enemy-agent-one is outside the map/);
-  const wall = moveItem(mission, "opponents", "enemy-agent-one", { x: 10, y: 10 });
-  assert.match(validateDraft(wall, map).join(" "), /enemy-agent-one stands on ground nobody can stand on/);
-  const twin = addItem(mission, "opponents", { kind: "units/guard.unit.json", stem: "enemy-agent", position: { x: 30, y: 40 } });
-  twin.opponents.at(-1).id = "enemy-agent-one";
-  assert.match(validateDraft(twin, map).join(" "), /share the id enemy-agent-one/);
+  const off = moveItem(mission, "opponents", "director-vale", { x: 500, y: 5 });
+  assert.match(validateDraft(off, map).join(" "), /director-vale is outside the map/);
+  const wall = moveItem(mission, "opponents", "director-vale", { x: 10, y: 10 });
+  assert.match(validateDraft(wall, map).join(" "), /director-vale stands on ground nobody can stand on/);
+  const twin = addItem(mission, "opponents", { kind: "units/guard.unit.json", stem: "director", position: { x: 30, y: 40 } });
+  twin.opponents.at(-1).id = "director-vale";
+  assert.match(validateDraft(twin, map).join(" "), /share the id director-vale/);
   assert.match(validateDraft({ ...mission, team: [] }, map).join(" "), /at least one operator/);
   const badZone = {
     ...mission,
-    objectives: [{ ...mission.objectives[0], targetZone: "nowhere" }, ...mission.objectives.slice(1)],
+    objectives: [mission.objectives[0], { ...mission.objectives[1], targetZone: "nowhere" }],
   };
   assert.match(validateDraft(badZone, map).join(" "), /points at a zone that is not on the map/);
   const badTarget = { ...mission, objectives: [{ id: "x", type: "disable", required: true, description: "d", targets: ["ghost"] }] };
@@ -150,10 +151,10 @@ test("a typed script is checked and explained, and sets or removes a unit's scri
   assert.match(parseScript('[{"type":"wait","seconds":3,"to":{"x":1,"y":1}}]').error, /does not use/);
 
   const { mission } = await draft();
-  const person = mission.bystanders[0];
-  const scripted = setScript(mission, "bystanders", person.id, parseScript(good).steps);
-  assert.equal(scripted.bystanders[0].script.length, 5);
-  assert.equal(setScript(scripted, "bystanders", person.id, []).bystanders[0].script, undefined);
+  const person = mission.opponents[1];
+  const scripted = setScript(mission, "opponents", person.id, parseScript(good).steps);
+  assert.equal(scripted.opponents[1].script.length, 5);
+  assert.equal(setScript(scripted, "opponents", person.id, []).opponents[1].script, undefined);
   assert.equal(setScript(mission, "vehicles", mission.vehicles[0]?.id ?? "x", parseScript(good).steps), mission, "vehicles take no script");
 });
 

@@ -1,0 +1,32 @@
+{
+  "formatVersion": 1,
+  "id": "developer.lucan-vale",
+  "name": "Director Lucan Vale",
+  "license": "CC0-1.0",
+  "role": "guard",
+  "stats": {
+    "vitality": 60,
+    "speed": 3.2,
+    "awareness": 70,
+    "attack": 10,
+    "range": 3.25,
+    "cooldown": 1.2
+  },
+  "abilities": [
+    "observe",
+    "raise-alert"
+  ],
+  "carries": [
+    "equipment/scatter-emitter.equipment.json"
+  ],
+  "appearance": {
+    "shape": "hexagon",
+    "primaryColor": "#3a4a3a",
+    "accentColor": "#e1b35a",
+    "marker": "G",
+    "sprites": [
+      "guard-1",
+      "guard-2"
+    ]
+  }
+}
