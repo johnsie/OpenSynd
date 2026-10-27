@@ -158,7 +158,7 @@
     {
       "id": "vale-escape-car",
       "vehicle": "vehicles/patrol-car.vehicle.json",
-      "position": { "x": 106, "y": 51 }
+      "position": { "x": 112, "y": 51 }
     }
   ],
   "unlocks": [
@@ -170,7 +170,7 @@
     "developer.op-scandinavia"
   ],
   "intel": [
-    "Vale's car is exposed on the eastbound road beyond the cleared forecourt. He will make for it as soon as an operative enters the 12-tile security perimeter around his starting position.",
+    "Vale's car is exposed farther east on the road beyond the cleared forecourt. He will make for it as soon as an operative enters the 12-tile security perimeter around his starting position.",
     "Every other hostile in the yard is a patrolling guard. Vale wears the same uniform; identify him by the waiting patrol car."
   ]
 }

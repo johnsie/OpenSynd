@@ -1169,15 +1169,15 @@
    "color": "#343d43"
   },
   {
-   "id": "block-4-1-b",
+   "id": "vale-forecourt-east",
    "x": 113,
    "y": 31,
    "width": 8,
    "height": 18,
-   "surface": "utility-building",
-   "walkable": false,
-   "elevation": 4,
-   "color": "#20262c"
+   "surface": "service-concrete",
+   "walkable": true,
+   "elevation": 0,
+   "color": "#343d43"
   },
   {
    "id": "wall-4-1-east",
@@ -2043,7 +2043,7 @@
    "id": "streetlight-34",
    "kind": "streetlight",
    "position": {
-    "x": 112,
+    "x": 118,
     "y": 49
    }
   },
@@ -2051,7 +2051,7 @@
    "id": "bin-12",
    "kind": "bin",
    "position": {
-    "x": 112,
+    "x": 118,
     "y": 54
    }
   },
