@@ -65,6 +65,23 @@ test("a sole coalition captures a point and persistent rooms do not time out", (
   assert.equal(restored.world.war.coalitions[0].score, 1);
 });
 
+test("an operative can use a company-war relay and receives capture guidance", () => {
+  const room = new WarRoom({ content, mission });
+  const company = room.claimCompany("player", 1);
+  const operator = room.world.units.find((unit) => unit.id === company.ids[0]);
+  const point = room.world.war.points[0];
+  operator.position = { ...point.position };
+  room.tick();
+  const messages = [];
+  const hooks = { ...silentHooks(), message: (message) => messages.push(message) };
+  const result = applyCommand(room.world, hooks, { type: "interact", unitIds: [operator.id] }, {
+    owns: (id) => company.ids.includes(id),
+  });
+  assert.equal(result.ok, true);
+  assert.equal(point.claiming, company.coalition);
+  assert.match(messages.at(-1), /uplink active/i);
+});
+
 test("mission-giver NPCs issue repeatable coalition contracts that pay on capture", () => {
   const room = new WarRoom({ content, mission });
   const company = room.claimCompany("player", 1);

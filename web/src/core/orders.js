@@ -4,7 +4,7 @@
 // out of vehicles. Each takes the world, the hooks (see hooks.js) and the operators the order is for, and reports through the
 // hooks. The browser, a server and a test all give orders by calling applyCommand with a command record (see commands.js).
 import { THROW_RANGE, plantBomb } from "../bombs.js";
-import { findObjectiveAtPosition, findPath, formationTiles, isWalkable } from "../engine.js";
+import { findObjectiveAtPosition, findPath, formationTiles, isWalkable, zoneContains } from "../engine.js";
 import {
   clearWeaponForAll,
   distanceBetween,
@@ -690,6 +690,8 @@ export function interactionCandidate(world, operators) {
     const spot = { x: Math.round(unit.position.x), y: Math.round(unit.position.y) };
     const objective = findObjectiveAtPosition(world.objectives, world.map.zones, spot, "interact");
     if (objective) return { unit, objective };
+    const warPoint = world.war?.points?.find((point) => zoneContains(point, spot));
+    if (warPoint) return { unit, warPoint };
   }
   let nearest = null;
   for (const unit of operators) {
@@ -711,6 +713,21 @@ export function performInteraction(world, hooks, operators) {
     return;
   }
   const { unit, objective } = candidate;
+  if (candidate.warPoint) {
+    const point = candidate.warPoint;
+    if (point.owner === unit.warSide) {
+      hooks.message(`${point.name} is secured by your coalition.`);
+    } else if (point.claiming === unit.warSide) {
+      const left = Math.max(1, Math.ceil(world.war.captureSeconds - point.progress));
+      hooks.message(`${point.name}: uplink active. Hold the relay for ${left} more seconds.`);
+    } else {
+      hooks.message(`${point.name}: hold this relay for ${world.war.captureSeconds} seconds to capture it.`);
+    }
+    hooks.sound("objective");
+    hooks.effect("restore", { unitId: unit.id });
+    hooks.changed();
+    return;
+  }
   if (candidate.giver) {
     const details = candidate.giver.missionGiver;
     const contract = world.war?.contracts?.find((item) => item.contractId === details.contractId);

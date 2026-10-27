@@ -2247,7 +2247,8 @@ function drawZones(viewport) {
   const { cellSize, origin } = viewport;
   for (const zone of state.map.zones) {
     const objective = state.objectives.find((item) => item.targetZone === zone.id);
-    const complete = objective?.complete;
+    const warPoint = state.online?.mode === "war" ? state.war?.points?.find((point) => point.id === zone.id) : null;
+    const complete = warPoint ? warPoint.owner === state.online.coalition : objective?.complete;
     const first = state.grid[zone.position.y]?.[zone.position.x];
     const lift = (first?.elevation ?? 0) * cellSize.height * 0.28;
     const corner = (gx, gy) => ({
@@ -2259,8 +2260,12 @@ function drawZones(viewport) {
     const x1 = x0 + zone.width;
     const y1 = y0 + zone.height;
     const points = [corner(x0, y0), corner(x1, y0), corner(x1, y1), corner(x0, y1)];
-    const colour = complete ? "121, 213, 155" : zone.kind === "interaction" || zone.kind === "hold" ? "225, 179, 90" : "66, 214, 208";
-    const holdFraction = objective?.holdSeconds ? (objective.progress ?? 0) / objective.holdSeconds : 0;
+    const warColour = warPoint?.owner === "cyan" ? "66, 214, 208" : warPoint?.owner === "ember" ? "255, 138, 98" : null;
+    const colour = warColour ?? (complete
+      ? "121, 213, 155"
+      : zone.kind === "interaction" || zone.kind === "hold" ? "225, 179, 90" : "66, 214, 208");
+    const warFraction = warPoint?.claiming ? (warPoint.progress ?? 0) / state.war.captureSeconds : 0;
+    const holdFraction = warFraction || (objective?.holdSeconds ? (objective.progress ?? 0) / objective.holdSeconds : 0);
     context.beginPath();
     points.forEach((point, index) => (index === 0 ? context.moveTo(point.x, point.y) : context.lineTo(point.x, point.y)));
     context.closePath();
@@ -2377,6 +2382,48 @@ function drawHoldLabels(viewport) {
     context.fillRect(centre.x - width / 2 + 6, top, (width - 12) * Math.min(1, progress / objective.holdSeconds), 6);
     // A line down to the square itself.
     context.strokeStyle = `rgba(225, 179, 90, .6)`;
+    context.beginPath();
+    context.moveTo(centre.x, top + 14);
+    context.lineTo(centre.x, centre.y);
+    context.stroke();
+  }
+  if (state.online?.mode !== "war") return;
+  const names = Object.fromEntries((state.war?.coalitions ?? []).map((coalition) => [coalition.id, coalition.name]));
+  for (const point of state.war?.points ?? []) {
+    const zone = state.map.zones.find((item) => item.id === point.id);
+    if (!zone) continue;
+    const tile = state.grid[zone.position.y]?.[zone.position.x];
+    const centre = gridToScreen(
+      { x: zone.position.x + (zone.width - 1) / 2, y: zone.position.y + (zone.height - 1) / 2 },
+      cellSize,
+      origin,
+      tile?.elevation ?? 0,
+    );
+    const width = Math.max(150, cellSize.width * 2.3);
+    const top = centre.y - cellSize.height * 2.35;
+    const seconds = state.war.captureSeconds;
+    const fraction = point.claiming ? Math.min(1, (point.progress ?? 0) / seconds) : point.owner ? 1 : 0;
+    const status = point.claiming
+      ? `${names[point.claiming].toUpperCase()} ${Math.floor(point.progress)} / ${seconds} s`
+      : point.owner
+        ? `${names[point.owner].toUpperCase()} CONTROL`
+        : "HOLD TO CAPTURE";
+    const colour = point.claiming === "ember" || (!point.claiming && point.owner === "ember") ? "#ff8a62" : "#42d6d0";
+    context.fillStyle = "rgba(10, 18, 22, .9)";
+    context.fillRect(centre.x - width / 2, top - 22, width, 36);
+    context.strokeStyle = point.owner || point.claiming ? colour : "#e1b35a";
+    context.lineWidth = 2;
+    context.strokeRect(centre.x - width / 2, top - 22, width, 36);
+    context.font = "700 11px ui-sans-serif, sans-serif";
+    context.textAlign = "center";
+    context.textBaseline = "alphabetic";
+    context.fillStyle = "#f3efe6";
+    context.fillText(`${point.name.toUpperCase()} · ${status}`, centre.x, top - 7);
+    context.fillStyle = "rgba(255, 255, 255, .15)";
+    context.fillRect(centre.x - width / 2 + 6, top, width - 12, 6);
+    context.fillStyle = point.owner || point.claiming ? colour : "#e1b35a";
+    context.fillRect(centre.x - width / 2 + 6, top, (width - 12) * fraction, 6);
+    context.strokeStyle = "rgba(225, 179, 90, .6)";
     context.beginPath();
     context.moveTo(centre.x, top + 14);
     context.lineTo(centre.x, centre.y);
@@ -5908,6 +5955,10 @@ function renderInterface() {
     actionLabel,
     interaction?.giver
       ? `Speak to ${interaction.giver.missionGiver.name}`
+      : interaction?.warPoint
+        ? interaction.warPoint.owner === state.online.coalition
+          ? `${interaction.warPoint.name} secured`
+          : `Capture ${interaction.warPoint.name}`
       : prop === "server"
         ? "Download data"
         : interaction
