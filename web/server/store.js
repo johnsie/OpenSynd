@@ -206,6 +206,20 @@ export function openStore(path = ":memory:", { now = Date.now } = {}) {
 
     getAccount: (id) => publicAccount(statements.byId.get(id)),
 
+    /** Small server-owned persistent values, used by modes whose state outlives a room. */
+    getMeta(key, fallback = null) {
+      const value = statements.getMeta.get(key)?.value;
+      if (value === undefined) return fallback;
+      try {
+        return JSON.parse(value);
+      } catch {
+        return fallback;
+      }
+    },
+    setMeta(key, value) {
+      statements.setMeta.run(key, JSON.stringify(value));
+    },
+
     /** Delete an account and everything tied to it. */
     deleteAccount(id) {
       statements.deleteAccount.run(id);

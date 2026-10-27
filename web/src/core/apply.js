@@ -33,7 +33,7 @@ export function applyCommand(world, hooks, command, context = {}) {
   if (!check.ok) return check;
   useStreams(world.streams);
   const chance = context.chance ?? (() => world.streams.world());
-  const operators = operatorsOf(world, command.unitIds);
+  const operators = operatorsOf(world, command.unitIds, context.owns);
   const queue = Boolean(command.queue);
   switch (command.type) {
     case "move":

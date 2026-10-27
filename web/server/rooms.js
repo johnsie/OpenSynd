@@ -53,6 +53,7 @@ export class Room {
     this.finished = false;
     this.result = null;
     this.onFinish = null; // called once when the operation ends; what it returns is added to the message the players get
+    this.persistent = false;
   }
 
   get squad() {
@@ -63,11 +64,12 @@ export class Room {
    * A player joins and controls these agents (all four if the squad is not shared out). `send(message)` is how they are told
    * things. Returns the player, with the `start` message already sent.
    */
-  addPlayer(id, { send, unitIds = this.squad, name = id, account = null, start = true }) {
+  addPlayer(id, { send, unitIds = this.squad, name = id, account = null, coalition = null, start = true }) {
     const player = {
       id,
       name,
       account,
+      coalition,
       send,
       unitIds,
       known: new Map(),
@@ -99,11 +101,20 @@ export class Room {
       ...(this.missionData ? { data: this.missionData } : {}),
       seed: this.seed,
       squad: player.unitIds,
-      team: [...this.players.values()].map((other) => ({ name: other.name, squad: other.unitIds })),
+      team: this.teamSummary(),
       step: this.world.steps,
       world: packWorld(this.world),
       units: changedUnits(this.world, player.known),
     });
+  }
+
+  teamSummary() {
+    return [...this.players.values()].map((other) => ({
+      name: other.name,
+      squad: other.unitIds,
+      ...(other.coalition ? { coalition: other.coalition } : {}),
+      away: other.away,
+    }));
   }
 
   removePlayer(id) {
@@ -121,7 +132,7 @@ export class Room {
     player.awaySince = time;
     player.send = () => {};
     player.queue.length = 0;
-    for (const unit of operatorsOf(this.world, player.unitIds)) {
+    for (const unit of operatorsOf(this.world, player.unitIds, (id) => player.unitIds.includes(id))) {
       if (unit.activeSlot !== null && unit.activeSlot !== undefined) continue;
       const slot = unit.equipment.findIndex((item) => item.definition.action === "disable-pulse" && item.charges !== 0);
       if (slot >= 0) raiseWeapon(unit, slot);
@@ -167,7 +178,7 @@ export class Room {
     for (const event of forPlayers(this.stepHooks.events)) this.pending.push({ ...event, step: this.world.steps });
     if (this.pending.length > MAX_PENDING_EVENTS) this.pending.splice(0, this.pending.length - MAX_PENDING_EVENTS);
     if (this.world.steps % UPDATE_EVERY_STEPS === 0 || this.world.outcome !== "active") this.sendUpdates(this.pending.splice(0));
-    if (this.world.outcome !== "active" || this.world.steps >= MAX_OPERATION_SECONDS * STEPS_PER_SECOND) this.finish();
+    if (this.world.outcome !== "active" || (!this.persistent && this.world.steps >= MAX_OPERATION_SECONDS * STEPS_PER_SECOND)) this.finish();
   }
 
   runCommands(player) {
@@ -195,6 +206,7 @@ export class Room {
         units: changedUnits(this.world, player.known),
         events,
         acks: player.acks.splice(0),
+        team: this.teamSummary(),
       });
     }
   }

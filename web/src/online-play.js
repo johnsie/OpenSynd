@@ -6,7 +6,7 @@
 // sends the player's orders to the server. It touches no page elements; the page hands it what it needs.
 import { applyCommand } from "./core/apply.js";
 import { silentHooks } from "./core/hooks.js";
-import { applyServerMessage, equipmentLookup } from "./core/sync.js";
+import { applyServerMessage, equipmentLookup, orientPlayerUnits } from "./core/sync.js";
 import { syncWorldGates } from "./core/step.js";
 import { OnlineClient, createSmoother } from "./online.js";
 import { createPredictor } from "./predict.js";
@@ -67,6 +67,11 @@ export function createOnlinePlay({
     if (message.t === "update") {
       const began = now();
       applyServerMessage(state, message, lookup, { smoother, now: began });
+      if (message.team && state.online) {
+        state.online.owners = Object.fromEntries(message.team.flatMap((member) => member.squad.map((id) => [id, member.name])));
+        state.online.team = message.team;
+      }
+      orientPlayerUnits(state, state.online?.coalition);
       // Orders the server has now answered stop being guesses; the agents it reported are where it says, and are moved on from there.
       predictor.answered((message.acks ?? []).map((ack) => ack.seq));
       for (const change of message.units) {

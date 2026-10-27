@@ -86,7 +86,9 @@ export function createWorld({ mission, map, content, campaign, seed = 1, options
   const buildUnit = (placement, definition) => ({
     ...placement,
     definition,
-    side: SIDE_BY_ROLE[definition.role] ?? "opposition",
+    // Generated operations (the persistent war) can put an operative on either
+    // coalition without inventing a second copy of its unit definition.
+    side: placement.side ?? SIDE_BY_ROLE[definition.role] ?? "opposition",
     position: { ...placement.position },
     initialPosition: { ...placement.position },
     alertedBy: null,

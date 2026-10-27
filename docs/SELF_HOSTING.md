@@ -3,7 +3,7 @@
 # Running your own copy
 
 NeuroReign is a folder of static files. You do not need a database, an account, a container or any project service to run the
-game. The online modes (daily operation, co-op, rival companies) need a game server, which you can also run yourself: see
+game. The online modes (daily operation, co-op, rival companies, and the persistent two-coalition company war) need a game server, which you can also run yourself: see
 [Running a game server](#running-a-game-server) below. Single-player never needs it.
 
 ## The quickest way: any static file server

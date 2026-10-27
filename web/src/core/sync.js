@@ -18,7 +18,7 @@ function replacer(key, value) {
 // A person's route can be long and changes every step. The squad's own routes are sent whole (the player sees them drawn); for
 // everyone else only the next step and how many remain are, which is all that is needed to show them walking.
 function compactPath(unit) {
-  if (unit.side === "team" || unit.path.length === 0) return unit.path;
+  if (unit.side === "team" || unit.playerUnit || unit.path.length === 0) return unit.path;
   return { next: unit.path[0], left: unit.path.length };
 }
 
@@ -55,6 +55,7 @@ export function packWorld(world) {
         targeted: world.targeted,
         opStats: world.opStats,
         debrief: world.debrief,
+        ...(world.war ? { war: world.war } : {}),
       },
       replacer,
     ),
@@ -126,6 +127,7 @@ export function applyWorld(world, packed, lookup) {
   world.targeted = packed.targeted;
   world.opStats = packed.opStats;
   world.debrief = packed.debrief;
+  if (packed.war) world.war = packed.war;
 }
 
 /** A definition lookup by id over a pack's equipment, for applyUnit and applyWorld. */
@@ -175,4 +177,12 @@ export function applyServerMessage(world, message, lookup, { smoother = null, no
     if (smoother && change.set?.position) smoother.observe(unit, message.step);
   }
   applyWorld(world, message.world, lookup);
+}
+
+/** Present either coalition as the local player's squad side without changing the server's authoritative warSide. */
+export function orientPlayerUnits(world, coalition) {
+  if (!coalition) return;
+  for (const unit of world.units.filter((candidate) => candidate.playerUnit)) {
+    unit.side = unit.warSide === coalition ? "team" : "opposition";
+  }
 }

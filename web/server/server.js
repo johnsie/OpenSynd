@@ -40,6 +40,7 @@ import {
   upgradeCost,
 } from "./raids.js";
 import { Room } from "./rooms.js";
+import { WarRoom } from "./war.js";
 import { upgrade } from "./ws.js";
 
 const MAX_BODY_BYTES = 4096;
@@ -102,6 +103,7 @@ export function createGameServer({
   const speech = createRateLimiter({ max: 8, windowMs: 10_000 });
   const reports = createRateLimiter({ max: 5, windowMs: 3_600_000 });
   let roomCounter = 0;
+  let warRoom = null;
 
   const allowed = (origin) => origins.includes("*") || (origin && origins.includes(origin));
   const corsHeaders = (request) => {
@@ -140,6 +142,7 @@ export function createGameServer({
           content: content.hash,
           rooms: rooms.size,
           oidc: oidc ? { issuer: oidc.issuer, client: oidc.client } : null,
+          war: { online: warRoom?.present ?? 0, running: Boolean(warRoom) },
         });
       } else if (url.pathname === "/api/signup" && request.method === "POST") {
         if (!signups.take(address)) return reply(429, { error: "Too many sign-ups from here. Wait a minute." });
@@ -514,6 +517,7 @@ export function createGameServer({
 
   function startRoom(connection, mode, mission, territory) {
     if (mode === "raid") return startRaid(connection, territory);
+    if (mode === "war") return startWar(connection);
     if (rooms.size >= MAX_ROOMS) return connection.error("The server is full. Try again in a moment.");
     if (mode === "daily" && !connection.account) return connection.error("Sign in to play the daily operation.");
     const operation = mode === "daily" ? dailyOperation(content, today()) : null;
@@ -530,6 +534,27 @@ export function createGameServer({
     room.startedAt = now();
     rooms.set(room.id, room);
     seat(connection, room, room.squad);
+  }
+
+  function startWar(connection) {
+    if (!needAccount(connection)) return;
+    leaveGame(connection);
+    leaveRoom(connection);
+    if (!warRoom || warRoom.finished) {
+      warRoom = new WarRoom({
+        content,
+        mission: content.pack.missions[0],
+        persisted: store.getMeta("company-war", {}),
+        save: (state) => store.setMeta("company-war", state),
+      });
+      warRoom.startedAt = now();
+      rooms.set(warRoom.id, warRoom);
+    }
+    const preferred = store.getMeta(`company-war-coalition:${connection.account.id}`, null);
+    const slot = warRoom.claimCompany(connection.key, connection.account.id, preferred, connection.account.name);
+    if (!slot) return connection.error("The company war is full. Try again when a company leaves.");
+    store.setMeta(`company-war-coalition:${connection.account.id}`, slot.coalition);
+    seat(connection, warRoom, slot.ids);
   }
 
   /** Put a player into a room with these agents (the room tells them how it starts). */
@@ -556,7 +581,7 @@ export function createGameServer({
     }
     room.removePlayer(connection.key);
     if (connection.account) seated.delete(connection.account.id);
-    if (room.players.size === 0) rooms.delete(room.id);
+    if (room.players.size === 0 && !room.persistent) rooms.delete(room.id);
   }
 
   // ------------------------------------------------------------------------------------------------------------ co-op
@@ -653,7 +678,7 @@ export function createGameServer({
       }
     }
     for (const [id, room] of rooms) {
-      if (room.players.size === 0 || (room.finished && room.present === 0)) rooms.delete(id);
+      if ((!room.persistent && room.players.size === 0) || (room.finished && room.present === 0)) rooms.delete(id);
     }
     for (const [id, seat] of seated) if (!rooms.has(seat.room.id) || seat.room.finished) seated.delete(id);
     for (const [id, game] of games) {

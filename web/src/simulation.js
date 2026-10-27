@@ -50,7 +50,7 @@ export function advanceTails(units, grid) {
   const events = [];
   const byId = new Map(units.map((unit) => [unit.id, unit]));
   for (const unit of units) {
-    if (unit.side !== "team" || !unit.tailId) continue;
+    if ((!unit.playerUnit && unit.side !== "team") || !unit.tailId) continue;
     const target = byId.get(unit.tailId);
     if (unit.disabled || !target || target.disabled) {
       events.push({ type: "ended", unitId: unit.id, reason: target?.disabled ? "disabled" : "lost" });
@@ -84,7 +84,7 @@ export function advancePursuit(units, grid) {
   const events = [];
   const byId = new Map(units.map((unit) => [unit.id, unit]));
   for (const unit of units) {
-    if (unit.side !== "team" || !unit.followId) continue;
+    if ((!unit.playerUnit && unit.side !== "team") || !unit.followId) continue;
     const target = byId.get(unit.followId);
     if (unit.disabled || !target || target.disabled) {
       events.push({ type: "ended", unitId: unit.id, reason: target?.disabled ? "disabled" : "lost" });
@@ -165,7 +165,7 @@ export function advanceUnits(units, deltaSeconds) {
   const arrivals = [];
 
   for (const unit of units) {
-    if (unit.side !== "team" || unit.inVehicle) continue;
+    if ((!unit.playerUnit && unit.side !== "team") || unit.inVehicle) continue;
     if (unit.path.length === 0 || unit.disabled || unit.hitStun > 0) continue;
 
     const pace = weightPace(unit) * legsPace(unit.upgrades) * adrenalineSpeed(unit.drugs);
@@ -760,7 +760,7 @@ export function advancePatrols(units, deltaSeconds, grid = null, now = null, dro
       advanceScript(unit, deltaSeconds, grid, units);
       continue;
     }
-    if (unit.side === "team" || unit.disabled || unit.inVehicle || isVehicle(unit) || unit.hitStun > 0) continue;
+    if (unit.side === "team" || unit.playerUnit || unit.disabled || unit.inVehicle || isVehicle(unit) || unit.hitStun > 0) continue;
     if (unit.persuaded) {
       if (grid) advanceFollower(unit, byId, units, grid, deltaSeconds, now, events, drops);
       continue;
@@ -841,7 +841,7 @@ const DISARMED = Object.freeze({ attack: 0, range: 0, cooldown: 1 });
 // Operators fire only after choosing a weapon: with nothing selected they hold fire. Once one is
 // selected and runs dry, they carry on with the next loaded weapon they have.
 export function hasWeaponSelected(unit) {
-  return unit.side !== "team" || Number.isInteger(unit.activeSlot);
+  return (!unit.playerUnit && unit.side !== "team") || Number.isInteger(unit.activeSlot);
 }
 
 // An operative's Eyes upgrade lengthens the reach of whatever they fire.
@@ -887,7 +887,7 @@ export const RECENT_FIRE_SECONDS = 0.8;
 
 export function heldWeapon(unit, now = null) {
   if (unit.disabled) return null;
-  if (unit.side === "team") {
+  if (unit.side === "team" || unit.playerUnit) {
     const chosen = Number.isInteger(unit.activeSlot) ? unit.equipment?.[unit.activeSlot] : null;
     if (chosen && chosen.definition.action === "disable-pulse" && chosen.charges !== 0) return chosen;
     // Not selected, but firing (at a locked target, or a moment ago by hand): the weapon is out.
@@ -932,7 +932,7 @@ export function advanceCombat(units, deltaSeconds, grid = null, now = null) {
     if (attacker.persuaded && !(owner && !owner.disabled && gunOut(owner, now))) attacker.targetId = null;
     const hostile =
       (attacker.persuaded && Boolean(owner) && gunOut(owner, now) && combatStats(attacker).attack > 0) ||
-      (!attacker.persuaded && (attacker.side === "opposition" || (attacker.side === "criminal" && attacker.hostileTo)));
+      (!attacker.playerUnit && !attacker.persuaded && (attacker.side === "opposition" || (attacker.side === "criminal" && attacker.hostileTo)));
     if (hostile && attacker.targetId === null) {
       attacker.targetId = automaticTarget(attacker, units, grid)?.id ?? null;
     }

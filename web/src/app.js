@@ -35,7 +35,7 @@ import {
   syncWorldGates,
 } from "./core/step.js";
 import { applyCommand } from "./core/apply.js";
-import { applyServerMessage, equipmentLookup } from "./core/sync.js";
+import { applyServerMessage, equipmentLookup, orientPlayerUnits } from "./core/sync.js";
 import { createOnlinePlay } from "./online-play.js";
 import { createWorld } from "./core/create.js";
 import { commands } from "./commands.js";
@@ -594,7 +594,7 @@ async function loadGame(index = state.missionIndex, options = {}) {
   const rawMission = remote?.data ?? (await readJson(`content/${missionPath}`)); // a raid is made on the spot and sent whole
   // The squad is chosen from the roster: its members take the mission's starting places in order.
   state.rawTeam = rawMission.team;
-  const mission = { ...rawMission, team: squadTeam(rawMission.team) };
+  const mission = remote?.variant === "war" ? rawMission : { ...rawMission, team: squadTeam(rawMission.team) };
   const baseMap = await readJson(`content/${mission.map}`);
   // An operation may add zones of its own to its map's (the landing area an uprising or defence falls back to).
   const map = mission.zones?.length ? { ...baseMap, zones: [...baseMap.zones, ...mission.zones] } : baseMap;
@@ -635,7 +635,16 @@ async function loadGame(index = state.missionIndex, options = {}) {
     applyServerMessage(state, remote, equipmentLookup(equipmentDefinitions));
     const owners = {};
     for (const member of remote.team ?? []) for (const id of member.squad) owners[id] = member.name;
-    state.online = { room: remote.room, squad: remote.squad, mode: options.mode ?? "solo", owners };
+    const mine = remote.team?.find((member) => member.squad.some((id) => remote.squad.includes(id)));
+    state.online = {
+      room: remote.room,
+      squad: remote.squad,
+      mode: options.mode ?? "solo",
+      owners,
+      team: remote.team ?? [],
+      coalition: mine?.coalition ?? null,
+    };
+    orientPlayerUnits(state, state.online.coalition);
   }
   markRailBridges(map, state.grid);
   state.deathsSeeded = false;
@@ -4525,7 +4534,7 @@ async function setUpOnline() {
       showOutcome(state.outcome);
     });
     onlinePlay.onStart((start) => {
-      enterOnlineOperation(start, start.team?.length > 1 ? "coop" : "solo").catch(showFatalError);
+      enterOnlineOperation(start, start.variant === "war" ? "war" : start.team?.length > 1 ? "coop" : "solo").catch(showFatalError);
     });
     onlinePlay.onClose(() => {
       if (!state.online) return;
@@ -4629,6 +4638,7 @@ async function refreshOnlineMenuNow() {
   document.querySelector("#menu-daily").disabled = true;
   document.querySelector("#menu-coop").disabled = true;
   document.querySelector("#menu-world").disabled = true;
+  document.querySelector("#menu-war").disabled = true;
   if (!(await setUpOnline())) return;
   note.hidden = false;
   note.textContent = "Looking for the server…";
@@ -4656,6 +4666,7 @@ async function refreshOnlineMenuNow() {
   daily.disabled = false;
   document.querySelector("#menu-coop").disabled = false;
   document.querySelector("#menu-world").disabled = false;
+  document.querySelector("#menu-war").disabled = !account;
   document.querySelector("#menu-coop-note").textContent = account
     ? "Two to four players, one squad each."
     : "Two to four players, one squad each. Sign in to play.";
@@ -4720,7 +4731,8 @@ async function enterOnlineOperation(start, mode) {
   pauseButton.disabled = true;
   resetButton.disabled = true;
   canvas.focus();
-  setStatus(resuming ? "Back in the operation." : "Connected: this operation is running on the server.");
+  const coalition = state.online?.coalition ? `${state.online.coalition === "cyan" ? "Cyan" : "Ember"} Coalition` : null;
+  setStatus(resuming ? "Back in the operation." : coalition ? `Joined ${coalition}.` : "Connected: this operation is running on the server.");
 }
 
 async function startOnlineGame(mode = "solo") {
@@ -5127,6 +5139,7 @@ async function showCoop() {
 
 coopDialog.addEventListener("close", () => clearInterval(coopTimer));
 document.querySelector("#menu-coop").addEventListener("click", () => showCoop().catch(showFatalError));
+document.querySelector("#menu-war").addEventListener("click", () => startOnlineGame("war").catch(showFatalError));
 document.querySelector("#coop-close").addEventListener("click", () => {
   if (!document.querySelector("#coop-waiting").hidden) onlinePlay.client.leaveGame();
   coopDialog.close();
@@ -5661,14 +5674,27 @@ let shownThreatsKey = "";
 
 function renderInterface() {
   if (!state.mission) return;
+  const warPoints = state.online?.mode === "war" ? (state.war?.points ?? []) : null;
   const objectivesKey = JSON.stringify([
-    state.objectives.map((o) => [o.id, o.complete, o.type === "hold" ? Math.floor(o.progress ?? 0) : 0]),
+    warPoints
+      ? warPoints.map((point) => [point.id, point.owner, point.claiming, Math.floor(point.progress ?? 0)])
+      : state.objectives.map((o) => [o.id, o.complete, o.type === "hold" ? Math.floor(o.progress ?? 0) : 0]),
     currentObjective(state.objectives)?.id ?? null,
     state.mission.id,
   ]);
   if (objectivesKey !== shownObjectivesKey) {
     shownObjectivesKey = objectivesKey;
-    objectiveList.replaceChildren(
+    if (warPoints) {
+      const names = Object.fromEntries((state.war?.coalitions ?? []).map((coalition) => [coalition.id, coalition.name]));
+      objectiveList.replaceChildren(...warPoints.map((point) => {
+        const item = document.createElement("li");
+        const owner = point.owner ? names[point.owner] : "Neutral";
+        const capture = point.claiming ? ` · ${names[point.claiming]} ${Math.floor(point.progress)} / ${state.war.captureSeconds} s` : "";
+        item.textContent = `${point.name}: ${owner}${capture}`;
+        item.classList.toggle("complete", point.owner === state.online.coalition);
+        return item;
+      }));
+    } else objectiveList.replaceChildren(
       ...state.objectives.map((objective) => {
         const item = document.createElement("li");
         item.textContent = objective.description;
@@ -5687,8 +5713,13 @@ function renderInterface() {
       }),
     );
   }
-  const completed = state.objectives.filter((objective) => objective.complete).length;
-  setText(objectiveCount, `${completed} / ${state.objectives.length}`);
+  if (warPoints) {
+    const scores = Object.fromEntries((state.war?.coalitions ?? []).map((coalition) => [coalition.id, coalition.score]));
+    setText(objectiveCount, `CYAN ${scores.cyan ?? 0} · ${scores.ember ?? 0} EMBER`);
+  } else {
+    const completed = state.objectives.filter((objective) => objective.complete).length;
+    setText(objectiveCount, `${completed} / ${state.objectives.length}`);
+  }
 
   const selectAllButton = document.querySelector("#select-all-button");
   const everyoneSelected = activeOperators().length > 1 && selectedOperators().length === activeOperators().length;
@@ -5698,7 +5729,7 @@ function renderInterface() {
     "aria-pressed",
     String(activeOperators().length > 1 && selectedOperators().length === activeOperators().length),
   );
-  const operators = state.units.filter((unit) => unit.side === "team");
+  const operators = state.units.filter((unit) => unit.side === "team" && !unit.warReserve);
   // The roster's buttons are only replaced when something they show (other than numbers) changes: an operation on a server changes
   // every tenth of a second, and a button replaced between the press and the release of a click would swallow it.
   const rosterKey = JSON.stringify([
@@ -5799,7 +5830,7 @@ function renderInterface() {
     );
   }
 
-  const threats = state.units.filter((unit) => unit.side === "opposition" && !unit.persuaded);
+  const threats = state.units.filter((unit) => unit.side === "opposition" && !unit.persuaded && !unit.warReserve);
   setText(enemyCount, String(threats.filter((unit) => !unit.disabled).length));
   const threatsKey = JSON.stringify(threats.map((unit) => [unit.id, serialOf(unit), unit.disabled, unit.health]));
   if (threatsKey !== shownThreatsKey || threatsElement.children.length !== threats.length) {

@@ -26,8 +26,10 @@ import { completeObjectivesAt, handleCombatEvents, lootNow, syncWorldGates } fro
 const findUnit = (world, id) => world.units.find((unit) => unit.id === id);
 
 /** The operators an order is for: the named units that are on the squad's side, still able and where the world has them. */
-export function operatorsOf(world, unitIds) {
-  return unitIds.map((id) => findUnit(world, id)).filter((unit) => unit && unit.side === "team" && !unit.disabled);
+export function operatorsOf(world, unitIds, owns = null) {
+  return unitIds
+    .map((id) => findUnit(world, id))
+    .filter((unit) => unit && !unit.disabled && (owns ? owns(unit.id) : unit.side === "team"));
 }
 
 // ------------------------------------------------------------------------------------------------------------ walking
@@ -143,7 +145,7 @@ export function issueMove(world, hooks, operators, destination, queue = false) {
     return { moved: true };
   }
   const unit = operators[0];
-  if (!unit || unit.side !== "team" || unit.disabled) return { moved: false };
+  if (!unit || (!unit.playerUnit && unit.side !== "team") || unit.disabled) return { moved: false };
   const start = { x: Math.round(unit.position.x), y: Math.round(unit.position.y) };
   const steps = orderMove(world, hooks, unit, destination, queue);
   if (steps === 0) {
@@ -390,7 +392,7 @@ export function toggleVehicle(world, hooks, operators, queue = false) {
 // gone, the vehicle is wrecked, no route) is skipped with a message.
 export function runPendingOrders(world, hooks) {
   for (const unit of world.units) {
-    if (unit.side !== "team" || unit.disabled || !unit.pending?.length) continue;
+    if ((!unit.playerUnit && unit.side !== "team") || unit.disabled || !unit.pending?.length) continue;
     const name = unit.definition.name;
     if (unit.inVehicle) {
       // A driver waits for the car to stop, then drives on or gets out.
@@ -439,7 +441,8 @@ export function isAttackable(unit) {
 /** Clicking a watcher sends the armed operators after it: each closes in until it is in range, then stands and shoots. */
 export function issueAttack(world, hooks, operators, targetId, queue = false) {
   const target = findUnit(world, targetId);
-  if (!target || !isAttackable(target)) return;
+  const rivalCompany = target?.playerUnit && operators.some((unit) => unit.playerUnit && unit.warSide !== target.warSide);
+  if (!target || (!isAttackable(target) && !rivalCompany)) return;
   if (target.disabled) {
     const gear = nearestDrop(world, target.position, 3);
     if (gear) goLootBody(world, hooks, operators, gear, queue);
