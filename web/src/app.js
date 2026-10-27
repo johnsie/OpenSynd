@@ -5668,6 +5668,9 @@ if (new URLSearchParams(location.search).has("e2e")) {
     completeAllOtherOperations() {
       state.progress = { completed: state.missionList.map((entry) => entry.id).filter((id) => id !== state.mission.id) };
     },
+    loadMission(index) {
+      return loadGame(index);
+    },
     completeObjectives() {
       for (const objective of state.objectives) objective.complete = true;
     },

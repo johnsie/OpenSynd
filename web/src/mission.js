@@ -135,6 +135,10 @@ export function failureReason(objectives, units) {
       const gone = (objective.targets ?? []).map(find).find((unit) => unit?.escaped);
       if (gone) return `${gone.definition.name} got away. ${objective.description}`;
     }
+    if (objective.type === "persuade") {
+      const lost = (objective.targets ?? []).map(find).find((unit) => unit?.disabled);
+      if (lost) return `${lost.definition.name} was killed before they could be persuaded. ${objective.description}`;
+    }
   }
   return null;
 }

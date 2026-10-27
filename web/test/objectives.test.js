@@ -173,6 +173,14 @@ test("protect: the named person must be in the zone alive; losing them loses the
   assert.match(failureReason(second, [op, witness]), /w was lost/);
 });
 
+test("a required persuasion target dying makes the mission fail instead of remaining unwinnable", () => {
+  const defector = unit("defector", "opposition", 5, 5, { disabled: true, health: 0 });
+  const op = unit("op", "team", 1, 1);
+  const list = [objective({ type: "persuade", targets: ["defector"] })];
+  assert.equal(missionOutcome(list, [op, defector]), "failure");
+  assert.match(failureReason(list, [op, defector]), /defector was killed before they could be persuaded/);
+});
+
 test("a target who escapes is not 'disabled' and loses the operation", () => {
   const broker = unit("broker", "opposition", 5, 5, { disabled: true, escaped: true, health: 0 });
   const op = unit("op", "team", 1, 1);

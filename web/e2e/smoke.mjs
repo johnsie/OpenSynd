@@ -132,6 +132,30 @@ for (const [name, type, executablePath] of targets) {
       await deployment.close();
     });
 
+    scenario("A personnel-acquisition mission animates and moves the deployed squad", async () => {
+      const deployment = await browser.newPage();
+      const errors = [];
+      deployment.on("pageerror", (error) => errors.push(error.message));
+      await deployment.goto(`${url}?e2e`);
+      await deployment.waitForSelector(".roster-select");
+      await deployment.evaluate(() => window.opensyndTest.loadMission(7));
+      await deployment.waitForFunction(() => document.querySelector("#title-heading").textContent.includes("Scandinavia Defection"));
+      await beginMission(deployment);
+      await deployment.waitForFunction(() => !document.querySelector("#title-dialog").open);
+      const before = await deployment.evaluate(() => window.opensyndTest.positionOf("operator-one"));
+      const destination = await deployment.evaluate(() => window.opensyndTest.openTileNear("operator-one", 8));
+      await deployment.evaluate((to) => window.opensyndTest.moveSelected(to.x, to.y), destination);
+      await deployment.waitForTimeout(800);
+      const after = await deployment.evaluate(() => window.opensyndTest.positionOf("operator-one"));
+      assert.notDeepEqual(after, before);
+      assert.equal((await deployment.evaluate(() => window.opensyndTest.runtimeState())).modal, false);
+      assert.deepEqual(errors, []);
+      await deployment.evaluate(() => window.opensyndTest.disableUnit("defector"));
+      await deployment.waitForSelector("#outcome-dialog[open]");
+      assert.match(await deployment.locator("#outcome-text").innerText(), /killed before they could be persuaded/i);
+      await deployment.close();
+    });
+
     scenario("The game screen, selection, camera, combat, progress and the armoury", async () => {
       const page = await browser.newPage();
       const errors = [];
