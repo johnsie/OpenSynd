@@ -517,7 +517,7 @@ for (const [name, type, executablePath] of targets) {
 
       // The Research & Armoury screen: research, then buy weapons into specific slots.
       await page.evaluate(() => window.opensyndTest.setFunds(100000));
-      await page.click("#open-research");
+      await page.click("#begin-button");
       await page.waitForSelector("#research-dialog[open]");
       const labFunds = async () =>
         Number((await page.locator("#research-funds").innerText()).replace(/\D/g, ""));
@@ -1233,7 +1233,7 @@ for (const [name, type, executablePath] of targets) {
       const buyer = await browser.newPage();
       await buyer.goto(`${url}?e2e`);
       await buyer.waitForSelector(".roster-select");
-      await buyer.click("#open-research");
+      await buyer.click("#begin-button");
       await buyer.waitForSelector("#research-dialog[open]");
       await buyer.getByLabel("Operator 1 slot 3: empty", { exact: true }).click();
       await buyer.getByRole("button", { name: /^Buy Persuader for Operator 1 slot 3/ }).click();

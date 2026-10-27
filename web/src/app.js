@@ -1246,7 +1246,6 @@ function openResearch(canDeploy = titleDialog.open) {
   researchDialog.showModal();
 }
 
-document.querySelector("#open-research").addEventListener("click", () => openResearch(true));
 document.querySelector("#outcome-research").addEventListener("click", () => openResearch(false));
 document.querySelector("#close-research").addEventListener("click", () => researchDialog.close());
 // Before an operation starts, what was bought, fitted or changed in the squad has to be on the operatives when it begins:
