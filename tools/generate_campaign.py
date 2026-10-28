@@ -547,11 +547,13 @@ def make_mission(territory: dict, tier: int, layout: dict, map_value: dict, map_
             position = spot(near or pool)
             opponents.append({"id": f"minder-{number + 1}", "unit": "units/guard.unit.json",
                               "position": {"x": position[0], "y": position[1]}, "equipment": []})
-    kinds = ["units/civilian-woman.unit.json", "units/civilian-man.unit.json"]
+    # A broader female cast: three women for each man, cycled predictably so generated missions remain reproducible.
+    kinds = ["units/civilian-woman.unit.json", "units/civilian-man.unit.json",
+             "units/civilian-woman.unit.json", "units/civilian-woman.unit.json"]
     for number in range(10):
         position = spot(street or pool)
         bystanders.append(with_patrol(rng, reach, {
-            "id": f"civilian-{number + 1}", "unit": kinds[number % 2],
+            "id": f"civilian-{number + 1}", "unit": kinds[number % len(kinds)],
             "position": {"x": position[0], "y": position[1]}, "equipment": []}, 6, 14))
     for number in range(3):
         position = spot(street or pool)

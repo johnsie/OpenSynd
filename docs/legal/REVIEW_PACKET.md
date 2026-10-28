@@ -11,28 +11,31 @@ release notes (see `docs/RELEASING.md`, "The legal gate").
 
 - **Code**: every `.js`, `.css` and `.html` file, GPL-2.0-or-later (SPDX notice in each; checked by CI).
 - **Content**: `open-content/packs/developer`, CC0-1.0, written for this project (no material from other games).
-- **Registered assets**: 40 files under `web/public/assets/`, of which **40 are not yet approved**.
+- **Registered assets**: 43 files under `web/public/assets/`, of which **43 are not yet approved**.
 - **Nothing** from other games, and nothing from `data/` or `icon/` (excluded or quarantined, not built into the site).
 
 | File | Licence | Maker | Source | Status | SHA-256 (first 12) |
 | --- | --- | --- | --- | --- | --- |
 | `music/electric-stream.mp3` | CC0-1.0 | Alexander Ehlers (tricksntraps) | https://opengameart.org/content/t-t-free-cyberpunk-pack-2 | quarantined | `3735344130d1` |
 | `music/the-core.mp3` | GPL-3.0-only OR CC-BY-SA-3.0 | p0ss | https://opengameart.org/content/core-music-futuristic | quarantined | `a54563a9aeba` |
-| `sprites/civilian-man-1.png` | CC0-1.0 | Quaternius | https://opengameart.org/content/animated-human-low-poly | quarantined | `518472d37c04` |
-| `sprites/civilian-man-2.png` | CC0-1.0 | Quaternius | https://opengameart.org/content/animated-human-low-poly | quarantined | `ce8be960031f` |
-| `sprites/civilian-man-3.png` | CC0-1.0 | Quaternius | https://opengameart.org/content/animated-human-low-poly | quarantined | `f45263b10903` |
-| `sprites/civilian-woman-1.png` | CC0-1.0 | Quaternius | https://opengameart.org/content/animated-human-low-poly | quarantined | `1c0273db8f89` |
-| `sprites/civilian-woman-2.png` | CC0-1.0 | Quaternius | https://opengameart.org/content/animated-human-low-poly | quarantined | `b5fd1ecfc5ff` |
+| `sprites/civilian-man-1.png` | CC0-1.0 | Quaternius | https://opengameart.org/content/animated-human-low-poly | quarantined | `79393b373214` |
+| `sprites/civilian-man-2.png` | CC0-1.0 | Quaternius | https://opengameart.org/content/animated-human-low-poly | quarantined | `9f08f66bc60e` |
+| `sprites/civilian-man-3.png` | CC0-1.0 | Quaternius | https://opengameart.org/content/animated-human-low-poly | quarantined | `20cad4f2895d` |
+| `sprites/civilian-woman-1.png` | CC0-1.0 | Quaternius | https://opengameart.org/content/animated-human-low-poly | quarantined | `d6afa0e48de5` |
+| `sprites/civilian-woman-2.png` | CC0-1.0 | Quaternius | https://opengameart.org/content/animated-human-low-poly | quarantined | `93cfa058af44` |
+| `sprites/civilian-woman-3.png` | CC0-1.0 | Quaternius | https://opengameart.org/content/animated-human-low-poly | quarantined | `b88068598112` |
+| `sprites/civilian-woman-4.png` | CC0-1.0 | Quaternius | https://opengameart.org/content/animated-human-low-poly | quarantined | `717b02e195f0` |
+| `sprites/civilian-woman-5.png` | CC0-1.0 | Quaternius | https://opengameart.org/content/animated-human-low-poly | quarantined | `97e12ec4a1c4` |
 | `sprites/criminal-1-pulse.png` | CC0-1.0 | Quaternius | https://opengameart.org/content/animated-human-low-poly | quarantined | `fbfa156d2049` |
 | `sprites/criminal-1.png` | CC0-1.0 | Quaternius | https://opengameart.org/content/animated-human-low-poly | quarantined | `2bac86c2f995` |
 | `sprites/criminal-2-pulse.png` | CC0-1.0 | Quaternius | https://opengameart.org/content/animated-human-low-poly | quarantined | `399b61cb13de` |
 | `sprites/criminal-2.png` | CC0-1.0 | Quaternius | https://opengameart.org/content/animated-human-low-poly | quarantined | `1f70c5928b1e` |
-| `sprites/guard-1-heavy-pulse.png` | CC0-1.0 | Quaternius | https://opengameart.org/content/animated-human-low-poly | quarantined | `f2c4c1199865` |
-| `sprites/guard-1-pulse.png` | CC0-1.0 | Quaternius | https://opengameart.org/content/animated-human-low-poly | quarantined | `1fb9c2b4150c` |
-| `sprites/guard-1.png` | CC0-1.0 | Quaternius | https://opengameart.org/content/animated-human-low-poly | quarantined | `18c1e2b17a88` |
-| `sprites/guard-2-heavy-pulse.png` | CC0-1.0 | Quaternius | https://opengameart.org/content/animated-human-low-poly | quarantined | `d39a07a2e895` |
-| `sprites/guard-2-pulse.png` | CC0-1.0 | Quaternius | https://opengameart.org/content/animated-human-low-poly | quarantined | `128c0b8fe5c7` |
-| `sprites/guard-2.png` | CC0-1.0 | Quaternius | https://opengameart.org/content/animated-human-low-poly | quarantined | `50a91154f05d` |
+| `sprites/guard-1-heavy-pulse.png` | CC0-1.0 | Quaternius | https://opengameart.org/content/animated-human-low-poly | quarantined | `51ac71614463` |
+| `sprites/guard-1-pulse.png` | CC0-1.0 | Quaternius | https://opengameart.org/content/animated-human-low-poly | quarantined | `e1d38503e5a2` |
+| `sprites/guard-1.png` | CC0-1.0 | Quaternius | https://opengameart.org/content/animated-human-low-poly | quarantined | `f55e18672c87` |
+| `sprites/guard-2-heavy-pulse.png` | CC0-1.0 | Quaternius | https://opengameart.org/content/animated-human-low-poly | quarantined | `a6449e0b2c2c` |
+| `sprites/guard-2-pulse.png` | CC0-1.0 | Quaternius | https://opengameart.org/content/animated-human-low-poly | quarantined | `8e338e69dd18` |
+| `sprites/guard-2.png` | CC0-1.0 | Quaternius | https://opengameart.org/content/animated-human-low-poly | quarantined | `a5415c6c0ffe` |
 | `sprites/operative-four-heavy-pulse.png` | CC0-1.0 | Quaternius | https://opengameart.org/content/animated-human-low-poly | quarantined | `d5bbd706d750` |
 | `sprites/operative-four-pulse.png` | CC0-1.0 | Quaternius | https://opengameart.org/content/animated-human-low-poly | quarantined | `5f5d458d4dbe` |
 | `sprites/operative-four.png` | CC0-1.0 | Quaternius | https://opengameart.org/content/animated-human-low-poly | quarantined | `7430bb5f4eea` |
@@ -49,7 +52,7 @@ release notes (see `docs/RELEASING.md`, "The legal gate").
 | `sprites/police-1.png` | CC0-1.0 | Quaternius | https://opengameart.org/content/animated-human-low-poly | quarantined | `0fe621a3bd50` |
 | `sprites/police-2-pulse.png` | CC0-1.0 | Quaternius | https://opengameart.org/content/animated-human-low-poly | quarantined | `48b655e6312a` |
 | `sprites/police-2.png` | CC0-1.0 | Quaternius | https://opengameart.org/content/animated-human-low-poly | quarantined | `826ee6ca51e4` |
-| `sprites/sprites.json` | CC0-1.0 | Quaternius | https://opengameart.org/content/animated-human-low-poly | quarantined | `26d32fd791d5` |
+| `sprites/sprites.json` | CC0-1.0 | Quaternius | https://opengameart.org/content/animated-human-low-poly | quarantined | `54a986a25a23` |
 | `sprites/watcher-one-heavy-pulse.png` | CC0-1.0 | Quaternius | https://opengameart.org/content/animated-human-low-poly | quarantined | `097715babf51` |
 | `sprites/watcher-one-pulse.png` | CC0-1.0 | Quaternius | https://opengameart.org/content/animated-human-low-poly | quarantined | `02e8f0b7a74b` |
 | `sprites/watcher-one.png` | CC0-1.0 | Quaternius | https://opengameart.org/content/animated-human-low-poly | quarantined | `5541adb6adaa` |

@@ -92,6 +92,7 @@
         "position": { "$ref": "#/$defs/position" },
         "equipment": { "$ref": "#/$defs/pathList" },
         "facing": { "type": "integer", "minimum": 0, "maximum": 7, "description": "Initial sprite direction, clockwise in eighth-turns from the camera." },
+        "pose": { "enum": ["attention"], "description": "A mission-specific stationary presentation pose." },
         "side": { "enum": ["team", "ally", "opposition", "civilian", "criminal", "police"], "description": "Optional mission-specific allegiance override; allies are AI-controlled support for the team." },
         "passive": { "type": "boolean", "description": "Stand or follow the script without looking for a fight." },
         "priorityTarget": { "$ref": "#/$defs/id", "description": "A person this placement pursues in preference to the squad, including while that person rides in a vehicle." },

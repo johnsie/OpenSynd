@@ -355,8 +355,14 @@
           "seconds": 2
         },
         {
-          "name": "walk",
+          "name": "attention",
           "row": 8,
+          "frames": 1,
+          "seconds": 0.01
+        },
+        {
+          "name": "walk",
+          "row": 16,
           "frames": 8,
           "seconds": 0.66
         }
@@ -374,8 +380,14 @@
           "seconds": 2
         },
         {
-          "name": "walk",
+          "name": "attention",
           "row": 8,
+          "frames": 1,
+          "seconds": 0.01
+        },
+        {
+          "name": "walk",
+          "row": 16,
           "frames": 8,
           "seconds": 0.66
         }
@@ -393,8 +405,14 @@
           "seconds": 2
         },
         {
-          "name": "walk",
+          "name": "attention",
           "row": 8,
+          "frames": 1,
+          "seconds": 0.01
+        },
+        {
+          "name": "walk",
+          "row": 16,
           "frames": 8,
           "seconds": 0.66
         }
@@ -412,8 +430,14 @@
           "seconds": 2
         },
         {
-          "name": "walk",
+          "name": "attention",
           "row": 8,
+          "frames": 1,
+          "seconds": 0.01
+        },
+        {
+          "name": "walk",
+          "row": 16,
           "frames": 8,
           "seconds": 0.66
         }
@@ -431,8 +455,14 @@
           "seconds": 2
         },
         {
-          "name": "walk",
+          "name": "attention",
           "row": 8,
+          "frames": 1,
+          "seconds": 0.01
+        },
+        {
+          "name": "walk",
+          "row": 16,
           "frames": 8,
           "seconds": 0.66
         }
@@ -699,6 +729,81 @@
         {
           "name": "walk",
           "row": 8,
+          "frames": 8,
+          "seconds": 0.66
+        }
+      ]
+    },
+    "civilian-woman-3": {
+      "file": "civilian-woman-3.png",
+      "frameSize": 128,
+      "directions": 8,
+      "animations": [
+        {
+          "name": "idle",
+          "row": 0,
+          "frames": 4,
+          "seconds": 2
+        },
+        {
+          "name": "attention",
+          "row": 8,
+          "frames": 1,
+          "seconds": 0.01
+        },
+        {
+          "name": "walk",
+          "row": 16,
+          "frames": 8,
+          "seconds": 0.66
+        }
+      ]
+    },
+    "civilian-woman-4": {
+      "file": "civilian-woman-4.png",
+      "frameSize": 128,
+      "directions": 8,
+      "animations": [
+        {
+          "name": "idle",
+          "row": 0,
+          "frames": 4,
+          "seconds": 2
+        },
+        {
+          "name": "attention",
+          "row": 8,
+          "frames": 1,
+          "seconds": 0.01
+        },
+        {
+          "name": "walk",
+          "row": 16,
+          "frames": 8,
+          "seconds": 0.66
+        }
+      ]
+    },
+    "civilian-woman-5": {
+      "file": "civilian-woman-5.png",
+      "frameSize": 128,
+      "directions": 8,
+      "animations": [
+        {
+          "name": "idle",
+          "row": 0,
+          "frames": 4,
+          "seconds": 2
+        },
+        {
+          "name": "attention",
+          "row": 8,
+          "frames": 1,
+          "seconds": 0.01
+        },
+        {
+          "name": "walk",
+          "row": 16,
           "frames": 8,
           "seconds": 0.66
         }

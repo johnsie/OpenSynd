@@ -501,7 +501,7 @@
     },
     {
       "id": "civilian-4",
-      "unit": "units/civilian-man.unit.json",
+      "unit": "units/civilian-woman.unit.json",
       "position": {
         "x": 132,
         "y": 32
@@ -577,7 +577,7 @@
     },
     {
       "id": "civilian-8",
-      "unit": "units/civilian-man.unit.json",
+      "unit": "units/civilian-woman.unit.json",
       "position": {
         "x": 55,
         "y": 32

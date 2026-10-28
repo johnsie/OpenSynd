@@ -2570,7 +2570,9 @@ function updateFacing(unit, viewport) {
 function drawSprite(unit, sheet, viewport, size) {
   updateFacing(unit, viewport);
   const moving = (unit.path.length > 0 && !unit.disabled) || isPatrolling(unit);
-  const animation = sheet.animations.find((item) => item.name === (moving ? "walk" : "idle"));
+  const still = unit.pose === "attention" ? "attention" : "idle";
+  const animation = sheet.animations.find((item) => item.name === (moving ? "walk" : still)) ??
+    sheet.animations.find((item) => item.name === "idle");
   // Tired units walk with a slower cadence: their walk phase advances more slowly.
   const phase = moving ? unit.walkPhase : state.elapsed;
   const clock = reduceMotion ? 0 : (phase + unit.id.length * 0.13) / animation.seconds;

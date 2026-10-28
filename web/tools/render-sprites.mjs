@@ -63,6 +63,27 @@ const watcherSkins = {
 };
 const humanAnimations = {
   idle: { pick: "Idle", frames: 4, window: 2 },
+  // Ceremonial attention: feet planted, head level and both arms held straight at the sides.
+  attention: {
+    pick: "Idle",
+    frames: 1,
+    window: 0.01,
+    posture: {
+      LeftShoulder: 1,
+      RightShoulder: 1,
+      LeftArm: 1,
+      RightArm: 1,
+      LeftForeArm: 1,
+      RightForeArm: 1,
+      LeftHand: 1,
+      RightHand: 1,
+      Spine: 1,
+      Spine1: 1,
+      Spine2: 1,
+      Neck: 1,
+      Head: 1,
+    },
+  },
   // A serious march: quick cadence, little arm swing, a steady head and level shoulders.
   walk: {
     pick: "Walk",
@@ -111,6 +132,12 @@ const bystanderJobs = [
     { style: "woman", skirt: [52, 44, 60], top: [92, 72, 98], hair: [40, 32, 44], glow: [120, 84, 120] }],
   ["civilian-woman-2", [196, 146, 104], [88, 56, 44], [60, 92, 96], [62, 60, 70],
     { style: "woman", skirt: [38, 52, 56], top: [60, 92, 96], hair: [88, 56, 44], glow: [80, 120, 120] }],
+  ["civilian-woman-3", [156, 114, 72], [24, 18, 16], [112, 54, 92], [52, 46, 62],
+    { style: "woman", skirt: [76, 34, 68], top: [112, 54, 92], hair: [24, 18, 16], glow: [232, 107, 214] }],
+  ["civilian-woman-4", [233, 186, 140], [190, 142, 72], [58, 74, 116], [52, 54, 70],
+    { style: "woman", skirt: [42, 50, 92], top: [58, 74, 116], hair: [190, 142, 72], glow: [120, 170, 245] }],
+  ["civilian-woman-5", [112, 78, 52], [118, 52, 38], [52, 104, 82], [44, 54, 58],
+    { style: "woman", skirt: [32, 76, 62], top: [52, 104, 82], hair: [118, 52, 38], glow: [121, 213, 155] }],
   // Men: worn street clothes in dull, muted colours with a faint trim: a pressured world, not a bright one.
   ["civilian-man-1", [233, 186, 140], [20, 16, 14], [66, 56, 76], [30, 32, 42],
     { style: "man", collar: [52, 46, 62], crest: [110, 84, 120], glow: [110, 84, 120] }],

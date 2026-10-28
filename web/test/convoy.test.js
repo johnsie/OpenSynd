@@ -25,7 +25,10 @@ test("the Northern Ireland squad deploys in the escort and the procession holds 
   assert.equal(world.mission.opponents.length, 6, "the procession faces six enemy agents");
   const spectators = world.units.filter((unit) => unit.id.startsWith("civilian-"));
   assert.equal(spectators.length, 288, "the 72-person crowd is quadrupled");
-  assert.ok(spectators.every((unit) => unit.passive && Number.isInteger(unit.facing)), "every spectator stands facing the road");
+  assert.ok(spectators.every((unit) => unit.passive && unit.pose === "attention" && Number.isInteger(unit.facing)),
+    "every spectator stands at attention facing the road");
+  assert.equal(spectators.filter((unit) => unit.definition.id === "developer.civilian-woman").length, 216,
+    "three quarters of the procession crowd are women");
   const stepByFacing = new Map([[1, { x: 1, y: 0 }], [3, { x: 0, y: -1 }], [5, { x: -1, y: 0 }], [7, { x: 0, y: 1 }]]);
   assert.ok(spectators.every((unit) => {
     const step = stepByFacing.get(unit.facing);
