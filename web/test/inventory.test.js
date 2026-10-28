@@ -152,12 +152,12 @@ test("an operative with nothing loaded keeps what they had", () => {
   assert.equal(dry.activeSlot, 0);
 });
 
-test("putting a weapon away also puts away the stand-ins others raised for it", () => {
+test("putting a group weapon away holsters every selected operative even when their weapons differ", () => {
   const first = { ...carrier("a", [gun("pistol", 10), gun("rifle", 4)]), activeSlot: 0 };
-  const second = { ...carrier("b", [gun("rifle", 4)]), activeSlot: 0 };
-  clearWeaponForAll([first, second], "pistol");
+  const second = { ...carrier("b", [gun("pistol", 10), gun("rifle", 4)]), activeSlot: 1 };
+  clearWeaponForAll([first, second]);
   assert.equal(first.activeSlot, null);
-  assert.equal(second.activeSlot, null, "their rifle was the stand-in for the pistol");
+  assert.equal(second.activeSlot, null, "their separately selected rifle is put away too");
 });
 
 const grassGrid = Array.from({ length: 20 }, () => Array.from({ length: 20 }, () => ({ walkable: true })));

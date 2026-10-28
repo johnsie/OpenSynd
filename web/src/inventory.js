@@ -236,10 +236,7 @@ export function setPersuader(units, on) {
   return carriers;
 }
 
-// Put the weapon away for several operatives: whoever raised it (or its stand-in) goes back to automatic.
-export function clearWeaponForAll(units, definitionId) {
-  const reference = units.flatMap((unit) => unit.equipment).find((item) => item.definition.id === definitionId)?.definition;
-  for (const unit of units) {
-    if (reference && Number.isInteger(unit.activeSlot) && unit.activeSlot === matchingSlot(unit, reference)) unit.activeSlot = null;
-  }
+// Put every selected operative's weapon away. Their active weapons may differ if they were armed before the group was selected.
+export function clearWeaponForAll(units) {
+  for (const unit of units) unit.activeSlot = null;
 }

@@ -594,7 +594,7 @@ export function useItem(world, hooks, operators, unit, slot, options = {}) {
     // copy of the same weapon, or puts it away together.
     if (group) {
       if (unit.activeSlot === slot) {
-        clearWeaponForAll(operators, definition.id);
+        clearWeaponForAll(operators);
         hooks.message(`${operators.length} operators: weapons put away. Select one to fire.`);
       } else {
         const { selected, substituted, missing } = selectWeaponForAll(operators, definition.id);
