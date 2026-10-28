@@ -4110,6 +4110,10 @@ canvas.addEventListener("pointerdown", (event) => {
     return;
   }
   if (!state.map || event.button !== 0) return;
+  if (event.pointerType === "touch") {
+    event.preventDefault();
+    canvas.setPointerCapture(event.pointerId);
+  }
   Object.assign(drag, { pointerId: event.pointerId, lastX: event.clientX, lastY: event.clientY, moved: 0, active: false });
 });
 canvas.addEventListener("pointermove", (event) => {
@@ -4118,6 +4122,7 @@ canvas.addEventListener("pointermove", (event) => {
     state.holdFireScreen = { x: event.clientX - bounds.left, y: event.clientY - bounds.top };
   }
   if (drag.pointerId !== event.pointerId || !state.viewport) return;
+  if (event.pointerType === "touch") event.preventDefault();
   const deltaX = event.clientX - drag.lastX;
   const deltaY = event.clientY - drag.lastY;
   drag.lastX = event.clientX;
@@ -4126,7 +4131,7 @@ canvas.addEventListener("pointermove", (event) => {
   if (!drag.active) {
     if (drag.moved < 8) return;
     drag.active = true;
-    canvas.setPointerCapture(event.pointerId);
+    if (!canvas.hasPointerCapture(event.pointerId)) canvas.setPointerCapture(event.pointerId);
   }
   drag.suppressClick = true;
   panByScreen(state.camera, deltaX, deltaY, state.viewport, state.map);

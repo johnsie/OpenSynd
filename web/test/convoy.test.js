@@ -41,12 +41,12 @@ test("the Northern Ireland squad deploys in the escort and the procession holds 
   assert.equal(dignitary.inVehicle, "dignitary-armoured-car");
 
   const order = [
+    "convoy-response-armoured-car",
     "convoy-police-lead",
     "convoy-armoured-escort",
     "dignitary-armoured-car",
     "convoy-ambulance",
     "convoy-police-rear",
-    "convoy-response-armoured-car",
   ];
   assert.ok(order.every((id) => world.units.find((unit) => unit.id === id).vehicle.cruiseSpeed === 5));
   advance(world, 20);
@@ -92,7 +92,7 @@ test("the stolen car blocks the convoy until its assassin driver is forced out",
   assert.ok(Math.hypot(lead.position.x - stoppedAt.x, lead.position.y - stoppedAt.y) > 4, "the lead car moves once the blockade is empty");
 });
 
-test("eight response guards leave the rear armoured car at the blockade and hunt the assassins", () => {
+test("eight response guards leave the lead armoured car at the blockade and hunt the assassins", () => {
   const world = makeWorld(content, mission, { options: { decidesOutcome: false } });
   const target = world.units.find((unit) => unit.id === "assassin-five");
   for (const unit of world.units.filter((candidate) => candidate.side === "opposition" && candidate !== target)) unit.disabled = true;

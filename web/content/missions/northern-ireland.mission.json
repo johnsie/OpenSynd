@@ -4,7 +4,7 @@
   "name": "The Northern Procession",
   "license": "CC0-1.0",
   "title": "The procession reaches the reception",
-  "briefing": "Northstar Mutual's CEO, Mara Quinn, is touring Northern Ireland in a civic procession. Six Tidewater agents intend to assassinate her at any cost, and one has stolen a car to blockade the route. Your squad begins aboard the armoured escort; leave it with V when you need to intercept a threat. A second armoured car carries an eight-guard response team at the rear; they deploy and hunt the assassins when the procession reaches the blockade. Protect Quinn while the convoy circles the expanded city, clear the roadblock, then cover her walk through the reception doors. The roadside guards are friendly and will not attack your operatives. Police are neutral, but they will warn and then fire if they see an operative carrying a weapon openly.",
+  "briefing": "Northstar Mutual's CEO, Mara Quinn, is touring Northern Ireland in a civic procession. Six Tidewater agents intend to assassinate her at any cost, and one has stolen a car to blockade the route. Your squad begins aboard the armoured escort; leave it with V when you need to intercept a threat. The lead armoured car carries an eight-guard response team; they deploy and hunt the assassins when the procession reaches the blockade. Protect Quinn while the convoy circles the expanded city, clear the roadblock, then cover her walk through the reception doors. The roadside guards are friendly and will not attack your operatives. Police are neutral, but they will warn and then fire if they see an operative carrying a weapon openly.",
   "story": "The Northern Procession: civilians, police and Northstar guards line the cleared streets while patrol cars, armoured escorts and an ambulance lead Mara Quinn around town. The ceremony ends only when Quinn leaves her armoured car and enters the reception building alive.",
   "debrief": {
     "success": "Mara Quinn crosses the reception threshold unharmed. Northstar keeps its leadership, the crowd disperses safely, and the six assassins have failed.",
@@ -411,7 +411,7 @@
     {
       "id": "convoy-response-armoured-car",
       "vehicle": "vehicles/armored-response-car.vehicle.json",
-      "position": {"x": 13, "y": 47},
+      "position": {"x": 43, "y": 47},
       "driver": "units/city-police.unit.json",
       "cruiseSpeed": 5,
       "passengers": ["response-guard-1", "response-guard-2", "response-guard-3", "response-guard-4", "response-guard-5", "response-guard-6", "response-guard-7", "response-guard-8"],
@@ -426,7 +426,7 @@
   "intel": [
     "Patrol survey: six Tidewater assassins are converging on Mara Quinn; all six know which armoured car carries her.",
     "Full survey: one assassin steals a city car and stops it across the northern route. Hit the car to force the driver out and let the convoy pass.",
-    "Response plan: eight Northstar guards ride in the rear armoured car. They deploy at the blockade and hunt the Tidewater agents."
+    "Response plan: eight Northstar guards ride in the lead armoured car. They deploy at the blockade and hunt the Tidewater agents."
   ],
   "unlocks": []
 }
