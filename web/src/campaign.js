@@ -224,6 +224,23 @@ export function deployedMembers(campaign) {
   return campaign.squad.map((id) => campaign.roster.find((member) => member.id === id)).filter((member) => member?.alive);
 }
 
+/**
+ * Put the campaign's chosen squad into a mission's starting slots. References to those slots from vehicles must follow the
+ * operative who took the slot; otherwise replacement operatives appear on the slot's fallback tile instead of in the vehicle.
+ */
+export function deploySquadToMission(mission, campaign) {
+  const members = deployedMembers(campaign).slice(0, mission.team.length);
+  const slotToOperative = new Map(members.map((member, index) => [mission.team[index].id, member.id]));
+  const team = members.map((member, index) => ({ ...mission.team[index], id: member.id, callsign: member.name }));
+  const vehicles = (mission.vehicles ?? []).map((vehicle) => ({
+    ...vehicle,
+    ...(vehicle.passengers
+      ? { passengers: vehicle.passengers.map((id) => slotToOperative.get(id) ?? id) }
+      : {}),
+  }));
+  return { ...mission, team, vehicles };
+}
+
 // Put a living operative in the squad (if there is room) or take one out. At least one must stay.
 export function deploy(campaign, id) {
   const member = campaign.roster.find((entry) => entry.id === id);

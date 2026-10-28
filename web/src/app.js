@@ -156,6 +156,7 @@ import {
   bench,
   deploy,
   deployedMembers,
+  deploySquadToMission,
   hire,
   loseOperatives,
   recruit,
@@ -601,7 +602,7 @@ async function loadGame(index = state.missionIndex, options = {}) {
   const rawMission = remote?.data ?? (await readJson(`content/${missionPath}`)); // a raid is made on the spot and sent whole
   // The squad is chosen from the roster: its members take the mission's starting places in order.
   state.rawTeam = rawMission.team;
-  const mission = remote?.variant === "war" ? rawMission : { ...rawMission, team: squadTeam(rawMission.team) };
+  const mission = remote?.variant === "war" ? rawMission : deploySquadToMission(rawMission, state.campaign);
   const baseMap = await readJson(`content/${mission.map}`);
   // An operation may add zones of its own to its map's (the landing area an uprising or defence falls back to).
   const map = mission.zones?.length ? { ...baseMap, zones: [...baseMap.zones, ...mission.zones] } : baseMap;

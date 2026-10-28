@@ -3,6 +3,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { deploySquadToMission, emptyCampaign } from "../src/campaign.js";
 import { silentHooks } from "../src/core/hooks.js";
 import { stepWorld } from "../src/core/world.js";
 import { FIXED_STEP_SECONDS } from "../src/simulation.js";
@@ -59,6 +60,20 @@ test("the Northern Ireland squad deploys in the escort and the procession holds 
   }
   assert.equal(dignitary.inVehicle, "dignitary-armoured-car", "Mara remains aboard on the first pass by reception");
   assert.equal(world.objectives[0].complete, false);
+});
+
+test("a three-operative campaign squad starts aboard the Northern Ireland escort", () => {
+  const campaign = emptyCampaign();
+  campaign.roster.push({ id: "replacement-five", name: "Rourke", alive: true, missions: 0 });
+  campaign.squad = ["operator-three", "replacement-five", "operator-one"];
+  const deployedMission = deploySquadToMission(content.read(mission), campaign);
+  const world = makeWorld(content, deployedMission, { campaign, options: { harmless: true } });
+  const squad = world.units.filter((unit) => unit.side === "team");
+  const escort = world.units.find((unit) => unit.id === "convoy-armoured-escort");
+
+  assert.deepEqual(squad.map((unit) => unit.id), campaign.squad);
+  assert.deepEqual(squad.map((unit) => unit.inVehicle), Array(3).fill(escort.id));
+  assert.deepEqual(escort.vehicle.occupantIds.filter((id) => campaign.squad.includes(id)), campaign.squad);
 });
 
 test("Mara completes a full circuit before walking through reception", () => {
