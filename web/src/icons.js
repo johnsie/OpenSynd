@@ -52,28 +52,10 @@ const SHAPES = Object.freeze({
   box: '<rect x="5" y="8" width="22" height="18" rx="2"/><path d="M5 14h22"/>',
 });
 
-// Tiny, space-neutral identifiers for weapons in the field HUD. The badge distinguishes weapons even without colour; the kind
-// selects a stripe colour/pattern in CSS. Keys are trusted icon names rather than content-provided class names.
-const WEAPON_IDENTITIES = Object.freeze({
-  pulse: { badge: "CP", kind: "pulse" },
-  "heavy-pulse": { badge: "HP", kind: "heavy" },
-  smg: { badge: "MP", kind: "auto" },
-  rotary: { badge: "RC", kind: "heavy" },
-  coil: { badge: "CG", kind: "coil" },
-  longshot: { badge: "LR", kind: "precision" },
-  scatter: { badge: "SE", kind: "scatter" },
-  flame: { badge: "IN", kind: "flame" },
-  beam: { badge: "BP", kind: "beam" },
-});
-
 export const ICON_NAMES = Object.freeze(Object.keys(SHAPES).filter((name) => name !== "box"));
 
 export function hasIcon(name) {
   return ICON_NAMES.includes(name);
-}
-
-export function weaponIdentity(name) {
-  return WEAPON_IDENTITIES[name] ?? { badge: "WP", kind: "pulse" };
 }
 
 // SVG markup for an icon; an unknown name gets a plain box.
