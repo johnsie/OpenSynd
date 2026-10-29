@@ -105,7 +105,7 @@ import {
   visibleBounds,
   zoomCamera,
 } from "./camera.js";
-import { iconMarkup } from "./icons.js";
+import { iconMarkup, itemImagePath } from "./icons.js";
 import {
   CAMPAIGN_KEY,
   SLOTS_PER_OPERATIVE,
@@ -566,6 +566,23 @@ async function readJson(path) {
   const response = await fetch(assetUrl(path));
   if (!response.ok) throw new Error(`Unable to load ${path}`);
   return response.json();
+}
+
+function itemIcon(definition, size) {
+  const path = itemImagePath(definition.id);
+  if (!path) {
+    const icon = document.createElement("span");
+    icon.className = "vector-item-art";
+    icon.innerHTML = iconMarkup(definition.icon, size);
+    return icon;
+  }
+  const image = document.createElement("img");
+  image.className = "item-art";
+  image.src = assetUrl(path);
+  image.alt = "";
+  image.setAttribute("aria-hidden", "true");
+  image.draggable = false;
+  return image;
 }
 
 // Operators start with their campaign loadout (their mission defaults until one is chosen);
@@ -1130,7 +1147,7 @@ function renderArmoury() {
         number.textContent = String(slot + 1);
         square.append(number);
         if (item) {
-          square.insertAdjacentHTML("beforeend", iconMarkup(item.icon, 34));
+          square.append(itemIcon(item, 34));
           if (item.charges) {
             const badge = document.createElement("span");
             badge.className = "charges";
@@ -1175,7 +1192,7 @@ function renderArmoury() {
     row.classList.toggle("locked", !available);
     const icon = document.createElement("span");
     icon.className = "icon";
-    icon.innerHTML = iconMarkup(item.icon, 32);
+    icon.append(itemIcon(item, 32));
     const text = document.createElement("span");
     const name = document.createElement("strong");
     name.textContent = item.name;
@@ -5723,7 +5740,7 @@ function slotRow(unit, label) {
     const spent = entry.charges === 0;
     square.classList.toggle("active", active);
     square.classList.toggle("spent", spent);
-    square.innerHTML = iconMarkup(definition.icon, 22);
+    square.append(itemIcon(definition, 22));
     if (entry.charges !== null && entry.charges !== undefined) {
       const badge = document.createElement("span");
       badge.className = "charges";

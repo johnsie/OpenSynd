@@ -16,6 +16,15 @@ ROOT = Path(__file__).resolve().parents[1]
 GROUPS = [
     ("Character pictures (sprite sheets)", {"derived-sprite-sheet"}),
     ("The 3D model they are drawn from", {"third-party-art-source"}),
+    (
+        "Inventory artwork",
+        {
+            "user-supplied-weapon-art-source",
+            "derived-weapon-icon",
+            "generated-inventory-art-source",
+            "derived-inventory-icon",
+        },
+    ),
     ("Music", {"music"}),
     ("Inherited from FreeSynd, not used by the browser game", {
         "legacy-localization", "legacy-branding", "legacy-audio", "legacy-artwork", "legacy-game-data",

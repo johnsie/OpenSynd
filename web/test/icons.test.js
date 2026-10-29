@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-import { ICON_NAMES, hasIcon, iconMarkup } from "../src/icons.js";
+import { ICON_NAMES, hasIcon, iconMarkup, itemImagePath } from "../src/icons.js";
 
 test("every named icon draws an SVG on the 32 x 32 grid", () => {
   assert.deepEqual([...ICON_NAMES].sort(), [
@@ -31,9 +31,15 @@ test("an unknown icon falls back to a plain box and markup never carries script"
 test("every item in the pack names an icon that exists", async () => {
   const pack = JSON.parse(await readFile(new URL("../content/pack.json", import.meta.url), "utf8"));
   assert.ok(pack.equipment.length >= 5);
+  const itemImages = [];
   for (const path of pack.equipment) {
     const item = JSON.parse(await readFile(new URL(`../content/${path}`, import.meta.url), "utf8"));
     assert.equal(hasIcon(item.icon), true, `${path} needs a known icon`);
     assert.ok(Number.isInteger(item.price) && item.price >= 0, `${path} needs a price`);
+    const image = itemImagePath(item.id);
+    assert.ok(image, `${path} needs inventory artwork`);
+    assert.equal((await readFile(new URL(`../public/${image}`, import.meta.url))).subarray(1, 4).toString(), "PNG");
+    itemImages.push(image);
   }
+  assert.equal(new Set(itemImages).size, itemImages.length, "every item has distinct artwork");
 });

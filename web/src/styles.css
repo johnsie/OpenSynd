@@ -634,6 +634,19 @@ dialog.title-screen[open] {
   box-shadow: 0 0 0 1px var(--public);
 }
 .slot svg { width: 70%; height: 70%; }
+.slot .vector-item-art { display: grid; width: 100%; height: 100%; place-items: center; }
+.slot .vector-item-art svg { width: 70%; height: 70%; }
+.item-art {
+  display: block;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+.slot .item-art { width: 94%; height: 80%; }
+.slot.big .item-art { width: 96%; height: 82%; }
+.shop-row .icon .item-art { width: 2rem; height: 2rem; }
 .slot .charges {
   position: absolute;
   right: 1px;
@@ -997,6 +1010,7 @@ main { grid-template-columns: minmax(0, 1fr) minmax(250px, 300px); gap: 0.6rem; 
 /* The squad card shows the weapon squares and, under them, the three drug sliders. */
 .squad-hud .slots { gap: 4px; }
 .squad-hud .slot svg { width: 76%; height: 76%; }
+.squad-hud .slot .vector-item-art svg { width: 76%; height: 76%; }
 .squad-hud .slot .charges { font-size: 0.7rem; right: 3px; bottom: 2px; }
 
 /* Each drug has its own colour: Adrenaline (speed, shaky aim) hot, Perception (aim, sight) cyan, Intelligence (recharge) violet. */

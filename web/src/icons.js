@@ -52,10 +52,31 @@ const SHAPES = Object.freeze({
   box: '<rect x="5" y="8" width="22" height="18" rx="2"/><path d="M5 14h22"/>',
 });
 
+const ITEM_IMAGES = Object.freeze({
+  "developer.civic-pulse-emitter": "assets/weapons/civic-pulse-emitter.png",
+  "developer.machine-pistol": "assets/weapons/machine-pistol.png",
+  "developer.rotary-cannon": "assets/weapons/rotary-cannon.png",
+  "developer.coil-gun": "assets/weapons/coil-gun.png",
+  "developer.longshot-rifle": "assets/weapons/longshot-rifle.png",
+  "developer.scatter-emitter": "assets/weapons/scatter-emitter.png",
+  "developer.incinerator": "assets/weapons/incinerator.png",
+  "developer.beam-projector": "assets/weapons/beam-projector.png",
+  "developer.persuader": "assets/items/persuader.png",
+  "developer.scanner": "assets/items/scanner.png",
+  "developer.deflector-shield": "assets/items/deflector-shield.png",
+  "developer.delay-charge": "assets/items/delay-charge.png",
+  "developer.field-repair-kit": "assets/items/field-repair-kit.png",
+  "developer.clearance-key": "assets/items/clearance-key.png",
+});
+
 export const ICON_NAMES = Object.freeze(Object.keys(SHAPES).filter((name) => name !== "box"));
 
 export function hasIcon(name) {
   return ICON_NAMES.includes(name);
+}
+
+export function itemImagePath(id) {
+  return ITEM_IMAGES[id] ?? null;
 }
 
 // SVG markup for an icon; an unknown name gets a plain box.

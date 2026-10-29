@@ -22,14 +22,14 @@ the overview is in the [README](README.md).
 
 ## Honest caveats
 
-- The registry has **58 quarantined, 7 excluded and 0 approved** entries.
+- The registry has **82 quarantined, 7 excluded and 0 approved** entries.
   "Approved" is only given after a named person reviews a file, and that has not happened: I did the intake
   checking with an AI assistant, which is not a legal review.
 - Anything marked `NOASSERTION` is inherited and its licence is **unknown**; I am not relying on it.
 
 ## Character pictures (sprite sheets)
 
-38 sheets in `web/public/assets/sprites/`, made by `web/tools/render-sprites.mjs` from the model below
+41 sheets in `web/public/assets/sprites/`, made by `web/tools/render-sprites.mjs` from the model below
 (clothes, hair, boots and gear are generated shapes added to its skeleton by `web/tools/render.html`).
 Licence CC0-1.0; creator credited as Quaternius for the model, with rendering and styling by the project's contributors.
 
@@ -45,6 +45,33 @@ Licence CC0-1.0; creator credited as Quaternius for the model, with rendering an
   - `web/art-source/quaternius-animated-human/Blend/Textures/ClothedLightSkin1.png` (quarantined)
   - `web/art-source/quaternius-animated-human/Blend/Textures/ClothedLightSkin2.png` (quarantined)
   - and 4 more
+
+## Inventory artwork
+
+- **User supplied; transparency extraction by OpenAI image generation**, licence `NOASSERTION`, source: user-supplied-chat-image-2026-10-29
+  - `web/art-source/weapon-icons/weapon-sheet.png` (quarantined)
+  - `web/public/assets/weapons/beam-projector.png` (quarantined)
+  - `web/public/assets/weapons/civic-pulse-emitter.png` (quarantined)
+  - `web/public/assets/weapons/coil-gun.png` (quarantined)
+  - `web/public/assets/weapons/incinerator.png` (quarantined)
+  - `web/public/assets/weapons/longshot-rifle.png` (quarantined)
+  - `web/public/assets/weapons/machine-pistol.png` (quarantined)
+  - `web/public/assets/weapons/rotary-cannon.png` (quarantined)
+  - and 1 more
+- **OpenAI image generation**, licence `NOASSERTION`, source: OpenAI image generation based on the registered user-supplied weapon style reference
+  - `web/art-source/inventory-icons/clearance-key.png` (quarantined)
+  - `web/art-source/inventory-icons/deflector-shield.png` (quarantined)
+  - `web/art-source/inventory-icons/delay-charge.png` (quarantined)
+  - `web/art-source/inventory-icons/field-repair-kit.png` (quarantined)
+  - `web/art-source/inventory-icons/persuader.png` (quarantined)
+  - `web/art-source/inventory-icons/scanner.png` (quarantined)
+- **OpenAI image generation; crop and scaling by NeuroReign contributors**, licence `NOASSERTION`, source: OpenAI image generation based on the registered user-supplied weapon style reference
+  - `web/public/assets/items/clearance-key.png` (quarantined)
+  - `web/public/assets/items/deflector-shield.png` (quarantined)
+  - `web/public/assets/items/delay-charge.png` (quarantined)
+  - `web/public/assets/items/field-repair-kit.png` (quarantined)
+  - `web/public/assets/items/persuader.png` (quarantined)
+  - `web/public/assets/items/scanner.png` (quarantined)
 
 ## Music
 
