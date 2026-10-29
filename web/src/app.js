@@ -1120,7 +1120,6 @@ function renderArmoury() {
         square.type = "button";
         square.className = "slot big";
         square.classList.toggle("empty", !item);
-        square.classList.toggle("weapon", item?.action === "disable-pulse");
         const chosen = choice.operator === index && choice.slot === slot;
         square.classList.toggle("chosen", chosen);
         square.setAttribute("aria-pressed", String(chosen));
@@ -5717,8 +5716,6 @@ function slotRow(unit, label) {
       continue;
     }
     const definition = entry.definition;
-    const weapon = definition.action === "disable-pulse";
-    square.classList.toggle("weapon", weapon);
     square.dataset.action = definition.action ?? "";
     const active =
       (definition.action === "disable-pulse" && unit.activeSlot === slot) ||
@@ -5727,13 +5724,6 @@ function slotRow(unit, label) {
     square.classList.toggle("active", active);
     square.classList.toggle("spent", spent);
     square.innerHTML = iconMarkup(definition.icon, 22);
-    if (weapon && Number.isFinite(entry.charges) && Number.isFinite(definition.charges) && definition.charges > 0) {
-      const meter = document.createElement("span");
-      meter.className = "ammo-meter";
-      meter.style.setProperty("--ammo-level", `${Math.max(0, Math.min(100, (entry.charges / definition.charges) * 100))}%`);
-      meter.setAttribute("aria-hidden", "true");
-      square.append(meter);
-    }
     if (entry.charges !== null && entry.charges !== undefined) {
       const badge = document.createElement("span");
       badge.className = "charges";
