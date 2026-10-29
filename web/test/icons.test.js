@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-import { ICON_NAMES, hasIcon, iconMarkup } from "../src/icons.js";
+import { ICON_NAMES, hasIcon, iconMarkup, weaponIdentity } from "../src/icons.js";
 
 test("every named icon draws an SVG on the 32 x 32 grid", () => {
   assert.deepEqual([...ICON_NAMES].sort(), [
@@ -26,6 +26,14 @@ test("an unknown icon falls back to a plain box and markup never carries script"
   for (const name of [...ICON_NAMES, "nonsense"]) {
     assert.doesNotMatch(iconMarkup(name), /<script|onload|onerror/i);
   }
+});
+
+test("weapons have compact, distinct HUD identities", () => {
+  const weapons = ["pulse", "smg", "rotary", "coil", "longshot", "scatter", "flame", "beam"];
+  const identities = weapons.map(weaponIdentity);
+  assert.ok(identities.every(({ badge, kind }) => /^[A-Z]{2}$/.test(badge) && /^[a-z]+$/.test(kind)));
+  assert.equal(new Set(identities.map(({ badge }) => badge)).size, weapons.length);
+  assert.deepEqual(weaponIdentity("smg"), { badge: "MP", kind: "auto" });
 });
 
 test("every item in the pack names an icon that exists", async () => {

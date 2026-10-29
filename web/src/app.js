@@ -105,7 +105,7 @@ import {
   visibleBounds,
   zoomCamera,
 } from "./camera.js";
-import { iconMarkup } from "./icons.js";
+import { iconMarkup, weaponIdentity } from "./icons.js";
 import {
   CAMPAIGN_KEY,
   SLOTS_PER_OPERATIVE,
@@ -5716,6 +5716,8 @@ function slotRow(unit, label) {
       continue;
     }
     const definition = entry.definition;
+    const weapon = definition.action === "disable-pulse" ? weaponIdentity(definition.icon) : null;
+    if (weapon) square.classList.add("weapon", `weapon-${weapon.kind}`);
     square.dataset.action = definition.action ?? "";
     const active =
       (definition.action === "disable-pulse" && unit.activeSlot === slot) ||
@@ -5724,6 +5726,12 @@ function slotRow(unit, label) {
     square.classList.toggle("active", active);
     square.classList.toggle("spent", spent);
     square.innerHTML = iconMarkup(definition.icon, 22);
+    if (weapon) {
+      const badge = document.createElement("span");
+      badge.className = "weapon-badge";
+      badge.textContent = weapon.badge;
+      square.append(badge);
+    }
     if (entry.charges !== null && entry.charges !== undefined) {
       const badge = document.createElement("span");
       badge.className = "charges";
