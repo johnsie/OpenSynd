@@ -134,7 +134,10 @@ export function createGameServer({
     }
     const address = request.socket.remoteAddress ?? "unknown";
     try {
-      if (url.pathname === "/api/health" && request.method === "GET") {
+      if (url.pathname === "/api/outiva-status" && request.method === "GET") {
+        // The Outiva console's public status contract: counts only, readable from outiva.com alone.
+        json(response, 200, { status: "available", players: connections.size }, { "Access-Control-Allow-Origin": "https://outiva.com", "Cache-Control": "public, max-age=15", Vary: "Origin" });
+      } else if (url.pathname === "/api/health" && request.method === "GET") {
         reply(200, {
           ok: true,
           protocol: PROTOCOL_VERSION,
